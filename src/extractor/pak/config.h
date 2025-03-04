@@ -16,32 +16,6 @@
 //#include "config.h"
 #endif
 
-// Config IMGUI
-#ifdef __APPLE__
-    #if TARGET_OS_OSX
-        #define USE_SDL 1
-        #define FITD_DEBUGGER
-        #define USE_IMGUI
-        #define USE_OPENGL_3_2
-    #endif
-    #if TARGET_OS_TV || TARGET_OS_IOS
-        #define USE_SDL 1
-        #define USE_OPENGLES_3_0
-        #define RUN_FULLSCREEN  
-        #define USE_IMGUI
-        #define FITD_DEBUGGER
-    #endif
-#else
-    #define USE_SDL 1
-    #define FITD_DEBUGGER
-    #define USE_IMGUI
-    #define USE_OPENGL_3_2
-#endif
-
-#ifdef AITD_UE4
-#undef USE_IMGUI
-#endif
-
 #ifdef MACOSX
 #define UNIX
 #endif
@@ -72,10 +46,6 @@ typedef signed long int s32;
 #include <string.h>
 #ifdef WIN32
 #include <search.h>
-#endif
-
-#ifdef _WIN32
-#include <windows.h>
 #endif
 
 #include <assert.h>

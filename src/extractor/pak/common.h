@@ -84,17 +84,15 @@ int getCVarsIdx(int);
 
 //////////////////
 
-#if !AITD_UE4
 typedef unsigned char uint8;
 typedef unsigned short uint16;
 typedef unsigned long uint32;
 #ifndef UNIX
-typedef unsigned int uint;
+  typedef unsigned int uint;
 #endif
 typedef signed char int8;
 typedef signed short int16;
 typedef signed long int32;
-#endif
 
 typedef unsigned char U8;
 typedef unsigned short U16;

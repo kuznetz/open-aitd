@@ -1,0 +1,28 @@
+Cam         24  44
+CamViewRoom 44  56
+???         file_off=56 loc_offs=32 size=756
+camCovers   812 858 loc_offs=788
+
+cam         858 878
+CamViewRoom 878 890
+???         file_off=890 loc_offs=32 size=374
+camCovers   1264 1300 loc_offs=406
+
+cam         1264 1300
+CamViewRoom 1300 1332
+???
+camCovers   2212 2240
+
+cam         2240 2260
+CamViewRoom 2260 2272
+???
+camCovers   2802 2834
+
+cam         2834 2854
+CamViewRoom 2854 2866
+???
+camCovers   3052 3072
+
+
+
+

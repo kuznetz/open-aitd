@@ -1,20 +1,26 @@
 #include <raylib.h>
-#include <rlgl.h>
-#include "camera.hpp"
+//#include <rlgl.h>
+//#include "camera.hpp"
+#include "extractor/extractor.hpp"
+#include "extractor/pak/floor.h"
 
 int screenW = 1280;
 int screenH = 800;
 
 int main(void)
 {
+    loadFloor("ETAGE00");
+
     InitWindow(screenW, screenH, "Open AITD");
     SetTargetFPS(60);
 
-    //Format24bppRgb
-    //Image backgroundImage = GenImageChecked(screenW, screenH, 40, 40, ORANGE, YELLOW);
-    Image backgroundImage = loadBackground();
-    Texture2D backgroundTexture = LoadTextureFromImage(backgroundImage);
+    extractBackground("CAMERA00", 0);
+    extractBackground("CAMERA00", 1);
+    extractBackground("CAMERA00", 2);
 
+    //Format24bppRgb
+    Image backgroundImage = GenImageChecked(screenW, screenH, 40, 40, ORANGE, YELLOW);
+    Texture2D backgroundTexture = LoadTextureFromImage(backgroundImage);
     Texture2D texture = LoadTexture(ASSETS_PATH"test.png"); // Check README.md for how this works
 
 
