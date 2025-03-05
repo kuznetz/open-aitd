@@ -1,7 +1,7 @@
-#include "common.h"
-#include "floor.h"
-#include "pak.h"
+#include "../structures/floor.h"
+#include "pak/pak.h"
 #include <stdexcept>
+#include <fstream>
 
 struct debugBlock {
     char* name;
@@ -172,6 +172,7 @@ void loadCameraMaskV1(cameraViewedRoomStruct* curCameraViewedRoom, u8* camerasRa
             maskRawData += 8;
         }
 
+        /*
         u8* rawVerts = camerasRawData + offset + polyOffset + 2;
         curMask->numPolys = READ_LE_U16(rawVerts);
         rawVerts += 2;
@@ -197,7 +198,8 @@ void loadCameraMaskV1(cameraViewedRoomStruct* curCameraViewedRoom, u8* camerasRa
                 //invalid poly
             }
         }
-        int offsetTest = rawVerts - (camerasRawData + offset);
+        */
+        //int offsetTest = rawVerts - (camerasRawData + offset);
      }
     
     struct debugBlock db = { "cameraMaskV1", 0, offset, (maskRawData - camerasRawData) };
@@ -291,7 +293,7 @@ void loadCameras(floorStruct* result, char* filename) {
 
 }
 
-floorStruct* loadFloor(char* filename) {
+floorStruct* loadFloorPak(char* filename) {
     floorStruct* result = new floorStruct;
     //loadRooms(result, filename);
     loadCameras(result, filename);
@@ -299,3 +301,31 @@ floorStruct* loadFloor(char* filename) {
 }
 
 
+void saveFloorTxt(char* filename, floorStruct* fs) {
+    char fname[50];
+    sprintf(fname, "%s.txt", filename);
+    std::ofstream myfile;
+    myfile.open(fname);
+
+    myfile << "CAMERAS: " << fs->cameraCount << "\n";
+    for (int i = 0; i < fs->cameraCount; i++) {
+        cameraStruct* cam = &fs->cameras[i];
+        myfile << "CAMERA:\n";
+        myfile << " XYZ: " << cam->x << " " << cam->y << " " << cam->z << "\n";
+        myfile << " VIEWS: " << cam->numViewedRooms << "\n";
+        for (int i2 = 0; i2 < cam->numViewedRooms; i2++) {
+            cameraViewedRoomStruct* vw = &cam->viewedRoomTable[i2];
+            myfile << " VIEW:\n";
+            myfile << "  MASKS_V1: " << vw->numV1Mask << "\n";
+            for (int i3 = 0; i3 < vw->numV1Mask; i3++) {
+                cameraMaskV1Struct* mask = &vw->V1masks[i3];
+                myfile << "  MASK_V1:\n";
+                myfile << "  ZONES: " << mask->numZone << "\n";
+                for (int i4 = 0; i4 < mask->numZone; i4++) {
+                    myfile << "   ZONE: " << mask->zones[i4].zoneX1 << " " << mask->zones[i4].zoneZ1 << " " << mask->zones[i4].zoneX2 << " " << mask->zones[i4].zoneZ2 << "\n";
+                }
+            }
+        }
+    }
+    myfile.close();
+}

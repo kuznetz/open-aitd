@@ -1,6 +1,9 @@
 // seg 55
 
-#include "common.h"
+#include <stdlib.h> 
+#include <stdio.h>
+#include <string.h>
+#include "../../structures/int_types.h"
 #include "unpack.h"
 #include "pak.h"
 
@@ -50,8 +53,6 @@ unsigned int PAK_getNumFiles(const char* name)
 
     if (!fileHandle)
         return 0;
-
-    ASSERT(fileHandle);
 
     fseek(fileHandle,4,SEEK_CUR);
     fread(&fileOffset,4,1,fileHandle);
@@ -246,8 +247,6 @@ char* loadPak(const char* name, int index)
 
 		if(pakInfo.offset)
 		{
-			ASSERT(pakInfo.offset<256);
-
 			fread(nameBuffer,pakInfo.offset,1,fileHandle);
 #ifdef FITD_DEBUGGER
 			printf("Loading %s/%s\n", name,nameBuffer+2);
@@ -289,7 +288,6 @@ char* loadPak(const char* name, int index)
                 break;
             }
         default:
-            assert(false);
             break;
         }
         fclose(fileHandle);
@@ -349,8 +347,6 @@ void dumpPak(const char* name)
 
             if (pakInfo.offset)
             {
-                ASSERT(pakInfo.offset < 256);
-
                 fread(nameBuffer, pakInfo.offset, 1, fileHandle);
 #ifdef FITD_DEBUGGER
                 printf("Loading %s/%s\n", name, nameBuffer + 2);
@@ -392,7 +388,6 @@ void dumpPak(const char* name)
                 break;
             }
             default:
-                assert(false);
                 break;
             }
             fclose(fileHandle);

@@ -13,8 +13,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "common.h"
-
 #define _WINDOWS
 //#define ZLIB_DLL
 #include "zlib.h"
@@ -543,5 +541,4 @@ int PAK_deflate(unsigned char * srcBuffer, unsigned char * dstBuffer, unsigned i
 void PAK_Error(char * txt) {
   printf("%s", txt);
   getchar();
-  assert(0);
 }

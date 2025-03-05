@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string>
 
-#include "extractor.hpp"
+#include "background_extractor.h"
 #include "pak/pak.h"
 #include "png.h"
 
@@ -90,8 +90,4 @@ void extractBackground(char* filename, int camera) {
     delete[] img;
 }
 
-void extractBgMasks(char* filename, int camera) {
-    
 
-
-}
