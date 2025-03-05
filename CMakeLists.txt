@@ -39,6 +39,4 @@ target_sources(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCES})
 target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_INCLUDE} ${ZLIB_INCLUDE_DIR} ${PNG_INCLUDE_DIR} )
 target_link_libraries(${PROJECT_NAME} PRIVATE png_static raylib ${ZLIB_LIBRARY_2} )
 
-#https://github.com/open-source-parsers/jsoncpp.git
-
 target_compile_definitions(${PROJECT_NAME} PUBLIC ASSETS_PATH="${CMAKE_CURRENT_SOURCE_DIR}/assets/") 

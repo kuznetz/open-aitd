@@ -4,12 +4,44 @@
 #include "extractor/extractor.hpp"
 #include "extractor/pak/floor.h"
 
+#include <fstream>
+
 int screenW = 1280;
 int screenH = 800;
 
+void writeFloor(char* filename, floorStruct* fs) {
+    char fname[50];
+    sprintf(fname, "%s.txt", filename);
+    std::ofstream myfile;
+    myfile.open(fname);
+
+    for (int i = 0; i < fs->cameraCount; i++) {
+        cameraStruct* cam = &fs->cameras[i];
+        myfile << "CAMERA:\n";
+        myfile << " XYZ:" << cam->x << " " << cam->y << " " << cam->z << "\n";
+        for (int i2 = 0; i2 < cam->numViewedRooms; i2++) {
+            cameraViewedRoomStruct* vw = &cam->viewedRoomTable[i2];
+            myfile << " VIEW:\n";
+            for (int i3 = 0; i3 < vw->numV1Mask; i3++) {
+                cameraMaskV1Struct* mask = &vw->V1masks[i3];
+                myfile << "  MASK_V1:\n";
+                for (int i4 = 0; i4 < mask->numZone; i4++) {
+                    myfile << "ZONE:" << mask->zones[i4].zoneX1 << mask->zones[i4].zoneZ1 << mask->zones[i4].zoneX2 << mask->zones[i4].zoneZ2 << "\n";
+                }
+            }
+        }
+    }
+    myfile.close();    
+}
+
 int main(void)
 {
-    loadFloor("ETAGE00");
+    char fname[50];
+    for (int i = 0; i < 8; i++) {
+        sprintf(fname, "ETAGE0%d", i);
+        floorStruct* fs = loadFloor(fname);
+        writeFloor(fname, fs);
+    }
 
     InitWindow(screenW, screenH, "Open AITD");
     SetTargetFPS(60);

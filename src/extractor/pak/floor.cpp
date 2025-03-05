@@ -12,6 +12,7 @@ struct debugBlock {
 debugBlock debugBlocks[1000];
 int countBlock = 0;
 void addDebugBlock(debugBlock db) {
+    /*
     for (int i = 0; i < countBlock - 1; i++) {
         if ((db.start >= debugBlocks[i].start) && (db.start < debugBlocks[i].end)) {
             throw new std::exception("Block collision (start)");
@@ -22,6 +23,7 @@ void addDebugBlock(debugBlock db) {
     }
     debugBlocks[countBlock] = db;
     countBlock++;
+    */
 }
 
 void loadRooms(floorStruct* result, char* filename) {
@@ -146,50 +148,60 @@ void loadCameraCover(cameraViewedRoomStruct* curCameraViewedRoom, u8* camerasRaw
 void loadCameraMaskV1(cameraViewedRoomStruct* curCameraViewedRoom, u8* camerasRawData, u32 offset) {
     int j;
     u8* maskRawData = camerasRawData + offset;
-
     curCameraViewedRoom->numV1Mask = READ_LE_U16(maskRawData);
     maskRawData += 2;
 
-    curCameraViewedRoom->V1masks = new cameraMaskV1Struct[curCameraViewedRoom->numV1Mask];    
-    /*
+    curCameraViewedRoom->V1masks = new cameraMaskV1Struct[curCameraViewedRoom->numV1Mask];
     for (int maskIdx = 0; maskIdx < curCameraViewedRoom->numV1Mask; maskIdx++)    {
+        
         cameraMaskV1Struct* curMask = &curCameraViewedRoom->V1masks[maskIdx];
-        u16 unknown = READ_LE_U16(maskRawData);
-        curMask->numZone = 1; //READ_LE_U16(rawData);
+        
+        curMask->numZone = READ_LE_U16(maskRawData);
         maskRawData += 2;
-        curMask->zones = new cameraMaskV1ZoneStruct[curMask->numZone];        
-        for (int zoneIdx = 0; zoneIdx < curMask->numZone; zoneIdx++) {
-            int test = READ_LE_U16(maskRawData);
-            u8* rawVerts = maskRawData + READ_LE_U16(maskRawData);
-            cameraMaskV1ZoneStruct* curZone = &curMask->zones[zoneIdx];
-            curZone->polyCount = READ_LE_U16(rawVerts);
+        u16 polyOffset = READ_LE_U16(maskRawData);
+        maskRawData += 2;
+
+        curMask->zones = new zoneStruct[curMask->numZone];
+        for (int i = 0; i < curMask->numZone; i++) {
+            s16* zoneTest = (s16*)maskRawData;
+            zoneStruct* z = &curMask->zones[i];
+            z->zoneX1 = READ_LE_S16(maskRawData + 0);
+            z->zoneZ1 = READ_LE_S16(maskRawData + 2);
+            z->zoneX2 = READ_LE_S16(maskRawData + 4);
+            z->zoneZ2 = READ_LE_S16(maskRawData + 6);
+            maskRawData += 8;
+        }
+
+        u8* rawVerts = camerasRawData + offset + polyOffset + 2;
+        curMask->numPolys = READ_LE_U16(rawVerts);
+        rawVerts += 2;
+        curMask->polys = new cameraMaskV1PolyStruct[curMask->numPolys];
+        for (int polyIdx = 0; polyIdx < curMask->numPolys; polyIdx++)
+        {
+            cameraMaskV1PolyStruct* poly = &curMask->polys[polyIdx];
+            poly->pointsCount = READ_LE_S16(rawVerts);
             rawVerts += 2;
-            curZone->polys = new cameraMaskV1PolyStruct[curZone->polyCount];
-            for (int polyIdx = 0; polyIdx < curZone->polyCount; polyIdx++)
+            if ( poly->pointsCount > 0)
             {
-                cameraMaskV1PolyStruct* poly = &curZone->polys[polyIdx];
-                poly->pointsCount = READ_LE_U16(rawVerts);
                 poly->points = new s16[poly->pointsCount * 2];
-                rawVerts += 2;
                 for (int verticeId = 0; verticeId < poly->pointsCount; verticeId++)
                 {
                     poly->points[verticeId * 2 + 0] = READ_LE_S16(rawVerts);
                     poly->points[verticeId * 2 + 1] = READ_LE_S16(rawVerts + 2);
                     rawVerts += 4;
                 }
-                //drawBgOverlaySub2(param);
             }
-            maskRawData += 2;
+            else 
+            {
+                int y = 0;
+                //invalid poly
+            }
         }
-        */
-        struct debugBlock db = { "cameraMaskV1", 0, offset, (maskRawData - camerasRawData) };
-        addDebugBlock(db);
-
-        //
-        /*u16 numOverlay = READ_LE_U16(rawData);
-        rawData += 2;
-        rawData += ((numOverlay * 4) + 1) * 2;*/
-    }
+        int offsetTest = rawVerts - (camerasRawData + offset);
+     }
+    
+    struct debugBlock db = { "cameraMaskV1", 0, offset, (maskRawData - camerasRawData) };
+    addDebugBlock(db);
 }
 
 void loadCameras(floorStruct* result, char* filename) {
@@ -265,12 +277,13 @@ void loadCameras(floorStruct* result, char* filename) {
             struct debugBlock db = { "camViewRoom", k, viewOffset, (cameraRawData - camerasRawData) };
             addDebugBlock(db);
 
-            if (offsetToCover) {
-                loadCameraCover(curCameraViewedRoom, camerasRawData, offset + offsetToCover);
-            }
             if (offsetToMask) {
                 loadCameraMaskV1(curCameraViewedRoom, camerasRawData, offset + offsetToMask);
             }
+            if (offsetToCover) {
+                loadCameraCover(curCameraViewedRoom, camerasRawData, offset + offsetToCover);
+            }
+
 
         }
 

@@ -48,7 +48,7 @@ struct roomStruct
 
 //CAMERA
 
-struct rectTestStruct
+struct zoneStruct
 {
 	s16 zoneX1;
 	s16 zoneZ1;
@@ -59,7 +59,7 @@ struct rectTestStruct
 struct cameraMaskV2Struct
 {
 	u16 numTestRect = 0;
-	rectTestStruct* rectTests;
+	zoneStruct* rectTests;
 };
 
 struct cameraZonePointStruct
@@ -76,29 +76,22 @@ struct cameraZoneEntryStruct
 
 struct cameraMaskV1PolyStruct
 {
-	u16 pointsCount = 0;
+	s16 pointsCount = 0;
 	//x2 points - [x1,y1,x2,y2,...]
 	//std::vector<s16> points;
 	s16* points = nullptr;
 };
 
-struct cameraMaskV1ZoneStruct
-{
-	u16 polyCount = 0;
-	cameraMaskV1PolyStruct* polys;
-};
-
 struct cameraMaskV1Struct
 {
 	u16 numZone = 0;
-	cameraMaskV1ZoneStruct* zones;
+	zoneStruct* zones;
+	u16 numPolys = 0;
+	cameraMaskV1PolyStruct* polys;
 };
 
 struct cameraViewedRoomStruct
 {
-	int offset;
-	int end;
-
 	s16 viewedRoomIdx = 0;
 	s16 lightX;
 	s16 lightY;
@@ -116,9 +109,6 @@ struct cameraViewedRoomStruct
 
 struct cameraStruct
 {
-	int offset;
-	int end;
-
 	s16 alpha;
 	s16 beta;
 	s16 gamma;
