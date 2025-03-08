@@ -1,4 +1,23 @@
-﻿//glEnable(GL_STENCIL_TEST);
+﻿#pragma once
+#include <vector>
+#include <list>
+#include <poly2tri/poly2tri.h>
+#include "../structures/camera.h"
+
+void renderV1Mask(const cameraOverlayPolygon* srcPoly, const char* outPng) {
+	std::vector<p2t::Point*> polyline;
+	std::list<p2t::Triangle*> map;
+
+	polyline.resize(srcPoly->size());
+	for (int i = 0; i < srcPoly->size(); i++) {
+		polyline[i] = new p2t::Point{ (double)(*srcPoly)[i].x, (double)(*srcPoly)[i].y };
+	}
+
+	//polyline.
+}
+
+
+//glEnable(GL_STENCIL_TEST);
 //
 //Then you first draw your masking quad only in the stencil buffer :
 //
