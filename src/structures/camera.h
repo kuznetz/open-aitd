@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "int_types.h"
 #include <vector>
 
@@ -28,7 +28,7 @@ struct cameraZoneEntryStruct
 	std::vector<cameraPointStruct> pointTable;
 };
 
-typedef std::vector <cameraPointStruct> cameraOverlayPolygon;
+typedef std::vector<cameraPointStruct> cameraOverlayPolygon;
 struct cameraOverlayV1Struct
 {
 	std::vector <zoneStruct> zones;
