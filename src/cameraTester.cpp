@@ -16,6 +16,8 @@ floorStruct* curFloor = 0;
 cameraStruct* curCamera = 0;
 Texture2D backgroundTex;
 
+bool renderLayers[10] = { true, true, true, true, true, true, true, true, true, true };
+
 void changeCamera(int floor, int camera) {
     if (!curFloor || curFloorId != floor) {
         if (curFloor) {
@@ -49,6 +51,38 @@ void drawDebugText() {
     DrawText((char*)text, screenW / 2. - text_size.x / 2, screenH - (text_size.y + 10), 20, BLACK);
 }
 
+void getRoomsIn() {
+
+}
+
+void drawOverlayLines() {
+    for (int i = 0; i < curCamera->viewedRoomTable.size(); i++) {
+        auto vw = &curCamera->viewedRoomTable[i];
+        for (int i2 = 0; i2 < vw->overlays_V1.size(); i2++) {
+            auto mask = &vw->overlays_V1[i2];
+            for (int i3 = 0; i3 < mask->polygons.size(); i3++) {
+                auto psize = mask->polygons[i3].size();
+                for (int i4 = 0; i4 < psize; i4++) {
+                    auto p1 = mask->polygons[i3][i4];
+                    auto p2 = mask->polygons[i3][(i4 + 1) % psize];
+                    DrawLineEx(
+                        { (float)p1.x * screenW / 320, (float)p1.y * screenH / 200 },
+                        { (float)p2.x * screenW / 320, (float)p2.y * screenH / 200 },
+                        2, RED);
+                }
+            }
+        }
+    }
+}
+
+void drawColliders() {
+
+}
+
+void set3DCamera() {
+
+}
+
 void runCameraTester()
 {
     backgroundTex.id = 0;
@@ -70,40 +104,31 @@ void runCameraTester()
         if (IsKeyPressed(KEY_DOWN)) {
             if (curFloorId > 0) changeCamera(curFloorId - 1, 0);
         }
+        for (int i = 0; i < 10; i++) {
+            if (IsKeyPressed(KEY_ZERO + i)) {
+                renderLayers[i] = !renderLayers[i];
+            }
+        }
 
         BeginDrawing();
         ClearBackground(DARKGRAY);
-        //Original game rendered on 320x200
-        //But displayed on 4/3 monitor, with non squared pixels
-        DrawTexturePro(
-            backgroundTex,
-            { 0, 0, (float)backgroundTex.width, (float)backgroundTex.height },
-            { 0, 0, (float)screenW, (float)screenH},
-            { 0, 0 }, 0, WHITE
-        );
 
-        for (int i = 0; i < curCamera->viewedRoomTable.size(); i++) {
-            auto vw = &curCamera->viewedRoomTable[i];
-            for (int i2 = 0; i2 < vw->overlays_V1.size(); i2++) {
-                auto mask = &vw->overlays_V1[i2];
-                for (int i3 = 0; i3 < mask->polys.size(); i3++) {
-                    auto psize = mask->polys[i3].points.size() / 2;
-                    for (int i4 = 0; i4 < psize; i4++) {
-                        auto x1 = mask->polys[i3].points[i4 * 2 + 0];
-                        auto y1 = mask->polys[i3].points[i4 * 2 + 1];
-                        auto i5 = (i4 + 1) % psize;
-                        auto x2 = mask->polys[i3].points[i5 * 2 + 0];
-                        auto y2 = mask->polys[i3].points[i5 * 2 + 1];
-                        DrawLine(
-                            (float)x1 * screenW / 320,
-                            (float)y1 * screenH / 200,
-                            (float)x2 * screenW / 320,
-                            (float)y2 * screenH / 200,
-                            RED);
-                    }
-                }
-            }            
+        if (renderLayers[1]) {
+            //Original game rendered on 320x200
+            //But displayed on 4/3 monitor, with non squared pixels
+            DrawTexturePro(
+                backgroundTex,
+                { 0, 0, (float)backgroundTex.width, (float)backgroundTex.height },
+                { 0, 0, (float)screenW, (float)screenH },
+                { 0, 0 }, 0, WHITE
+            );
         }
+
+        if (renderLayers[2]) {
+            drawOverlayLines();
+        }
+
+
 
         //setCamera(fs->cameras[0]);
         //BeginMode3D(mainCamera);
@@ -112,7 +137,10 @@ void runCameraTester()
         ////DrawGrid(10, 1.0f);
         //EndMode3D();
 
-        drawDebugText();
+        if (renderLayers[0]) {
+            drawDebugText();
+        }
+
         EndDrawing();
     }
 

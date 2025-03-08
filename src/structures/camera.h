@@ -17,7 +17,7 @@ struct cameraMaskV2Struct
 	std::vector<zoneStruct> rectTests;
 };
 
-struct cameraZonePointStruct
+struct cameraPointStruct
 {
 	s16 x;
 	s16 y;
@@ -25,19 +25,14 @@ struct cameraZonePointStruct
 
 struct cameraZoneEntryStruct
 {
-	std::vector<cameraZonePointStruct> pointTable;
+	std::vector<cameraPointStruct> pointTable;
 };
 
-struct cameraMaskV1PolyStruct
+typedef std::vector <cameraPointStruct> cameraOverlayPolygon;
+struct cameraOverlayV1Struct
 {
-	//x2 points - [x1,y1,x2,y2,...]
-	std::vector <s16> points;
-};
-
-struct cameraMaskV1Struct
-{
-	std::vector < zoneStruct> zones;
-	std::vector <cameraMaskV1PolyStruct> polys;
+	std::vector <zoneStruct> zones;
+	std::vector <cameraOverlayPolygon> polygons;
 };
 
 struct cameraViewedRoomStruct
@@ -48,7 +43,7 @@ struct cameraViewedRoomStruct
 	s16 lightZ;
 
 	//AITD1 masks
-	std::vector <cameraMaskV1Struct> overlays_V1;
+	std::vector <cameraOverlayV1Struct> overlays_V1;
 	//Others masks
 	std::vector<cameraMaskV2Struct> V2masks;
 	std::vector<cameraZoneEntryStruct> coverZones;

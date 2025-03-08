@@ -1,30 +1,30 @@
-#include "../structures/floor.h"
+﻿#include "../structures/floor.h"
 #include "pak/pak.h"
 #include <stdexcept>
 #include <fstream>
 #include <iostream>
+#include <list>
 
-roomStruct defaultRoom;
-
+u8* debugStartPtr;
+int debugSize;
 struct debugBlock {
     char* name;
     int index;
     int start;
     int end;
 };
-debugBlock debugBlocks[1000];
-int countBlock = 0;
-void addDebugBlock(debugBlock db) {
-    for (int i = 0; i < countBlock - 1; i++) {
-        if ((db.start >= debugBlocks[i].start) && (db.start < debugBlocks[i].end)) {
+std::list<debugBlock> debugBlocks;
+void addDebugBlock(const char* name, int idx, u8* start, u8* end) {
+    debugBlock dbNew = { (char*)name, idx, debugStartPtr - start, debugStartPtr - end };
+    for (auto db = debugBlocks.begin(); db != debugBlocks.end(); ++db) {
+        if ((dbNew.start >= db->start) && (dbNew.start < db->end)) {
             throw new std::exception("Block collision (start)");
         }
-        if ((db.end > debugBlocks[i].start) && (db.end <= debugBlocks[i].end)) {
+        if ((dbNew.end > db->start) && (dbNew.end <= db->end)) {
             throw new std::exception("Block collision (end)");
         }
     }
-    debugBlocks[countBlock] = db;
-    countBlock++;
+    debugBlocks.push_back(dbNew);
 }
 
 void loadRooms(floorStruct* result, char* filename) {
@@ -110,9 +110,9 @@ void loadRooms(floorStruct* result, char* filename) {
     }
 }
 
-void loadCameraCover(cameraViewedRoomStruct* curCameraViewedRoom, u8* camerasRawData, u32 offset) {
+void loadCameraCovers(cameraViewedRoomStruct* curCameraViewedRoom, u8* coversRawData) {
     int j;
-    u8* rawData = camerasRawData + offset;
+    u8* rawData = coversRawData;
     //u16 unknown = READ_LE_U16(rawData);
     int numCoverZones = READ_LE_U16(rawData);
     rawData += 2;
@@ -131,20 +131,17 @@ void loadCameraCover(cameraViewedRoomStruct* curCameraViewedRoom, u8* camerasRaw
             rawData += 2;
         }
     }
-
-    struct debugBlock db = { "cameraCovers", 0, offset, (rawData - camerasRawData) };
-    addDebugBlock(db);
+    addDebugBlock("CameraCovers", 0, coversRawData, rawData);
 }
 
-void loadCameraMaskV1(cameraViewedRoomStruct* curCameraViewedRoom, u8* camerasRawData, u32 offset) {
-    int j;
-    u8* maskRawData = camerasRawData + offset;
+void loadCameraOverlaysV1(cameraViewedRoomStruct* curCameraViewedRoom, u8* startMasksRawData, u8* startCameraData) {
+    u8* maskRawData = startMasksRawData;
     int numV1Mask = READ_LE_U16(maskRawData);
+    u8* startOverlayRawData = maskRawData;
     maskRawData += 2;
     curCameraViewedRoom->overlays_V1.resize(numV1Mask);
     for (int maskIdx = 0; maskIdx < numV1Mask; maskIdx++)    {
-        
-        cameraMaskV1Struct* curMask = &curCameraViewedRoom->overlays_V1[maskIdx];
+        cameraOverlayV1Struct* curMask = &curCameraViewedRoom->overlays_V1[maskIdx];
         
         int numZone = READ_LE_U16(maskRawData);
         maskRawData += 2;
@@ -161,42 +158,64 @@ void loadCameraMaskV1(cameraViewedRoomStruct* curCameraViewedRoom, u8* camerasRa
             z->zoneZ2 = READ_LE_S16(maskRawData + 6);
             maskRawData += 8;
         }
+        addDebugBlock("CameraOverlaysV1", 0, startMasksRawData, maskRawData);
 
-        u8* rawVerts = camerasRawData + offset + polyOffset;
+        int test = maskRawData - startMasksRawData;
+
+        u8* startRawVerts = startCameraData + polyOffset;
+        u8* rawVerts = startRawVerts;
         int numPolys = READ_LE_U16(rawVerts);
         rawVerts += 2;
-        curMask->polys.resize(numPolys);
+        curMask->polygons.resize(numPolys);
         for (int polyIdx = 0; polyIdx < numPolys; polyIdx++)
         {
-            cameraMaskV1PolyStruct* poly = &curMask->polys[polyIdx];
+            cameraOverlayPolygon* poly = &curMask->polygons[polyIdx];
             int pointsCount = READ_LE_S16(rawVerts);
             rawVerts += 2;
             if ( pointsCount > 0)
             {
-                poly->points.resize(pointsCount * 2);
+                poly->resize(pointsCount);
                 for (int verticeId = 0; verticeId < pointsCount; verticeId++)
                 {
-                    poly->points[verticeId * 2 + 0] = READ_LE_S16(rawVerts);
-                    poly->points[verticeId * 2 + 1] = READ_LE_S16(rawVerts + 2);
+                    (*poly)[verticeId].x = READ_LE_S16(rawVerts);
+                    (*poly)[verticeId].y = READ_LE_S16(rawVerts + 2);
                     rawVerts += 4;
                 }
             }
-            else 
-            {
-                //invalid poly
-            }
         }
-        //int offsetTest = rawVerts - (camerasRawData + offset);
-     }
-    
-    struct debugBlock db = { "cameraMaskV1", 0, offset, (maskRawData - camerasRawData) };
-    addDebugBlock(db);
+        addDebugBlock("CameraOverlayVerts", 0, startRawVerts, rawVerts);
+     }   
+}
+
+void loadCameraRoom(cameraViewedRoomStruct* curCameraRoom, u8* cameraRoomRawData) {
+    curCameraRoom->viewedRoomIdx = READ_LE_U16(cameraRoomRawData + 0x00);
+    u16 offsetToOverlays = READ_LE_U16(cameraRoomRawData + 0x02);
+    u16 offsetToCovers = READ_LE_U16(cameraRoomRawData + 0x04);
+    //curCameraRoom->offsetToHybrids = 0;
+    //curCameraRoom->offsetCamOptims = 0;
+
+    curCameraRoom->lightX = READ_LE_U16(cameraRoomRawData + 0x06);
+    curCameraRoom->lightY = READ_LE_U16(cameraRoomRawData + 0x08);
+    curCameraRoom->lightZ = READ_LE_U16(cameraRoomRawData + 0x0A);
+
+    addDebugBlock("camViewRoom", 0, cameraRoomRawData, cameraRoomRawData + 0x0C);
+
+    if (offsetToOverlays) {
+        loadCameraOverlaysV1(curCameraRoom, cameraRoomRawData + offsetToOverlays, cameraRoomRawData);
+    }
+    if (offsetToCovers) {
+        loadCameraCovers(curCameraRoom, cameraRoomRawData + offsetToCovers);
+    }
 }
 
 void loadCameras(floorStruct* result, char* filename) {
     int i;
     int camerasRawDataSize = getPakSize(filename, 1);
     u8* camerasRawData = (u8*)loadPak(filename, 1);
+
+    debugBlocks.clear();
+    debugStartPtr = camerasRawData;
+    debugSize = camerasRawDataSize;
 
     int maxExpectedNumberOfCamera = ((READ_LE_U32(camerasRawData)) / 4);
     int cameraCount = 0;
@@ -241,75 +260,23 @@ void loadCameras(floorStruct* result, char* filename) {
         int numViewedRooms = READ_LE_U16(cameraRawData + 0x12);
         cameraRawData += 0x14;
         
-        struct debugBlock db = { "cam", i, offset, (cameraRawData - camerasRawData) };
-        addDebugBlock(db);
+        addDebugBlock( "CameraHead", i, camerasRawData, cameraRawData);
 
         curCamera->viewedRoomTable.resize(numViewedRooms);
         for (k = 0; k < numViewedRooms; k++)
         {
-            std::cout << "Load camera " << k << "...\n";
-            cameraViewedRoomStruct* curCameraViewedRoom = &curCamera->viewedRoomTable[k];
-            int viewOffset = cameraRawData - camerasRawData;
-            curCameraViewedRoom->viewedRoomIdx = READ_LE_U16(cameraRawData + 0x00);
-            
-            u16 offsetToMask = READ_LE_U16(cameraRawData + 0x02);
-            u16 offsetToCover = READ_LE_U16(cameraRawData + 0x04);
-            //curCameraViewedRoom->offsetToHybrids = 0;
-            //curCameraViewedRoom->offsetCamOptims = 0;
-
-            curCameraViewedRoom->lightX = READ_LE_U16(cameraRawData + 0x06);
-            curCameraViewedRoom->lightY = READ_LE_U16(cameraRawData + 0x08);
-            curCameraViewedRoom->lightZ = READ_LE_U16(cameraRawData + 0x0A);
-
+            loadCameraRoom(&curCamera->viewedRoomTable[k], cameraRawData);
             cameraRawData += 0x0C;
-
-            struct debugBlock db = { "camViewRoom", k, viewOffset, (cameraRawData - camerasRawData) };
-            addDebugBlock(db);
-
-            if (offsetToMask) {
-                std::cout << "Load mask...\n";
-                loadCameraMaskV1(curCameraViewedRoom, camerasRawData, offset + offsetToMask);
-            }
-            if (offsetToCover) {
-                std::cout << "Load covers...\n";
-                loadCameraCover(curCameraViewedRoom, camerasRawData, offset + offsetToCover);
-            }
-
-
         }
-
     }
-
 }
 
 floorStruct* loadFloorPak(char* filename) {
-    countBlock = 0;
     floorStruct* result = new floorStruct;
     loadRooms(result, filename);
     loadCameras(result, filename);
     std::cout << "Load Floor END...\n";
     return result;
-}
-
-
-void deleteFloor(floorStruct* floor) {
-    /*for (int i = 0; i < floor->cameraCount; i++) {
-        auto cam = &floor->cameras[i];
-        for (int i2 = 0; i2 < cam->numViewedRooms; i2++) {
-            auto vw = &cam->viewedRoomTable[i2];
-            for (int i3 = 0; i3 < vw->numCoverZones; i3++) {
-                delete[] vw->coverZones[i3].pointTable;
-            }
-            for (int i3 = 0; i3 < vw->numV1Mask; i3++) {
-                for (int i4 = 0; i4 < vw->numV1Mask; i4++) {
-                    auto mask = vw->overlays_V1[i3].polys
-                }
-            }            
-        }
-    }
-    for (int i = 0; i < floor->roomCount; i++) {
-        auto room = &floor->rooms[i];
-    }*/
 }
 
 void saveFloorTxt(char* filename, floorStruct* fs) {
@@ -329,7 +296,7 @@ void saveFloorTxt(char* filename, floorStruct* fs) {
             myfile << " VIEW:\n";
             myfile << "  MASKS_V1: " << vw->overlays_V1.size() << "\n";
             for (int i3 = 0; i3 < vw->overlays_V1.size(); i3++) {
-                cameraMaskV1Struct* mask = &vw->overlays_V1[i3];
+                cameraOverlayV1Struct* mask = &vw->overlays_V1[i3];
                 myfile << "  MASK_V1:\n";
                 myfile << "  ZONES: " << mask->zones.size() << "\n";
                 for (int i4 = 0; i4 < mask->zones.size(); i4++) {
