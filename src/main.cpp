@@ -1,4 +1,4 @@
-#include <cameraTester.h>
+﻿#include <cameraTester.h>
 #include <cassert>
 #include <cstdlib>
 #include <filesystem>
@@ -9,16 +9,20 @@
 void extractAllData() {
     char str[100];
     char str2[100];
-    for (int fl = 7; fl < 8; fl++) {
+    char str3[100];
+    for (int fl = 0; fl < 8; fl++) {
         //std::filesystem::create_directories("original");
         //std::filesystem::create_directories("backgrounds");
         sprintf(str, "original/ETAGE%02d", fl);
         auto curFloor = loadFloorPak(str);
         for (int cam = 0; cam < curFloor->cameras.size(); cam++) {
-            std::filesystem::create_directories("backgrounds");
+            sprintf(str2, "data/floor_%02d/camera_%02d", fl, cam);
+            std::filesystem::create_directories(str2);
             sprintf(str, "original/CAMERA%02d", fl );
-            sprintf(str2, "backgrounds/%d_%d.png", fl, cam);
-            extractBackground(str, cam, str2);
+            sprintf(str3, "%s/background.png", str2);
+            if (!std::filesystem::exists(str3)) {
+                extractBackground(str, cam, str3);
+            }
         }
         delete curFloor;
     }    
@@ -26,7 +30,7 @@ void extractAllData() {
 
 int main(void)
 {
-    //extractAllData();
+    extractAllData();
 
     //char fname[50];
     //for (int i = 0; i < 8; i++) {

@@ -1,4 +1,4 @@
-#include <raylib.h>
+﻿#include <raylib.h>
 #include <string.h>
 #include <string>
 #include <iostream>
@@ -31,7 +31,7 @@ void changeCamera(int floor, int camera) {
     if (!backgroundTex.id || curFloorId != floor || curCameraId != camera) {
         curCamera = &curFloor->cameras[camera];
         char str[100];
-        sprintf(str, "backgrounds/%d_%d.png", floor, camera);
+        sprintf(str, "data/floor_%02d/camera_%02d/background.png", floor, camera);
         Image image = LoadImage(str);
         backgroundTex = LoadTextureFromImage(image);
     }
