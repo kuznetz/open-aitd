@@ -1,4 +1,28 @@
-﻿//// Функция для рисования треугольника по трем вершинам
+﻿//glEnable(GL_STENCIL_TEST);
+//
+//Then you first draw your masking quad only in the stencil buffer :
+//
+////begin mask
+//glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+//glStencilFunc(GL_NEVER, 0, 0);
+//glStencilOp(GL_INCR, GL_KEEP, GL_KEEP);
+//glClear(GL_STENCIL_BUFFER_BIT);
+////draw your mask, a quad in your case
+//
+//Then you draw the masked part :
+//
+//////masked fill part
+//glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+//glStencilFunc(GL_NOTEQUAL, 0, 1);
+//glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+//// draw the masked element, the text in your case
+//
+//Disable stencil testing again
+//
+//glDisable(GL_STENCIL_TEST);
+
+
+//// Функция для рисования треугольника по трем вершинам
 //void drawTriangle(cameraPointStruct p1, cameraPointStruct p2, cameraPointStruct p3) {
 //    // Упорядочить вершины по возрастанию Y
 //    if (p1.y > p2.y) std::swap(p1, p2);

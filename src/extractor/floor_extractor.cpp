@@ -110,7 +110,7 @@ void loadRooms(floorStruct* result, char* filename) {
     }
 }
 
-void loadCameraCovers(cameraViewedRoomStruct* curCameraViewedRoom, u8* coversRawData) {
+void loadCameraCovers(cameraViewedRoomStruct* curCameraViewedRoom, u8* coversRawData, u8* cameraStartRawData) {
     int j;
     u8* rawData = coversRawData;
     //u16 unknown = READ_LE_U16(rawData);
@@ -134,10 +134,9 @@ void loadCameraCovers(cameraViewedRoomStruct* curCameraViewedRoom, u8* coversRaw
     addDebugBlock("CameraCovers", 0, coversRawData, rawData);
 }
 
-void loadCameraOverlaysV1(cameraViewedRoomStruct* curCameraViewedRoom, u8* startMasksRawData, u8* startCameraData) {
-    u8* maskRawData = startMasksRawData;
+void loadCameraOverlaysV1(cameraViewedRoomStruct* curCameraViewedRoom, u8* startOverlayRawData, u8* cameraStartRawData) {
+    u8* maskRawData = startOverlayRawData;
     int numV1Mask = READ_LE_U16(maskRawData);
-    u8* startOverlayRawData = maskRawData;
     maskRawData += 2;
     curCameraViewedRoom->overlays_V1.resize(numV1Mask);
     for (int maskIdx = 0; maskIdx < numV1Mask; maskIdx++)    {
@@ -158,11 +157,11 @@ void loadCameraOverlaysV1(cameraViewedRoomStruct* curCameraViewedRoom, u8* start
             z->zoneZ2 = READ_LE_S16(maskRawData + 6);
             maskRawData += 8;
         }
-        addDebugBlock("CameraOverlaysV1", 0, startMasksRawData, maskRawData);
+        addDebugBlock("CameraOverlaysV1", 0, startOverlayRawData, maskRawData);
 
-        int test = maskRawData - startMasksRawData;
+        int offsetTest = maskRawData - cameraStartRawData;
 
-        u8* startRawVerts = startCameraData + polyOffset;
+        u8* startRawVerts = startOverlayRawData + polyOffset;
         u8* rawVerts = startRawVerts;
         int numPolys = READ_LE_U16(rawVerts);
         rawVerts += 2;
@@ -187,7 +186,7 @@ void loadCameraOverlaysV1(cameraViewedRoomStruct* curCameraViewedRoom, u8* start
      }   
 }
 
-void loadCameraRoom(cameraViewedRoomStruct* curCameraRoom, u8* cameraRoomRawData) {
+void loadCameraRoom(cameraViewedRoomStruct* curCameraRoom, u8* cameraRoomRawData, u8* cameraStartRawData) {
     curCameraRoom->viewedRoomIdx = READ_LE_U16(cameraRoomRawData + 0x00);
     u16 offsetToOverlays = READ_LE_U16(cameraRoomRawData + 0x02);
     u16 offsetToCovers = READ_LE_U16(cameraRoomRawData + 0x04);
@@ -199,12 +198,13 @@ void loadCameraRoom(cameraViewedRoomStruct* curCameraRoom, u8* cameraRoomRawData
     curCameraRoom->lightZ = READ_LE_U16(cameraRoomRawData + 0x0A);
 
     addDebugBlock("camViewRoom", 0, cameraRoomRawData, cameraRoomRawData + 0x0C);
-
+    
+    //int offsetTest = cameraStartRawData - debugStartPtr; //24 858 1300 2240
     if (offsetToOverlays) {
-        loadCameraOverlaysV1(curCameraRoom, cameraRoomRawData + offsetToOverlays, cameraRoomRawData);
+        loadCameraOverlaysV1(curCameraRoom, cameraStartRawData + offsetToOverlays, cameraStartRawData);
     }
     if (offsetToCovers) {
-        loadCameraCovers(curCameraRoom, cameraRoomRawData + offsetToCovers);
+        loadCameraCovers(curCameraRoom, cameraStartRawData + offsetToCovers, cameraStartRawData);
     }
 }
 
@@ -243,7 +243,6 @@ void loadCameras(floorStruct* result, char* filename) {
 
         u8* cameraRawData = (u8*)(camerasRawData + offset);
         //curCamera->offset = cameraRawData - camerasRawData;
-        u8* backupDataPtr = cameraRawData;
 
         curCamera->alpha = READ_LE_U16(cameraRawData + 0x00);
         curCamera->beta = READ_LE_U16(cameraRawData + 0x02);
@@ -259,13 +258,14 @@ void loadCameras(floorStruct* result, char* filename) {
 
         int numViewedRooms = READ_LE_U16(cameraRawData + 0x12);
         cameraRawData += 0x14;
-        
+        u8* cameraStartRawData = (u8*)(camerasRawData + offset);
+
         addDebugBlock( "CameraHead", i, camerasRawData, cameraRawData);
 
         curCamera->viewedRoomTable.resize(numViewedRooms);
         for (k = 0; k < numViewedRooms; k++)
         {
-            loadCameraRoom(&curCamera->viewedRoomTable[k], cameraRawData);
+            loadCameraRoom(&curCamera->viewedRoomTable[k], cameraRawData, cameraStartRawData);
             cameraRawData += 0x0C;
         }
     }
