@@ -27,13 +27,18 @@ void extractAllData() {
                 extractBackground(str, cam, str3);
             }
 
-            //mask
-            if (tmp > 0) {
-                auto poly = &curFloor->cameras[cam].viewedRoomTable[0].overlays_V1[0].polygons[0];
-                sprintf(str2, "data/floor_%02d/camera_%02d/mask_test.png", fl, cam);
-                renderV1Mask(poly, str2);
-                tmp--;
+            for (int vw = 0; vw < curFloor->cameras[cam].viewedRoomTable.size(); vw++) {
+                auto curVw = &curFloor->cameras[cam].viewedRoomTable[vw];
+                for (int ovl = 0; ovl < curVw->overlays_V1.size(); ovl++) {
+                    auto polys = &curVw->overlays_V1[ovl].polygons;
+                    sprintf(str2, "data/floor_%02d/camera_%02d/mask_%02d_%02d.png", fl, cam, vw, ovl);
+                    renderV1Mask(polys, str2);
+                }
             }
+
+            //mask
+            //if (tmp > 0) {                //tmp--;
+            //}
         }
         delete curFloor;
     }    
