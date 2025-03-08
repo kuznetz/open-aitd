@@ -7,12 +7,14 @@
 #include <renderer.h>
 
 int screenW = 1280;
-int screenH = 800;
+int screenH = 960;
 
 int curFloorId = 0;
 int curRoomId = 0;
 int curCameraId = 0;
 floorStruct* curFloor = 0;
+cameraStruct* curCamera = 0;
+Texture2D backgroundTex;
 
 void changeCamera(int floor, int camera) {
     if (!curFloor || curFloorId != floor) {
@@ -23,6 +25,13 @@ void changeCamera(int floor, int camera) {
         sprintf(fname, "original/ETAGE0%d", floor);
         curFloor = loadFloorPak(fname);
         //saveFloorTxt(fname, fs);
+    }
+    if (!backgroundTex.id || curFloorId != floor || curCameraId != camera) {
+        curCamera = &curFloor->cameras[camera];
+        char str[100];
+        sprintf(str, "backgrounds/%d_%d.png", floor, camera);
+        Image image = LoadImage(str);
+        backgroundTex = LoadTextureFromImage(image);
     }
 
     //Image backgroundImage = GenImageChecked(screenW, screenH, 40, 40, ORANGE, YELLOW);
@@ -42,6 +51,7 @@ void drawDebugText() {
 
 void runCameraTester()
 {
+    backgroundTex.id = 0;
     InitWindow(screenW, screenH, "Open AITD");
     SetTargetFPS(60);
     changeCamera(0, 0);
@@ -63,6 +73,37 @@ void runCameraTester()
 
         BeginDrawing();
         ClearBackground(DARKGRAY);
+        //Original game rendered on 320x200
+        //But displayed on 4/3 monitor, with non squared pixels
+        DrawTexturePro(
+            backgroundTex,
+            { 0, 0, (float)backgroundTex.width, (float)backgroundTex.height },
+            { 0, 0, (float)screenW, (float)screenH},
+            { 0, 0 }, 0, WHITE
+        );
+
+        for (int i = 0; i < curCamera->viewedRoomTable.size(); i++) {
+            auto vw = &curCamera->viewedRoomTable[i];
+            for (int i2 = 0; i2 < vw->overlays_V1.size(); i2++) {
+                auto mask = &vw->overlays_V1[i2];
+                for (int i3 = 0; i3 < mask->polys.size(); i3++) {
+                    auto psize = mask->polys[i3].points.size() / 2;
+                    for (int i4 = 0; i4 < psize; i4++) {
+                        auto x1 = mask->polys[i3].points[i4 * 2 + 0];
+                        auto y1 = mask->polys[i3].points[i4 * 2 + 1];
+                        auto i5 = (i4 + 1) % psize;
+                        auto x2 = mask->polys[i3].points[i5 * 2 + 0];
+                        auto y2 = mask->polys[i3].points[i5 * 2 + 1];
+                        DrawLine(
+                            (float)x1 * screenW / 320,
+                            (float)y1 * screenH / 200,
+                            (float)x2 * screenW / 320,
+                            (float)y2 * screenH / 200,
+                            RED);
+                    }
+                }
+            }            
+        }
 
         //setCamera(fs->cameras[0]);
         //BeginMode3D(mainCamera);

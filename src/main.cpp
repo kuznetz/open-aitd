@@ -1,13 +1,32 @@
 #include <cameraTester.h>
+#include <cassert>
+#include <cstdlib>
+#include <filesystem>
 
-void exportAllData() {
-    for (int fl = 0; fl < 7; fl++) {
-        //std::filesystem::create_directories("sandbox/1/2/a");original
+#include "extractor/floor_extractor.h"
+#include "extractor/background_extractor.h"
+
+void extractAllData() {
+    char str[100];
+    char str2[100];
+    for (int fl = 7; fl < 8; fl++) {
+        //std::filesystem::create_directories("original");
+        //std::filesystem::create_directories("backgrounds");
+        sprintf(str, "original/ETAGE%02d", fl);
+        auto curFloor = loadFloorPak(str);
+        for (int cam = 0; cam < curFloor->cameras.size(); cam++) {
+            std::filesystem::create_directories("backgrounds");
+            sprintf(str, "original/CAMERA%02d", fl );
+            sprintf(str2, "backgrounds/%d_%d.png", fl, cam);
+            extractBackground(str, cam, str2);
+        }
+        delete curFloor;
     }    
 }
 
 int main(void)
 {
+    //extractAllData();
 
     //char fname[50];
     //for (int i = 0; i < 8; i++) {
@@ -16,8 +35,6 @@ int main(void)
     //    //saveFloorTxt(fname, fs);
     //}
     //floorStruct* fs = loadFloorPak("ETAGE01");
-
-
 
     //extractBackground("CAMERA00", 0);
     //extractBackground("CAMERA00", 1);

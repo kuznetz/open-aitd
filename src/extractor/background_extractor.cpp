@@ -3,6 +3,7 @@
 #include <string>
 
 #include "background_extractor.h"
+#include "../structures/int_types.h"
 #include "pak/pak.h"
 #include "png.h"
 
@@ -60,17 +61,19 @@ void savePng(const char* filename, int width, int height, void* data, int color_
 void loadPalette() {
     if (palette != 0) return;
     palette = new unsigned char[256 * 30];
-    if (!LoadPak("ITD_RESS", 3, (char*)palette))
+    if (!LoadPak("original/ITD_RESS", 3, (char*)palette))
     {
         printf("Failed to load palette\n");
         return;
     }
 }
 
-void extractBackground(char* filename, int camera) {
+void extractBackground(char* filename, int camera, char* outPng) {
     loadPalette();
-    unsigned char* img = new unsigned char[320 * 200];
-    if (!LoadPak(filename, camera, (char*)img))
+    //unsigned char* img = new unsigned char[320 * 200];
+    auto sz = getPakSize(filename, camera);
+    auto img = loadPak(filename, camera);
+    if (!img)
     {
         printf("Failed to load background\n");
         return;
@@ -78,13 +81,13 @@ void extractBackground(char* filename, int camera) {
 
     unsigned char* data = new unsigned char[320 * 200 * 3];
     for (int i = 0; i < (320 * 200); i++) {
-        data[i * 3 + 0] = palette[img[i] * 3 + 0];
-        data[i * 3 + 1] = palette[img[i] * 3 + 1];
-        data[i * 3 + 2] = palette[img[i] * 3 + 2];
+        u8 idx = ((u8*)img)[i];
+        data[i * 3 + 0] = palette[idx * 3 + 0];
+        data[i * 3 + 1] = palette[idx * 3 + 1];
+        data[i * 3 + 2] = palette[idx * 3 + 2];
     }
 
-    std::string s = std::string("extracted/") + filename + "_" + std::to_string(camera) + ".png";
-    savePng( s.c_str(), 320, 200, data );
+    savePng( outPng, 320, 200, data );
 
     delete[] data;
     delete[] img;
