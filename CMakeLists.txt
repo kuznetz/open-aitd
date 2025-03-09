@@ -40,20 +40,16 @@ add_subdirectory( ${CMAKE_SOURCE_DIR}/libs/libpng ${CMAKE_CURRENT_BINARY_DIR}/li
 set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE) # don't build the supplied examples
 set(BUILD_GAMES    OFF CACHE BOOL "" FORCE) # don't build the supplied example games
 add_subdirectory( ${CMAKE_SOURCE_DIR}/libs/raylib ${CMAKE_CURRENT_BINARY_DIR}/libs/raylib )
-
-# Adding POLY2TRI
-#set(POLY2TRI_INCLUDE "${CMAKE_CURRENT_LIST_DIR}/libs/poly2tri/include/")
-#set(POLY2TRI_LIB "${CMAKE_CURRENT_LIST_DIR}/libs/poly2tri/poly2tri.lib")
-add_subdirectory( ${CMAKE_SOURCE_DIR}/libs/poly2tri ${CMAKE_CURRENT_BINARY_DIR}/libs/poly2tri )
+set(GLFW_INCLUDE "${CMAKE_SOURCE_DIR}/libs/raylib/external/glfw/include/GLFW")
 
 # Adding our source files
 file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS "src/*.cpp" "src/*.h" "src/*.hpp")
 set(PROJECT_INCLUDE "${CMAKE_CURRENT_LIST_DIR}/src/")
 
 add_executable(${PROJECT_NAME})
-target_compile_definitions(${PROJECT_NAME} PRIVATE P2T_STATIC_EXPORTS)
+#target_compile_definitions(${PROJECT_NAME} PRIVATE XXX)
 target_sources(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCES} )
-target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_INCLUDE} ${ZLIB_INCLUDE_DIR} ${PNG_INCLUDE_DIR} ${POLY2TRI_INCLUDE})
-target_link_libraries(${PROJECT_NAME} PRIVATE png_static raylib ZLIB::ZLIB poly2tri )
+target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_INCLUDE} ${ZLIB_INCLUDE_DIR} ${PNG_INCLUDE_DIR} ${GLFW_INCLUDE})
+target_link_libraries(${PROJECT_NAME} PRIVATE png_static raylib ZLIB::ZLIB )
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC ASSETS_PATH="${CMAKE_CURRENT_SOURCE_DIR}/assets/") 

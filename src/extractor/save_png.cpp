@@ -43,6 +43,9 @@ void savePng(const char* filename, int width, int height, void* data, int color_
     case PNG_COLOR_TYPE_GRAY:
         byteCount = 1;
         break;
+    case PNG_COLOR_TYPE_GRAY_ALPHA:
+        byteCount = 2;
+        break;
     case PNG_COLOR_TYPE_RGBA:
         byteCount = 4;
         break;

@@ -136,11 +136,11 @@ void fillpoly(u8* buffer, s16* datas, int n, u8 c) {
 }
 
 
-void renderV1Mask(const std::vector<cameraOverlayPolygon>* srcPolys, const char* outPng) {
+void extractV1Mask(const std::vector<cameraOverlayPolygon>* srcPolys, const char* outPng) {
     //std::list<p2t::Triangle*> map;
-
-    u8* mask = new u8[320 * 200];
-    memset(mask, 0, 320 * 200);
+    const int pixCount = 320 * 200;
+    u8* mask0 = new u8[pixCount];
+    memset(mask0, 0, pixCount);
 
     for (auto& srcPoly : *srcPolys) {        
         auto datas = new s16[srcPoly.size() * 2];
@@ -148,34 +148,15 @@ void renderV1Mask(const std::vector<cameraOverlayPolygon>* srcPolys, const char*
             datas[i * 2] = srcPoly[i].x;
             datas[i * 2 + 1] = srcPoly[i].y;
         }
-        fillpoly(mask, datas, srcPoly.size(), 255);
+        fillpoly(mask0, datas, srcPoly.size(), 255);
     }
 
-    savePng(outPng, 320, 200, mask, PNG_COLOR_TYPE_GRAY);
+    u8* mask = new u8[pixCount * 2];
+    for (int i = 0; i < pixCount; i++) {
+        mask[i * 2 + 0] = 255;
+        mask[i * 2 + 0] = mask0[i];
+    }
+
+    savePng(outPng, 320, 200, mask, PNG_COLOR_TYPE_GRAY_ALPHA);
     delete[] mask;
 }
-
-
-//glEnable(GL_STENCIL_TEST);
-//
-//Then you first draw your masking quad only in the stencil buffer :
-//
-////begin mask
-//glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-//glStencilFunc(GL_NEVER, 0, 0);
-//glStencilOp(GL_INCR, GL_KEEP, GL_KEEP);
-//glClear(GL_STENCIL_BUFFER_BIT);
-////draw your mask, a quad in your case
-//
-//Then you draw the masked part :
-//
-//////masked fill part
-//glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-//glStencilFunc(GL_NOTEQUAL, 0, 1);
-//glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-//// draw the masked element, the text in your case
-//
-//Disable stencil testing again
-//
-//glDisable(GL_STENCIL_TEST);
-

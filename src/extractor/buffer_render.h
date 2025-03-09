@@ -29,6 +29,7 @@ void hline(u8* buffer, int x1, int x2, int y, unsigned char c)
 
     for (i = x1; i < (x2 + 1); i++)
     {
+        pixel(buffer, i, y-1, c);
         pixel(buffer, i, y, c);
     }
 }
