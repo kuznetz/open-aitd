@@ -7,6 +7,7 @@
 #include <renderer.h>
 #include <rcamera.h>
 #include <raymath.h>
+#include <vector>
 
 namespace CameraTest {
 
@@ -21,6 +22,7 @@ namespace CameraTest {
     Texture2D backgroundTex;
     Texture2D maskTex;
 
+    bool useFilter = false;
     bool renderLayers[10] = { true, true, false, true, true, true, true, true, true, true };
 
     Camera3D testCamera = {
@@ -102,6 +104,7 @@ namespace CameraTest {
             sprintf(str, "data/floor_%02d/camera_%02d/background.png", floor, camera);
             Image image = LoadImage(str);
             backgroundTex = LoadTextureFromImage(image);
+            //SetTextureFilter(backgroundTex, TEXTURE_FILTER_BILINEAR);
             testCamera.position = { 
                 -(float)curCamera->x / 100,
                 (float)curCamera->y / 100,
@@ -163,6 +166,7 @@ namespace CameraTest {
                 -(float)curRoom->worldY / 100,
                 -(float)curRoom->worldZ / 100
             };
+            DrawSphere(RoomV, 0.2f, GREEN);
             for (int colIdx = 0; colIdx < curRoom->hardColTable.size(); colIdx++) {
                 auto col = &curRoom->hardColTable[colIdx];
                 //rlPushMatrix();
@@ -217,7 +221,6 @@ namespace CameraTest {
                     V2.x = -V2.x;
                     DrawZVWires(&V1, &V2, BLUE);
                 }
-                break;
             }
         }
     }
@@ -251,6 +254,10 @@ namespace CameraTest {
             if (IsKeyPressed(KEY_DOWN)) {
                 if (curFloorId > 0) changeCamera(curFloorId - 1, 0);
             }
+            if (IsKeyPressed(KEY_F)) {
+                useFilter = !useFilter;
+                SetTextureFilter(backgroundTex, useFilter? TEXTURE_FILTER_BILINEAR: TEXTURE_FILTER_POINT );
+            }            
             for (int i = 0; i < 10; i++) {
                 if (IsKeyPressed(KEY_ZERO + i)) {
                     renderLayers[i] = !renderLayers[i];

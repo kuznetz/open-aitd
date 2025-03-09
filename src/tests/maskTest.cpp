@@ -26,7 +26,7 @@ namespace MaskTest {
     bool renderLayers[10] = { true, true, false, true, true, true, true, true, true, true };
 
     const Camera3D testCamera = {
-        { 0.0f, 0.0f, 5.0f }, // mainCamera position
+        { 0.0f, 3.0f, 5.0f }, // mainCamera position
         { 0.0f, 0.0f, 0.0f },   // mainCamera looking at point
         { 0.0f, 1.0f, 0.0f },   // mainCamera up vector (rotation towards target)
         60.0f,
@@ -58,12 +58,45 @@ namespace MaskTest {
         char str[100];
         sprintf(str, "data/floor_%02d/camera_%02d/background.png", 0, 0);
         Image image = LoadImage(str);
-        backgroundTex.id = 0;
-
-        //Image image = LoadImage("data/mask_test.png");
         backgroundTex = LoadTextureFromImage(image);
-        Image image2 = GenImageChecked(100, 100, 10, 10, DARKGREEN, RAYWHITE);
+
+        Image image2 = LoadImage("data/floor_00/camera_00/mask_00_00.png");
+        //Image image2 = GenImageChecked(100, 100, 10, 10, DARKGREEN, RAYWHITE);
         maskTex = LoadTextureFromImage(image2);
+
+        RenderTexture2D screenTex = LoadRenderTexture(screenW, screenH);
+        
+        BeginTextureMode(screenTex);
+        SetTextureFilter(backgroundTex, TEXTURE_FILTER_BILINEAR);
+        DrawTexturePro(
+            backgroundTex,
+            { 0, 0, (float)backgroundTex.width, (float)backgroundTex.height },
+            { 0, 0, (float)screenW, (float)screenH },
+            { 0, 0 }, 0, WHITE
+        );
+        EndTextureMode();
+        Image bgImageScaled = LoadImageFromTexture(screenTex.texture);
+        ImageFlipVertical(&bgImageScaled);
+        Texture2D backgroundTex2 = LoadTextureFromImage(bgImageScaled);
+
+        BeginTextureMode(screenTex);
+        ClearBackground(BLACK);
+        SetTextureFilter(maskTex, TEXTURE_FILTER_BILINEAR);
+        DrawTexturePro(
+            maskTex,
+            { 0, 0, (float)maskTex.width, (float)maskTex.height },
+            { 0, 0, (float)screenW, (float)screenH },
+            { 0, 0 }, 0, WHITE
+        );
+        EndTextureMode();
+        Image maskImageScaled = LoadImageFromTexture(screenTex.texture);
+        ImageFlipVertical(&maskImageScaled);
+        Texture2D maskTex2 = LoadTextureFromImage(maskImageScaled);
+
+        for (int i = 0; i < (screenW * screenH); i++) {
+            ((u8*)bgImageScaled.data)[i * 4 + 3] = ((u8*)maskImageScaled.data)[i * 4 + 0];
+        }
+        Texture2D maskTex3 = LoadTextureFromImage(bgImageScaled);
 
         while (!WindowShouldClose())
         {
@@ -94,67 +127,37 @@ namespace MaskTest {
                 //Original game rendered on 320x200
                 //But displayed on 4/3 monitor, with non squared pixels
                 DrawTexturePro(
-                    backgroundTex,
-                    { 0, 0, (float)backgroundTex.width, (float)backgroundTex.height },
+                    backgroundTex2,
+                    { 0, 0, (float)screenW, (float)screenH },
                     { 0, 0, (float)screenW, (float)screenH },
                     { 0, 0 }, 0, WHITE
                 );
             }
 
-            if (renderLayers[2]) {
-            }
-
-            
-            //DrawTexturePro(
-            //    maskTex,
-            //    { 0, 0, (float)maskTex.width, (float)maskTex.height },
-            //    { 50, 50, 100, 100 },
-            //    { 0, 0 }, 0, WHITE
-            //);
-
             BeginMode3D(testCamera);
-
-            /*DrawTexturePro(
-                maskTex,
-                { 0, 0, (float)maskTex.width, (float)maskTex.height },
-                { -1, -1, 1, 1 },
-                { 0, 0 }, 0, WHITE
-            );*/
-            //DrawMask(maskTex, { -1, -1, 1, 1 }, 0);
-
-            //beginStencil();
-            //beginStencilMask();
-            //BeginBlendMode(blending);
-
-            //endStencilMask();
-
-            DrawCube({ 2, 0, 0 }, 0.5f, 4.0f, 0.5f, RED);
-            
-            
-            //DrawTexture(maskTex, 0, 0, WHITE);
-
-            BeginMaskCamera(0);
-            DrawMask(maskTex, { 150, 0, 20, 200 }, -5);
-            ////DrawSphere({ 160, 100, testPos.z }, 50.0f, BLUE);
-            EndMaskCamera(testCamera);
-
+            DrawCube({ -1.06667542, 0.00000000, -4.83492994 }, 2, 0.5f, 0.5f, RED);
             EndMode3D();
 
-            rlDisableDepthTest();
+            if (renderLayers[2]) {
+                DrawTexturePro(
+                    maskTex2,
+                    { 0, 0, (float)screenW, (float)screenH },
+                    { 0, 0, (float)screenW, (float)screenH },
+                    { 0, 0 }, 0, WHITE
+                );
+            }
+
+            if (renderLayers[3]) {
+                DrawTexturePro(
+                    maskTex3,
+                    { 0, 0, (float)screenW, (float)screenH },
+                    { 0, 0, (float)screenW, (float)screenH },
+                    { 0, 0 }, 0, WHITE
+                );
+            }
+            
             BeginMode3D(testCamera);
-            rlDisableDepthTest();
-            DrawSphere( testPos, 1.0f, BLUE);
-            //rlEnableDepthTest();
-            //rlDisableDepthTest();
-            //rlEnableDepthTest();
-
-            //    ////DrawGrid(10, 1.0f);
-
-            //endStencil();
-
-            //GetWorldToScreen
-            //auto r = GetScreenToWorldRay(100, 100);
-
+            DrawCube(testPos, 2, 0.5f, 0.5f, BLUE);
             EndMode3D();
 
             if (renderLayers[0]) {

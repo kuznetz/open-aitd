@@ -154,7 +154,7 @@ void extractV1Mask(const std::vector<cameraOverlayPolygon>* srcPolys, const char
     u8* mask = new u8[pixCount * 2];
     for (int i = 0; i < pixCount; i++) {
         mask[i * 2 + 0] = 255;
-        mask[i * 2 + 0] = mask0[i];
+        mask[i * 2 + 1] = mask0[i];
     }
 
     savePng(outPng, 320, 200, mask, PNG_COLOR_TYPE_GRAY_ALPHA);
