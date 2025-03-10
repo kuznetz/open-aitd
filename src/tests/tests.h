@@ -5,4 +5,10 @@ namespace CameraTest {
 namespace MaskTest {
 	void runTest();
 }
+namespace ModelTest {
+	void runTest();
+}
+namespace PerspectiveTest {
+	void runTest();
+}
 

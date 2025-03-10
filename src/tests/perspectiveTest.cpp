@@ -7,19 +7,20 @@
 #include <renderer.h>
 #include <rcamera.h>
 #include <raymath.h>
+#include "legacy_camera.h"
 #include <vector>
 
-
-namespace CameraTest {
+namespace PerspectiveTest {
 
     int screenW = 1280;
-    //int screenH = 960;
-    int screenH = 800;
+    int screenH = 960;
+    //int screenH = 800;
 
     int curFloorId = 0;
     int curRoomId = 0;
     int curCameraId = 0;
     floorStruct* curFloor = 0;
+    roomStruct* curRoom = 0;
     cameraStruct* curCamera = 0;
     Texture2D backgroundTex;
     Texture2D maskTex;
@@ -37,6 +38,49 @@ namespace CameraTest {
         56.5f,
         CAMERA_PERSPECTIVE
     };
+
+    //************************************
+
+    void draw2dline(LegacyCamera::Vector2 v1, LegacyCamera::Vector2 v2) {
+        rlVertex2f(v1.x / 320 * screenW, v1.y / 200 * screenH);
+        rlVertex2f(v2.x / 320 * screenW, v2.y / 200 * screenH);
+    }
+
+    void DrawZVWires2(ZVStruct* zv, Color color)
+    {
+        LegacyCamera::Vector2 vecs[8];
+        // Front face        
+        vecs[0] = LegacyCamera::projectPoint(zv->ZVX1, zv->ZVY2, zv->ZVZ2); // Top left
+        vecs[1] = LegacyCamera::projectPoint(zv->ZVX2, zv->ZVY2, zv->ZVZ2); // Top right
+        vecs[2] = LegacyCamera::projectPoint(zv->ZVX1, zv->ZVY1, zv->ZVZ2); // Bottom left
+        vecs[3] = LegacyCamera::projectPoint(zv->ZVX2, zv->ZVY1, zv->ZVZ2); // Bottom right
+        // Back face
+        vecs[4] = LegacyCamera::projectPoint(zv->ZVX1, zv->ZVY2, zv->ZVZ1); // Top left
+        vecs[5] = LegacyCamera::projectPoint(zv->ZVX2, zv->ZVY2, zv->ZVZ1); // Top right
+        vecs[6] = LegacyCamera::projectPoint(zv->ZVX1, zv->ZVY1, zv->ZVZ1); // Bottom left
+        vecs[7] = LegacyCamera::projectPoint(zv->ZVX2, zv->ZVY1, zv->ZVZ1); // Bottom right
+
+        rlBegin(RL_LINES);
+        rlColor4ub(color.r, color.g, color.b, color.a);
+
+        draw2dline(vecs[0], vecs[1]);
+        draw2dline(vecs[1], vecs[3]);
+        draw2dline(vecs[3], vecs[2]);
+        draw2dline(vecs[2], vecs[0]);
+
+        draw2dline(vecs[4], vecs[5]);
+        draw2dline(vecs[5], vecs[7]);
+        draw2dline(vecs[7], vecs[6]);
+        draw2dline(vecs[6], vecs[4]);
+
+        draw2dline(vecs[0], vecs[4]);
+        draw2dline(vecs[1], vecs[5]);
+        draw2dline(vecs[2], vecs[6]);
+        draw2dline(vecs[3], vecs[7]);
+        rlEnd();
+    }
+
+    //************************************
 
     void DrawZVWires(Vector3 *v1, Vector3* v2, Color color)
     {
@@ -89,7 +133,9 @@ namespace CameraTest {
         rlEnd();
     }
 
-    void setCamera(cameraStruct* curCamera) {
+    void setCamera(cameraStruct* curCamera) {        
+        LegacyCamera::setupCamera(curCamera);
+
         Quaternion q = QuaternionFromEuler(
             (float)curCamera->alpha * 2 * PI / 1024,
             -(float)curCamera->beta * 2 * PI / 1024,
@@ -109,25 +155,11 @@ namespace CameraTest {
             testCamera.position.y + testVec.y,
             testCamera.position.z + testVec.z,
         };        
-        //testCamera.fovy = 60;
-        //testCamera.position = { 0,0,0 };
-        //testCamera.target = { 0,0,1 };
-
-        //cameraPerspective = perspective;
-        //cameraFovX = perspective;
-        //cameraFovY = perspective;
-        //z1 += cameraPerspective;
-        //z2 += cameraPerspective;
-        //transformedX1 = ((x1 * cameraFovX) / (float)z1) + cameraCenterX;
-        //transformedX2 = ((x2 * cameraFovX) / (float)z2) + cameraCenterX;
-        //transformedY1 = ((y1 * cameraFovY) / (float)z1) + cameraCenterY;
-        //transformedY2 = ((y2 * cameraFovY) / (float)z2) + cameraCenterY;
-
-        //float x = (float)320 / 200;
-        
-        //testCamera.fovy
-
-        projection = MatrixPerspective(testCamera.fovy * DEG2RAD, 4/3, CAMERA_CULL_DISTANCE_NEAR, CAMERA_CULL_DISTANCE_FAR);
+        float xx = (float)curCamera->fovX / (float)curCamera->fovY;
+        //transformedY1 = ((yf * cameraFovY) / (float)zf) + cameraCenterY;
+        //float frustumHeight = 1;
+        //testFov = 2.0f * atan(frustumHeight * 0.5f / frustumHeight);
+        projection = MatrixPerspective(testCamera.fovy * DEG2RAD, xx, CAMERA_CULL_DISTANCE_NEAR, CAMERA_CULL_DISTANCE_FAR);
     }
 
     void changeCamera(int floor, int camera) {
@@ -183,27 +215,6 @@ namespace CameraTest {
 
     }
 
-    void drawOverlayLines() {
-        for (int i = 0; i < curCamera->viewedRoomTable.size(); i++) {
-            auto vw = &curCamera->viewedRoomTable[i];
-            for (int i2 = 0; i2 < vw->overlays_V1.size(); i2++) {
-                auto mask = &vw->overlays_V1[i2];
-                for (int i3 = 0; i3 < mask->polygons.size(); i3++) {
-                    auto psize = mask->polygons[i3].size();
-                    for (int i4 = 0; i4 < psize; i4++) {
-                        auto p1 = mask->polygons[i3][i4];
-                        auto p2 = mask->polygons[i3][(i4 + 1) % psize];
-                        DrawLineEx(
-                            { (float)p1.x * screenW / 320, (float)p1.y * screenH / 200 },
-                            { (float)p2.x * screenW / 320, (float)p2.y * screenH / 200 },
-                            2, RED);
-
-                    }
-                }
-            }
-        }
-    }
-
     void drawColliders() {
         for (int i = 0; i < curCamera->viewedRoomTable.size(); i++) {
             auto vw = &curCamera->viewedRoomTable[i];
@@ -239,35 +250,15 @@ namespace CameraTest {
         }
     }
 
-    void drawOverlayZones() {
+    void drawCollidersLeagcy() {
         for (int i = 0; i < curCamera->viewedRoomTable.size(); i++) {
             auto vw = &curCamera->viewedRoomTable[i];
-            for (int i2 = 0; i2 < vw->overlays_V1.size(); i2++) {
-                auto mask = &vw->overlays_V1[i2];
-                auto curRoom = &curFloor->rooms[vw->viewedRoomIdx];
-                Vector3 RoomV = {
-                    (float)curRoom->worldX / 100,
-                    -(float)curRoom->worldY / 100,
-                    -(float)curRoom->worldZ / 100
-                };
-                for (int i3 = 0; i3 < mask->zones.size(); i3++) {
-                    auto zone = &mask->zones[i3];
-                    Vector3 V1 = {
-                        (float)zone->zoneX1 / 100,
-                        0,
-                        (float)zone->zoneZ1 / 100
-                    };
-                    Vector3 V2 = {
-                        (float)zone->zoneX2 / 100,
-                        0,
-                        (float)zone->zoneZ2 / 100
-                    };
-                    V1 = Vector3Add(V1, RoomV);
-                    V2 = Vector3Add(V2, RoomV);
-                    V1.x = -V1.x;
-                    V2.x = -V2.x;
-                    DrawZVWires(&V1, &V2, BLUE);
-                }
+            auto curRoom = &curFloor->rooms[vw->viewedRoomIdx];
+            //DrawSphere(RoomV, 0.02f, GREEN);
+            LegacyCamera::setupCameraRoom(curCamera, curRoom);
+            for (int colIdx = 0; colIdx < curRoom->hardColTable.size(); colIdx++) {
+                auto col = &curRoom->hardColTable[colIdx];
+                DrawZVWires2(&col->zv, BLUE);
             }
         }
     }
@@ -275,7 +266,7 @@ namespace CameraTest {
     void runTest()
     {
         backgroundTex.id = 0;
-        InitWindow(screenW, screenH, "Open AITD");
+        InitWindow(screenW, screenH, "Perspective Test");
         SetTargetFPS(60);
         changeCamera(0, 0);
 
@@ -341,16 +332,13 @@ namespace CameraTest {
             }
 
             if (renderLayers[2]) {
-                drawOverlayLines();
-            }
+                drawCollidersLeagcy();
+            }            
 
             BeginMode3D(testCamera);
             rlSetMatrixProjection(projection);
 
                 if (renderLayers[3]) {
-                    drawOverlayZones();
-                }
-                if (renderLayers[4]) {
                     drawColliders();
                 }
 

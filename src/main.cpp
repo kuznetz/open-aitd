@@ -50,8 +50,10 @@ int main(void)
 {
     extractAllData();
 
-    CameraTest::runTest();
+    //CameraTest::runTest();
     //MaskTest::runTest();
+    //ModelTest::runTest();
+    PerspectiveTest::runTest();
 
     return 0;
 }
