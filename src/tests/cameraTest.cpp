@@ -113,9 +113,9 @@ namespace CameraTest {
         //testCamera.position = { 0,0,0 };
         //testCamera.target = { 0,0,1 };
 
-        //cameraPerspective = perspective;
-        //cameraFovX = perspective;
-        //cameraFovY = perspective;
+        //cameraPerspective = nearDistance;
+        //cameraFovX = nearDistance;
+        //cameraFovY = nearDistance;
         //z1 += cameraPerspective;
         //z2 += cameraPerspective;
         //transformedX1 = ((x1 * cameraFovX) / (float)z1) + cameraCenterX;
@@ -167,12 +167,12 @@ namespace CameraTest {
         //    cameraForw.x, cameraForw.y, cameraForw.z
         //);
 
-        float p = (float)curCamera->perspective / 100;
+        float p = (float)curCamera->nearDistance / 100;
         sprintf((char*)text, "FOV:%f, %f %f %f %f", 
             testCamera.fovy,
             p,
-            (float)curCamera->fovX / 100,
             (float)curCamera->fovY / 100,
+            (float)curCamera->fovX / 100,
             testFov
         );
         const Vector2 text_size = MeasureTextEx(GetFontDefault(), (char*)text, 30, 1);

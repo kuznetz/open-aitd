@@ -252,9 +252,9 @@ void loadCameras(floorStruct* result, char* filename) {
         curCamera->y = READ_LE_U16(cameraRawData + 0x08);
         curCamera->z = READ_LE_U16(cameraRawData + 0x0A);
 
-        curCamera->perspective = READ_LE_U16(cameraRawData + 0x0C);
-        curCamera->fovX = READ_LE_U16(cameraRawData + 0x0E);
-        curCamera->fovY = READ_LE_U16(cameraRawData + 0x10);
+        curCamera->nearDistance = READ_LE_U16(cameraRawData + 0x0C);
+        curCamera->fovY = READ_LE_U16(cameraRawData + 0x0E);
+        curCamera->fovX = READ_LE_U16(cameraRawData + 0x10);
 
         int numViewedRooms = READ_LE_U16(cameraRawData + 0x12);
         cameraRawData += 0x14;
