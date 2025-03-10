@@ -97,7 +97,7 @@ namespace CameraTest {
         );
         testVec = { 0,0,1 };
         testVec = Vector3RotateByQuaternion(testVec, q);
-        //testVec = Vector3Negate(testVec);
+        //cameraForw = Vector3Negate(cameraForw);
 
         testCamera.position = {
             -(float)curCamera->x / 100,
@@ -164,7 +164,7 @@ namespace CameraTest {
         
         //sprintf((char*)text, "%f %f %f = %f %f %f", 
         //    tCamVec.x, tCamVec.y, tCamVec.z,
-        //    testVec.x, testVec.y, testVec.z
+        //    cameraForw.x, cameraForw.y, cameraForw.z
         //);
 
         float p = (float)curCamera->perspective / 100;

@@ -1207,43 +1207,43 @@ namespace LegacyCamera {
     return res;
   }
 
-  void mulMartrix3x3(float* results, float* matrix1, float* matrix2) {
-      for (int i = 0; i < 9; i++) {
-          results[i] = 0;
-      }
-      for (int i = 0; i < 3; i++)
-      {
-          for (int j = 0; j < 3; j++)
-          {
-              for (int u = 0; u < 3; u++)
-              {
-                  //results[i][j] += matrix1[i][u] * matrix2[u][j];
-                  results[i * 3 + j] += matrix1[i * 3 + u] * matrix2[u * 3 + j];
-              }
-          }
-      }
-  }
+  //void mulMartrix3x3(float* results, float* matrix1, float* matrix2) {
+  //    for (int i = 0; i < 9; i++) {
+  //        results[i] = 0;
+  //    }
+  //    for (int i = 0; i < 3; i++)
+  //    {
+  //        for (int j = 0; j < 3; j++)
+  //        {
+  //            for (int u = 0; u < 3; u++)
+  //            {
+  //                //results[i][j] += matrix1[i][u] * matrix2[u][j];
+  //                results[i * 3 + j] += matrix1[i * 3 + u] * matrix2[u * 3 + j];
+  //            }
+  //        }
+  //    }
+  //}
 
-  void eulerToMatrix(float* res, cameraStruct* cam)
-  {
-      float x[] = {
-          -1,0,0,
-          0,cosTable[(cam->alpha + 0x100) & 0x3FF] / 32768.0,-cosTable[cam->alpha & 0x3FF] / 32768.0,
-          0,cosTable[cam->alpha & 0x3FF] / 32768.0,cosTable[(cam->alpha + 0x100) & 0x3FF] / 32768.0,
-      };
-      float y[] = {
-          cosTable[(cam->beta + 0x100) & 0x3FF] / 32768.0,0,-cosTable[cam->beta & 0x3FF] / 32768.0,
-          0,1,0,
-          cosTable[cam->beta & 0x3FF] / 32768.0,0,cosTable[(cam->beta + 0x100) & 0x3FF] / 32768.0
-      };
-      float z[] = {
-          cosTable[(cam->gamma + 0x100) & 0x3FF] / 32768.0,-cosTable[cam->gamma & 0x3FF] / 32768.0,0,
-          cosTable[cam->gamma & 0x3FF] / 32768.0,cosTable[(cam->gamma + 0x100) & 0x3FF] / 32768.0,0,
-          0,0,1
-      };
-      float t[9];
-      mulMartrix3x3(t, z, x);
-      mulMartrix3x3(res, t, y);
-  }
+  //void eulerToMatrix(float* res, cameraStruct* cam)
+  //{
+  //    float x[] = {
+  //        -1,0,0,
+  //        0,cosTable[(cam->alpha + 0x100) & 0x3FF] / 32768.0,-cosTable[cam->alpha & 0x3FF] / 32768.0,
+  //        0,cosTable[cam->alpha & 0x3FF] / 32768.0,cosTable[(cam->alpha + 0x100) & 0x3FF] / 32768.0,
+  //    };
+  //    float y[] = {
+  //        cosTable[(cam->beta + 0x100) & 0x3FF] / 32768.0,0,-cosTable[cam->beta & 0x3FF] / 32768.0,
+  //        0,1,0,
+  //        cosTable[cam->beta & 0x3FF] / 32768.0,0,cosTable[(cam->beta + 0x100) & 0x3FF] / 32768.0
+  //    };
+  //    float z[] = {
+  //        cosTable[(cam->gamma + 0x100) & 0x3FF] / 32768.0,-cosTable[cam->gamma & 0x3FF] / 32768.0,0,
+  //        cosTable[cam->gamma & 0x3FF] / 32768.0,cosTable[(cam->gamma + 0x100) & 0x3FF] / 32768.0,0,
+  //        0,0,1
+  //    };
+  //    float t[9];
+  //    mulMartrix3x3(t, z, x);
+  //    mulMartrix3x3(res, t, y);
+  //}
 
 }

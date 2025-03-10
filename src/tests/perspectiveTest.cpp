@@ -16,9 +16,10 @@ namespace PerspectiveTest {
     int screenH = 960;
     //int screenH = 800;
 
-    int curFloorId = 0;
+    int curFloorId = 2;
     int curRoomId = 0;
     int curCameraId = 0;
+    int curCollider = 0;
     floorStruct* curFloor = 0;
     roomStruct* curRoom = 0;
     cameraStruct* curCamera = 0;
@@ -29,8 +30,13 @@ namespace PerspectiveTest {
     bool renderLayers[10] = { true, true, false, true, true, true, true, true, true, true };
 
     Matrix projection;
-    Vector3 testVec;
-    float testFov;
+    Vector3 cameraForw;
+    float testFovX2 = 55.5f;
+    float testFovY2 = 70.0f;
+    float testFovK = 1;
+    float testFovX = 55.5f;
+    float testFovY = 70.0f;
+
     Camera3D testCamera = {
         { 0.0f, 5.0f, -10.0f }, // mainCamera position
         { 0.0f, 0.0f, 0.0f },   // mainCamera looking at point
@@ -41,7 +47,7 @@ namespace PerspectiveTest {
 
     //************************************
 
-    void draw2dline(LegacyCamera::Vector2 v1, LegacyCamera::Vector2 v2) {
+    void rlLine2D(LegacyCamera::Vector2 v1, LegacyCamera::Vector2 v2) {
         rlVertex2f(v1.x / 320 * screenW, v1.y / 200 * screenH);
         rlVertex2f(v2.x / 320 * screenW, v2.y / 200 * screenH);
     }
@@ -63,20 +69,20 @@ namespace PerspectiveTest {
         rlBegin(RL_LINES);
         rlColor4ub(color.r, color.g, color.b, color.a);
 
-        draw2dline(vecs[0], vecs[1]);
-        draw2dline(vecs[1], vecs[3]);
-        draw2dline(vecs[3], vecs[2]);
-        draw2dline(vecs[2], vecs[0]);
+        rlLine2D(vecs[0], vecs[1]);
+        rlLine2D(vecs[1], vecs[3]);
+        rlLine2D(vecs[3], vecs[2]);
+        rlLine2D(vecs[2], vecs[0]);
 
-        draw2dline(vecs[4], vecs[5]);
-        draw2dline(vecs[5], vecs[7]);
-        draw2dline(vecs[7], vecs[6]);
-        draw2dline(vecs[6], vecs[4]);
+        rlLine2D(vecs[4], vecs[5]);
+        rlLine2D(vecs[5], vecs[7]);
+        rlLine2D(vecs[7], vecs[6]);
+        rlLine2D(vecs[6], vecs[4]);
 
-        draw2dline(vecs[0], vecs[4]);
-        draw2dline(vecs[1], vecs[5]);
-        draw2dline(vecs[2], vecs[6]);
-        draw2dline(vecs[3], vecs[7]);
+        rlLine2D(vecs[0], vecs[4]);
+        rlLine2D(vecs[1], vecs[5]);
+        rlLine2D(vecs[2], vecs[6]);
+        rlLine2D(vecs[3], vecs[7]);
         rlEnd();
     }
 
@@ -136,14 +142,37 @@ namespace PerspectiveTest {
     void setCamera(cameraStruct* curCamera) {        
         LegacyCamera::setupCamera(curCamera);
 
-        Quaternion q = QuaternionFromEuler(
-            (float)curCamera->alpha * 2 * PI / 1024,
-            -(float)curCamera->beta * 2 * PI / 1024,
-            -(float)curCamera->gamma * 2 * PI / 1024
-        );
-        testVec = { 0,0,1 };
-        testVec = Vector3RotateByQuaternion(testVec, q);
-        //testVec = Vector3Negate(testVec);
+        //Quaternion q = QuaternionFromEuler(
+        //    (float)curCamera->alpha * 2 * PI / 1024,
+        //    -(float)curCamera->beta * 2 * PI / 1024,
+        //    (float)curCamera->gamma * 2 * PI / 1024
+        //);        
+        //Matrix m = QuaternionToMatrix(q);
+        //cameraForw = { m.m8,m.m9,m.m10 };
+        //Vector3 cameraUp = { m.m4,m.m5,m.m6 };
+
+        //MatrixIdentity();
+        //Matrix m = MatrixRotateZYX({
+        //    (float)curCamera->alpha * 2 * PI / 1024,
+        //    -(float)curCamera->beta * 2 * PI / 1024,
+        //    0//(float)curCamera->gamma * 2 * PI / 1024
+        //});
+        
+        //Rotate YXZ
+        rlPushMatrix();
+        rlLoadIdentity();
+        rlRotatef(-(float)curCamera->beta * 360 / 1024, 0, 1, 0);
+        rlRotatef((float)curCamera->alpha * 360 / 1024, 1, 0, 0);
+        rlRotatef(-(float)curCamera->gamma * 360 / 1024, 0, 0, 1);
+        Matrix m2 = rlGetMatrixTransform();
+        rlPopMatrix();
+
+        //m2 = m;
+
+        cameraForw = { m2.m8,m2.m9,m2.m10 };
+        Vector3 cameraUp = { m2.m4,m2.m5,m2.m6 };
+
+
 
         testCamera.position = {
             -(float)curCamera->x / 100,
@@ -151,15 +180,47 @@ namespace PerspectiveTest {
             -(float)curCamera->z / 100,
         };
         testCamera.target = {
-            testCamera.position.x + testVec.x,
-            testCamera.position.y + testVec.y,
-            testCamera.position.z + testVec.z,
-        };        
-        float xx = (float)curCamera->fovX / (float)curCamera->fovY;
+            testCamera.position.x + cameraForw.x,
+            testCamera.position.y + cameraForw.y,
+            testCamera.position.z + cameraForw.z,
+        };
+        testCamera.up = cameraUp;
+        float perspective = (float)curCamera->perspective / 1000;
+        testCamera.position = Vector3Add(testCamera.position, Vector3Scale(cameraForw, -perspective));
+        float aspect = (float)curCamera->fovX / (float)curCamera->fovY;
         //transformedY1 = ((yf * cameraFovY) / (float)zf) + cameraCenterY;
         //float frustumHeight = 1;
         //testFov = 2.0f * atan(frustumHeight * 0.5f / frustumHeight);
-        projection = MatrixPerspective(testCamera.fovy * DEG2RAD, xx, CAMERA_CULL_DISTANCE_NEAR, CAMERA_CULL_DISTANCE_FAR);
+        
+
+        //------------------------------
+        projection = MatrixPerspective(testCamera.fovy * DEG2RAD, aspect, CAMERA_CULL_DISTANCE_NEAR, CAMERA_CULL_DISTANCE_FAR);
+        projection = { 0 };
+
+        //testFovX = nearPlane * tan(testFovX00 * DEG2RAD * 0.5);
+        //testFovY = nearPlane * tan(testFovY00 * DEG2RAD * 0.5);
+
+        double nearPlane = CAMERA_CULL_DISTANCE_NEAR / 2;
+        //double nearPlane = (float)curCamera->perspective / 1000;
+        double farPlane = CAMERA_CULL_DISTANCE_FAR;
+        double top = nearPlane * testFovX * testFovK;
+        double right = nearPlane * testFovY * testFovK;
+        //perspective = (float)curCamera->perspective / 1000;
+        perspective = 1.56;
+
+        // MatrixFrustum(-right, right, -top, top, near, far);
+        float rl = (float)(right * 2);
+        float tb = (float)(top * 2);
+        float fn = (float)(farPlane - nearPlane);
+
+        projection.m0 = ((float)nearPlane * 2.0f) / rl;
+        projection.m5 = ((float)nearPlane * 2.0f) / tb;
+        projection.m8 = (0) / rl;
+        projection.m9 = (0) / tb;
+        projection.m10 = -((float)farPlane + (float)nearPlane) / fn;
+        projection.m11 = -1; //-1.0f
+        projection.m14 = -((float)farPlane * (float)nearPlane * 2.0f) / fn;
+
     }
 
     void changeCamera(int floor, int camera) {
@@ -178,6 +239,10 @@ namespace PerspectiveTest {
             sprintf(str, "data/floor_%02d/camera_%02d/background.png", floor, camera);
             Image image = LoadImage(str);
             backgroundTex = LoadTextureFromImage(image);
+            
+            testFovX = (float)curCamera->fovX / 320;
+            testFovY = (float)curCamera->fovY / 200;
+            testFovK = 1;
             setCamera(curCamera);
         }
 
@@ -196,19 +261,56 @@ namespace PerspectiveTest {
         
         //sprintf((char*)text, "%f %f %f = %f %f %f", 
         //    tCamVec.x, tCamVec.y, tCamVec.z,
-        //    testVec.x, testVec.y, testVec.z
+        //    cameraForw.x, cameraForw.y, cameraForw.z
         //);
 
-        float p = (float)curCamera->perspective / 100;
-        sprintf((char*)text, "FOV:%f, %f %f %f %f", 
-            testCamera.fovy,
-            p,
-            (float)curCamera->fovX / 100,
-            (float)curCamera->fovY / 100,
-            testFov
+        Vector2 text_size;
+
+        //sprintf((char*)text, "CAMPOS:%f %f %f",
+        //    //return (x / (2 * tan(M_PI * fov / 360.f)));
+        //    (float)curCamera->x / 1000,
+        //    (float)curCamera->y / 1000,
+        //    (float)curCamera->z / 1000
+        //);
+        //Vector2 text_size = MeasureTextEx(GetFontDefault(), (char*)text, 30, 1);
+        //DrawText((char*)text, screenW / 2. - text_size.x / 2, screenH - (text_size.y*3 + 10), 30, WHITE);
+
+        sprintf((char*)text, "EULER:%f %f %f",
+            //return (x / (2 * tan(M_PI * fov / 360.f)));
+            (float)curCamera->alpha / 1024,
+            (float)curCamera->beta / 1024,
+            (float)curCamera->gamma / 1024
         );
-        const Vector2 text_size = MeasureTextEx(GetFontDefault(), (char*)text, 30, 1);
-        DrawText((char*)text, screenW / 2. - text_size.x / 2, screenH - (text_size.y + 10), 30, WHITE);
+        text_size = MeasureTextEx(GetFontDefault(), (char*)text, 30, 1);
+        DrawText((char*)text, screenW / 2. - text_size.x / 2, screenH - (text_size.y * 3 + 10), 30, WHITE);
+
+        //sprintf((char*)text, "CAMFORW:%f %f %f",
+        //    (float)cameraForw.x,
+        //    (float)cameraForw.y,
+        //    (float)cameraForw.z
+        //);        
+        //text_size = MeasureTextEx(GetFontDefault(), (char*)text, 30, 1);
+        //DrawText((char*)text, screenW / 2. - text_size.x / 2, screenH - (text_size.y * 3 + 10), 30, WHITE);
+
+        float startX = (float)curCamera->fovX / (320); //* p / (320);
+        float startY = (float)curCamera->fovY / (200); //* p / (200);
+        sprintf((char*)text, "FOV: %f %f -> %f %f",
+            startX,
+            startY,
+            testFovX,
+            testFovY
+        );
+        text_size = MeasureTextEx(GetFontDefault(), (char*)text, 30, 1);
+        DrawText((char*)text, screenW / 2. - text_size.x / 2, screenH - (text_size.y * 2 + 10), 30, WHITE);
+
+        float p = (float)curCamera->perspective / 1000;
+        sprintf((char*)text, "DIFF: %f (P:%f)",
+            testFovK,
+            p
+        );
+        text_size = MeasureTextEx(GetFontDefault(), (char*)text, 30, 1);
+        DrawText((char*)text, screenW / 2. - text_size.x / 2, screenH - (text_size.y * 1 + 10), 30, WHITE);
+
     }
 
     void getRoomsIn() {
@@ -263,12 +365,22 @@ namespace PerspectiveTest {
         }
     }
 
+    void drawTestLeagcy() {
+        LegacyCamera::translateX = (curCamera->x) * 10;
+        LegacyCamera::translateY = (-curCamera->y) * 10;
+        LegacyCamera::translateZ = (-curCamera->z) * 10;        
+        
+        ZVStruct zv = curFloor->rooms[0].hardColTable[curCollider].zv;
+        //ZVStruct zv = { -7800, 7800, -2500, 0, -5300, -5000 };
+        DrawZVWires2(&zv, BLUE);
+    }
+
     void runTest()
     {
         backgroundTex.id = 0;
         InitWindow(screenW, screenH, "Perspective Test");
         SetTargetFPS(60);
-        changeCamera(0, 0);
+        changeCamera(2, 38);
 
         Image image = GenImageChecked(screenW, screenH, 10, 10, BLACK, WHITE);
         //Image image = LoadImage("data/mask_test.png");
@@ -277,6 +389,12 @@ namespace PerspectiveTest {
 
         while (!WindowShouldClose())
         {
+            if (IsKeyPressed(KEY_LEFT_BRACKET)) {
+                curCollider--;
+            }
+            if (IsKeyPressed(KEY_RIGHT_BRACKET)) {
+                curCollider++;
+            }
             if (IsKeyPressed(KEY_ESCAPE)) {
                 CloseWindow();
             }
@@ -301,16 +419,24 @@ namespace PerspectiveTest {
                     renderLayers[i] = !renderLayers[i];
                 }
             }
-            if (IsKeyPressed(KEY_KP_MULTIPLY)) {
-                testCamera.fovy -= 0.1f;
+            //if (IsKeyPressed(KEY_KP_ADD)) {
+            //    testFovX2 -= 0.5;
+            //    testFovX = tan(testFovX2 * DEG2RAD * 0.5);
+            //    setCamera(curCamera);
+            //}
+            //if (IsKeyPressed(KEY_KP_SUBTRACT)) {
+            //    testFovX2 += 0.5f;
+            //    testFovX = tan(testFovX2 * DEG2RAD * 0.5);
+            //    setCamera(curCamera);
+            //}
+            if (IsKeyPressed(KEY_PAGE_UP)) {
+                testFovK += 0.02f;
+                //testFovY = tan(testFovY2 * DEG2RAD * 0.5);
                 setCamera(curCamera);
             }
-            if (IsKeyPressed(KEY_KP_ADD)) {
-                testCamera.fovy -= 0.5;
-                setCamera(curCamera);
-            }
-            if (IsKeyPressed(KEY_KP_SUBTRACT)) {
-                testCamera.fovy += 0.5f;
+            if (IsKeyPressed(KEY_PAGE_DOWN)) {
+                testFovK -= 0.02f;
+                //testFovY = tan(testFovY2 * DEG2RAD * 0.5);
                 setCamera(curCamera);
             }
             
@@ -333,7 +459,10 @@ namespace PerspectiveTest {
 
             if (renderLayers[2]) {
                 drawCollidersLeagcy();
-            }            
+            }
+            if (renderLayers[4]) {
+                drawTestLeagcy();
+            }
 
             BeginMode3D(testCamera);
             rlSetMatrixProjection(projection);
@@ -342,7 +471,7 @@ namespace PerspectiveTest {
                     drawColliders();
                 }
 
-                DrawSphere(Vector3Add(testCamera.position,testVec), 0.01f, GREEN);
+                //DrawSphere(Vector3Add(testCamera.position,cameraForw), 0.01f, GREEN);
 
             //DrawCube({ 0, 3, 0 }, 2.0f, 2.0f, 2.0f, BLUE);
             //DrawCube({ 0, -3, 0 }, 2.0f, 2.0f, 2.0f, RED);
