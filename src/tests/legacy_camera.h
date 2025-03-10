@@ -6,10 +6,11 @@ namespace LegacyCamera {
   //0x000-0x100 - cos
   //0x100-0x200 - sin
 
-  typedef struct Vector2 {
+  typedef struct Vec {
     float x; 
     float y;
-  } Vector2;
+    float z;
+  } Vec;
 
   s16 cosTable[] = {
     4,
@@ -1186,7 +1187,7 @@ namespace LegacyCamera {
       translateZ = (room->worldZ - pCamera->z) * 10;
   }
 
-  Vector2 projectPoint(int xs, int ys, int zs)
+  Vec projectPoint(int xs, int ys, int zs)
   {
     float xf = (float)xs;
     float yf = (float)ys;
@@ -1200,9 +1201,10 @@ namespace LegacyCamera {
 
     zf += cameraPerspective;
 
-    Vector2 res = {
+    Vec res = {
         ((xf * cameraFovX) / (float)zf) + cameraCenterX,
-        ((yf * cameraFovY) / (float)zf) + cameraCenterY
+        ((yf * cameraFovY) / (float)zf) + cameraCenterY,
+        zf
     };
     return res;
   }

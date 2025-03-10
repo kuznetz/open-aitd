@@ -50,14 +50,14 @@ namespace PerspectiveTest {
 
     //************************************
 
-    void rlLine2D(LegacyCamera::Vector2 v1, LegacyCamera::Vector2 v2) {
+    void rlLine2D(LegacyCamera::Vec v1, LegacyCamera::Vec v2) {
         rlVertex2f(v1.x / 320 * screenW, v1.y / 200 * screenH);
         rlVertex2f(v2.x / 320 * screenW, v2.y / 200 * screenH);
     }
 
     void DrawZVWires2(ZVStruct* zv, Color color)
     {
-        LegacyCamera::Vector2 vecs[8];
+        LegacyCamera::Vec vecs[8];
         // Front face        
         vecs[0] = LegacyCamera::projectPoint(zv->ZVX1, zv->ZVY2, zv->ZVZ2); // Top left
         vecs[1] = LegacyCamera::projectPoint(zv->ZVX2, zv->ZVY2, zv->ZVZ2); // Top right
@@ -216,13 +216,15 @@ namespace PerspectiveTest {
         //---------------------------
     }
 
-    struct calcFovStepsResult { float fov; float dist; };
+    struct calcFovStepsResult { float fov; float dist; Vector2 point; };
+
+    calcFovStepsResult fovRes;
+
     calcFovStepsResult calcFovSteps(Vector2 legPoint, Vector3 V1, float start, float stop, float step, bool render = false) {
         Matrix oldProj = projection;
         float nearDist = (float)curCamera->nearDistance / 1000;
 
-        float bestDist = 0;
-        float bestFov = start;
+        calcFovStepsResult best;
 
         float curFov = start;
         float newDist = 0;
@@ -232,9 +234,10 @@ namespace PerspectiveTest {
             projection = MatrixPerspective(curFov * DEG2RAD, cameraAspect, nearDist, CAMERA_CULL_DISTANCE_FAR);
             auto newPoint = CurWorldToScreen(V1, screenW, screenH);
             newDist = Vector2Distance({ legPoint.x,legPoint.y }, newPoint);
-            if (first || bestDist > newDist) {
-                bestDist = newDist;
-                bestFov = curFov;
+            if (first || best.dist > newDist) {
+                best.dist = newDist;
+                best.fov = curFov;
+                best.point = newPoint;
                 first = false;
             }
             if (render) {
@@ -244,7 +247,7 @@ namespace PerspectiveTest {
         curFov -= step;
 
         projection = oldProj;
-        return { bestFov , bestDist };
+        return best;
     }
 
     bool addFovPoint(std::list<Vector2>* legPoints, std::list<Vector3>* points3D, int x, int y, int z, Vector3 RoomV, bool render) {
@@ -255,6 +258,7 @@ namespace PerspectiveTest {
         if (legPoint.x < 0 || legPoint.x > screenW || legPoint.y < 0 || legPoint.y > screenH) {
             return false;
         }
+
 
         Vector3 V1 = {
             (float)x / 1000,
@@ -273,7 +277,7 @@ namespace PerspectiveTest {
         return true;
     }
 
-    float calcFov(bool render = false) {
+    calcFovStepsResult calcFov(bool render = false) {
         std::list<Vector2> legPoints;
         std::list<Vector3> points3D;
 
@@ -304,38 +308,35 @@ namespace PerspectiveTest {
         }
 
         if (!legPoints.size()) {
-            return 60;
+            return { 60, 0, {0,0} };
         }
 
         calcFovStepsResult bestRes;
+        bestRes.fov = 0;
         auto p3d = points3D.begin();
         bool first = true;
         for (auto const& lp : legPoints) {
             //matrixView = MatrixLookAt(testCamera.position, testCamera.target, testCamera.up);
 
-            auto newRes = calcFovSteps(lp, *p3d, 20., 170, 0.01, render);
-            if (first || bestRes.dist > newRes.dist) {
-                bestRes = newRes;
-                first = false;
-            }
+            auto newRes = calcFovSteps(lp, *p3d, 40., 90, 0.01, render);
+            //if (first || bestRes.dist > newRes.dist) {
+            //    bestRes = newRes;
+            //    first = false;
+            //}
+            bestRes.fov += newRes.fov;
+            bestRes.point = newRes.point;
 
             p3d++;
         }
+        bestRes.fov = bestRes.fov / legPoints.size();
 
         if (render) {
             //DrawCircleV({ legPoint.x, legPoint.y }, 5, BLUE);
             //DrawCircleV(point60, 5, RED);
             //DrawCircleV(point70, 5, GREEN);
-
-            char text[200];
-            sprintf((char*)text, "CALCFOV: %f",
-                bestRes.fov
-            );
-            auto text_size = MeasureTextEx(GetFontDefault(), (char*)text, 30, 1);
-            DrawText((char*)text, screenW / 2. - text_size.x / 2, 10, 30, WHITE);
         }
 
-        return bestRes.fov;
+        return bestRes;
     }
 
     void setCamera(cameraStruct* curCamera) {
@@ -392,8 +393,9 @@ namespace PerspectiveTest {
 
         
         //atan(testFovY) * 2 * RAD2DEG;;
-        float newFov = calcFov(false); 
-        projection = MatrixPerspective(newFov * DEG2RAD, cameraAspect, nearDist, CAMERA_CULL_DISTANCE_FAR);
+        fovRes = calcFov(false); 
+        testCamera.fovy = fovRes.fov;
+        projection = MatrixPerspective(fovRes.fov * DEG2RAD, cameraAspect, nearDist, CAMERA_CULL_DISTANCE_FAR);
     }
 
     void changeCamera(int floor, int camera) {
@@ -437,6 +439,12 @@ namespace PerspectiveTest {
         //);
 
         Vector2 text_size;
+
+        sprintf((char*)text, "FOV: %f",
+            testCamera.fovy
+        );
+        text_size = MeasureTextEx(GetFontDefault(), (char*)text, 30, 1);
+        DrawText((char*)text, screenW / 2. - text_size.x / 2, 10, 30, WHITE);
 
         //sprintf((char*)text, "CAMPOS:%f %f %f",
         //    //return (x / (2 * tan(M_PI * fov / 360.f)));
@@ -660,6 +668,7 @@ namespace PerspectiveTest {
                 drawColliders2D();
             }
             if (renderLayers[5]) {
+                DrawCircleV(fovRes.point, 3, RED);
                 //calcFov(true);
             }
 
