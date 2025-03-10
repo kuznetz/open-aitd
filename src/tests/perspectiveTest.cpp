@@ -9,6 +9,7 @@
 #include <raymath.h>
 #include "legacy_camera.h"
 #include <vector>
+#include <list>
 
 namespace PerspectiveTest {
 
@@ -30,6 +31,7 @@ namespace PerspectiveTest {
     bool renderLayers[10] = { true, true, false, true, true, true, true, true, true, true };
 
     Matrix projection;
+    Matrix matrixView;
     Vector3 cameraForw;
     float cameraAspect;
     float testFovX2 = 55.5f;
@@ -140,7 +142,203 @@ namespace PerspectiveTest {
         rlEnd();
     }
 
-    void setCamera(cameraStruct* curCamera) {        
+    Vector2 CurWorldToScreen(Vector3 position, int width, int height)
+    {
+        // Convert world position vector to quaternion
+        Quaternion worldPos = { position.x, position.y, position.z, 1.0f };
+        // Transform world position to view
+        worldPos = QuaternionTransform(worldPos, matrixView);
+        // Transform result to projection (clip space position)
+        worldPos = QuaternionTransform(worldPos, projection);
+        // Calculate normalized device coordinates (inverted y)
+        Vector3 ndcPos = { worldPos.x / worldPos.w, -worldPos.y / worldPos.w, worldPos.z / worldPos.w };
+        // Calculate 2d screen position vector
+        Vector2 screenPosition = { (ndcPos.x + 1.0f) / 2.0f * (float)width, (ndcPos.y + 1.0f) / 2.0f * (float)height };
+        return screenPosition;
+    }
+
+    void DrawZVWires3(Vector3* v1, Vector3* v2, Color color)
+    {
+        Vector2 vecs[8];
+        // Front face        
+        vecs[0] = CurWorldToScreen({v1->x, v2->y, v2->z}, screenW, screenH ); // Top left
+        vecs[1] = CurWorldToScreen({v2->x, v2->y, v2->z}, screenW, screenH ); // Top right
+        vecs[2] = CurWorldToScreen({v1->x, v1->y, v2->z}, screenW, screenH ); // Bottom left
+        vecs[3] = CurWorldToScreen({v2->x, v1->y, v2->z}, screenW, screenH ); // Bottom right
+        // Back face
+        vecs[4] = CurWorldToScreen({v1->x, v2->y, v1->z}, screenW, screenH ); // Top left
+        vecs[5] = CurWorldToScreen({v2->x, v2->y, v1->z}, screenW, screenH ); // Top right
+        vecs[6] = CurWorldToScreen({v1->x, v1->y, v1->z}, screenW, screenH ); // Bottom left
+        vecs[7] = CurWorldToScreen({v2->x, v1->y, v1->z}, screenW, screenH ); // Bottom right
+        
+        DrawLineEx(vecs[0], vecs[1], 1, color);
+        DrawLineEx(vecs[1], vecs[3], 1, color);
+        DrawLineEx(vecs[3], vecs[2], 1, color);
+        DrawLineEx(vecs[2], vecs[0], 1, color);
+
+        DrawLineEx(vecs[4], vecs[5], 1, color);
+        DrawLineEx(vecs[5], vecs[7], 1, color);
+        DrawLineEx(vecs[7], vecs[6], 1, color);
+        DrawLineEx(vecs[6], vecs[4], 1, color);
+
+        DrawLineEx(vecs[0], vecs[4], 1, color);
+        DrawLineEx(vecs[1], vecs[5], 1, color);
+        DrawLineEx(vecs[2], vecs[6], 1, color);
+        DrawLineEx(vecs[3], vecs[7], 1, color);
+    }
+
+    void oldMatrix(float nearDist) {
+        //--------- ManualMatrix ---------------------
+        projection = { 0 };
+
+        //testFovY = nearPlane * tan(testFovX00 * DEG2RAD * 0.5);
+        //testFovX = nearPlane * tan(testFovY00 * DEG2RAD * 0.5);
+
+        //double nearPlane = CAMERA_CULL_DISTANCE_NEAR / 2;
+        double nearPlane = nearDist / 2;
+        double farPlane = CAMERA_CULL_DISTANCE_FAR * 100;
+        double top = nearPlane * testFovY * testFovK;
+        double right = nearPlane * testFovX * testFovK;// * cameraAspect;
+        //nearDistance = (float)curCamera->nearDistance / 1000;
+
+        // MatrixFrustum(-right, right, -top, top, near, far);
+        float rl = (float)(right * 2);
+        float tb = (float)(top * 2);
+        float fn = (float)(farPlane - nearPlane);
+
+        projection.m0 = ((float)nearPlane * 2.0f) / rl;
+        projection.m5 = ((float)nearPlane * 2.0f) / tb;
+        projection.m8 = (0) / rl;
+        projection.m9 = (0) / tb;
+        projection.m10 = -((float)farPlane + (float)nearPlane) / fn;
+        projection.m11 = -1; //-1.0f
+        projection.m14 = -((float)farPlane * (float)nearPlane * 2.0f) / fn;
+        //---------------------------
+    }
+
+    struct calcFovStepsResult { float fov; float dist; };
+    calcFovStepsResult calcFovSteps(Vector2 legPoint, Vector3 V1, float start, float stop, float step, bool render = false) {
+        Matrix oldProj = projection;
+        float nearDist = (float)curCamera->nearDistance / 1000;
+
+        float bestDist = 0;
+        float bestFov = start;
+
+        float curFov = start;
+        float newDist = 0;
+        bool first = true;
+        do {
+            curFov += step;
+            projection = MatrixPerspective(curFov * DEG2RAD, cameraAspect, nearDist, CAMERA_CULL_DISTANCE_FAR);
+            auto newPoint = CurWorldToScreen(V1, screenW, screenH);
+            newDist = Vector2Distance({ legPoint.x,legPoint.y }, newPoint);
+            if (first || bestDist > newDist) {
+                bestDist = newDist;
+                bestFov = curFov;
+                first = false;
+            }
+            if (render) {
+                DrawCircleV(newPoint, 5, RED);
+            }
+        } while (curFov < stop);
+        curFov -= step;
+
+        projection = oldProj;
+        return { bestFov , bestDist };
+    }
+
+    bool addFovPoint(std::list<Vector2>* legPoints, std::list<Vector3>* points3D, int x, int y, int z, Vector3 RoomV, bool render) {
+        auto legPoint = LegacyCamera::projectPoint(x, y, z);
+        legPoint.x = legPoint.x / 320 * screenW;
+        legPoint.y = legPoint.y / 200 * screenH;
+
+        if (legPoint.x < 0 || legPoint.x > screenW || legPoint.y < 0 || legPoint.y > screenH) {
+            return false;
+        }
+
+        Vector3 V1 = {
+            (float)x / 1000,
+            -(float)y / 1000,
+            (float)z / 1000
+        };
+        V1 = Vector3Add(V1, RoomV);
+        V1.x = -V1.x;
+
+        legPoints->push_back({ legPoint.x, legPoint.y });
+        points3D->push_back(V1);
+
+        if (render) {
+            DrawCircleV({ legPoint.x, legPoint.y }, 5, BLUE);
+        }
+        return true;
+    }
+
+    float calcFov(bool render = false) {
+        std::list<Vector2> legPoints;
+        std::list<Vector3> points3D;
+
+        for (int i = 0; i < curCamera->viewedRoomTable.size(); i++) {
+            auto vw = &curCamera->viewedRoomTable[i];
+            auto curRoom = &curFloor->rooms[vw->viewedRoomIdx];
+            LegacyCamera::setupCameraRoom(curCamera, curRoom);
+            Vector3 RoomV = {
+                (float)curRoom->worldX / 100,
+                -(float)curRoom->worldY / 100,
+                -(float)curRoom->worldZ / 100
+            };
+            for (int colIdx = 0; colIdx < curRoom->hardColTable.size(); colIdx++) {
+                auto zv = &curRoom->hardColTable[colIdx].zv;
+                //addFovPoint(&legPoints, &points3D, zv->ZVX1, zv->ZVY1, zv->ZVZ1, RoomV, render);
+
+                // Front face        
+                addFovPoint(&legPoints, &points3D, zv->ZVX1, zv->ZVY2, zv->ZVZ2, RoomV, render); // Top left
+                addFovPoint(&legPoints, &points3D, zv->ZVX2, zv->ZVY2, zv->ZVZ2, RoomV, render); // Top right
+                addFovPoint(&legPoints, &points3D, zv->ZVX1, zv->ZVY1, zv->ZVZ2, RoomV, render); // Bottom left
+                addFovPoint(&legPoints, &points3D, zv->ZVX2, zv->ZVY1, zv->ZVZ2, RoomV, render); // Bottom right
+                // Back face
+                addFovPoint(&legPoints, &points3D, zv->ZVX1, zv->ZVY2, zv->ZVZ1, RoomV, render); // Top left
+                addFovPoint(&legPoints, &points3D, zv->ZVX2, zv->ZVY2, zv->ZVZ1, RoomV, render); // Top right
+                addFovPoint(&legPoints, &points3D, zv->ZVX1, zv->ZVY1, zv->ZVZ1, RoomV, render); // Bottom left
+                addFovPoint(&legPoints, &points3D, zv->ZVX2, zv->ZVY1, zv->ZVZ1, RoomV, render); // Bottom right
+            }
+        }
+
+        if (!legPoints.size()) {
+            return 60;
+        }
+
+        calcFovStepsResult bestRes;
+        auto p3d = points3D.begin();
+        bool first = true;
+        for (auto const& lp : legPoints) {
+            //matrixView = MatrixLookAt(testCamera.position, testCamera.target, testCamera.up);
+
+            auto newRes = calcFovSteps(lp, *p3d, 20., 170, 0.01, render);
+            if (first || bestRes.dist > newRes.dist) {
+                bestRes = newRes;
+                first = false;
+            }
+
+            p3d++;
+        }
+
+        if (render) {
+            //DrawCircleV({ legPoint.x, legPoint.y }, 5, BLUE);
+            //DrawCircleV(point60, 5, RED);
+            //DrawCircleV(point70, 5, GREEN);
+
+            char text[200];
+            sprintf((char*)text, "CALCFOV: %f",
+                bestRes.fov
+            );
+            auto text_size = MeasureTextEx(GetFontDefault(), (char*)text, 30, 1);
+            DrawText((char*)text, screenW / 2. - text_size.x / 2, 10, 30, WHITE);
+        }
+
+        return bestRes.fov;
+    }
+
+    void setCamera(cameraStruct* curCamera) {
         LegacyCamera::setupCamera(curCamera);
 
         //Quaternion q = QuaternionFromEuler(
@@ -161,64 +359,41 @@ namespace PerspectiveTest {
         
         //Rotate YXZ
         rlPushMatrix();
-        rlLoadIdentity();
+        rlLoadIdentity();        
         rlRotatef(-(float)curCamera->beta * 360 / 1024, 0, 1, 0);
         rlRotatef((float)curCamera->alpha * 360 / 1024, 1, 0, 0);
         rlRotatef(-(float)curCamera->gamma * 360 / 1024, 0, 0, 1);
-        Matrix m2 = rlGetMatrixTransform();
+        matrixView = rlGetMatrixTransform();
         rlPopMatrix();
 
-        //m2 = m;
+        //matrixView = m;
 
-        cameraForw = { m2.m8,m2.m9,m2.m10 };
-        Vector3 cameraUp = { m2.m4,m2.m5,m2.m6 };
-
-        testCamera.position = {
+        cameraForw = { matrixView.m8,matrixView.m9,matrixView.m10 };
+        float nearDist = (float)curCamera->nearDistance / 1000;
+        Vector3 cameraUp = { matrixView.m4,matrixView.m5,matrixView.m6 };
+        Vector3 camPosition = {
             -(float)curCamera->x / 100,
             (float)curCamera->y / 100,
             -(float)curCamera->z / 100,
         };
+        camPosition = Vector3Add(camPosition, Vector3Scale(cameraForw, -nearDist));
+
+        testCamera.position = camPosition;
         testCamera.target = {
             testCamera.position.x + cameraForw.x,
             testCamera.position.y + cameraForw.y,
             testCamera.position.z + cameraForw.z,
         };
         testCamera.up = cameraUp;
-        float perspective = (float)curCamera->nearDistance / 1000;
-        testCamera.position = Vector3Add(testCamera.position, Vector3Scale(cameraForw, -perspective));
-        //cameraAspect = (float)curCamera->fovY / (float)curCamera->fovX;
-        //transformedY1 = ((yf * cameraFovY) / (float)zf) + cameraCenterY;
-        //float frustumHeight = 1;
-        //testFov = 2.0f * atan(frustumHeight * 0.5f / frustumHeight);
+        testCamera.position = Vector3Add(testCamera.position, Vector3Scale(cameraForw, -nearDist));        
+        cameraAspect = testFovX / testFovY;
+
+        matrixView = MatrixLookAt(testCamera.position, testCamera.target, testCamera.up);
+
         
-
-        //------------------------------
-        projection = MatrixPerspective(testCamera.fovy * DEG2RAD, cameraAspect, CAMERA_CULL_DISTANCE_NEAR, CAMERA_CULL_DISTANCE_FAR);
-        projection = { 0 };
-
-        //testFovY = nearPlane * tan(testFovX00 * DEG2RAD * 0.5);
-        //testFovX = nearPlane * tan(testFovY00 * DEG2RAD * 0.5);
-
-        //double nearPlane = CAMERA_CULL_DISTANCE_NEAR / 2;
-        double nearPlane = perspective / 2;
-        double farPlane = CAMERA_CULL_DISTANCE_FAR * 100;
-        double top = nearPlane * testFovY * testFovK;
-        double right = nearPlane * testFovX * testFovK;// * cameraAspect;
-        //nearDistance = (float)curCamera->nearDistance / 1000;
-
-        // MatrixFrustum(-right, right, -top, top, near, far);
-        float rl = (float)(right * 2);
-        float tb = (float)(top * 2);
-        float fn = (float)(farPlane - nearPlane);
-
-        projection.m0 = ((float)nearPlane * 2.0f) / rl;
-        projection.m5 = ((float)nearPlane * 2.0f) / tb;
-        projection.m8 = (0) / rl;
-        projection.m9 = (0) / tb;
-        projection.m10 = -((float)farPlane + (float)nearPlane) / fn;
-        projection.m11 = -1; //-1.0f
-        projection.m14 = -((float)farPlane * (float)nearPlane * 2.0f) / fn;
-
+        //atan(testFovY) * 2 * RAD2DEG;;
+        float newFov = calcFov(false); 
+        projection = MatrixPerspective(newFov * DEG2RAD, cameraAspect, nearDist, CAMERA_CULL_DISTANCE_FAR);
     }
 
     void changeCamera(int floor, int camera) {
@@ -240,7 +415,6 @@ namespace PerspectiveTest {
             
             testFovY = (float)curCamera->fovY / 320;
             testFovX = (float)curCamera->fovX / 200;
-            testFovK = 1;
             setCamera(curCamera);
         }
 
@@ -312,10 +486,6 @@ namespace PerspectiveTest {
 
     }
 
-    void getRoomsIn() {
-
-    }
-
     void drawColliders() {
         for (int i = 0; i < curCamera->viewedRoomTable.size(); i++) {
             auto vw = &curCamera->viewedRoomTable[i];
@@ -351,6 +521,41 @@ namespace PerspectiveTest {
         }
     }
 
+    void drawColliders2D() {
+        for (int i = 0; i < curCamera->viewedRoomTable.size(); i++) {
+            auto vw = &curCamera->viewedRoomTable[i];
+            auto curRoom = &curFloor->rooms[vw->viewedRoomIdx];
+            Vector3 RoomV = {
+                (float)curRoom->worldX / 100,
+                -(float)curRoom->worldY / 100,
+                -(float)curRoom->worldZ / 100
+            };
+            //DrawSphere(RoomV, 0.02f, GREEN);
+            for (int colIdx = 0; colIdx < curRoom->hardColTable.size(); colIdx++) {
+                auto col = &curRoom->hardColTable[colIdx];
+                //rlPushMatrix();
+                //rlLoadIdentity();
+                //rlTranslatef(curRoom->worldX, curRoom->worldX, curRoom->worldZ);
+                //rlPopMatrix();
+                Vector3 V1 = {
+                    (float)col->zv.ZVX1 / 1000,
+                    -(float)col->zv.ZVY1 / 1000,
+                    (float)col->zv.ZVZ1 / 1000
+                };
+                Vector3 V2 = {
+                    (float)col->zv.ZVX2 / 1000,
+                    -(float)col->zv.ZVY2 / 1000,
+                    (float)col->zv.ZVZ2 / 1000
+                };
+                V1 = Vector3Add(V1, RoomV);
+                V2 = Vector3Add(V2, RoomV);
+                V1.x = -V1.x;
+                V2.x = -V2.x;
+                DrawZVWires3(&V1, &V2, GREEN);
+            }
+        }
+    }
+
     void drawCollidersLeagcy() {
         for (int i = 0; i < curCamera->viewedRoomTable.size(); i++) {
             auto vw = &curCamera->viewedRoomTable[i];
@@ -362,16 +567,6 @@ namespace PerspectiveTest {
                 DrawZVWires2(&col->zv, BLUE);
             }
         }
-    }
-
-    void drawTestLeagcy() {
-        //LegacyCamera::translateX = (curCamera->x) * 10;
-        //LegacyCamera::translateY = (-curCamera->y) * 10;
-        //LegacyCamera::translateZ = (-curCamera->z) * 10;        
-        //
-        //ZVStruct zv = curFloor->rooms[0].hardColTable[curCollider].zv;
-        ////ZVStruct zv = { -7800, 7800, -2500, 0, -5300, -5000 };
-        //DrawZVWires2(&zv, BLUE);
     }
 
     void runTest()
@@ -462,18 +657,21 @@ namespace PerspectiveTest {
                 drawCollidersLeagcy();
             }
             if (renderLayers[4]) {
-                drawTestLeagcy();
+                drawColliders2D();
+            }
+            if (renderLayers[5]) {
+                //calcFov(true);
             }
 
             BeginMode3D(testCamera);
+            rlSetMatrixModelview(matrixView);
             rlSetMatrixProjection(projection);
 
-                if (renderLayers[3]) {
-                    drawColliders();
-                }
+            if (renderLayers[3]) {
+                drawColliders();
+            }
 
-                //DrawSphere(Vector3Add(testCamera.position,cameraForw), 0.01f, GREEN);
-
+            //DrawSphere(Vector3Add(testCamera.position,cameraForw), 0.01f, GREEN);
             //DrawCube({ 0, 3, 0 }, 2.0f, 2.0f, 2.0f, BLUE);
             //DrawCube({ 0, -3, 0 }, 2.0f, 2.0f, 2.0f, RED);
 
