@@ -1060,14 +1060,14 @@ namespace LegacyCamera {
   int cameraFovX;
   int cameraFovY;
 
-  void setupCameraProjection(int centerX, int centerY, int x, int y, int z)
+  void setupCameraProjection(int centerX, int centerY, int x, int fovX, int fovY)
   {
       cameraCenterX = centerX;
       cameraCenterY = centerY;
 
       cameraPerspective = x;
-      cameraFovX = y;
-      cameraFovY = z;
+      cameraFovX = fovX;
+      cameraFovY = fovY;
   }
 
   void SetAngleCamera(int x, int y, int z)
@@ -1175,7 +1175,7 @@ namespace LegacyCamera {
   void setupCamera(cameraStruct* pCamera)
   {
       SetAngleCamera(pCamera->alpha, pCamera->beta, pCamera->gamma);
-      setupCameraProjection(160, 100, pCamera->nearDistance, pCamera->fovX, pCamera->fovY); // setup focale
+      setupCameraProjection(160, 100, pCamera->nearDistance, pCamera->focalX, pCamera->focalY); // setup focale
       //setupCameraSub1();
       //setupCameraSub4();
   }
