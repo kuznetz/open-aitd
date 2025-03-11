@@ -4,7 +4,7 @@
 #include <string>
 #include <iostream>
 #include "extractor/background_extractor.h"
-#include "extractor/floor_extractor.h"
+#include "extractor/floor_loader.h"
 #include <renderer.h>
 #include "../mask_render.h"
 
