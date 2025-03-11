@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <math.h>
-#include "./structures/camera.h"
+#include "./extractor/structs/camera.h"
 namespace LegacyCamera {
   
   //0x000-0x100 - cos

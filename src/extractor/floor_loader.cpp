@@ -1,4 +1,4 @@
-﻿#include "../structures/floor.h"
+﻿#include "structs/floor.h"
 #include "pak/pak.h"
 #include <stdexcept>
 #include <fstream>

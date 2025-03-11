@@ -1,0 +1,4 @@
+json.hpp - 3.11.3 - https://github.com/nlohmann/json
+zlib-ng-2.2.4 - https://github.com/zlib-ng/zlib-ng/releases/tag/2.2.4
+raylib - https://github.com/raysan5/raylib/releases/tag/5.5 (https://www.raylib.com/)
+libpng - libpng-1.6.48 - https://github.com/pnggroup/libpng

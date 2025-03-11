@@ -1,9 +1,9 @@
-// seg 55
+﻿// seg 55
 
 #include <stdlib.h> 
 #include <stdio.h>
 #include <string.h>
-#include "../../structures/int_types.h"
+#include "../structs/int_types.h"
 #include "unpack.h"
 #include "pak.h"
 

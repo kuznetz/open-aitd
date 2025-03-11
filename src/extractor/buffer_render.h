@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <math.h>
 #include <stdlib.h>
-#include "../structures/int_types.h"
+#include "structs/int_types.h"
 
 void swap(int* a, int* b)
 {

@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <vector>
 #include <list>
-#include "../structures/camera.h"
+#include "structs/camera.h"
 #include "save_png.h"
 #include <stdio.h>
 #include <stdlib.h>

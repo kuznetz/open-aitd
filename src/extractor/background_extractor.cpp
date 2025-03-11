@@ -4,7 +4,7 @@
 
 #include "background_extractor.h"
 #include "save_png.h"
-#include "../structures/int_types.h"
+#include "structs/int_types.h"
 #include "pak/pak.h"
 
 unsigned char* palette = 0;

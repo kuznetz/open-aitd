@@ -3,7 +3,7 @@
 #include <string.h>
 #include <string>
 #include <iostream>
-#include "../extractor/floor_extractor.h"
+#include "../extractor/floor_loader.h"
 #include <renderer.h>
 #include <rcamera.h>
 #include <raymath.h>
