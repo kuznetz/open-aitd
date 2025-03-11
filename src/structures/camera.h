@@ -60,8 +60,8 @@ struct cameraStruct
 	s16 z;
 
 	s16 nearDistance;
-	s16 fovY;
 	s16 fovX;
+	s16 fovY;
 
 	std::vector<cameraViewedRoomStruct> viewedRoomTable;
 };

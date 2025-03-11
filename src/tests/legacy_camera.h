@@ -1175,7 +1175,7 @@ namespace LegacyCamera {
   void setupCamera(cameraStruct* pCamera)
   {
       SetAngleCamera(pCamera->alpha, pCamera->beta, pCamera->gamma);
-      setupCameraProjection(160, 100, pCamera->nearDistance, pCamera->fovY, pCamera->fovX); // setup focale
+      setupCameraProjection(160, 100, pCamera->nearDistance, pCamera->fovX, pCamera->fovY); // setup focale
       //setupCameraSub1();
       //setupCameraSub4();
   }

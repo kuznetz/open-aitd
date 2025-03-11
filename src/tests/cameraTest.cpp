@@ -171,8 +171,8 @@ namespace CameraTest {
         sprintf((char*)text, "FOV:%f, %f %f %f %f", 
             testCamera.fovy,
             p,
-            (float)curCamera->fovY / 100,
             (float)curCamera->fovX / 100,
+            (float)curCamera->fovY / 100,
             testFov
         );
         const Vector2 text_size = MeasureTextEx(GetFontDefault(), (char*)text, 30, 1);

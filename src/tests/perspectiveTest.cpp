@@ -13,8 +13,8 @@
 
 namespace PerspectiveTest {
 
-    int screenW = 1280;
-    int screenH = 960;
+    int screenW = 320*4;
+    int screenH = 240*4;
     //int screenH = 800;
 
     int curFloorId = 2;
@@ -28,7 +28,7 @@ namespace PerspectiveTest {
     Texture2D maskTex;
 
     bool useFilter = false;
-    bool renderLayers[10] = { true, true, false, true, true, true, true, true, true, true };
+    bool renderLayers[10] = { true, true, true, true, false, true, true, true, true, true };
 
     Matrix projection;
     Matrix matrixView;
@@ -37,8 +37,8 @@ namespace PerspectiveTest {
     float testFovX2 = 55.5f;
     float testFovY2 = 70.0f;
     float testFovK = 1;
-    float testFovY = 55.5f;
-    float testFovX = 70.0f;
+    float legcFovX = 55.5f;
+    float legcFovY = 70.0f;
 
     Camera3D testCamera = {
         { 0.0f, 5.0f, -10.0f }, // mainCamera position
@@ -191,14 +191,14 @@ namespace PerspectiveTest {
         //--------- ManualMatrix ---------------------
         projection = { 0 };
 
-        //testFovY = nearPlane * tan(testFovX00 * DEG2RAD * 0.5);
-        //testFovX = nearPlane * tan(testFovY00 * DEG2RAD * 0.5);
+        //legcFovX = nearPlane * tan(testFovX00 * DEG2RAD * 0.5);
+        //legcFovY = nearPlane * tan(testFovY00 * DEG2RAD * 0.5);
 
         //double nearPlane = CAMERA_CULL_DISTANCE_NEAR / 2;
         double nearPlane = nearDist / 2;
         double farPlane = CAMERA_CULL_DISTANCE_FAR * 100;
-        double top = nearPlane * testFovY * testFovK;
-        double right = nearPlane * testFovX * testFovK;// * cameraAspect;
+        double top = nearPlane * legcFovX * testFovK;
+        double right = nearPlane * legcFovY * testFovK;// * cameraAspect;
         //nearDistance = (float)curCamera->nearDistance / 1000;
 
         // MatrixFrustum(-right, right, -top, top, near, far);
@@ -318,7 +318,9 @@ namespace PerspectiveTest {
         for (auto const& lp : legPoints) {
             //matrixView = MatrixLookAt(testCamera.position, testCamera.target, testCamera.up);
 
-            auto newRes = calcFovSteps(lp, *p3d, 40., 90, 0.01, render);
+            //For AITD1, FOV 25-90
+
+            auto newRes = calcFovSteps(lp, *p3d, 25., 90, 0.05, render);
             //if (first || bestRes.dist > newRes.dist) {
             //    bestRes = newRes;
             //    first = false;
@@ -377,7 +379,7 @@ namespace PerspectiveTest {
             (float)curCamera->y / 100,
             -(float)curCamera->z / 100,
         };
-        camPosition = Vector3Add(camPosition, Vector3Scale(cameraForw, -nearDist));
+        //camPosition = Vector3Add(camPosition, Vector3Scale(cameraForw, -nearDist));
 
         testCamera.position = camPosition;
         testCamera.target = {
@@ -387,15 +389,13 @@ namespace PerspectiveTest {
         };
         testCamera.up = cameraUp;
         testCamera.position = Vector3Add(testCamera.position, Vector3Scale(cameraForw, -nearDist));        
-        cameraAspect = testFovX / testFovY;
-
+        cameraAspect = legcFovY / legcFovX;
         matrixView = MatrixLookAt(testCamera.position, testCamera.target, testCamera.up);
-
         
-        //atan(testFovY) * 2 * RAD2DEG;;
-        fovRes = calcFov(false); 
-        testCamera.fovy = fovRes.fov;
-        projection = MatrixPerspective(fovRes.fov * DEG2RAD, cameraAspect, nearDist, CAMERA_CULL_DISTANCE_FAR);
+        //atan(legcFovX) * 2 * RAD2DEG;;
+        testCamera.fovy = fovRes.fov * testFovK;
+        //oldMatrix(nearDist);
+        projection = MatrixPerspective(fovRes.fov * testFovK * DEG2RAD, cameraAspect, nearDist, CAMERA_CULL_DISTANCE_FAR);
     }
 
     void changeCamera(int floor, int camera) {
@@ -415,8 +415,11 @@ namespace PerspectiveTest {
             Image image = LoadImage(str);
             backgroundTex = LoadTextureFromImage(image);
             
-            testFovY = (float)curCamera->fovY / 320;
-            testFovX = (float)curCamera->fovX / 200;
+            legcFovX = (float)curCamera->fovX / 320; // 320;
+            legcFovY = (float)curCamera->fovY / 200; // 200 or 240?
+            testFovK = 1;
+            setCamera(curCamera);
+            fovRes = calcFov(false);
             setCamera(curCamera);
         }
 
@@ -472,13 +475,13 @@ namespace PerspectiveTest {
         //text_size = MeasureTextEx(GetFontDefault(), (char*)text, 30, 1);
         //DrawText((char*)text, screenW / 2. - text_size.x / 2, screenH - (text_size.y * 3 + 10), 30, WHITE);
 
-        float startX = (float)curCamera->fovY / (320); //* p / (320);
-        float startY = (float)curCamera->fovX / (200); //* p / (200);
+        float startX = (float)curCamera->fovX / (320); //* p / (320);
+        float startY = (float)curCamera->fovY / (200); //* p / (200);
         sprintf((char*)text, "FOV: %f %f -> %f %f",
             startX,
             startY,
-            testFovY,
-            testFovX
+            legcFovX,
+            legcFovY
         );
         text_size = MeasureTextEx(GetFontDefault(), (char*)text, 30, 1);
         DrawText((char*)text, screenW / 2. - text_size.x / 2, screenH - (text_size.y * 2 + 10), 30, WHITE);
@@ -582,7 +585,8 @@ namespace PerspectiveTest {
         backgroundTex.id = 0;
         InitWindow(screenW, screenH, "Perspective Test");
         SetTargetFPS(60);
-        changeCamera(2, 38);
+        changeCamera(0, 0);
+        //changeCamera(2, 38);
 
         Image image = GenImageChecked(screenW, screenH, 10, 10, BLACK, WHITE);
         //Image image = LoadImage("data/mask_test.png");
@@ -623,24 +627,24 @@ namespace PerspectiveTest {
             }
             //if (IsKeyPressed(KEY_KP_ADD)) {
             //    testFovX2 -= 0.5;
-            //    testFovY = tan(testFovX2 * DEG2RAD * 0.5);
+            //    legcFovX = tan(testFovX2 * DEG2RAD * 0.5);
             //    setCamera(curCamera);
             //}
             //if (IsKeyPressed(KEY_KP_SUBTRACT)) {
             //    testFovX2 += 0.5f;
-            //    testFovY = tan(testFovX2 * DEG2RAD * 0.5);
+            //    legcFovX = tan(testFovX2 * DEG2RAD * 0.5);
             //    setCamera(curCamera);
             //}
             if (IsKeyPressed(KEY_PAGE_UP)) {
                 testFovK += 0.02f;
                 //testFovK += 1.00f;
-                //testFovX = tan(testFovY2 * DEG2RAD * 0.5);
+                //legcFovY = tan(testFovY2 * DEG2RAD * 0.5);
                 setCamera(curCamera);
             }
             if (IsKeyPressed(KEY_PAGE_DOWN)) {
                 testFovK -= 0.02f;
                 //testFovK -= 1.00f;
-                //testFovX = tan(testFovY2 * DEG2RAD * 0.5);
+                //legcFovY = tan(testFovY2 * DEG2RAD * 0.5);
                 setCamera(curCamera);
             }
             
