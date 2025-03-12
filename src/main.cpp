@@ -8,7 +8,7 @@ int main(void)
     //CameraTest::runTest();
     //MaskTest::runTest();
     //ModelTest::runTest();
-    PerspectiveTest::runTest();
+    //PerspectiveTest::runTest();
 
     return 0;
 }

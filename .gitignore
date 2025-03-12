@@ -10,3 +10,5 @@ libs/zlib-ng-2.2.4/
 libs/tinygltf-2.9.5/
 libs/poly2tri/
 libs/json.hpp
+libs/tinygltf-2.9.5/
+libs/tiny_gltf.h
