@@ -23,7 +23,7 @@ void extractAllData() {
 
         sprintf(floordir, "data/floor_%02d", fl);
         std::filesystem::create_directories(floordir);
-        sprintf(str, "%s/scene.gltf", floordir);
+        sprintf(str, "%s/scene", floordir);
         saveFloorGLTF(curFloor, str);
 
         for (int cam = 0; cam < curFloor->cameras.size(); cam++) {

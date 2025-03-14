@@ -351,34 +351,24 @@ namespace PerspectiveTest {
     void setCamera(cameraStruct* curCamera) {
         LegacyCamera::setupCamera(curCamera);
 
-        //Quaternion q = QuaternionFromEuler(
-        //    (float)curCamera->alpha * 2 * PI / 1024,
-        //    -(float)curCamera->beta * 2 * PI / 1024,
-        //    (float)curCamera->gamma * 2 * PI / 1024
-        //);        
-        //Matrix m = QuaternionToMatrix(q);
-        //cameraForw = { m.m8,m.m9,m.m10 };
-        //Vector3 cameraUp = { m.m4,m.m5,m.m6 };
-
-        //MatrixIdentity();
-        //Matrix m = MatrixRotateZYX({
-        //    (float)curCamera->alpha * 2 * PI / 1024,
-        //    -(float)curCamera->beta * 2 * PI / 1024,
-        //    0//(float)curCamera->gamma * 2 * PI / 1024
-        //});
+        //RL Rotate YXZ
         
-        //Rotate YXZ
         rlPushMatrix();
         rlLoadIdentity();        
         rlRotatef(-(float)curCamera->beta * 360 / 1024, 0, 1, 0);
         rlRotatef((float)curCamera->alpha * 360 / 1024, 1, 0, 0);
         rlRotatef(-(float)curCamera->gamma * 360 / 1024, 0, 0, 1);
-        matrixView = rlGetMatrixTransform();
+        Matrix matrixView2 = rlGetMatrixTransform();
         rlPopMatrix();
 
-        //matrixView = m;
+        Matrix my = MatrixRotateY((float)curCamera->beta * 2 * PI / 1024);
+        Matrix mx = MatrixRotateX(-(float)curCamera->alpha * 2 * PI / 1024);
+        Matrix mz = MatrixRotateZ((float)curCamera->gamma * 2 * PI / 1024);
+        matrixView = MatrixTranspose(MatrixMultiply(MatrixMultiply(my, mx), mz));
+        
+        cameraForw = { matrixView2.m8,matrixView2.m9,matrixView2.m10 };
+        auto q = QuaternionFromMatrix(matrixView);
 
-        cameraForw = { matrixView.m8,matrixView.m9,matrixView.m10 };
         float nearDist = (float)curCamera->nearDistance / 1000;
         Vector3 cameraUp = { matrixView.m4,matrixView.m5,matrixView.m6 };
         Vector3 camPosition = {

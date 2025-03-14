@@ -45,7 +45,7 @@ struct cameraViewedRoomStruct
 	//AITD1 masks
 	std::vector <cameraOverlayV1Struct> overlays_V1;
 	//Others masks
-	std::vector<cameraMaskV2Struct> V2masks;
+	std::vector<cameraMaskV2Struct> overlays_V2;
 	std::vector<cameraZoneEntryStruct> coverZones;
 };
 
