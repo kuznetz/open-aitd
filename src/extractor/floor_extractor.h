@@ -266,9 +266,9 @@ void saveFloorGLTF(floorStruct* floor, char* filename)
             auto& vw = cam.viewedRoomTable[viewIdx];            
             auto roomIdx = vw.viewedRoomIdx;
             auto& roomN = roomNodes[vw.viewedRoomIdx];
+            tinygltf::Node camRoomN;
+            camRoomN.name = string("camera_room_") + to_string(camIdx) + "_" + to_string(roomIdx);
 
-            tinygltf::Node ovlZsN;
-            ovlZsN.name = string("overlay_zones_") + to_string(camIdx) + "_" + to_string(roomIdx);
             for (int ovlIdx = 0; ovlIdx < vw.overlays_V1.size(); ovlIdx++) {
                 auto& ovl = vw.overlays_V1[ovlIdx];
                 for (int ovlZIdx = 0; ovlZIdx < ovl.zones.size(); ovlZIdx++) {
@@ -288,13 +288,9 @@ void saveFloorGLTF(floorStruct* floor, char* filename)
                     };
                     m.nodes.push_back(ovlZN);
                     int ovlZNIdx = m.nodes.size() - 1;
-                    ovlZsN.children.push_back(ovlZNIdx);
+                    camRoomN.children.push_back(ovlZNIdx);
                 }                
             }
-            m.nodes.push_back(ovlZsN);
-            int ovlZsIdx = m.nodes.size() - 1;
-            roomN.children.push_back(ovlZsIdx);
-
 
             for (int zoneIdx = 0; zoneIdx < vw.coverZones.size(); zoneIdx++) {
                 auto& camZone = vw.coverZones[zoneIdx];
@@ -312,8 +308,12 @@ void saveFloorGLTF(floorStruct* floor, char* filename)
                 camZoneN.mesh = lineMeshIdx;
                 m.nodes.push_back(camZoneN);
                 int camZoneNIdx = m.nodes.size() - 1;
-                roomN.children.push_back(camZoneNIdx);
+                camRoomN.children.push_back(camZoneNIdx);
             }
+
+            m.nodes.push_back(camRoomN);
+            int idx = m.nodes.size() - 1;
+            roomN.children.push_back(idx);
         }
 
     }
