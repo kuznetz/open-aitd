@@ -7,7 +7,7 @@
 #include "floor_extractor.h"
 #include "background_extractor.h"
 #include "mask_extractor.h"
-#include "body_loader.h"
+#include "model_loader.h"
 #include "pak/pak.h"
 
 void extractAllData() {
@@ -62,7 +62,7 @@ void extractAllData() {
     {
         int size = getPakSize(srcFN, i);
         char* testBody = loadPak(srcFN, i);
-        loadBody(testBody, size);
+        loadModel(testBody, size);
         delete testBody;
     }
 
@@ -72,7 +72,7 @@ void extractAllData() {
     {
         int size = getPakSize(srcFN2, i);
         char* testBody = loadPak(srcFN2, i);
-        loadBody(testBody, size);
+        loadModel(testBody, size);
         delete testBody;
     }
 }

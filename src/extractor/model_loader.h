@@ -1,9 +1,9 @@
 ﻿#pragma once
 #include <string>
-#include "structs/body.h"
+#include "structs/model.h"
 #include "pak/pak.h"
 
-int loadBodyBones(PakBody &body, char* data) {
+int loadModelBones(PakModel &body, char* data) {
 	int i = 0;
 	int bonesCount = READ_LE_U16(data + 0);
 	i += 2;
@@ -34,7 +34,7 @@ int loadBodyBones(PakBody &body, char* data) {
 	return i;
 }
 
-void loadBodyPrimitives(PakBody& body, char* data) {
+void loadModelPrimitives(PakModel& body, char* data) {
 	int i = 0;
 	int primCount = READ_LE_U16(data + 0);
 	i += 2;
@@ -148,9 +148,9 @@ void loadBodyPrimitives(PakBody& body, char* data) {
 	}
 }
 
-void loadBody(char* data, int size) {
+void loadModel(char* data, int size) {
 	//header
-	PakBody body;
+	PakModel body;
 	body.modelFlags = READ_LE_U16(data);	
 	body.bounds.ZVX1 = READ_LE_S16(data + 2);
 	body.bounds.ZVX2 = READ_LE_S16(data + 4);
@@ -174,7 +174,7 @@ void loadBody(char* data, int size) {
 	//check if model has bones
 	if ((body.modelFlags & 2) == 2)
 	{
-		i += loadBodyBones(body, data + i);
+		i += loadModelBones(body, data + i);
 	}
-	loadBodyPrimitives(body, data + i);
+	loadModelPrimitives(body, data + i);
 }

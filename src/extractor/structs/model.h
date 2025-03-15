@@ -2,7 +2,7 @@
 #include "int_types.h"
 #include <vector>
 
-struct PakBodyPrimitive {
+struct PakModelPrimitive {
 	u8 type = 0;
 	u8 subType = 0;
 	u8 colorIndex = 0;
@@ -14,7 +14,7 @@ struct PakBodyPrimitive {
 	vector<u16> uv;
 };
 
-struct BodyBone {
+struct ModelBone {
 	int fromVertexIdx;
 	int vertexCount;
 	int rootVertexIdx;
@@ -22,10 +22,10 @@ struct BodyBone {
 	int curBoneIdx;
 };
 
-struct PakBody {
+struct PakModel {
 	u16 modelFlags;
 	ZVStruct bounds;
 	std::vector <s16> vertices;
-	std::vector <BodyBone> bones;	
-	std::vector <PakBodyPrimitive> primitives;
+	std::vector <ModelBone> bones;	
+	std::vector <PakModelPrimitive> primitives;
 };
