@@ -3,13 +3,12 @@
 #include "int_types.h"
 #include "room.h"
 #include "camera.h"
+#include <vector>
 
 struct floorStruct
 {
-	u32 cameraCount = 0;
-	s16 roomCount = 0;
-	roomStruct* rooms;
-	cameraStruct* cameras;
+	std::vector<roomStruct> rooms;
+	std::vector<cameraStruct> cameras;
 };
 
 //PAK

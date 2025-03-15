@@ -1,5 +1,6 @@
 #pragma once
 #include "int_types.h"
+#include <vector>
 
 struct ZVStruct
 {
@@ -27,16 +28,10 @@ struct sceZoneStruct
 
 struct roomStruct
 {
-	int offset;
-	int end;
-
 	s16 worldX;
 	s16 worldY;
 	s16 worldZ;
-	u32 numHardCol = 0;
-	hardColStruct* hardColTable;
-	u32 numSceZone = 0;
-	sceZoneStruct* sceZoneTable;
-	u32 numCameraInRoom = 0;
-	u16* cameraIdxTable;
+	std::vector<hardColStruct> hardColTable;
+	std::vector<sceZoneStruct> sceZoneTable;
+	std::vector<u16> cameraIdxTable;
 };

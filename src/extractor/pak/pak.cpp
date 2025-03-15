@@ -11,8 +11,6 @@
 #include <direct.h>
 #endif
 
-char homePath[512] = "original/";
-
 typedef struct pakInfoStruct // warning: allignement unsafe
 {
     s32 discSize;
@@ -41,11 +39,10 @@ void readPakInfo(pakInfoStruct* pPakInfo, FILE* fileHandle)
 
 unsigned int PAK_getNumFiles(const char* name)
 {
-    char bufferName[512];
+    char bufferName[512] = "";
     FILE* fileHandle;
     u32 fileOffset;
 
-    strcpy(bufferName, homePath);
     strcat(bufferName, name); // temporary until makeExtention is coded
     strcat(bufferName,".PAK");
 
@@ -121,14 +118,13 @@ int getPakSize(const char* name, int index)
 
     return (size);
 #else
-    char bufferName[512];
+    char bufferName[512] = "";
     FILE* fileHandle;
     s32 fileOffset;
     s32 additionalDescriptorSize;
     pakInfoStruct pakInfo;
     s32 size=0;
 
-    strcpy(bufferName, homePath);
     strcat(bufferName, name); // temporary until makeExtention is coded
     strcat(bufferName,".PAK");
 
@@ -204,7 +200,7 @@ char* loadPak(const char* name, int index)
 
     return ptr;
 #else
-    char bufferName[512];
+    char bufferName[512] = "";
     FILE* fileHandle;
     u32 fileOffset;
     u32 additionalDescriptorSize;
@@ -213,7 +209,6 @@ char* loadPak(const char* name, int index)
 
 
     //makeExtention(bufferName, name, ".PAK");
-    strcpy(bufferName, homePath);
     strcat(bufferName, name); // temporary until makeExtention is coded
     strcat(bufferName,".PAK");
 
@@ -304,7 +299,7 @@ void dumpPak(const char* name)
 
     for (unsigned int index = 0; index < numEntries; index++)
     {
-        char bufferName[512];
+        char bufferName[512] = "";
         FILE* fileHandle;
         u32 fileOffset;
         u32 additionalDescriptorSize;
@@ -313,7 +308,6 @@ void dumpPak(const char* name)
 
 
         //makeExtention(bufferName, name, ".PAK");
-        strcpy(bufferName, homePath);
         strcat(bufferName, name); // temporary until makeExtention is coded
         strcat(bufferName, ".PAK");
 
