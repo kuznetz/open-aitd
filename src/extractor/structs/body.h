@@ -14,9 +14,18 @@ struct PakBodyPrimitive {
 	vector<u16> uv;
 };
 
+struct BodyBone {
+	int fromVertexIdx;
+	int vertexCount;
+	int rootVertexIdx;
+	int parentBone;
+	int curBoneIdx;
+};
+
 struct PakBody {
 	u16 modelFlags;
 	ZVStruct bounds;
 	std::vector <s16> vertices;
+	std::vector <BodyBone> bones;	
 	std::vector <PakBodyPrimitive> primitives;
 };

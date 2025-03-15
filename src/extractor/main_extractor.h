@@ -57,8 +57,8 @@ void extractAllData() {
     }
 
     char* srcFN = "original/LISTBODY";
-    int size = getPakSize(srcFN, 0);
-    char* testBody = loadPak(srcFN, 0);
+    int size = getPakSize(srcFN, 1);
+    char* testBody = loadPak(srcFN, 1);
     loadBody(testBody, size);
     delete testBody;
 }
