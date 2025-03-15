@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #if defined(HAS_STDINT)
 typedef uint8_t u8;
@@ -93,3 +93,13 @@ FORCEINLINE s32 READ_BE_S32(void *ptr)
 {
   return (s32)READ_LE_U32(ptr);
 }
+
+struct ZVStruct
+{
+	s32 ZVX1;
+	s32 ZVX2;
+	s32 ZVY1;
+	s32 ZVY2;
+	s32 ZVZ1;
+	s32 ZVZ2;
+};

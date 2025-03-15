@@ -7,6 +7,8 @@
 #include "floor_extractor.h"
 #include "background_extractor.h"
 #include "mask_extractor.h"
+#include "body_loader.h"
+#include "pak/pak.h"
 
 void extractAllData() {
     char floordir[100];
@@ -24,8 +26,10 @@ void extractAllData() {
         sprintf(floordir, "data/floor_%02d", fl);
         std::filesystem::create_directories(floordir);
         sprintf(str, "%s/scene", floordir);
-        saveFloorGLTF(curFloor, str);
-
+        sprintf(str2, "%s.json", str);
+        if (!std::filesystem::exists(str2)) {
+            saveFloorGLTF(curFloor, str);
+        }
         for (int cam = 0; cam < curFloor->cameras.size(); cam++) {
             //background
             sprintf(cameradir, "%s/camera_%02d", floordir, cam);
@@ -48,6 +52,13 @@ void extractAllData() {
                 }
             }
         }
+
         delete curFloor;
     }
+
+    char* srcFN = "original/LISTBODY";
+    int size = getPakSize(srcFN, 0);
+    char* testBody = loadPak(srcFN, 0);
+    loadBody(testBody, size);
+    delete testBody;
 }
