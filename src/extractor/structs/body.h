@@ -3,14 +3,14 @@
 #include <vector>
 
 struct PakBodyPrimitive {
-	u8 type;
+	u8 type = 0;
+	u8 subType = 0;
+	u8 colorIndex = 0;
 	vector <u16> vertexIdxs;
-	//poly
-	u8 polyType;
+	u16 size;
 	//triangles
-	u16 uvIndex;
-	u8 texModel;
-	u16 colorIndex;
+	u16 uvIndex = 0;
+	u8 texModel = 0;
 	vector<u16> uv;
 };
 

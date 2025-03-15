@@ -41,44 +41,29 @@ void loadBodyPrimitives(PakBody& body, char* data) {
 	body.primitives.resize(primCount);
 	for (int n = 0; n < primCount; n++) {
 		auto& prim = body.primitives[n];
-		prim.type = data[i + 0];
-		i++;
+		prim.type		= READ_LE_U8(data + i);
+		i += 1;
 		switch (prim.type)
 		{
-		/*
 		//line
 		case 0:
 		{
-			i++;
-			int colorIndex = buffer[i + 0];
-			i += 2;
+			int numPoints = READ_LE_U8(data + i);
+			prim.subType = READ_LE_U8(data + i + 1);
+			prim.colorIndex = READ_LE_U8(data + i + 2);
+			i += 3;
 
-			Color32 color = paletteColors[colorIndex];
-			int pointIndexA = buffer.ReadShort(i + 0) / 6;
-			int pointIndexB = buffer.ReadShort(i + 2) / 6;
-			Vector3 directionVector = vertices[pointIndexA] - vertices[pointIndexB];
-			Vector3 middle = (vertices[pointIndexA] + vertices[pointIndexB]) / 2.0f;
-			Quaternion rotation = Quaternion.LookRotation(directionVector);
-
-			uv.AddRange(CubeMesh.uv);
-			uvDepth.AddRange(CubeMesh.vertices.Select(x = > Vector2.zero));
-			indices[0].AddRange(CubeMesh.triangles.Select(x = > x + allVertices.Count));
-			allVertices.AddRange(CubeMesh.vertices.Select(x = >
-				rotation * Vector3.Scale(x, new Vector3(linesize, linesize, directionVector.magnitude))
-				+ middle));
-			colors.AddRange(CubeMesh.vertices.Select(x = > color));
-			colorsRaw.AddRange(CubeMesh.vertices.Select(x = > color));
-			boneWeights.AddRange(CubeMesh.vertices.Select(x = > new BoneWeight(){ boneIndex0 = bonesPerVertex[x.z > 0 ? pointIndexA : pointIndexB], weight0 = 1 }));
-
+			prim.vertexIdxs.resize(2);
+			prim.vertexIdxs[0] = READ_LE_U16(data + i);
+			prim.vertexIdxs[1] = READ_LE_U16(data + i + 2);
 			i += 4;
 			break;
 		}
-		*/
 		//polygon
 		case 1:
 		{
 			int numPoints = READ_LE_U8(data + i);
-			prim.polyType = READ_LE_U8(data + i + 1);
+			prim.subType = READ_LE_U8(data + i + 1);
 			prim.colorIndex = READ_LE_U8(data + i + 2);
 			i += 3;
 
@@ -90,80 +75,33 @@ void loadBodyPrimitives(PakBody& body, char* data) {
 			}
 			break;
 		}
-		/*
 		//sphere
 		case 3:
 		{
-			int polyType = buffer[i];
+			prim.subType = READ_LE_U8(data + i + 0);
 			i++;
-			int colorIndex = buffer[i];
-			Color32 color = Palette.GetPaletteColor(paletteColors, colorIndex, polyType, DetailsLevel.BoolValue);
-			Color32 colorRaw = Palette.GetRawPaletteColor(paletteColors, colorIndex, polyType);
-			List<int> triangleList = indices[GetTriangleListIndex(polyType)];
-
+			prim.colorIndex = READ_LE_U8(data + i);
+			//???
 			i += 2;
-
-			int size = buffer.ReadShort(i + 0);
+			prim.size = READ_LE_S16(data + i);
 			i += 2;
-			int pointSphereIndex = buffer.ReadShort(i + 0) / 6;
+			prim.vertexIdxs.resize(1);
+			prim.vertexIdxs[0] = READ_LE_U16(data + i);
 			i += 2;
-
-			Vector3 position = vertices[pointSphereIndex];
-			float scale = size / 500.0f;
-			float uvScale = noisesize * size / 200.0f;
-
-			if ((polyType == 3 || polyType == 4 || polyType == 5 || polyType == 6) && DetailsLevel.BoolValue)
-			{
-				gradientPolygonType.Add(polyType);
-				gradientPolygonList.Add(Enumerable.Range(allVertices.Count, SphereMesh.vertices.Length).ToList());
-			}
-
-			uv.AddRange(SphereMesh.uv.Select(x = > x * uvScale));
-			uvDepth.AddRange(SphereMesh.vertices.Select(x = > Vector2.zero));
-			triangleList.AddRange(SphereMesh.triangles.Select(x = > x + allVertices.Count));
-			allVertices.AddRange(SphereMesh.vertices.Select(x = > x * scale + position));
-			colors.AddRange(SphereMesh.vertices.Select(x = > color));
-			colorsRaw.AddRange(SphereMesh.vertices.Select(x = > colorRaw));
-			boneWeights.AddRange(SphereMesh.vertices.Select(x = > new BoneWeight(){ boneIndex0 = bonesPerVertex[pointSphereIndex], weight0 = 1 }));
 			break;
 		}
-		*/
-		/*
 		case 2: //1x1 pixel
 		case 6: //2x2 square
 		case 7: //NxN square, size depends projected z-value
 		{
-			i++;
-			int colorIndex = buffer[i];
+			prim.subType = READ_LE_U8(data + i + 0);
+			prim.colorIndex = READ_LE_U8(data + i + 1);
+			i += 3;
+			prim.vertexIdxs.resize(1);
+			prim.vertexIdxs[0] = READ_LE_U16(data + i);
 			i += 2;
-			int cubeIndex = buffer.ReadShort(i + 0) / 6;
-			i += 2;
-
-			Color32 color = paletteColors[colorIndex];
-			Vector3 position = vertices[cubeIndex];
-
-			float pointsize = linesize;
-			switch (prim.type)
-			{
-			case 6:
-				pointsize = linesize * 2.5f;
-				break;
-			case 7:
-				pointsize = linesize * 5.0f;
-				break;
-			}
-
-			uv.AddRange(CubeMesh.uv);
-			uvDepth.AddRange(CubeMesh.vertices.Select(x = > Vector2.zero));
-			indices[0].AddRange(CubeMesh.triangles.Select(x = > x + allVertices.Count));
-			allVertices.AddRange(CubeMesh.vertices.Select(x = > x * pointsize + position));
-			colors.AddRange(CubeMesh.vertices.Select(x = > color));
-			colorsRaw.AddRange(CubeMesh.vertices.Select(x = > color));
-			boneWeights.AddRange(CubeMesh.vertices.Select(x = > new BoneWeight(){ boneIndex0 = bonesPerVertex[cubeIndex], weight0 = 1 }));
 			break;
 		}
-		*/
-		
 		//triangle
 		case 8:  //texture
 		case 9:  //normals
@@ -227,9 +165,9 @@ void loadBody(char* data, int size) {
 	body.vertices.resize(vertsCount*3);
 	for (int j = 0; j < vertsCount; j++)
 	{
-		body.vertices[j + 0] = READ_LE_S16(data + i + 0);
-		body.vertices[j + 1] = READ_LE_S16(data + i + 2);
-		body.vertices[j + 2] = READ_LE_S16(data + i + 4);
+		body.vertices[j * 3 + 0] = READ_LE_S16(data + i + 0);
+		body.vertices[j * 3 + 1] = READ_LE_S16(data + i + 2);
+		body.vertices[j * 3 + 2] = READ_LE_S16(data + i + 4);
 		i += 6;
 	}
 

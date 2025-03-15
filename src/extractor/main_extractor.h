@@ -57,8 +57,22 @@ void extractAllData() {
     }
 
     char* srcFN = "original/LISTBODY";
-    int size = getPakSize(srcFN, 1);
-    char* testBody = loadPak(srcFN, 1);
-    loadBody(testBody, size);
-    delete testBody;
+    int filesNum = PAK_getNumFiles(srcFN);
+    for ( int i = 0; i < filesNum; i++ ) 
+    {
+        int size = getPakSize(srcFN, i);
+        char* testBody = loadPak(srcFN, i);
+        loadBody(testBody, size);
+        delete testBody;
+    }
+
+    char* srcFN2 = "original/LISTBOD2";
+    int filesNum2 = PAK_getNumFiles(srcFN2);
+    for (int i = 0; i < filesNum2; i++)
+    {
+        int size = getPakSize(srcFN2, i);
+        char* testBody = loadPak(srcFN2, i);
+        loadBody(testBody, size);
+        delete testBody;
+    }
 }
