@@ -134,14 +134,14 @@ void addColliders(tinygltf::Model& m, int roomIdx, roomStruct &room) {
         collN.name = string("coll_") + to_string(roomIdx) + "_" + to_string(collIdx);
         collN.mesh = 0;
         collN.translation = {
-            -(double)coll.zv.ZVX1 / 1000,
+            (double)coll.zv.ZVX1 / 1000,
             -(double)coll.zv.ZVY1 / 1000,
-            (double)coll.zv.ZVZ1 / 1000
+            -(double)coll.zv.ZVZ1 / 1000
         };
         collN.scale = {
-            -(double)coll.zv.ZVX2 / 1000 - collN.translation[0],
-            -(double)coll.zv.ZVY2 / 1000 - collN.translation[1],
-            (double)coll.zv.ZVZ2 / 1000 - collN.translation[2],
+            (double)(coll.zv.ZVX2 - coll.zv.ZVX1) / 1000,
+            -(double)(coll.zv.ZVY2 - coll.zv.ZVY1) / 1000,
+            -(double)(coll.zv.ZVZ2 - coll.zv.ZVZ1) / 1000,
         };
 
         /*tinygltf::Value::Object extras;
@@ -167,14 +167,14 @@ void addZones(tinygltf::Model& m, int roomIdx, roomStruct& room) {
         zoneN.name = string("zone_") + to_string(roomIdx) + "_" + to_string(zoneIdx);
         zoneN.mesh = 0;
         zoneN.translation = {
-            -(double)zone.zv.ZVX1 / 1000,
+            (double)zone.zv.ZVX1 / 1000,
             -(double)zone.zv.ZVY1 / 1000,
-            (double)zone.zv.ZVZ1 / 1000
+            -(double)zone.zv.ZVZ1 / 1000
         };
         zoneN.scale = {
-            -(double)zone.zv.ZVX2 / 1000 - zoneN.translation[0],
-            -(double)zone.zv.ZVY2 / 1000 - zoneN.translation[1],
-            (double)zone.zv.ZVZ2 / 1000 - zoneN.translation[2],
+            (double)(zone.zv.ZVX2 - zone.zv.ZVX1) / 1000,
+            -(double)(zone.zv.ZVY2 - zone.zv.ZVY1) / 1000,
+            -(double)(zone.zv.ZVZ2 - zone.zv.ZVZ1) / 1000,
         };
 
         /*zoneN.extras["collType"] = zone.parameter;
@@ -187,17 +187,26 @@ void addZones(tinygltf::Model& m, int roomIdx, roomStruct& room) {
 }
 
 void addCamera(tinygltf::Model& m, int camIdx, cameraStruct& cam) {
+    auto tx = (float)cam.alpha * 360 / 1024;
+    auto ty = (float)cam.beta * 360 / 1024;
+    auto tz = (float)cam.gamma * 360 / 1024;
+    /* 20 335.4 0 */
+    //Matrix my = MatrixInvert(MatrixRotateY(((float)cam.beta * 2 * PI / 1024)));
     Matrix my = MatrixRotateY((float)cam.beta * 2 * PI / 1024);
-    Matrix mx = MatrixRotateX(-(float)cam.alpha * 2 * PI / 1024);
+    Matrix mx = MatrixRotateX((float)cam.alpha * 2 * PI / 1024);
     Matrix mz = MatrixRotateZ((float)cam.gamma * 2 * PI / 1024);
     auto myxz = MatrixTranspose(MatrixMultiply(MatrixMultiply(my, mx), mz));
     auto q = QuaternionFromMatrix(myxz);
 
-    float aspect = ((float)cam.focalY / 200) / ((float)cam.focalX / 320);
-    float fovY = 2.0 * atan(1.0 / (cam.focalY * 2)) * 180.0 / PI;
+    //MatrixLookAt
+
+    float legcFocalX = (float)cam.focalX / 320;
+    float legcFocalY = (float)cam.focalY / 200;
+    float aspect = legcFocalY / legcFocalX;
+    float fovY = 2.0 * atan(1.0 / (legcFocalY * 2)); //in radians
     float nearDist = cam.nearDistance / 1000;
-    Vector3 cameraForw = { myxz.m8,myxz.m9,myxz.m10 };
-    Vector3 camPosition = { -(float)cam.x / 100, (float)cam.y / 100, -(float)cam.z / 100 };
+    Vector3 cameraForw = { myxz.m8, myxz.m9, myxz.m10 };
+    Vector3 camPosition = { (float)cam.x / 100, (float)cam.y / 100, (float)cam.z / 100 };
     camPosition = Vector3Add(camPosition, Vector3Scale(cameraForw, -nearDist));
 
     tinygltf::Camera camera;
@@ -242,9 +251,9 @@ void saveFloorGLTF(floorStruct* floor, char* filename)
         auto& roomN = roomNodes[roomIdx];
         roomN.name = string("room_") + to_string(roomIdx);
         roomN.translation = {
-            -(float)room.worldX / 100,
+            (float)room.worldX / 100,
             -(float)room.worldY / 100,
-            -(float)room.worldZ / 100
+            (float)room.worldZ / 100
         };
 
         addColliders(m, roomIdx, room);
@@ -279,17 +288,17 @@ void saveFloorGLTF(floorStruct* floor, char* filename)
                     ovlZN.translation = {
                         (float)ovlZ.zoneX1 / 100,
                         0,
-                        (float)ovlZ.zoneZ1 / 100
+                        -(float)ovlZ.zoneZ1 / 100
                     };
                     ovlZN.scale = {
                         (float)(ovlZ.zoneX2 - ovlZ.zoneX1) / 100,
-                        0.1,
-                        (float)(ovlZ.zoneZ2 - ovlZ.zoneZ1) / 100,
+                        -0.1,
+                        -(float)(ovlZ.zoneZ2 - ovlZ.zoneZ1) / 100,
                     };
                     m.nodes.push_back(ovlZN);
                     int ovlZNIdx = m.nodes.size() - 1;
                     camRoomN.children.push_back(ovlZNIdx);
-                }                
+                }
             }
 
             for (int zoneIdx = 0; zoneIdx < vw.coverZones.size(); zoneIdx++) {
@@ -297,9 +306,9 @@ void saveFloorGLTF(floorStruct* floor, char* filename)
                 vector<float> flzone(camZone.pointTable.size() * 3);
                 for (int pIdx = 0; pIdx < camZone.pointTable.size(); pIdx++) {
                     auto& p = camZone.pointTable[pIdx];
-                    flzone[pIdx * 3 + 0] = -(float)p.x / 100;// +camN.translation[0];
+                    flzone[pIdx * 3 + 0] = (float)p.x / 100;// +camN.translation[0];
                     flzone[pIdx * 3 + 1] = 0;
-                    flzone[pIdx * 3 + 2] = (float)p.y / 100;// +camN.translation[2];
+                    flzone[pIdx * 3 + 2] = -(float)p.y / 100;// +camN.translation[2];
                 }
                 auto lineMeshIdx = addLine(m, flzone);
 
