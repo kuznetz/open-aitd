@@ -1,32 +1,41 @@
-cmake_minimum_required(VERSION 3.0)
-project(my_raylib_game C)
-set(CMAKE_C_STANDARD 99)
+cmake_minimum_required(VERSION 3.5)
+project(open-AITD CXX)
+
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+message ( STATUS "DIR ${CMAKE_SOURCE_DIR}" )
+
+# Adding zlib
+#set(ZLIB_ROOT ${CMAKE_SOURCE_DIR}/libs/zlib )
+set(ZLIB_LIBRARY zlib)
+set(ZLIB_BUILD_TESTING OFF)
+set(ZLIB_BUILD_SHARED OFF)
+set(ZLIB_BUILD_STATIC ON)
+set(ZLIB_BUILD_MINIZIP OFF)
+set(ZLIB_INSTALL ON)
+add_subdirectory( ${CMAKE_SOURCE_DIR}/libs/zlib ${CMAKE_CURRENT_BINARY_DIR}/libs/zlib )
+set(ZLIB_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libs/zlib )
+
+# Adding libpng
+set(PNG_SHARED OFF)
+set(PNG_TESTS OFF)
+set(PNG_TOOLS OFF)
+add_subdirectory( ${CMAKE_SOURCE_DIR}/libs/libpng ${CMAKE_CURRENT_BINARY_DIR}/libs/libpng )
+set(PNG_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libs/libpng )
 
 # Adding Raylib
-include(FetchContent)
-set(FETCHCONTENT_QUIET FALSE)
 set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE) # don't build the supplied examples
 set(BUILD_GAMES    OFF CACHE BOOL "" FORCE) # don't build the supplied example games
-
-FetchContent_Declare(
-    raylib
-    GIT_REPOSITORY "https://github.com/raysan5/raylib.git"
-    GIT_TAG "master"
-    GIT_PROGRESS TRUE
-)
-
-FetchContent_MakeAvailable(raylib)
+add_subdirectory( ${CMAKE_SOURCE_DIR}/libs/raylib ${CMAKE_CURRENT_BINARY_DIR}/libs/raylib )
 
 # Adding our source files
-file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_LIST_DIR}/sources/*.c") # Define PROJECT_SOURCES as a list of all source files
-set(PROJECT_INCLUDE "${CMAKE_CURRENT_LIST_DIR}/sources/") # Define PROJECT_INCLUDE to be the path to the include directory of the project
+file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS "src/*.cpp" "src/*.h" "src/*.hpp")
+set(PROJECT_INCLUDE "${CMAKE_CURRENT_LIST_DIR}/src/")
 
-# Declaring our executable
 add_executable(${PROJECT_NAME})
 target_sources(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCES})
-target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_INCLUDE})
-target_link_libraries(${PROJECT_NAME} PRIVATE raylib)
+target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_INCLUDE} ${ZLIB_INCLUDE_DIR} ${PNG_INCLUDE_DIR} )
+target_link_libraries(${PROJECT_NAME} PRIVATE png_static raylib )
 
-# Setting ASSETS_PATH
-target_compile_definitions(${PROJECT_NAME} PUBLIC ASSETS_PATH="${CMAKE_CURRENT_SOURCE_DIR}/assets/") # Set the asset path macro to the absolute path on the dev machine
-#target_compile_definitions(${PROJECT_NAME} PUBLIC ASSETS_PATH="./assets") # Set the asset path macro in release mode to a relative path that assumes the assets folder is in the same directory as the game executable
+target_compile_definitions(${PROJECT_NAME} PUBLIC ASSETS_PATH="${CMAKE_CURRENT_SOURCE_DIR}/assets/") 
