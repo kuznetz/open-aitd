@@ -8,6 +8,7 @@
 #include "background_extractor.h"
 #include "mask_extractor.h"
 #include "model_loader.h"
+#include "model_extractor.h"
 #include "pak/pak.h"
 
 void extractAllData() {
@@ -62,11 +63,14 @@ void extractAllData() {
     {
         int size = getPakSize(srcFN, i);
         char* testBody = loadPak(srcFN, i);
-        loadModel(testBody, size);
-        delete testBody;
+        auto& model = loadModel(testBody, size);
+        sprintf(str, "data/models/LISTBODY_%d", i);
+        std::filesystem::create_directories(str);
+        saveModelGLTF(&model, str);
+        delete [] testBody;
     }
 
-    char* srcFN2 = "original/LISTBOD2";
+    /*char* srcFN2 = "original/LISTBOD2";
     int filesNum2 = PAK_getNumFiles(srcFN2);
     for (int i = 0; i < filesNum2; i++)
     {
@@ -74,5 +78,5 @@ void extractAllData() {
         char* testBody = loadPak(srcFN2, i);
         loadModel(testBody, size);
         delete testBody;
-    }
+    }*/
 }
