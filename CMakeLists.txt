@@ -50,6 +50,7 @@ add_executable(${PROJECT_NAME})
 #target_compile_definitions(${PROJECT_NAME} PRIVATE XXX)
 target_sources(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCES} )
 target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_INCLUDE} ${ZLIB_INCLUDE_DIR} ${PNG_INCLUDE_DIR} ${GLFW_INCLUDE})
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/libs/includes)
 target_link_libraries(${PROJECT_NAME} PRIVATE png_static raylib ZLIB::ZLIB )
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC ASSETS_PATH="${CMAKE_CURRENT_SOURCE_DIR}/assets/") 

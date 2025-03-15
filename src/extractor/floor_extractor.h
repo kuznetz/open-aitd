@@ -1,9 +1,8 @@
 ﻿#pragma once
-#include "../../libs/json.hpp"
-#define TINYGLTF_NO_STB_IMAGE
-#define TINYGLTF_NO_STB_IMAGE_WRITE
-#define TINYGLTF_IMPLEMENTATION
-#include "../../libs/tiny_gltf.h"
+
+//#include <json_fwd.hpp>
+#include "my_gltf.h"
+#include <fstream>
 #include <vector>
 #include <raymath.h>
 
@@ -209,10 +208,8 @@ void addCamera(tinygltf::Model& m, int camIdx, cameraStruct& cam) {
 
 void saveFloorGLTF(floorStruct* floor, char* filename)
 {
-    json floorJson;
+    nlohmann::json floorJson;
     tinygltf::Model m;
-
-    tinygltf::Asset asset;
     m.asset.version = "2.0";
     m.asset.generator = "open-AITD";
     
@@ -220,14 +217,13 @@ void saveFloorGLTF(floorStruct* floor, char* filename)
     
     vector<tinygltf::Node> roomNodes(floor->rooms.size());
 
-
-    floorJson["rooms"] = json::array();
+    floorJson["rooms"] = nlohmann::json::array();
     for (int roomIdx = 0; roomIdx < floor->rooms.size(); roomIdx++) {
         auto& room = floor->rooms[roomIdx];
         
-        json roomJson;
-        roomJson["colliders"] = json::array();
-        roomJson["zones"] = json::array();
+        nlohmann::json roomJson;
+        roomJson["colliders"] = nlohmann::json::array();
+        roomJson["zones"] = nlohmann::json::array();
 
         auto& roomN = roomNodes[roomIdx];
         roomN.name = string("room_") + to_string(roomIdx);
@@ -278,12 +274,12 @@ void saveFloorGLTF(floorStruct* floor, char* filename)
         floorJson["rooms"].push_back(roomJson);
     }
 
-    floorJson["cameras"] = json::array();
+    floorJson["cameras"] = nlohmann::json::array();
     for (int camIdx = 0; camIdx < floor->cameras.size(); camIdx++) {
         auto& cam = floor->cameras[camIdx];
         
         json cameraJson;
-        cameraJson["roomViews"] = json::array();
+        cameraJson["roomViews"] = nlohmann::json::array();
 
         addCamera(m, camIdx, cam);
 

@@ -148,7 +148,7 @@ void loadModelPrimitives(PakModel& body, char* data) {
 	}
 }
 
-void loadModel(char* data, int size) {
+PakModel loadModel(char* data, int size) {
 	//header
 	PakModel body;
 	body.modelFlags = READ_LE_U16(data);	
@@ -177,4 +177,5 @@ void loadModel(char* data, int size) {
 		i += loadModelBones(body, data + i);
 	}
 	loadModelPrimitives(body, data + i);
+	return body;
 }

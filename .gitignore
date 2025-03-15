@@ -12,3 +12,4 @@ libs/poly2tri/
 libs/json.hpp
 libs/tinygltf-2.9.5/
 libs/tiny_gltf.h
+libs/includes/
