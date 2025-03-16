@@ -16,6 +16,7 @@ inline void loadPalette() {
         printf("Failed to load palette\n");
         return;
     }
+    paletteLoaded = true;
 }
 
 inline u8* getPalColor(u8 idx) {
