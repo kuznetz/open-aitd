@@ -2,6 +2,20 @@
 #include "int_types.h"
 #include <vector>
 
+enum ModelPrimitiveType {
+	Line = 0,
+	Polygon = 1,
+	Pixel = 2,
+	Sphere = 3,
+	Ign1 = 4,
+	Ign2 = 5,
+	Square2x2 = 6,
+	SquareNxN = 7,
+	TriTex = 8,
+	TriNorm = 9,
+	TriNormTex = 10,
+};
+
 struct PakModelPrimitive {
 	u8 type = 0;
 	u8 subType = 0;

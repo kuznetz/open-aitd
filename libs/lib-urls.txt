@@ -1,4 +1,8 @@
-json.hpp - 3.11.3 - https://github.com/nlohmann/json
 zlib-ng-2.2.4 - https://github.com/zlib-ng/zlib-ng/releases/tag/2.2.4
 raylib - https://github.com/raysan5/raylib/releases/tag/5.5 (https://www.raylib.com/)
 libpng - libpng-1.6.48 - https://github.com/pnggroup/libpng
+
+In includes dir
+tiny_gltf.h - https://github.com/syoyo/tinygltf
+json.hpp, json_fwd.hpp - 3.11.3 - https://github.com/nlohmann/json
+TriangulatePolygon.h - https://github.com/StefanJohnsen/Triangulate3DPolygon

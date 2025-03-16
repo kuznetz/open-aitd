@@ -39,8 +39,8 @@ void loadModelPrimitives(PakModel& body, char* data) {
 	int primCount = READ_LE_U16(data + 0);
 	i += 2;
 	body.primitives.resize(primCount);
-	for (int n = 0; n < primCount; n++) {
-		auto& prim = body.primitives[n];
+	for (int primIdx = 0; primIdx < primCount; primIdx++) {
+		auto& prim = body.primitives[primIdx];
 		prim.type		= READ_LE_U8(data + i);
 		i += 1;
 		switch (prim.type)

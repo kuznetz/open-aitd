@@ -4,4 +4,15 @@
 #define TINYGLTF_NO_STB_IMAGE
 #define TINYGLTF_NO_STB_IMAGE_WRITE
 #include <tiny_gltf.h>
+#include <vector>
+#include <raymath.h>
 
+using namespace std;
+
+extern const uint8_t cubeIndices[];
+extern const float cubeVertices[];
+extern const int cubeVertSize;
+
+int createCubeMesh(tinygltf::Model& m);
+int createLineMesh(tinygltf::Model& m, const vector<float>& line);
+int createPolyMesh(tinygltf::Model& m, const vector<Vector3>& vertexes, const vector<unsigned int>& indices);

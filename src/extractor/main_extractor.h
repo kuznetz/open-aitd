@@ -59,14 +59,15 @@ void extractAllData() {
 
     char* srcFN = "original/LISTBODY";
     int filesNum = PAK_getNumFiles(srcFN);
-    for ( int i = 0; i < filesNum; i++ ) 
+    int i = 0;
+    //for ( int i = 0; i < filesNum; i++ ) 
     {
         int size = getPakSize(srcFN, i);
         char* testBody = loadPak(srcFN, i);
         auto& model = loadModel(testBody, size);
         sprintf(str, "data/models/LISTBODY_%d", i);
         std::filesystem::create_directories(str);
-        saveModelGLTF(&model, str);
+        saveModelGLTF(model, string(str));
         delete [] testBody;
     }
 
