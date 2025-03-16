@@ -13,40 +13,47 @@ void saveModelGLTF(const PakModel& model, const string dirname)
     m.asset.version = "2.0";
     m.asset.generator = "open-AITD";  
 
-    for (int pIdx = 0; pIdx < model.primitives.size(); pIdx++) {
+    vector<Vector3> modelVerts;
+    modelVerts.resize(model.vertices.size() / 3);
+    for (int i = 0; i < modelVerts.size(); i++) {
+        modelVerts[i] = {
+            (float)model.vertices[i * 3 + 0] / 1000,
+            -(float)model.vertices[i * 3 + 1] / 1000,
+            (float)model.vertices[i * 3 + 2] / 1000
+        };
+    }
 
-        vector<Vector3> modelVerts;
-        vector<unsigned int> modelIdxs;
+    vector<unsigned int> modelIdxs;
+    for (int pIdx = 0; pIdx < model.primitives.size(); pIdx++) {
 
         auto& prim = model.primitives[pIdx];
         if (prim.type == 1) {
 
+            std::vector<int> idxMap(prim.vertexIdxs.size());
             std::vector<triangulate::Point> polygon;
             for (int i = 0; i < prim.vertexIdxs.size(); i++) {
                 int vIdx = prim.vertexIdxs[i] / 6;
+                idxMap[i] = vIdx;
                 auto qwe = (float)model.vertices[vIdx * 3 + 0];
-                Vector3 vec = {
-                    (float)model.vertices[vIdx * 3 + 0] / 1000,
-                    -(float)model.vertices[vIdx * 3 + 1] / 1000,
-                    (float)model.vertices[vIdx * 3 + 2] / 1000
-                };
-                modelVerts.push_back({ vec.x, vec.y, vec.z });
+                Vector3& vec = modelVerts[vIdx];
                 polygon.emplace_back(vec.x, vec.y, vec.z);
             }
             const auto triangles = triangulate::triangulate(polygon);
             for (int i = 0; i < triangles.size(); i++) {
-                modelIdxs.emplace_back(triangles[i].p0);
-                modelIdxs.emplace_back(triangles[i].p1);
-                modelIdxs.emplace_back(triangles[i].p2);                
+                modelIdxs.emplace_back(idxMap[triangles[i].p0]);
+                modelIdxs.emplace_back(idxMap[triangles[i].p1]);
+                modelIdxs.emplace_back(idxMap[triangles[i].p2]);
             }
-            auto meshIdx = createPolyMesh( m, modelVerts, modelIdxs );
 
-            tinygltf::Node zoneN;
-            zoneN.name = string("prim_") + to_string(pIdx);
-            zoneN.mesh = meshIdx;
-            m.nodes.push_back(zoneN);
         }
+
     }
+
+    auto meshIdx = createPolyMesh(m, modelVerts, modelIdxs);
+    tinygltf::Node zoneN;
+    zoneN.name = string("model");
+    zoneN.mesh = meshIdx;
+    m.nodes.push_back(zoneN);
 
     tinygltf::TinyGLTF gltf;
     gltf.WriteGltfSceneToFile(&m, dirname + "/model.gltf",
