@@ -123,6 +123,64 @@ int createLineMesh(tinygltf::Model& m, const vector<float>& line) {
     return m.meshes.size() - 1;
 }
 
+int createVertexes(tinygltf::Model& m, const vector<Vector3>& vertexes) {
+    int vertBytes = vertexes.size() * sizeof(Vector3);
+    tinygltf::Buffer buffer;
+    buffer.data.resize(vertBytes);
+    memcpy(buffer.data.data(), vertexes.data(), vertBytes);
+    m.buffers.push_back(buffer);
+    int bufIdx = m.buffers.size() - 1;
+
+    tinygltf::BufferView vertVw;
+    vertVw.buffer = bufIdx;
+    vertVw.byteOffset = 0;
+    vertVw.byteLength = vertBytes;
+    vertVw.target = TINYGLTF_TARGET_ARRAY_BUFFER;
+    m.bufferViews.push_back(vertVw);
+
+    tinygltf::Accessor vertAcc;
+    vertAcc.bufferView = m.bufferViews.size() - 1;
+    vertAcc.byteOffset = 0;
+    vertAcc.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
+    vertAcc.count = vertexes.size();
+    vertAcc.type = TINYGLTF_TYPE_VEC3;
+    m.accessors.push_back(vertAcc);
+    auto vertAccIdx = m.accessors.size() - 1;
+    return vertAccIdx;
+}
+
+tinygltf::Primitive createPolyPrimitive(tinygltf::Model& m, const vector<unsigned int>& indices, int vertAccIdx, int material) {
+    int indxBytes = indices.size() * sizeof(unsigned int);
+    tinygltf::Buffer buffer;
+    buffer.data.resize(indxBytes);
+    memcpy(buffer.data.data(), indices.data(), indxBytes);
+    m.buffers.push_back(buffer);
+    int bufIdx = m.buffers.size() - 1;
+
+    tinygltf::BufferView idxVw;
+    idxVw.buffer = bufIdx;
+    idxVw.byteOffset = 0;
+    idxVw.byteLength = indxBytes;
+    idxVw.target = TINYGLTF_TARGET_ELEMENT_ARRAY_BUFFER;
+    m.bufferViews.push_back(idxVw);
+
+    tinygltf::Accessor idxAcc;
+    idxAcc.bufferView = m.bufferViews.size() - 1;
+    idxAcc.byteOffset = 0;
+    idxAcc.componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT;
+    idxAcc.count = indices.size();
+    idxAcc.type = TINYGLTF_TYPE_SCALAR;
+    m.accessors.push_back(idxAcc);
+    auto idxAccIdx = m.accessors.size() - 1;
+
+    tinygltf::Primitive primitive;
+    primitive.material = material;
+    primitive.indices = idxAccIdx;                 // The index of the accessor for the vertex indices
+    primitive.attributes["POSITION"] = vertAccIdx; // The index of the accessor for positions
+    primitive.mode = TINYGLTF_MODE_TRIANGLES;
+    return primitive;
+}
+
 int createPolyMesh(tinygltf::Model& m, const vector<Vector3>& vertexes, const vector<unsigned int>& indices) {
     int vertBytes = vertexes.size() * sizeof(Vector3);
     int indxBytes = indices.size() * sizeof(unsigned int);

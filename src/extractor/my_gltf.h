@@ -16,3 +16,5 @@ extern const int cubeVertSize;
 int createCubeMesh(tinygltf::Model& m);
 int createLineMesh(tinygltf::Model& m, const vector<float>& line);
 int createPolyMesh(tinygltf::Model& m, const vector<Vector3>& vertexes, const vector<unsigned int>& indices);
+int createVertexes(tinygltf::Model& m, const vector<Vector3>& vertexes);
+tinygltf::Primitive createPolyPrimitive(tinygltf::Model& m, const vector<unsigned int>& indices, int vertAccIdx, int material);
