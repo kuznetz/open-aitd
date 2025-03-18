@@ -6,7 +6,7 @@
 #include "structs/int_types.h"
 #include "pak/pak.h"
 
-inline u8* paletteLoaded = false;
+inline bool paletteLoaded = false;
 inline u8 palette[256 * 30];
 
 inline void loadPalette() {

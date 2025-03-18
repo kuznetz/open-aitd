@@ -9,6 +9,8 @@
 #include "mask_extractor.h"
 #include "model_loader.h"
 #include "model_extractor.h"
+#include "objects_extractor.h"
+#include "vars_extractor.h"
 #include "pak/pak.h"
 
 void extractAllData() {
@@ -80,4 +82,7 @@ void extractAllData() {
         loadModel(testBody, size);
         delete testBody;
     }*/
+
+    //extractObjects("original/OBJETS.ITD", "data/objects.json");
+    extractVars("original", "data/vars.json");
 }
