@@ -3,7 +3,10 @@
 #include <stdexcept>
 #include <fstream>
 #include <iostream>
+#include <string>
 #include <list>
+
+using namespace std;
 
 u8* debugStartPtr;
 int debugSize;
@@ -27,10 +30,11 @@ void addDebugBlock(const char* name, int idx, u8* start, u8* end) {
     debugBlocks.push_back(dbNew);
 }
 
-void loadRooms(floorStruct* result, char* filename) {
+void loadRooms(floorStruct& result, PakFile& pak) {
     int i;
-    int roomsRawDataSize = getPakSize(filename, 0);
-    char* roomsRawData = loadPak(filename, 0);
+    int roomsRawDataSize = pak.headers[0].uncompressedSize;
+    auto& roomsRaw = pak.readBlock(0);
+    u8* roomsRawData = roomsRaw.data();
 
     int numMax = (((READ_LE_U32(roomsRawData)) / 4));
 
@@ -44,13 +48,13 @@ void loadRooms(floorStruct* result, char* filename) {
         else break;
     }
 
-    result->rooms.resize(roomCount);
-    for (i = 0; i < result->rooms.size(); i++)
+    result.rooms.resize(roomCount);
+    for (i = 0; i < result.rooms.size(); i++)
     {
         u32 j;
 
-        roomStruct* curRoom = &result->rooms[i];
-        char* curRoomRawData = roomsRawData + READ_LE_U32(roomsRawData + i * 4);
+        roomStruct* curRoom = &result.rooms[i];
+        u8* curRoomRawData = roomsRawData + READ_LE_U32(roomsRawData + i * 4);
 
         //Copy room header to result struct
         curRoom->worldX = READ_LE_S16(curRoomRawData + 4);
@@ -65,7 +69,7 @@ void loadRooms(floorStruct* result, char* filename) {
         }
 
         // hard col read
-        char* hardColRawData = curRoomRawData + READ_LE_U16(curRoomRawData);
+        u8* hardColRawData = curRoomRawData + READ_LE_U16(curRoomRawData);
         int numHardCol = READ_LE_U16(hardColRawData);
         hardColRawData += 2;
         curRoom->hardColTable.resize(numHardCol);
@@ -87,7 +91,7 @@ void loadRooms(floorStruct* result, char* filename) {
 
 
         // sce zone read
-        char* sceZoneRawData = curRoomRawData + READ_LE_U16(curRoomRawData + 2);
+        u8* sceZoneRawData = curRoomRawData + READ_LE_U16(curRoomRawData + 2);
         int numSceZone = READ_LE_U16(sceZoneRawData);
         sceZoneRawData += 2;
         curRoom->sceZoneTable.resize(numSceZone);
@@ -208,10 +212,11 @@ void loadCameraRoom(cameraViewedRoomStruct* curCameraRoom, u8* cameraRoomRawData
     }
 }
 
-void loadCameras(floorStruct* result, char* filename) {
+void loadCameras(floorStruct& result, PakFile& pak) {
     int i;
-    int camerasRawDataSize = getPakSize(filename, 1);
-    u8* camerasRawData = (u8*)loadPak(filename, 1);
+    int camerasRawDataSize = pak.headers[1].uncompressedSize;
+    auto& roomsRaw = pak.readBlock(1);
+    u8* camerasRawData = roomsRaw.data();
 
     debugBlocks.clear();
     debugStartPtr = camerasRawData;
@@ -234,12 +239,12 @@ void loadCameras(floorStruct* result, char* filename) {
         }
     }
 
-    result->cameras.resize(cameraCount);
-    for (i = 0; i < result->cameras.size(); i++)
+    result.cameras.resize(cameraCount);
+    for (i = 0; i < result.cameras.size(); i++)
     {
         int k;
         unsigned int offset = READ_LE_U32(camerasRawData + (i * 4));
-        cameraStruct* curCamera = &result->cameras[i];
+        cameraStruct* curCamera = &result.cameras[i];
 
         u8* cameraRawData = (u8*)(camerasRawData + offset);
         //curCamera->offset = cameraRawData - camerasRawData;
@@ -271,11 +276,12 @@ void loadCameras(floorStruct* result, char* filename) {
     }
 }
 
-floorStruct* loadFloorPak(char* filename) {
-    floorStruct* result = new floorStruct;
-    loadRooms(result, filename);
-    loadCameras(result, filename);
-    std::cout << "Load Floor END...\n";
+floorStruct loadFloorPak(string filename) {
+    PakFile pak(filename);
+    floorStruct result;
+    loadRooms(result, pak);
+    loadCameras(result, pak);
+    //std::cout << "Load Floor END...\n";
     return result;
 }
 

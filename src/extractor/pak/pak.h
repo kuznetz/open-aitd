@@ -22,13 +22,8 @@ public:
     FILE* fileHandle = 0;
     vector<pakInfoStruct> headers;
 
+    PakFile(string fname);
     ~PakFile();
     void open(string fname);
     vector<u8> readBlock(int index);
 };
-
-char* loadPak(const char* name, int index);
-int LoadPak(const char* name, int index, char* ptr);
-int getPakSize(const char* name, int index);
-unsigned int PAK_getNumFiles(const char* name);
-void dumpPak(const char* name);

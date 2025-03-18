@@ -21,6 +21,7 @@ namespace PerspectiveTest {
     int curRoomId = 0;
     int curCameraId = 0;
     int curCollider = 0;
+    floorStruct curFloor2;
     floorStruct* curFloor = 0;
     roomStruct* curRoom = 0;
     cameraStruct* curCamera = 0;
@@ -395,12 +396,10 @@ namespace PerspectiveTest {
 
     void changeCamera(int floor, int camera) {
         if (!curFloor || curFloorId != floor) {
-            if (curFloor) {
-                delete curFloor;
-            }
             char fname[50];
             sprintf(fname, "original/ETAGE0%d", floor);
-            curFloor = loadFloorPak(fname);
+            curFloor2 = loadFloorPak(fname);
+            curFloor = &curFloor2;
             //saveFloorTxt(fname, fs);
         }
         if (!backgroundTex.id || curFloorId != floor || curCameraId != camera) {

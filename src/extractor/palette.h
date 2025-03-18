@@ -7,19 +7,16 @@
 #include "pak/pak.h"
 
 inline bool paletteLoaded = false;
-inline u8 palette[256 * 30];
+inline vector<u8> palette; //[256 * 30];
 
 inline void loadPalette() {
     if (paletteLoaded) return;
-    if (!LoadPak("original/ITD_RESS", 3, (char*)palette))
-    {
-        printf("Failed to load palette\n");
-        return;
-    }
+    PakFile pak("original/ITD_RESS.PAK");
+    palette = pak.readBlock(3);
     paletteLoaded = true;
 }
 
 inline u8* getPalColor(u8 idx) {
     loadPalette();
-    return &palette[idx*3];
+    return &palette.data()[idx*3];
 }

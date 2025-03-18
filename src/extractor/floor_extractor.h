@@ -93,8 +93,9 @@ void addCamera(tinygltf::Model& m, int camIdx, cameraStruct& cam) {
     m.nodes.push_back(camN);
 }
 
-void saveFloorGLTF(floorStruct* floor, char* filename)
+void saveFloorGLTF(floorStruct& floor2, char* filename)
 {
+    floorStruct* floor = &floor2;
     nlohmann::json floorJson;
     tinygltf::Model m;
     m.asset.version = "2.0";

@@ -10,8 +10,9 @@
 
 void extractBackground(char* filename, int camera, char* outPng) {
     //unsigned char* img = new unsigned char[320 * 200];
-    auto sz = getPakSize(filename, camera);
-    auto img = loadPak(filename, camera);
+    PakFile pak(filename);
+    auto& raw = pak.readBlock(camera);
+    u8* img = raw.data();
     if (!img)
     {
         printf("Failed to load background\n");
