@@ -15,6 +15,7 @@ PakModel loadModel(char* data, int size);
 void saveModelGLTF(const PakModel& model, const string dirname);
 void extractObjects(string from, string josnTo);
 void extractVars(string dir, string josnTo);
+void extractLife(string fname, string outDir);
 
 inline void extractAllData() {
     char floordir[100];
@@ -89,4 +90,6 @@ inline void extractAllData() {
 
     //extractObjects("original/OBJETS.ITD", "data/objects.json");
     //extractVars("original", "data/vars.json");
+
+    extractLife("original/LISTLIFE.PAK", "data/scripts.lua");
 }
