@@ -59,19 +59,18 @@ void extractAllData() {
         delete curFloor;
     }
 
-    char* srcFN = "original/LISTBODY";
-    int filesNum = PAK_getNumFiles(srcFN);
-    int i = 0;
-    //for ( int i = 0; i < filesNum; i++ ) 
-    {
-        int size = getPakSize(srcFN, i);
-        char* testBody = loadPak(srcFN, i);
-        auto& model = loadModel(testBody, size);
-        sprintf(str, "data/models/LISTBODY_%d", i);
-        std::filesystem::create_directories(str);
-        saveModelGLTF(model, string(str));
-        delete [] testBody;
-    }
+    //PakFile pak;
+    //pak.open("original/LISTBODY.PAK");
+    ////int i = 0;
+    //for ( int i = 0; i < pak.headers.size(); i++ )
+    //{
+    //    auto h = pak.headers[i];
+    //    auto& testBody = pak.readBlock(i);
+    //    auto& model = loadModel((char*)testBody.data(), h.uncompressedSize);
+    //    sprintf(str, "data/models/LISTBODY_%d", i);
+    //    std::filesystem::create_directories(str);
+    //    saveModelGLTF(model, string(str));
+    //}
 
     /*char* srcFN2 = "original/LISTBOD2";
     int filesNum2 = PAK_getNumFiles(srcFN2);
@@ -84,5 +83,5 @@ void extractAllData() {
     }*/
 
     //extractObjects("original/OBJETS.ITD", "data/objects.json");
-    extractVars("original", "data/vars.json");
+    //extractVars("original", "data/vars.json");
 }
