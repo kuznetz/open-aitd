@@ -33,14 +33,18 @@ void extractAllData() {
         if (!std::filesystem::exists(str2)) {
             saveFloorGLTF(curFloor, str);
         }
+
+
+        sprintf(str, "original/CAMERA%02d.PAK", fl);
+        PakFile camPak(str);
         for (int cam = 0; cam < curFloor.cameras.size(); cam++) {
             //background
             sprintf(cameradir, "%s/camera_%02d", floordir, cam);
             std::filesystem::create_directories(cameradir);
-            sprintf(str, "original/CAMERA%02d.PAK", fl);
             sprintf(str2, "%s/background.png", cameradir);
             if (!std::filesystem::exists(str2)) {
-                extractBackground(str, cam, str2);
+                auto& data = camPak.readBlock(cam);
+                extractBackground(data.data(), str2);
             }
 
             //overlays
@@ -70,7 +74,7 @@ void extractAllData() {
     //    saveModelGLTF(model, string(str));
     //}
 
-    /*char* srcFN2 = "original/LISTBOD2";
+    /*char* srcFN2 = "original/LISTBOD2.PAK";
     int filesNum2 = PAK_getNumFiles(srcFN2);
     for (int i = 0; i < filesNum2; i++)
     {

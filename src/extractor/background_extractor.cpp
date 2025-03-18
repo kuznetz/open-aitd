@@ -8,17 +8,8 @@
 #include "palette.h"
 #include "pak/pak.h"
 
-void extractBackground(char* filename, int camera, char* outPng) {
+void extractBackground(u8* img, char* outPng) {
     //unsigned char* img = new unsigned char[320 * 200];
-    PakFile pak(filename);
-    auto& raw = pak.readBlock(camera);
-    u8* img = raw.data();
-    if (!img)
-    {
-        printf("Failed to load background\n");
-        return;
-    }
-
     unsigned char* data = new unsigned char[320 * 200 * 3];
     for (int i = 0; i < (320 * 200); i++) {
         u8 idx = ((u8*)img)[i];

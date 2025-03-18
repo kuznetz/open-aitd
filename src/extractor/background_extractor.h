@@ -1,6 +1,7 @@
-#ifndef EXTRACTOR_HPP
+﻿#ifndef EXTRACTOR_HPP
 #define EXTRACTOR_HPP
+#include "structs/int_types.h"
 
-void extractBackground(char* filename, int camera, char* outPng);
+void extractBackground(u8* img, char* outPng);
 
 #endif
