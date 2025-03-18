@@ -2,7 +2,9 @@
 #include "int_types.h"
 #include <vector>
 
-enum ModelPrimitiveType {
+using namespace std;
+
+typedef enum ModelPrimitiveType {
 	Line = 0,
 	Polygon = 1,
 	Pixel = 2,
@@ -14,32 +16,32 @@ enum ModelPrimitiveType {
 	TriTex = 8,
 	TriNorm = 9,
 	TriNormTex = 10,
-};
+} ModelPrimitiveType;
 
-struct PakModelPrimitive {
+typedef struct PakModelPrimitive {
 	u8 type = 0;
 	u8 subType = 0;
 	u8 colorIndex = 0;
-	vector <u16> vertexIdxs;
+	vector<u16> vertexIdxs;
 	u16 size;
 	//triangles
 	u16 uvIndex = 0;
 	u8 texModel = 0;
 	vector<u16> uv;
-};
+} PakModelPrimitive;
 
-struct ModelBone {
+typedef struct ModelBone {
 	int fromVertexIdx;
 	int vertexCount;
 	int rootVertexIdx;
 	int parentBone;
 	int curBoneIdx;
-};
+} ModelBone;
 
-struct PakModel {
+typedef struct PakModel {
 	u16 modelFlags;
 	ZVStruct bounds;
 	std::vector <s16> vertices;
 	std::vector <ModelBone> bones;	
 	std::vector <PakModelPrimitive> primitives;
-};
+} PakModel;

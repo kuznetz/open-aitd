@@ -3,17 +3,20 @@
 #include <cstdlib>
 #include <filesystem>
 
-#include "floor_loader.h"
-#include "floor_extractor.h"
-#include "background_extractor.h"
-#include "mask_extractor.h"
-#include "model_loader.h"
-#include "model_extractor.h"
-#include "objects_extractor.h"
-#include "vars_extractor.h"
 #include "pak/pak.h"
+#include "structs/floor.h"
+#include "structs/model.h"
 
-void extractAllData() {
+floorStruct loadFloorPak(string filename);
+void saveFloorGLTF(floorStruct& floor2, char* filename);
+void extractBackground(u8 * img, char* outPng);
+void extractV1Mask(const std::vector<cameraOverlayPolygon>* srcPolys, const char* outPng);
+PakModel loadModel(char* data, int size);
+void saveModelGLTF(const PakModel& model, const string dirname);
+void extractObjects(string from, string josnTo);
+void extractVars(string dir, string josnTo);
+
+inline void extractAllData() {
     char floordir[100];
     char cameradir[100];
     char str[100];

@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string>
 
-#include "background_extractor.h"
 #include "save_png.h"
 #include "structs/int_types.h"
 #include "palette.h"

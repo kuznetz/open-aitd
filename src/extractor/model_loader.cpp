@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <string>
-#include "structs/model.h"
 #include "pak/pak.h"
+#include "structs/model.h"
 
 int loadModelBones(PakModel &body, char* data) {
 	int i = 0;

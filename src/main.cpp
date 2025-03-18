@@ -1,5 +1,5 @@
-﻿#include "tests/tests.h"
-#include "extractor/main_extractor.h"
+﻿//#include "tests/tests.h"
+#include "extractor/extractor.h"
 
 int main(void)
 {

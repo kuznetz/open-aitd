@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <vector>
 #include <string>
+#include "../structs/int_types.h"
 
 using namespace std;
 
