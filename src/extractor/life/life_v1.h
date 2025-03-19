@@ -114,7 +114,7 @@ inline const vector<parseLifeInstruction> LifeTable_v1 =
 };
 
 // Start by 0
-inline const vector<parseLifeFunction> ExprTable_v1 =
+inline const vector<parseLifeExpr> ExprTable_v1 =
 {
 	{ EvalEnum::VAR, "VAR", { lifeConst }},
 	{ EvalEnum::ACTOR_COLLIDER, "ACTOR_COLLIDER", { }},

@@ -195,30 +195,13 @@ namespace LifeEnum {
 	};
 }
 
-typedef struct LifeExpr
-{
-	EvalEnum::EvalEnum Type = EvalEnum::CONST;
-	s16 Actor = -1;
-	s16 constVal = 0;
-	vector<LifeExpr> arguments;
-} EvalFunction;
-
-typedef struct LifeInstruction
-{
-	LifeEnum::LifeEnum Type;
-	vector<LifeExpr> arguments;
-	s16 Actor = -1;
-	int Goto = -1;
-	int Position = -1; //used to map gotos to a given instruction
-} LifeInstruction;
-
 enum parseArgType {
 	lifeConst,
 	lifeExpr,
 	lifeGoto
 };
 
-struct parseLifeFunction {
+struct parseLifeExpr {
 	EvalEnum::EvalEnum Type;
 	string typeStr;
 	vector<parseArgType> arguments;
@@ -229,3 +212,20 @@ struct parseLifeInstruction {
 	string typeStr;
 	vector<parseArgType> arguments;
 };
+
+typedef struct LifeExpr
+{
+	const parseLifeExpr* Type = 0;
+	s16 Actor = -1;
+	s16 constVal = 0;
+	vector<LifeExpr> arguments;
+} LifeExpr;
+
+typedef struct LifeInstruction
+{
+	const parseLifeInstruction* Type = 0;
+	vector<LifeExpr> arguments;
+	s16 Actor = -1;
+	int Goto = -1;
+	int Position = -1; //used to map gotos to a given instruction
+} LifeInstruction;

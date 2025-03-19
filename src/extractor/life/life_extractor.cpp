@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iomanip>
 #include "./life_v1.h"
+#include <fstream>
 
 using namespace std;
 
@@ -36,7 +37,7 @@ LifeExpr readExpr(lifeBuffer& buf) {
 	varTypeN &= 0x7FFF;
 
 	auto& parse = ExprTable_v1[varTypeN];
-	result.Type = parse.Type;
+	result.Type = &parse;
 
 	//if (result.Type == LifeEnum::READ) {}
 
@@ -71,9 +72,9 @@ LifeInstruction readInstruction(lifeBuffer &buf) {
 	opCodeN &= 0x7FFF;
 
 	auto& parse = LifeTable_v1[opCodeN];
-	result.Type = parse.Type;
+	result.Type = &parse;
 
-	if (result.Type == LifeEnum::MULTI_CASE)
+	if (parse.Type == LifeEnum::MULTI_CASE)
 	{
 		int numCases = read16(buf);
 		for (int n = 0; n < numCases; n++)
@@ -108,23 +109,78 @@ LifeInstruction readInstruction(lifeBuffer &buf) {
 	return result;
 }
 
-void extractLife(string fname, string outDir)
+vector<LifeInstruction> loadLife(u8* data, int size)
+{
+	lifeBuffer buf = {
+		data,
+		data + size
+	};
+	vector<LifeInstruction> life;
+	while (true) {
+		auto& oper = readInstruction(buf);
+		life.push_back(oper);
+		if (oper.Type->Type == LifeEnum::ENDLIFE) break;
+	}
+	return life;
+}
+
+void saveExpr(ofstream& out, LifeExpr& expr)
+{
+	if (!expr.Type) {
+		out << to_string(expr.constVal);
+		return;
+	}
+	if (expr.Actor != -1) {
+		out << expr.Actor << ".";
+	}
+	out << expr.Type->typeStr;
+	if (expr.arguments.size() > 0) {
+		out << "(";
+		saveExpr(out, expr.arguments[0]);
+		if (expr.arguments.size() > 1) {
+			out << ", ";
+			saveExpr(out, expr.arguments[1]);
+		}
+		out << ")";
+	}
+}
+
+void saveLife(ofstream& out, vector<LifeInstruction>& instructs)
+{
+	for (int i = 0; i < instructs.size(); i++)
+	{
+		auto& instr = instructs[i];
+		out << i << ": ";
+		if (instr.Actor != -1) {
+			out << instr.Actor << ".";
+		}
+		out << instr.Type->typeStr << " (";
+		for (int j = 0; j < instr.arguments.size(); j++) {
+			saveExpr(out, instr.arguments[j]);
+			if (j < instr.arguments.size()-1) {
+				out << ", ";
+			}
+		}
+		out << ")";
+		if (instr.Goto != -1) {
+			out << " " << to_string(instr.Goto);
+		}
+		out << "\n";
+	}
+}
+
+void extractLife(string fname, string outFile)
 {
 	PakFile pak(fname);
+	ofstream out(outFile, ios::trunc | ios::out);
 	//int i = 7;
-    //for (int i = 0; i < 50; i++)
 	for (int i = 0; i < pak.headers.size(); i++)
 	{
+		out << "LIFE " << i << "\n";
 		auto& data = pak.readBlock(i);
-		lifeBuffer buf = {
-			data.data(),
-			data.data() + pak.headers[i].uncompressedSize
-		};
-		vector<LifeInstruction> life;
-		while (true) {
-			auto& oper = readInstruction(buf);
-			life.push_back(oper);
-			if (oper.Type == LifeEnum::ENDLIFE) break;
-		}
+		auto& life = loadLife(data.data(), pak.headers[i].uncompressedSize);
+		saveLife(out, life);
+		out << "\n";
 	}
+	out.close();
 }
