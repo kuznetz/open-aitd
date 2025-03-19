@@ -38,9 +38,7 @@ LifeExpr readExpr(lifeBuffer& buf) {
 	auto& parse = ExprTable_v1[varTypeN];
 	result.Type = parse.Type;
 
-	if (!parse.checked) {
-		printf("Expression Not checked");
-	}
+	//if (result.Type == LifeEnum::READ) {}
 
 	for (int i = 0; i < parse.arguments.size(); i++)
 	{
@@ -64,13 +62,16 @@ LifeExpr readExpr(lifeBuffer& buf) {
 LifeInstruction readInstruction(lifeBuffer &buf) {
 	LifeInstruction result;
 	u16 opCodeN = read16(buf);
-	auto& parse = LifeTable_v1[opCodeN];	
-	result.Type = parse.Type;
-	//if (result.opCode == 0) throw new exception("Opcode not found");
 
-	if (!parse.checked) {
-		printf("Instruction Not checked");
+	if ((opCodeN & 0x8000) == 0x8000)
+	{
+		//change actor
+		result.Actor = read16(buf);
 	}
+	opCodeN &= 0x7FFF;
+
+	auto& parse = LifeTable_v1[opCodeN];
+	result.Type = parse.Type;
 
 	if (result.Type == LifeEnum::MULTI_CASE)
 	{
@@ -110,8 +111,9 @@ LifeInstruction readInstruction(lifeBuffer &buf) {
 void extractLife(string fname, string outDir)
 {
 	PakFile pak(fname);
-	int i = 7;
-	//for (int i = 0; i < pak.headers.size(); i++)
+	//int i = 7;
+    //for (int i = 0; i < 50; i++)
+	for (int i = 0; i < pak.headers.size(); i++)
 	{
 		auto& data = pak.readBlock(i);
 		lifeBuffer buf = {

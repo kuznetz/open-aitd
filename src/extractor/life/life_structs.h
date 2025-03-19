@@ -210,7 +210,6 @@ typedef struct LifeInstruction
 	s16 Actor = -1;
 	int Goto = -1;
 	int Position = -1; //used to map gotos to a given instruction
-	int Size = -1; //size in bytes of instruction
 } LifeInstruction;
 
 enum parseArgType {
@@ -221,12 +220,12 @@ enum parseArgType {
 
 struct parseLifeFunction {
 	EvalEnum::EvalEnum Type;
+	string typeStr;
 	vector<parseArgType> arguments;
-	bool checked = false;
 };
 
 struct parseLifeInstruction {
 	LifeEnum::LifeEnum Type;
+	string typeStr;
 	vector<parseArgType> arguments;
-	bool checked = false;
 };
