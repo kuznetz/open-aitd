@@ -222,9 +222,11 @@ enum parseArgType {
 struct parseLifeFunction {
 	EvalEnum::EvalEnum Type;
 	vector<parseArgType> arguments;
+	bool checked = false;
 };
 
 struct parseLifeInstruction {
 	LifeEnum::LifeEnum Type;
 	vector<parseArgType> arguments;
+	bool checked = false;
 };
