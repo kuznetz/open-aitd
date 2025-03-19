@@ -118,9 +118,28 @@ vector<LifeInstruction> loadLife(u8* data, int size)
 	vector<LifeInstruction> life;
 	while (true) {
 		auto& oper = readInstruction(buf);
+		oper.Position = buf.data - data;
 		life.push_back(oper);
 		if (oper.Type->Type == LifeEnum::ENDLIFE) break;
 	}
+
+	for (int i = 0; i < life.size(); i++) {
+		if (life[i].Goto == -1) continue;
+		auto gotoPos = life[i].Position + (life[i].Goto * 2);
+		bool changed = false;
+		for (int j = 0; j < life.size(); j++) {
+			if (gotoPos == life[j].Position) {
+				life[i].Goto = j;
+				changed = true;
+				break;
+			}
+		}
+		if (!changed) 
+		{
+			throw new exception("Cant calc goto");
+		}
+	}
+
 	return life;
 }
 

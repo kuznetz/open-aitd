@@ -91,5 +91,5 @@ inline void extractAllData() {
     //extractObjects("original/OBJETS.ITD", "data/objects.json");
     //extractVars("original", "data/vars.json");
 
-    extractLife("original/LISTLIFE.PAK", "data/scripts.lua");
+    extractLife("original/LISTLIFE.PAK", "data/life_scripts.txt");
 }
