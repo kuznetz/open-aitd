@@ -21,7 +21,7 @@ inline const vector<parseLifeInstruction> LifeTable_v1 =
 	{ LifeEnum::HIT, "HIT", { lifeConst, lifeConst, lifeConst, lifeConst, lifeExpr, lifeConst }},
 	{ LifeEnum::MESSAGE, "MESSAGE", { lifeConst }},
 	{ LifeEnum::MESSAGE_VALUE, "MESSAGE_VALUE", { }},
-	{ LifeEnum::VAR, "VAR", { lifeConst, lifeExpr }},
+	{ LifeEnum::SET, "SET", { lifeConst, lifeExpr }},
 	{ LifeEnum::INC, "INC", { lifeConst }},
 	{ LifeEnum::DEC, "DEC", { lifeConst }},
 	{ LifeEnum::ADD, "ADD", { lifeConst, lifeExpr }},
@@ -62,7 +62,7 @@ inline const vector<parseLifeInstruction> LifeTable_v1 =
 	{ LifeEnum::STOP_BETA, "STOP_BETA", { }},
 	{ LifeEnum::DO_MAX_ZV, "DO_MAX_ZV", { }},
 	{ LifeEnum::PUT, "PUT", { lifeConst, lifeConst, lifeConst, lifeConst, lifeConst, lifeConst, lifeConst, lifeConst, lifeConst }},
-	{ LifeEnum::C_VAR, "C_VAR", { lifeConst, lifeExpr }},
+	{ LifeEnum::SET_C, "SET_C", { lifeConst, lifeExpr }},
 	{ LifeEnum::DO_NORMAL_ZV, "DO_NORMAL_ZV", { }},
 	{ LifeEnum::DO_CARRE_ZV, "DO_CARRE_ZV", { }},
 	{ LifeEnum::SOUND_THEN, "SOUND_THEN", { lifeExpr, lifeExpr }},
@@ -116,7 +116,7 @@ inline const vector<parseLifeInstruction> LifeTable_v1 =
 // Start by 0
 inline const vector<parseLifeExpr> ExprTable_v1 =
 {
-	{ EvalEnum::VAR, "VAR", { lifeConst }},
+	{ EvalEnum::GET, "GET", { lifeConst }},
 	{ EvalEnum::ACTOR_COLLIDER, "ACTOR_COLLIDER", { }},
 	{ EvalEnum::TRIGGER_COLLIDER, "TRIGGER_COLLIDER", { }},
 	{ EvalEnum::HARD_COLLIDER, "HARD_COLLIDER", { }},
@@ -153,7 +153,7 @@ inline const vector<parseLifeExpr> ExprTable_v1 =
 	{ EvalEnum::ROOMY, "ROOMY", { }},
 	{ EvalEnum::TEST_ZV_END_ANIM, "TEST_ZV_END_ANIM", { lifeConst, lifeConst }},
 	{ EvalEnum::MUSIC, "MUSIC", { }},
-	{ EvalEnum::C_VAR, "C_VAR", { lifeConst }},
+	{ EvalEnum::GET_C, "GET_C", { lifeConst }},
 	{ EvalEnum::STAGE, "STAGE", { }},
 	{ EvalEnum::THROW, "THROW", { lifeConst }}
 };

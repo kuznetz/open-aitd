@@ -92,7 +92,28 @@ void writeIfHead(ofstream& out, LifeNode& ifNode)
 		writeLifeExpr(out, cond->arguments[1]);
 		out << ")";
 	}
-	out << "\n";
+	out << " then\n";
+}
+
+void writeCaseExpr(ofstream& out, LifeInstruction& switchi, LifeInstruction& instr)
+{
+	if (instr.Type->Type == LifeEnum::CASE) {
+		writeLifeExpr(out, switchi.arguments[0]);
+		out << " == ";
+		out << instr.arguments[0].constVal;
+	}
+	else {
+		for (int i = 0; i < instr.arguments.size(); i++) {
+			if (i > 0) {
+				out << " and ";
+			}
+			out << "(";
+			writeLifeExpr(out, switchi.arguments[0]);
+			out << " == ";
+			out << instr.arguments[i].constVal;
+			out << ")";
+	    }
+	}
 }
 
 void writeSwitch(ofstream& out, int level, LifeNode& ifNode)
@@ -100,10 +121,12 @@ void writeSwitch(ofstream& out, int level, LifeNode& ifNode)
 	for (int i = 0; i < ifNode.cases.size(); i++) {
 		writeSpaces(out, level);
 		if (i == 0) {
-			out << "if ... \n";
+			out << "if ";
 		} else {
-			out << "elseif ... \n";
+			out << "elseif ";
 		}
+		writeCaseExpr(out, *ifNode.instr, *ifNode.cases[i].caseInstr);
+		out << " then\n";
 		writeLifeNodes(out, level+1, ifNode.cases[i].instructs);
 	}
 	writeSpaces(out, level);

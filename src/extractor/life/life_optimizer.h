@@ -44,12 +44,12 @@ vector<LifeNode> lifeOptimize(LifeInstructionsP& instructs) {
 	while (i<instructs.size())
 	{
 		auto& ins = instructs[i];
-		//if (isIfInstr(*ins))
-		//{
-		//	LifeNode& ln = DetectIfElse(instructs, i);
-		//	result.push_back(ln);
-		//}
-		//else
+		if (isIfInstr(*ins))
+		{
+			LifeNode& ln = DetectIfElse(instructs, i);
+			result.push_back(ln);
+		}
+		else
 		if (ins->Type->Type == LifeEnum::SWITCH)
 		{
 			LifeNode& ln = DetectSwitch(instructs, i);
@@ -73,37 +73,37 @@ vector<LifeNode> lifeOptimize(LifeInstructionsP& instructs) {
 LifeNode DetectIfElse(LifeInstructionsP& insructs, int &i)
 {
 	LifeNode ln;
+	int startPos = insructs[0]->Position;
 	LifeInstruction* startIns = insructs[i];
-	LifeInstruction* curIns = startIns;
-	while (isIfInstr(*curIns) && startIns->Goto == curIns->Goto) {
-		ln.ifConditions.push_back(curIns);
-		curIns = insructs[++i];
+	while (isIfInstr(*insructs[i]) && startIns->Goto == insructs[i]->Goto) {
+		ln.ifConditions.push_back(insructs[i]);
+		i++;
 	}
 
 	int elseGoto = -1;
 	LifeInstructionsP ifInstructs;
-	while (curIns->Position < startIns->Goto-1) {
-		ifInstructs.push_back(curIns);
-		curIns = insructs[++i];
+	while ((startPos + i) < startIns->Goto - 1) {
+		ifInstructs.push_back(insructs[i]);
+		i++;
 	}
-	if (curIns->Type->Type != LifeEnum::GOTO) {
+	if (insructs[i]->Type->Type != LifeEnum::GOTO) {
 		//Without Else
-		ifInstructs.push_back(curIns);
-		curIns = insructs[++i];
+		ifInstructs.push_back(insructs[i]);
+		i++;
 	}
 	else 
 	{
 		//with Else
-		elseGoto = curIns->Goto;
-		curIns = insructs[++i];
+		elseGoto = insructs[i]->Goto;
+		i++;
 	}
 	ln.ifInstructs = lifeOptimize(ifInstructs);
 	if (elseGoto == -1) return ln;
 
 	LifeInstructionsP elseInstructs;
-	while (curIns->Position < startIns->Goto - 1) {
-		elseInstructs.push_back(curIns);
-		curIns = insructs[++i];
+	while ((startPos + i) < startIns->Goto - 1) {
+		elseInstructs.push_back(insructs[i]);
+		i++;
 	}
 	ln.elseInstructs = lifeOptimize(elseInstructs);
 	return ln;
