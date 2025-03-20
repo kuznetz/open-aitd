@@ -158,8 +158,8 @@ void extractLife(string fname, string outFile)
 	PakFile pak(fname);
 	vector<vector<LifeInstruction>> lifes;
 	vector<vector<LifeNode>> lifesNodes;
-	int i = 7;
-	//for (int i = 0; i < pak.headers.size(); i++)
+	//int i = 514;
+	for (int i = 0; i < pak.headers.size(); i++)
 	{
 		auto& data = pak.readBlock(i);
 		lifes.push_back(loadLife(data.data(), pak.headers[i].uncompressedSize));

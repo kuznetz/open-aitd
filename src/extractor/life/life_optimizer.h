@@ -112,21 +112,20 @@ LifeNode DetectIfElse(LifeInstructionsP& insructs, int &i)
 LifeNode DetectSwitch(LifeInstructionsP& insructs, int& i)
 {
 	LifeNode result;
-	result.instr = insructs[i];
-	LifeInstruction* curIns = insructs[++i];
-	auto t = curIns->Type->Type;
+	result.instr = insructs[i++];
+	auto t = insructs[i]->Type->Type;
 	while (t == LifeEnum::CASE || t == LifeEnum::MULTI_CASE) {
 		LifeCase lcase;
-		lcase.caseInstr = curIns;
-		curIns = insructs[++i];
+		lcase.caseInstr = insructs[i++];
 		LifeInstructionsP caseInstructs;
-		while (curIns->Position < lcase.caseInstr->Goto - 1) {
-			caseInstructs.push_back(curIns);
-			curIns = insructs[++i];
+		while (insructs[i]->Position < lcase.caseInstr->Goto - 1) {
+			caseInstructs.push_back(insructs[i++]);
 		}
-		auto caseLast = curIns;
-		curIns = insructs[++i];
-		t = curIns->Type->Type;
+		auto caseLast = insructs[i++];
+		t = LifeEnum::ENDLIFE;
+		if (i < insructs.size()) {
+			t = insructs[i]->Type->Type;
+		}
 		if (t != LifeEnum::CASE && t != LifeEnum::MULTI_CASE) {
 			//If current case last in chain - caseLast is not goto
 			caseInstructs.push_back(caseLast);

@@ -102,7 +102,7 @@ void writeCaseExpr(ofstream& out, LifeInstruction& switchi, LifeInstruction& ins
 		out << " == ";
 		out << instr.arguments[0].constVal;
 	}
-	else {
+	else if(instr.Type->Type == LifeEnum::MULTI_CASE) {
 		for (int i = 0; i < instr.arguments.size(); i++) {
 			if (i > 0) {
 				out << " and ";
