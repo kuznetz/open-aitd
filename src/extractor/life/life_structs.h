@@ -228,4 +228,5 @@ typedef struct LifeInstruction
 	s16 Actor = -1;
 	int Goto = -1;
 	int Position = -1; //used to map gotos to a given instruction
+	int Size = -1;     //used to map gotos to a given instruction
 } LifeInstruction;
