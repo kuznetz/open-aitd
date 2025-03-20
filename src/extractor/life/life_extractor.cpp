@@ -5,8 +5,9 @@
 #include <fstream>
 #include <iomanip>
 #include <fstream>
-#include "./life_v1.h"
-#include "./life_optimizer.h"
+#include "life_v1.h"
+#include "life_optimizer.h"
+#include "life_writer.h"
 
 using namespace std;
 
@@ -152,148 +153,12 @@ vector<LifeInstruction> loadLife(u8* data, int size)
 	return life;
 }
 
-void saveExprTxt(ofstream& out, LifeExpr& expr)
-{
-	if (!expr.Type) {
-		out << to_string(expr.constVal);
-		return;
-	}
-	if (expr.Actor != -1) {
-		out << expr.Actor << ".";
-	}
-	out << expr.Type->typeStr;
-	out << "(";
-	if (expr.arguments.size() > 0) {
-		saveExprTxt(out, expr.arguments[0]);
-		if (expr.arguments.size() > 1) {
-			out << ", ";
-			saveExprTxt(out, expr.arguments[1]);
-		}
-	}
-	out << ")";
-}
-
-void saveLifeTxt(ofstream& out, vector<LifeInstruction>& instructs)
-{
-	for (int i = 0; i < instructs.size(); i++)
-	{
-		auto& instr = instructs[i];
-		out << i << ": ";
-		if (instr.Actor != -1) {
-			out << instr.Actor << ".";
-		}
-		out << instr.Type->typeStr << " (";
-		for (int j = 0; j < instr.arguments.size(); j++) {
-			saveExprTxt(out, instr.arguments[j]);
-			if (j < instr.arguments.size()-1) {
-				out << ", ";
-			}
-		}
-		out << ")";
-		if (instr.Goto != -1) {
-			out << " " << to_string(instr.Goto);
-		}
-		out << "\n";
-	}
-}
-
-void spaces(ofstream& out, int level) {
-	for (int l = 0; l < level; l++)
-	{
-		out << "  ";
-	}
-}
-
-void writeLifeInstr(ofstream& out, LifeInstruction& instr)
-{
-	//out << i << ": ";
-	if (instr.Actor != -1) {
-		out << instr.Actor << ".";
-	}
-	out << instr.Type->typeStr << "(";
-	for (int j = 0; j < instr.arguments.size(); j++) {
-		saveExprTxt(out, instr.arguments[j]);
-		if (j < instr.arguments.size() - 1) {
-			out << ", ";
-		}
-	}
-	out << ")";
-	if (instr.Goto != -1) {
-		out << " " << to_string(instr.Goto);
-	}
-	out << "\n";
-}
-
-void writeIfHead(ofstream& out, LifeNode& ifNode)
-{
-	out << "if ";
-	for (int i = 0; i < ifNode.ifConditions.size(); i++) {
-		auto cond = ifNode.ifConditions[i];
-		if (i > 0) {
-			out << " and ";
-		}
-
-		out << "(";
-		saveExprTxt(out, cond->arguments[0]);
-		switch (cond->Type->Type) {
-		case LifeEnum::IF_EGAL:
-			out << " == ";
-			break;
-		case LifeEnum::IF_DIFFERENT:
-			out << " == ";
-			break;
-		default:
-			out << " ??? ";
-		}
-		saveExprTxt(out, cond->arguments[1]);
-		out << ")";
-	}
-	out << "\n";
-}
-
-
-void writeLifeNodes(ofstream& out, int level, vector<LifeNode>& nodes)
-{
-	//out << "function life_" << lifeIdx << "(o)\n";
-	//vector<int> gotos;
-	//for (int i = 0; i < nodes.size(); i++)
-	//{
-	//	if (instructs[i].Goto == -1) continue;
-	//	gotos.push_back(instructs[i].Goto);
-	//}
-
-	for (int i = 0; i < nodes.size(); i++)
-	{
-		auto& node = nodes[i];
-		if (node.ifConditions.size())
-		{
-			spaces(out, level);
-			writeIfHead(out, node);
-			writeLifeNodes(out, level + 1, node.ifInstructs);
-			if (node.elseInstructs.size()) {
-				spaces(out, level);
-				out << "else\n";
-				writeLifeNodes(out, level + 1, node.elseInstructs);
-			}
-			spaces(out, level);
-			out << "end\n";
-		}
-		else
-		{
-			spaces(out, level);
-			writeLifeInstr(out, *node.instr);
-		}
-	}
-	//out << "end";
-}
-
-
 void extractLife(string fname, string outFile)
 {
 	PakFile pak(fname);
 	vector<vector<LifeInstruction>> lifes;
 	vector<vector<LifeNode>> lifesNodes;
-	int i = 0;
+	int i = 7;
 	//for (int i = 0; i < pak.headers.size(); i++)
 	{
 		auto& data = pak.readBlock(i);
@@ -313,7 +178,7 @@ void extractLife(string fname, string outFile)
 	//for (int j = 0; j < lifes.size(); j++)
 	//{
 	//	out << "LIFE " << j << "\n";
-	//	saveLifeTxt(out, lifes[j]);
+	//	saveLifeInstructions(out, lifes[j]);
 	//	out << "\n";
 	//}
 	//out.close();

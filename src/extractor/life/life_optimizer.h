@@ -6,7 +6,7 @@ typedef struct LifeNode;
 
 typedef struct LifeCase
 {
-	vector<int> caseConds;
+	LifeInstruction* caseInstr;
 	vector<LifeNode> instructs;
 } LifeCase;
 
@@ -36,22 +36,25 @@ bool isIfInstr(LifeInstruction& instr) {
 }
 
 LifeNode DetectIfElse(LifeInstructionsP& insructs, int& i);
+LifeNode DetectSwitch(LifeInstructionsP& insructs, int& i);
 
-vector<LifeNode> lifeOptimize(LifeInstructionsP& insructs) {
+vector<LifeNode> lifeOptimize(LifeInstructionsP& instructs) {
 	vector<LifeNode> result;
 	int i = 0;
-	while (i<insructs.size())
+	while (i<instructs.size())
 	{
-		auto& ins = insructs[i];
-		if (isIfInstr(*ins))
+		auto& ins = instructs[i];
+		//if (isIfInstr(*ins))
+		//{
+		//	LifeNode& ln = DetectIfElse(instructs, i);
+		//	result.push_back(ln);
+		//}
+		//else
+		if (ins->Type->Type == LifeEnum::SWITCH)
 		{
-			LifeNode& ln = DetectIfElse(insructs, i);
+			LifeNode& ln = DetectSwitch(instructs, i);
 			result.push_back(ln);
 		}
-		//else if (ins.Type->Type == LifeEnum::SWITCH)
-		//{
-		//	DetectSwitch(node);
-		//}
 		else if (ins->Type->Type == LifeEnum::ENDLIFE)
 		{
 			i++;
@@ -104,4 +107,32 @@ LifeNode DetectIfElse(LifeInstructionsP& insructs, int &i)
 	}
 	ln.elseInstructs = lifeOptimize(elseInstructs);
 	return ln;
+}
+
+LifeNode DetectSwitch(LifeInstructionsP& insructs, int& i)
+{
+	LifeNode result;
+	result.instr = insructs[i];
+	LifeInstruction* curIns = insructs[++i];
+	auto t = curIns->Type->Type;
+	while (t == LifeEnum::CASE || t == LifeEnum::MULTI_CASE) {
+		LifeCase lcase;
+		lcase.caseInstr = curIns;
+		curIns = insructs[++i];
+		LifeInstructionsP caseInstructs;
+		while (curIns->Position < lcase.caseInstr->Goto - 1) {
+			caseInstructs.push_back(curIns);
+			curIns = insructs[++i];
+		}
+		auto caseLast = curIns;
+		curIns = insructs[++i];
+		t = curIns->Type->Type;
+		if (t != LifeEnum::CASE && t != LifeEnum::MULTI_CASE) {
+			//If current case last in chain - caseLast is not goto
+			caseInstructs.push_back(caseLast);
+		}
+		lcase.instructs = lifeOptimize(caseInstructs);
+		result.cases.push_back(lcase);
+	}
+	return result;
 }
