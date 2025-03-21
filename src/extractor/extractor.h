@@ -65,18 +65,17 @@ inline void extractAllData() {
         }
     }
 
-    //PakFile pak;
-    //pak.open("original/LISTBODY.PAK");
-    ////int i = 0;
-    //for ( int i = 0; i < pak.headers.size(); i++ )
-    //{
-    //    auto h = pak.headers[i];
-    //    auto& testBody = pak.readBlock(i);
-    //    auto& model = loadModel((char*)testBody.data(), h.uncompressedSize);
-    //    sprintf(str, "data/models/LISTBODY_%d", i);
-    //    std::filesystem::create_directories(str);
-    //    saveModelGLTF(model, string(str));
-    //}
+    PakFile pak("original/LISTBODY.PAK");
+    //int i = 1;
+    for ( int i = 0; i < pak.headers.size(); i++ )
+    {
+        auto h = pak.headers[i];
+        auto& testBody = pak.readBlock(i);
+        auto& model = loadModel((char*)testBody.data(), h.uncompressedSize);
+        sprintf(str, "data/models/LISTBODY_%d", i);
+        std::filesystem::create_directories(str);
+        saveModelGLTF(model, string(str));
+    }
 
     /*char* srcFN2 = "original/LISTBOD2.PAK";
     int filesNum2 = PAK_getNumFiles(srcFN2);
@@ -91,5 +90,5 @@ inline void extractAllData() {
     //extractObjects("original/OBJETS.ITD", "data/objects.json");
     //extractVars("original", "data/vars.json");
 
-    extractLife("original/LISTLIFE.PAK", "data/life_scripts.txt");
+    //extractLife("original/LISTLIFE.PAK", "data/scripts.lua");
 }

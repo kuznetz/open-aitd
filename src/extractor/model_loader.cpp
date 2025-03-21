@@ -16,8 +16,8 @@ int loadModelBones(PakModel &body, char* data) {
 		b.fromVertexIdx = READ_LE_U16(data + i + 0);
 		b.vertexCount   = READ_LE_U16(data + i + 2);
 		b.rootVertexIdx = READ_LE_U16(data + i + 4);
-		b.parentBone    = READ_LE_U8(data + i + 6);
-		b.curBoneIdx    = READ_LE_U8(data + i + 7);
+		b.parentBoneIdx    = READ_LE_U8(data + i + 6);
+		b.boneIdx    = READ_LE_U8(data + i + 7);
 		i += 8;
 
 		if ((body.modelFlags & 8) == 8)

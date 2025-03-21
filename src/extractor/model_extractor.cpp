@@ -118,6 +118,38 @@ void saveModelGLTF(const PakModel& model, const string dirname)
     zoneN.mesh = meshIdx;
     m.nodes.push_back(zoneN);
 
+    if (model.bones.size()) {
+        vector<u8> vecBoneAffect(model.vertices.size(), 0);
+        tinygltf::Skin skin;
+
+        for (int bIdx = 0; bIdx < model.bones.size(); bIdx++) {
+            skin.joints.push_back(bIdx + 1);
+            auto& bone = model.bones[bIdx];
+            tinygltf::Node boneN;
+            auto rIdx = bone.rootVertexIdx / 6;
+            boneN.translation = {
+                (float)model.vertices[rIdx * 3 + 0] / 1000,
+                -(float)model.vertices[rIdx * 3 + 1] / 1000,
+                (float)model.vertices[rIdx * 3 + 2] / 1000
+            };
+            for (int j = 0; j < model.bones.size(); j++) {
+                if (bIdx == j) continue;
+                if (model.bones[j].parentBoneIdx == model.bones[bIdx].boneIdx) {
+                    boneN.children.push_back(j + 1);
+                }
+            }
+            m.nodes.push_back(boneN);
+            int vfrom = (bone.fromVertexIdx / 6);
+            for (int j = vfrom; j < vfrom+bone.vertexCount; j++) {
+                vecBoneAffect[j] = bIdx;
+            }
+        }
+
+        m.skins.push_back(skin);
+        m.nodes[0].skin = 0;
+        addVertexSkin(m, vecBoneAffect);
+    }
+
     tinygltf::TinyGLTF gltf;
     gltf.WriteGltfSceneToFile(&m, dirname + "/model.gltf",
        false, // embedImages

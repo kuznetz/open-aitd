@@ -34,8 +34,8 @@ typedef struct ModelBone {
 	int fromVertexIdx;
 	int vertexCount;
 	int rootVertexIdx;
-	int parentBone;
-	int curBoneIdx;
+	int parentBoneIdx;
+	int boneIdx;
 } ModelBone;
 
 typedef struct PakModel {
