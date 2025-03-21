@@ -1,13 +1,25 @@
-﻿#include "my_gltf.h"
-#define NLOHMANN_JSON_NAMESPACE_NO_VERSION 1
+﻿#define NLOHMANN_JSON_NAMESPACE_NO_VERSION 1
 #include <nlohmann/json.hpp>
 #define TINYGLTF_NO_INCLUDE_JSON
-//#define TINYGLTF_NO_STB_IMAGE
-//#define TINYGLTF_NO_STB_IMAGE_WRITE
-#define TINYGLTF_IMPLEMENTATION
+#define TINYGLTF_NO_STB_IMAGE
+#define TINYGLTF_NO_STB_IMAGE_WRITE
 #include <tiny_gltf.h>
+#include <vector>
 #include <raymath.h>
 #include <cstring>
+
+using namespace std;
+
+extern const uint8_t cubeIndices[];
+extern const float cubeVertices[];
+extern const int cubeVertSize;
+
+int createCubeMesh(tinygltf::Model& m);
+int createLineMesh(tinygltf::Model& m, const vector<float>& line);
+int createPolyMesh(tinygltf::Model& m, const vector<Vector3>& vertexes, const vector<unsigned int>& indices);
+int createVertexes(tinygltf::Model& m, const vector<Vector3>& vertexes);
+void addVertexSkin(tinygltf::Model& m, vector<unsigned char> vecBoneAffect);
+tinygltf::Primitive createPolyPrimitive(tinygltf::Model& m, const vector<unsigned int>& indices, int vertAccIdx, int material);
 
 const uint8_t cubeIndices[] = {
     //Top
@@ -200,7 +212,7 @@ int createPolyMesh(tinygltf::Model& m, const vector<Vector3>& vertexes, const ve
     m.bufferViews.push_back(vertVw);
 
     tinygltf::Accessor vertAcc;
-    vertAcc.bufferView = m.bufferViews.size()-1;
+    vertAcc.bufferView = m.bufferViews.size() - 1;
     vertAcc.byteOffset = 0;
     vertAcc.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
     vertAcc.count = vertexes.size();

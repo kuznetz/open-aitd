@@ -1,11 +1,12 @@
-﻿#include <stdio.h>   
+﻿#pragma once
+#include <stdio.h>   
 #include <stdlib.h>
 #include <string>
 
-#include "save_png.h"
-#include "structs/int_types.h"
-#include "palette.h"
-#include "pak/pak.h"
+#include "../utils/save_png.h"
+#include "../structs/int_types.h"
+#include "../loaders/palette.h"
+#include "../pak/pak.h"
 
 void extractBackground(u8* img, char* outPng) {
     //unsigned char* img = new unsigned char[320 * 200];

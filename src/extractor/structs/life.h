@@ -8,7 +8,7 @@ using namespace std;
 namespace EvalEnum {
 	enum EvalEnum
 	{
-		CONST,
+		LCONST,
 		GET,
 		ACTOR_COLLIDER,
 		TRIGGER_COLLIDER,
@@ -93,7 +93,7 @@ namespace LifeEnum {
 		MULTI_CASE,
 		FOUND,
 		LIFE,
-		DELETE,
+		LDELETE,
 		TAKE,
 		IN_HAND,
 		READ,
@@ -230,3 +230,24 @@ typedef struct LifeInstruction
 	int Position = -1; //used to map gotos to a given instruction
 	int Size = -1;     //used to map gotos to a given instruction
 } LifeInstruction;
+
+typedef vector<LifeInstruction*> LifeInstructionsP;
+typedef struct LifeNode;
+
+typedef struct LifeCase
+{
+	LifeInstruction* caseInstr;
+	vector<LifeNode> instructs;
+} LifeCase;
+
+struct LifeNode
+{
+	//for simple of case
+	LifeInstruction* instr = 0;
+	//for if
+	LifeInstructionsP ifConditions;
+	vector<LifeNode> ifInstructs;
+	vector<LifeNode> elseInstructs;
+	//for case
+	vector<LifeCase> cases;
+};

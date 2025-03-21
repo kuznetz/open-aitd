@@ -3,13 +3,14 @@
 #include <string.h>
 #include <string>
 #include <iostream>
-#include "../extractor/extractor.h"
 #include <renderer.h>
 #include <rcamera.h>
 #include <raymath.h>
 #include "legacy_camera.h"
 #include <vector>
 #include <list>
+
+floorStruct loadFloorPak(std::string filename);
 
 namespace PerspectiveTest {
 

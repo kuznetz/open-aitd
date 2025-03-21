@@ -1,4 +1,4 @@
-﻿#include "life_structs.h"
+﻿#include "../structs/life.h"
 
 inline const vector<parseLifeInstruction> LifeTable_v1 =
 {
@@ -34,7 +34,7 @@ inline const vector<parseLifeInstruction> LifeTable_v1 =
 	{ LifeEnum::MULTI_CASE, "MULTI_CASE", {}}, //Custom parser
 	{ LifeEnum::FOUND, "FOUND", { lifeConst }},
 	{ LifeEnum::LIFE, "LIFE", { lifeConst }},
-	{ LifeEnum::DELETE, "DELETE", { lifeConst }},
+	{ LifeEnum::LDELETE, "DELETE", { lifeConst }},
 	{ LifeEnum::TAKE, "TAKE", { lifeConst }},
 	{ LifeEnum::IN_HAND, "IN_HAND", { lifeConst }},
 	{ LifeEnum::READ, "READ", { lifeConst, lifeConst }}, //3rd lifeConst in cd version

@@ -6,8 +6,8 @@
 #include <raymath.h>
 #include <iomanip>
 
-#include "my_gltf.h"
-#include "structs/floor.h"
+#include "../utils/my_gltf.h"
+#include "../structs/floor.h"
 using json = nlohmann::json;
 using namespace std;
 

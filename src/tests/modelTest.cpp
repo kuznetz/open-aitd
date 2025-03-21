@@ -3,7 +3,7 @@
 #include <string.h>
 #include <string>
 #include <iostream>
-#include "extractor/extractor.h"
+//#include "extractor/extractor.h"
 #include <renderer.h>
 
 namespace ModelTest {

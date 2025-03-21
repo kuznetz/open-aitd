@@ -1,26 +1,5 @@
 ﻿#pragma once
-#include "life_structs.h"
-
-typedef vector<LifeInstruction*> LifeInstructionsP;
-typedef struct LifeNode;
-
-typedef struct LifeCase
-{
-	LifeInstruction* caseInstr;
-	vector<LifeNode> instructs;
-} LifeCase;
-
-struct LifeNode
-{
-	//for simple of case
-	LifeInstruction* instr = 0;
-	//for if
-	LifeInstructionsP ifConditions;
-	vector<LifeNode> ifInstructs;
-	vector<LifeNode> elseInstructs;
-	//for case
-	vector<LifeCase> cases;
-};
+#include "../structs/life.h"
 
 bool isIfInstr(LifeInstruction& instr) {
 	auto t = instr.Type->Type;

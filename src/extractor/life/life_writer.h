@@ -5,8 +5,7 @@
 #include <fstream>
 #include <iomanip>
 #include <fstream>
-#include "life_structs.h"
-#include "life_optimizer.h"
+#include "../structs/life.h"
 
 void writeSpaces(ofstream& out, int level) {
 	for (int l = 0; l < level; l++)

@@ -1,12 +1,12 @@
 ﻿#pragma once
 #include <vector>
 #include <list>
-#include "structs/camera.h"
-#include "save_png.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "buffer_render.h"
+#include "../structs/camera.h"
+#include "../utils/save_png.h"
+#include "../utils/buffer_render.h"
 
 #define SCREENHEIGHT 200
 #define MAXPTS 10
