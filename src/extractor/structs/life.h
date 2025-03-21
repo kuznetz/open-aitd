@@ -231,6 +231,7 @@ typedef struct LifeInstruction
 	int Size = -1;     //used to map gotos to a given instruction
 } LifeInstruction;
 
+typedef vector<LifeInstruction> LifeInstructions;
 typedef vector<LifeInstruction*> LifeInstructionsP;
 typedef struct LifeNode;
 

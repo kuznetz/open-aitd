@@ -9,6 +9,7 @@
 #include "extractors/game_objects.h"
 #include "extractors/floor_extractor.h"
 #include "extractors/mask_extractor.h"
+#include "extractors/sound_extractor.h"
 #include "life/life_extractor.h"
 
 inline void processStages() {
@@ -31,7 +32,6 @@ inline void processStages() {
         if (!std::filesystem::exists(str2)) {
             saveFloorGLTF(curFloor, str);
         }
-
 
         sprintf(str, "original/CAMERA%02d.PAK", fl);
         PakFile camPak(str);
@@ -61,37 +61,88 @@ inline void processStages() {
 }
 
 
+typedef map<int, vector<int>> AnimationsMap;
+
+void CollectLifeAnims(AnimationsMap& aniMap, LifeInstruction& inst) {
+    int body = -1;
+    int anim = -1;
+    switch (inst.Type->Type)
+    {
+    //THROW 1 2 7
+    //HIT 1 2 6
+    //ANIM_ALL_ONCE - 
+    //ANIM_MOVE - payer move
+    //ANIM_SOUND
+    //ANIM_RESET ??
+    //ANIM_HYBRIDE_ONCE ??
+    //ANIM_HYBRIDE_REPEAT ??
+
+    case LifeEnum::ANIM_ONCE:
+        body = inst.arguments[0].constVal;
+        anim = inst.arguments[1].constVal;
+        break;
+    default:
+        break;
+    }
+    if (body != -1 && anim != -1) {
+        auto& ani = aniMap[body];
+        ani.push_back(anim);
+    }
+}
+
 void extractAllData() {
     //processStages();
 
     map<int,vector<int>> usedAnimations;
+    map<int, vector<int>> objectLifes;
+
+    //writeWAVDemo();
+    PakFile soundsPak("original/LISTSAMP.PAK");
+    for (int i = 0; i < soundsPak.headers.size(); i++) {
+        auto& data = soundsPak.readBlock(i);
+        auto& voc = loadVoc((char*)data.data(), soundsPak.headers[i].uncompressedSize);
+        auto s = string("data/sounds");
+        std::filesystem::create_directories(s);
+        s += "/" + to_string(i) + ".wav";
+        writeWav(&voc, s);
+    }
 
     auto& gameObjs = loadGameObjects("original/OBJETS.ITD");
     for (int i = 0; i < gameObjs.size(); i++) {
         if (gameObjs[i].body != -1 && gameObjs[i].anim != -1) {
-            auto& ani = usedAnimations[gameObjs[i].body];
-            ani.push_back(gameObjs[i].anim);
+            //auto& ani = usedAnimations[gameObjs[i].body];
+            //ani.push_back(gameObjs[i].anim);
+        }
+        if (gameObjs[i].life != -1) {
+            auto& ani = objectLifes[i];
+            ani.push_back(gameObjs[i].life);
         }
     }
 
     PakFile lifePak("original/LISTLIFE.PAK");
-    vector<vector<LifeInstruction>> lifes;
+    vector<LifeInstructions> allLifes;
     vector<vector<LifeNode>> lifesNodes;
     //int i = 514;
     for (int i = 0; i < lifePak.headers.size(); i++)
     {
         auto& data = lifePak.readBlock(i);
-        lifes.push_back(loadLife(data.data(), lifePak.headers[i].uncompressedSize));
-        auto& life = lifes.back();
-
-        LifeInstructionsP lifep;
-        auto lifeData = life.data();
+        auto& life = loadLife(data.data(), lifePak.headers[i].uncompressedSize);
+        
         for (int j = 0; j < life.size(); j++) {
-            lifep.push_back(lifeData + j);
+            CollectLifeAnims(usedAnimations, life[j]);
+
         }
-        auto& nodes = lifeOptimize(lifep);
-        lifesNodes.push_back(nodes);
+
+        //allLifes.push_back(life);
+        //LifeInstructionsP lifep;
+        //auto lifeData = life.data();
+        //for (int j = 0; j < life.size(); j++) {
+        //    lifep.push_back(lifeData + j);
+        //}
+        //auto& nodes = lifeOptimize(lifep);
+        //lifesNodes.push_back(nodes);
     }
+    printf("done.");
     
 
 
