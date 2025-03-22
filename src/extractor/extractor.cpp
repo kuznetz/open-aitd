@@ -82,7 +82,7 @@ void processModels() {
         if (!std::filesystem::exists(str)) {
             auto& model = loadModel((char*)testBody.data(), h.uncompressedSize);
             std::filesystem::create_directories(str);
-            saveModelGLTF(model, string(str));
+            saveModelGLTF(model, {}, string(str));
         }
 
         if (!bodiesEq) {
@@ -90,7 +90,7 @@ void processModels() {
             if (!std::filesystem::exists(str)) {
                 auto& model2 = loadModel((char*)testBody2.data(), h2.uncompressedSize);
                 std::filesystem::create_directories(str);
-                saveModelGLTF(model2, string(str));
+                saveModelGLTF(model2, {}, string(str));
             }
         }
     }
@@ -110,6 +110,16 @@ void processScripts() {
         allLifes.push_back(life);
 
     }
+
+    //for allLifes
+    //LifeInstructionsP lifep;
+    //auto lifeData = life.data();
+    //for (int j = 0; j < life.size(); j++) {
+    //    lifep.push_back(lifeData + j);
+    //}
+    //auto& nodes = lifeOptimize(lifep);
+    //lifesNodes.push_back(nodes);
+
 }
 
 void processSounds() {
@@ -127,44 +137,33 @@ void processSounds() {
 void extractAllData() {
     //processStages();
     //processModels();
-
-    PakFile animPak("original/LISTANIM.PAK");
-    vector<Animation> anims;
-    for (int i = 0; i < animPak.headers.size(); i++)
-    {
-        auto& data = animPak.readBlock(i);
-        auto& anim = loadAnimation(data.data());
-        anims.push_back(anim);
-    }
-    
-
-
-
-    //for allLifes
-    //LifeInstructionsP lifep;
-    //auto lifeData = life.data();
-    //for (int j = 0; j < life.size(); j++) {
-    //    lifep.push_back(lifeData + j);
-    //}
-    //auto& nodes = lifeOptimize(lifep);
-    //lifesNodes.push_back(nodes);
-
-    //extractLife("original/LISTLIFE.PAK", "data/scripts.lua");
-
-
-    //"data/objects.json"
-
     //extractVars("original", "data/vars.json");
 
+    //PakFile animPak("original/LISTANIM.PAK");
+    //vector<Animation> anims;
+    //for (int i = 0; i < animPak.headers.size(); i++)
+    //{
+    //    auto& data = animPak.readBlock(i);
+    //    auto& anim = loadAnimation(data.data());
+    //    anims.push_back(anim);
+    //}
 
-    /*char* srcFN2 = "original/LISTBOD2.PAK";
-    int filesNum2 = PAK_getNumFiles(srcFN2);
-    for (int i2 = 0; i2 < filesNum2; i2++)
+    PakFile animPak("original/LISTANIM.PAK");
+    Animation anim1;
+    Animation anim2;
     {
-        int size = getPakSize(srcFN2, i2);
-        char* testBody = loadPak(srcFN2, i2);
-        loadModel(testBody, size);
-        delete testBody;
-    }*/
+        auto& data = animPak.readBlock(0);
+        anim1 = loadAnimation(data.data());
+    }
+    {
+        auto& data = animPak.readBlock(1);
+        anim2 = loadAnimation(data.data());
+    }
+    vector<Animation*> chestAni = {&anim1};
 
+    PakFile bodyPak("original/LISTBODY.PAK");
+    auto h = bodyPak.headers[1];
+    auto& testBody = bodyPak.readBlock(1);
+    auto& model = loadModel((char*)testBody.data(), h.uncompressedSize);
+    saveModelGLTF(model, { &anim1 }, "data/test");
 }

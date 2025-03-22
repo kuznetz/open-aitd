@@ -290,3 +290,20 @@ void addVertexSkin(tinygltf::Model& m, vector<unsigned char> vecBoneAffect) {
         prim.attributes["WEIGHTS_0"] = weightsAccIdx;
     }
 }
+
+int createBufferAndView(tinygltf::Model& m, void* data, int size, int vwTarget) {
+    tinygltf::Buffer buffer;
+    buffer.data.resize(size);
+    memcpy(buffer.data.data(), data, size);
+    m.buffers.push_back(buffer);
+    int bufIdx = m.buffers.size() - 1;
+
+    tinygltf::BufferView bufVw;
+    bufVw.buffer = bufIdx;
+    bufVw.byteOffset = 0;
+    bufVw.byteLength = size;
+    bufVw.target = vwTarget;
+    m.bufferViews.push_back(bufVw);
+    int vwIdx = m.bufferViews.size() - 1;
+    return vwIdx;
+}

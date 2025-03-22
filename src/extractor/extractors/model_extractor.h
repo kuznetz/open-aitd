@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <string>
 #include "structs/model.h"
+#include "structs/animation.h"
 #include <raymath.h>
 #include "TriangulatePolygon.h"
 #include "../loaders/loaders.h"
@@ -49,7 +50,110 @@ int getMaterialIdx(tinygltf::Model& m, u8 colorIdx, u8 subType = 0)
     return m.materials.size() - 1;
 }
 
-void saveModelGLTF(const PakModel& model, const string dirname)
+Quaternion GetAniRotation(AniBone& bone)
+{
+    //zxy
+    auto q1 = QuaternionFromAxisAngle({ 0,0,1 }, -(float)bone.delta[2] * 2 * PI / 1024);
+    auto q2 = QuaternionFromAxisAngle({ 1,0,0 }, -(float)bone.delta[0] * 2 * PI / 1024);
+    auto q3 = QuaternionFromAxisAngle({ 0,1,0 }, -(float)bone.delta[1] * 2 * PI / 1024);
+    return QuaternionMultiply(QuaternionMultiply(q1, q2), q3);
+}
+
+struct boneAnimExp {
+    int type;
+    vector<Vector4> rotates;
+    vector<Vector3> translates;
+    vector<Vector3> scales;
+};
+
+void addAnimation(tinygltf::Model& m, Animation &anim) {
+    vector<float> timeline;
+    vector<boneAnimExp> expBones;
+
+    expBones.resize(anim.frames[0].bones.size());
+    for (int j = 0; j < anim.frames[0].bones.size(); j++) {
+        expBones[j].type = anim.frames[0].bones[j].type;
+        switch (expBones[j].type) {
+        case 0:
+            expBones[j].rotates.resize(anim.frames.size());
+            break;
+        case 1:
+            expBones[j].translates.resize(anim.frames.size());
+            break;
+        case 2:
+            expBones[j].scales.resize(anim.frames.size());
+            break;
+        }
+    }
+
+    for (int i = 0; i < anim.frames.size(); i++) {
+        auto& f = anim.frames[i];
+        timeline.push_back((float)f.timestamp / 50);
+        for (int j = 0; j < f.bones.size(); j++) {
+            auto& b = f.bones[j];
+            auto& eb = expBones[j];
+            if (b.type != eb.type) throw new exception("Type changed");
+            switch (eb.type) {
+            case 0:
+                eb.rotates[i] = GetAniRotation(b);
+                break;
+            case 1:
+                //expBones[j].translates.resize(anim.frames.size());
+                break;
+            case 2:
+                //expBones[j].scales.resize(anim.frames.size());
+                break;
+            }
+        }
+    }
+
+    int vwTime = createBufferAndView(m, timeline.data(), timeline.size() * sizeof(float), 0);
+    tinygltf::Accessor accTime;
+    accTime.bufferView = vwTime;
+    accTime.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
+    accTime.count = timeline.size();
+    accTime.type = TINYGLTF_TYPE_SCALAR;
+    m.accessors.push_back(accTime);
+    int accTimeIdx = m.accessors.size() - 1;
+
+    tinygltf::Animation outAni;
+    outAni.samplers.resize(expBones.size());
+    outAni.channels.resize(expBones.size());
+
+    for (int i = 0; i < expBones.size(); i++) {
+        int vwData = 0;
+        int accDataType = TINYGLTF_TYPE_VEC3;
+        string aniTargetPath = "rotation";
+        switch (expBones[i].type) {
+        case 0:
+            vwData = createBufferAndView(m, expBones[i].rotates.data(), timeline.size() * 4 * sizeof(float), 0);
+            accDataType = TINYGLTF_TYPE_VEC4;
+            break;
+        case 1:
+            break;
+        case 2:
+            break;
+        }
+
+        tinygltf::Accessor accData;
+        accData.bufferView = vwData;
+        accData.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
+        accData.count = timeline.size();
+        accData.type = accDataType;
+        m.accessors.push_back(accData);
+        int accDataIdx = m.accessors.size() - 1;
+
+        outAni.samplers[i].input = accTimeIdx;
+        outAni.samplers[i].output = accDataIdx;
+        outAni.channels[i].sampler = i;
+        outAni.channels[i].target_node = i + 1;
+        outAni.channels[i].target_path = "rotation";
+    }
+
+    m.animations.push_back(outAni);
+}
+
+void saveModelGLTF(const PakModel& model, vector<Animation*> animations, const string dirname)
 {
     tinygltf::Model m;
     m.asset.version = "2.0";
@@ -148,6 +252,10 @@ void saveModelGLTF(const PakModel& model, const string dirname)
         m.skins.push_back(skin);
         m.nodes[0].skin = 0;
         addVertexSkin(m, vecBoneAffect);
+    }
+
+    for (int i = 0; i < animations.size(); i++) {
+        addAnimation(m, *animations[i]);
     }
 
     tinygltf::TinyGLTF gltf;
