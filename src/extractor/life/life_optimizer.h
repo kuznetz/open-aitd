@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "../structs/life.h"
 
-bool isIfInstr(LifeInstruction& instr) {
+inline bool isIfInstr(LifeInstruction& instr) {
 	auto t = instr.Type->Type;
 	if (t == LifeEnum::IF_EGAL) return true;
 	if (t == LifeEnum::IF_DIFFERENT) return true;
@@ -17,7 +17,7 @@ bool isIfInstr(LifeInstruction& instr) {
 LifeNode DetectIfElse(LifeInstructionsP& insructs, int& i);
 LifeNode DetectSwitch(LifeInstructionsP& insructs, int& i);
 
-vector<LifeNode> lifeOptimize(LifeInstructionsP& instructs) {
+inline vector<LifeNode> lifeOptimize(LifeInstructionsP& instructs) {
 	vector<LifeNode> result;
 	int i = 0;
 	while (i<instructs.size())
@@ -49,7 +49,7 @@ vector<LifeNode> lifeOptimize(LifeInstructionsP& instructs) {
 	return result;
 }
 
-LifeNode DetectIfElse(LifeInstructionsP& insructs, int &i)
+inline LifeNode DetectIfElse(LifeInstructionsP& insructs, int &i)
 {
 	LifeNode ln;
 	int startPos = insructs[0]->Position;
@@ -88,7 +88,7 @@ LifeNode DetectIfElse(LifeInstructionsP& insructs, int &i)
 	return ln;
 }
 
-LifeNode DetectSwitch(LifeInstructionsP& insructs, int& i)
+inline LifeNode DetectSwitch(LifeInstructionsP& insructs, int& i)
 {
 	LifeNode result;
 	result.instr = insructs[i++];

@@ -4,3 +4,4 @@
 #include "structs/model.h"
 
 void extractAllData();
+floorStruct loadFloorPak(string filename);

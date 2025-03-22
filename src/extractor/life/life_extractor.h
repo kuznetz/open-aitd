@@ -17,14 +17,14 @@ struct lifeBuffer {
 	u8* dataEnd;
 };
 
-s16 read16(lifeBuffer& buf) {
+inline s16 read16(lifeBuffer& buf) {
 	if (buf.data >= buf.dataEnd) throw new exception("read16 over buffer size");
     s16 res = READ_LE_S16(buf.data);
 	buf.data += 2;
 	return res;
 }
 
-LifeExpr readExpr(lifeBuffer& buf) {
+inline LifeExpr readExpr(lifeBuffer& buf) {
 	LifeExpr result;
 	s16 varTypeN = read16(buf);
 	if (varTypeN == -1) {
@@ -63,7 +63,7 @@ LifeExpr readExpr(lifeBuffer& buf) {
 }
 
 
-LifeInstruction readInstruction(lifeBuffer &buf) {
+inline LifeInstruction readInstruction(lifeBuffer &buf) {
 	LifeInstruction result;
 	u16 opCodeN = read16(buf);
 
@@ -112,7 +112,7 @@ LifeInstruction readInstruction(lifeBuffer &buf) {
 	return result;
 }
 
-vector<LifeInstruction> loadLife(u8* data, int size)
+inline vector<LifeInstruction> loadLife(u8* data, int size)
 {
 	lifeBuffer buf = {
 		data,
@@ -154,7 +154,7 @@ vector<LifeInstruction> loadLife(u8* data, int size)
 	return life;
 }
 
-void extractLife(string fname, string outFile)
+inline void extractLife(string fname, string outFile)
 {
 	PakFile pak(fname);
 	vector<vector<LifeInstruction>> lifes;

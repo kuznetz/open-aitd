@@ -1,5 +1,4 @@
-﻿#pragma once
-#include <string>
+﻿#include <string>
 #include "../pak/pak.h"
 #include "../structs/model.h"
 #include "../structs/int_types.h"

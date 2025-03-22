@@ -5,7 +5,7 @@
 
 #include "../utils/save_png.h"
 #include "../structs/int_types.h"
-#include "../loaders/palette.h"
+#include "../loaders/loaders.h"
 #include "../pak/pak.h"
 
 void extractBackground(u8* img, char* outPng) {

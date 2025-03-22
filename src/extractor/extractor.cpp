@@ -4,8 +4,7 @@
 #include <map>
 
 #include "pak/pak.h"
-#include "loaders/floor_loader.h"
-#include "loaders/model_loader.h"
+#include "loaders/loaders.h"
 #include "extractors/background_extractor.h"
 #include "extractors/object_extractor.h"
 #include "extractors/floor_extractor.h"
@@ -13,8 +12,6 @@
 #include "extractors/sound_extractor.h"
 #include "extractors/model_extractor.h"
 #include "life/life_extractor.h"
-#include "res_using/life_using.h"
-#include "res_using/body_using.h"
 
 inline void processStages() {
     char floordir[100];
@@ -95,7 +92,7 @@ void extractAllData() {
 
     PakFile bodyPak("original/LISTBODY.PAK");
     PakFile body2Pak("original/LISTBOD2.PAK");
-    //int i = 2;
+    //int bodyId = 2;
     for ( int i = 0; i < bodyPak.headers.size(); i++ )
     {
         auto h = bodyPak.headers[i];
@@ -125,17 +122,6 @@ void extractAllData() {
             }
         }
     }
-
-    LifeUsing lifeUse(&allLifes, &gameObjs);
-    auto& lifeUse2 = lifeUse.result;
-    
-    BodyUsing bodyUse(&allLifes, &gameObjs, &lifeUse2);
-    auto& bodyUse2 = bodyUse.result;
-
-    BodyUsing animUse(&allLifes, &gameObjs, &lifeUse2);
-    auto& animUse2 = animUse.result;
-
-
 
     //for allLifes
     //LifeInstructionsP lifep;

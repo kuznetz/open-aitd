@@ -3,7 +3,7 @@
 #include <string.h>
 #include <string>
 #include <iostream>
-#include "extractor/extractor.h"
+#include "extractor/loaders/loaders.h"
 #include <renderer.h>
 #include <rcamera.h>
 #include <raymath.h>

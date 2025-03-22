@@ -7,14 +7,14 @@
 #include <fstream>
 #include "../structs/life.h"
 
-void writeSpaces(ofstream& out, int level) {
+inline void writeSpaces(ofstream& out, int level) {
 	for (int l = 0; l < level; l++)
 	{
 		out << "  ";
 	}
 }
 
-void writeLifeExpr(ofstream& out, LifeExpr& expr)
+inline void writeLifeExpr(ofstream& out, LifeExpr& expr)
 {
 	if (!expr.Type) {
 		out << to_string(expr.constVal);
@@ -35,7 +35,7 @@ void writeLifeExpr(ofstream& out, LifeExpr& expr)
 	out << ")";
 }
 
-void writeLifeInstr(ofstream& out, LifeInstruction& instr)
+inline void writeLifeInstr(ofstream& out, LifeInstruction& instr)
 {
 	//out << i << ": ";
 	if (instr.Actor != -1) {
@@ -55,7 +55,7 @@ void writeLifeInstr(ofstream& out, LifeInstruction& instr)
 	out << "\n";
 }
 
-void saveLifeInstructions(ofstream& out, vector<LifeInstruction>& instructs)
+inline void saveLifeInstructions(ofstream& out, vector<LifeInstruction>& instructs)
 {
 	for (int i = 0; i < instructs.size(); i++)
 	{
@@ -65,9 +65,9 @@ void saveLifeInstructions(ofstream& out, vector<LifeInstruction>& instructs)
 	}
 }
 
-void writeLifeNodes(ofstream& out, int level, vector<LifeNode>& nodes);
+inline void writeLifeNodes(ofstream& out, int level, vector<LifeNode>& nodes);
 
-void writeIfHead(ofstream& out, LifeNode& ifNode)
+inline void writeIfHead(ofstream& out, LifeNode& ifNode)
 {
 	out << "if ";
 	for (int i = 0; i < ifNode.ifConditions.size(); i++) {
@@ -94,7 +94,7 @@ void writeIfHead(ofstream& out, LifeNode& ifNode)
 	out << " then\n";
 }
 
-void writeCaseExpr(ofstream& out, LifeInstruction& switchi, LifeInstruction& instr)
+inline void writeCaseExpr(ofstream& out, LifeInstruction& switchi, LifeInstruction& instr)
 {
 	if (instr.Type->Type == LifeEnum::CASE) {
 		writeLifeExpr(out, switchi.arguments[0]);
@@ -115,7 +115,7 @@ void writeCaseExpr(ofstream& out, LifeInstruction& switchi, LifeInstruction& ins
 	}
 }
 
-void writeSwitch(ofstream& out, int level, LifeNode& ifNode)
+inline void writeSwitch(ofstream& out, int level, LifeNode& ifNode)
 {
 	for (int i = 0; i < ifNode.cases.size(); i++) {
 		writeSpaces(out, level);
@@ -132,7 +132,7 @@ void writeSwitch(ofstream& out, int level, LifeNode& ifNode)
 	out << "end\n";
 }
 
-void writeLifeNodes(ofstream& out, int level, vector<LifeNode>& nodes)
+inline void writeLifeNodes(ofstream& out, int level, vector<LifeNode>& nodes)
 {
 	//out << "function life_" << lifeIdx << "(o)\n";
 	//vector<int> gotos;
