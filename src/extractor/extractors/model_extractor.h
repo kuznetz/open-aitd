@@ -3,8 +3,8 @@
 #include "structs/model.h"
 #include <raymath.h>
 #include "TriangulatePolygon.h"
-#include "palette.h"
-#include "my_gltf.h"
+#include "../loaders/palette.h"
+#include "../utils/my_gltf.h"
 
 using namespace std;
 

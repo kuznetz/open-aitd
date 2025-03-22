@@ -1,7 +1,8 @@
 ﻿#pragma once
 #include <string>
-#include "pak/pak.h"
-#include "structs/model.h"
+#include "../pak/pak.h"
+#include "../structs/model.h"
+#include "../structs/int_types.h"
 
 int loadModelBones(PakModel &body, char* data) {
 	int i = 0;
@@ -158,10 +159,13 @@ PakModel loadModel(char* data, int size) {
 	body.bounds.ZVY2 = READ_LE_S16(data + 8);
     body.bounds.ZVZ1 = READ_LE_S16(data + 10);
 	body.bounds.ZVZ2 = READ_LE_S16(data + 12);
-	int vertsOffs = READ_LE_S16(data + 14) + 16;
+	
+	int i = 0xE;
+	int vertsOffs = READ_LE_S16(data + i);
+	i += vertsOffs + 2;
 
-	int vertsCount = READ_LE_S16(data + vertsOffs);
-	int i = vertsOffs+2;
+	int vertsCount = READ_LE_S16(data + i);
+	i += 2;
 	body.vertices.resize(vertsCount*3);
 	for (int j = 0; j < vertsCount; j++)
 	{

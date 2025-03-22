@@ -5,13 +5,16 @@
 
 #include "pak/pak.h"
 #include "loaders/floor_loader.h"
+#include "loaders/model_loader.h"
 #include "extractors/background_extractor.h"
 #include "extractors/object_extractor.h"
 #include "extractors/floor_extractor.h"
 #include "extractors/mask_extractor.h"
 #include "extractors/sound_extractor.h"
+#include "extractors/model_extractor.h"
 #include "life/life_extractor.h"
-#include "life/life_using.h"
+#include "res_using/life_using.h"
+#include "res_using/body_using.h"
 
 inline void processStages() {
     char floordir[100];
@@ -61,46 +64,17 @@ inline void processStages() {
     }
 }
 
-
-//typedef map<int, vector<int>> AnimationsMap;
-//void CollectLifeAnims(AnimationsMap& aniMap, LifeInstruction& inst) {
-//    int body = -1;
-//    int anim = -1;
-//    switch (inst.Type->Type)
-//    {
-//    //THROW 1 2 7
-//    //HIT 1 2 6
-//    //ANIM_ALL_ONCE - 
-//    //ANIM_MOVE - payer move
-//    //ANIM_SOUND
-//    //ANIM_RESET ??
-//    //ANIM_HYBRIDE_ONCE ??
-//    //ANIM_HYBRIDE_REPEAT ??
-//
-//    case LifeEnum::ANIM_ONCE:
-//        body = inst.arguments[0].constVal;
-//        anim = inst.arguments[1].constVal;
-//        break;
-//    default:
-//        break;
-//    }
-//    if (body != -1 && anim != -1) {
-//        auto& ani = aniMap[body];
-//        ani.push_back(anim);
-//    }
-//}
-
 void extractAllData() {
     //processStages();
 
     /*
     PakFile soundsPak("original/LISTSAMP.PAK");
-    for (int i = 0; i < soundsPak.headers.size(); i++) {
-        auto& data = soundsPak.readBlock(i);
-        auto& voc = loadVoc((char*)data.data(), soundsPak.headers[i].uncompressedSize);
+    for (int i2 = 0; i2 < soundsPak.headers.size(); i2++) {
+        auto& data = soundsPak.readBlock(i2);
+        auto& voc = loadVoc((char*)data.data(), soundsPak.headers[i2].uncompressedSize);
         auto s = string("data/sounds");
         std::filesystem::create_directories(s);
-        s += "/" + to_string(i) + ".wav";
+        s += "/" + to_string(i2) + ".wav";
         writeWav(&voc, s);
     }
     */
@@ -110,7 +84,7 @@ void extractAllData() {
     PakFile lifePak("original/LISTLIFE.PAK");
     vector<LifeInstructions> allLifes;
     vector<vector<LifeNode>> lifesNodes;
-    //int i = 514;
+    //int i2 = 514;
     for (int i = 0; i < lifePak.headers.size(); i++)
     {
         auto& data = lifePak.readBlock(i);
@@ -119,8 +93,49 @@ void extractAllData() {
         
     }
 
+    PakFile bodyPak("original/LISTBODY.PAK");
+    PakFile body2Pak("original/LISTBOD2.PAK");
+    //int i = 2;
+    for ( int i = 0; i < bodyPak.headers.size(); i++ )
+    {
+        auto h = bodyPak.headers[i];
+        auto& testBody = bodyPak.readBlock(i);
+
+        auto h2 = body2Pak.headers[i];
+        auto& testBody2 = body2Pak.readBlock(i);
+
+        bool bodiesEq = h2.uncompressedSize == h.uncompressedSize;
+        if (bodiesEq) {
+            bodiesEq = !memcmp(testBody.data(), testBody2.data(), testBody.size());
+        }
+
+        string str = string("data/models/") + to_string(i);
+        if (!std::filesystem::exists(str)) {
+            auto& model = loadModel((char*)testBody.data(), h.uncompressedSize);
+            std::filesystem::create_directories(str);
+            saveModelGLTF(model, string(str));
+        }
+
+        if (!bodiesEq) {
+            str = string("data/models/") + to_string(i) + "_alt";
+            if (!std::filesystem::exists(str)) {
+                auto& model2 = loadModel((char*)testBody2.data(), h2.uncompressedSize);
+                std::filesystem::create_directories(str);
+                saveModelGLTF(model2, string(str));
+            }
+        }
+    }
+
     LifeUsing lifeUse(&allLifes, &gameObjs);
-    auto& res = lifeUse.result;
+    auto& lifeUse2 = lifeUse.result;
+    
+    BodyUsing bodyUse(&allLifes, &gameObjs, &lifeUse2);
+    auto& bodyUse2 = bodyUse.result;
+
+    BodyUsing animUse(&allLifes, &gameObjs, &lifeUse2);
+    auto& animUse2 = animUse.result;
+
+
 
     //for allLifes
     //LifeInstructionsP lifep;
@@ -141,25 +156,12 @@ void extractAllData() {
 
     /*char* srcFN2 = "original/LISTBOD2.PAK";
     int filesNum2 = PAK_getNumFiles(srcFN2);
-    for (int i = 0; i < filesNum2; i++)
+    for (int i2 = 0; i2 < filesNum2; i2++)
     {
-        int size = getPakSize(srcFN2, i);
-        char* testBody = loadPak(srcFN2, i);
+        int size = getPakSize(srcFN2, i2);
+        char* testBody = loadPak(srcFN2, i2);
         loadModel(testBody, size);
         delete testBody;
     }*/
 
-
-
-    //PakFile lifePak("original/LISTBODY.PAK");
-    ////int i = 1;
-    //for ( int i = 0; i < lifePak.headers.size(); i++ )
-    //{
-    //    auto h = lifePak.headers[i];
-    //    auto& testBody = lifePak.readBlock(i);
-    //    auto& model = loadModel((char*)testBody.data(), h.uncompressedSize);
-    //    sprintf(str, "data/models/LISTBODY_%d", i);
-    //    std::filesystem::create_directories(str);
-    //    saveModelGLTF(model, string(str));
-    //}
 }
