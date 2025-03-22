@@ -61,39 +61,11 @@ inline void processStages() {
     }
 }
 
-void extractAllData() {
-    //processStages();
-
-    /*
-    PakFile soundsPak("original/LISTSAMP.PAK");
-    for (int i2 = 0; i2 < soundsPak.headers.size(); i2++) {
-        auto& data = soundsPak.readBlock(i2);
-        auto& voc = loadVoc((char*)data.data(), soundsPak.headers[i2].uncompressedSize);
-        auto s = string("data/sounds");
-        std::filesystem::create_directories(s);
-        s += "/" + to_string(i2) + ".wav";
-        writeWav(&voc, s);
-    }
-    */
-
-    auto& gameObjs = loadGameObjects("original/OBJETS.ITD");
-
-    PakFile lifePak("original/LISTLIFE.PAK");
-    vector<LifeInstructions> allLifes;
-    vector<vector<LifeNode>> lifesNodes;
-    //int i2 = 514;
-    for (int i = 0; i < lifePak.headers.size(); i++)
-    {
-        auto& data = lifePak.readBlock(i);
-        auto& life = loadLife(data.data(), lifePak.headers[i].uncompressedSize);
-        allLifes.push_back(life);
-        
-    }
-
+void processModels() {
     PakFile bodyPak("original/LISTBODY.PAK");
     PakFile body2Pak("original/LISTBOD2.PAK");
     //int bodyId = 2;
-    for ( int i = 0; i < bodyPak.headers.size(); i++ )
+    for (int i = 0; i < bodyPak.headers.size(); i++)
     {
         auto h = bodyPak.headers[i];
         auto& testBody = bodyPak.readBlock(i);
@@ -122,6 +94,51 @@ void extractAllData() {
             }
         }
     }
+}
+
+void processScripts() {
+    auto& gameObjs = loadGameObjects("original/OBJETS.ITD");
+
+    PakFile lifePak("original/LISTLIFE.PAK");
+    vector<LifeInstructions> allLifes;
+    vector<vector<LifeNode>> lifesNodes;
+    //int i2 = 514;
+    for (int i = 0; i < lifePak.headers.size(); i++)
+    {
+        auto& data = lifePak.readBlock(i);
+        auto& life = loadLife(data.data(), lifePak.headers[i].uncompressedSize);
+        allLifes.push_back(life);
+
+    }
+}
+
+void processSounds() {
+    PakFile soundsPak("original/LISTSAMP.PAK");
+    for (int i2 = 0; i2 < soundsPak.headers.size(); i2++) {
+        auto& data = soundsPak.readBlock(i2);
+        auto& voc = loadVoc((char*)data.data(), soundsPak.headers[i2].uncompressedSize);
+        auto s = string("data/sounds");
+        std::filesystem::create_directories(s);
+        s += "/" + to_string(i2) + ".wav";
+        writeWav(&voc, s);
+    }
+}
+
+void extractAllData() {
+    //processStages();
+    //processModels();
+
+    PakFile animPak("original/LISTANIM.PAK");
+    vector<Animation> anims;
+    for (int i = 0; i < animPak.headers.size(); i++)
+    {
+        auto& data = animPak.readBlock(i);
+        auto& anim = loadAnimation(data.data());
+        anims.push_back(anim);
+    }
+    
+
+
 
     //for allLifes
     //LifeInstructionsP lifep;

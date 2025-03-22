@@ -10,12 +10,17 @@
 #include "res_using/body_using.h"
 #include "res_using/anim_using.h"
 
+#define NLOHMANN_JSON_NAMESPACE_NO_VERSION 1
+#include <nlohmann/json.hpp>
+using nlohmann::json;
+
 struct ModelAinmsStruct {
     bool hasBones = false;
     vector<int> anims;
 };
 
-void linkAnimation() {
+void linkAnimations() {
+
     auto& gameObjs = loadGameObjects("original/OBJETS.ITD");
 
     PakFile lifePak("original/LISTLIFE.PAK");
@@ -68,7 +73,11 @@ void linkAnimation() {
     AnimUsing animUse(&allLifes, &gameObjs, &lifeUse2);
     auto& animUse2 = animUse.result;
 
+    auto outJson = json::array();
     for (int bodyId = 0; bodyId < bodyPak.headers.size(); bodyId++) {
+        if (!modelAnims[bodyId].hasBones) continue;
+
+        //Objects uses this body
         vector<int> bodyObjs;
         for (auto it = bodyUse2.begin(); it != bodyUse2.end(); it++) {
             auto& objId = it->first;
@@ -77,6 +86,25 @@ void linkAnimation() {
             bodyObjs.push_back(objId);
 
         }
+
+        //Animations uses this body
+        vector<int> bodyAnims;
+        for (int i = 0; i < bodyObjs.size(); i++) {
+            auto& ani = animUse2[bodyObjs[i]];
+            bodyAnims.insert(bodyAnims.end(), ani.begin(), ani.end());
+        }
+        auto last = std::unique(bodyAnims.begin(), bodyAnims.end());
+        bodyAnims.erase(last, bodyAnims.end());
+
+        auto rowJson = json::object();
+        rowJson["modelId"] = bodyId;
+        rowJson["anims"] = json::array();
+        for (int i = 0; i < bodyAnims.size(); i++) {
+            rowJson["anims"].push_back(bodyAnims[i]);
+        }
+        outJson.push_back(rowJson);
     }
 
+    std::ofstream o("data/animation_links.json");
+    o << std::setw(2) << outJson << std::endl;
 }

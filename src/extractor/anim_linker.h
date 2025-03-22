@@ -3,5 +3,4 @@
 #include "structs/floor.h"
 #include "structs/model.h"
 
-void extractAllData();
-floorStruct loadFloorPak(string filename);
+void linkAnimations();

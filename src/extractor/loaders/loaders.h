@@ -4,6 +4,7 @@
 #include "../structs/int_types.h"
 #include "../structs/game_objects.h"
 #include "../structs/floor.h"
+#include "../structs/animation.h"
 #include <stdio.h>
 #include <string>
 #include <fstream>
@@ -11,7 +12,9 @@
 #include <vector>
 using namespace std;
 
+
 u8* getPalColor(u8 idx);
 vector<gameObjectStruct> loadGameObjects(string from);
 PakModel loadModel(char* data, int size);
 floorStruct loadFloorPak(string filename);
+Animation loadAnimation(u8* animPtr);
