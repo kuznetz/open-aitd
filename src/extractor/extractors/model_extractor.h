@@ -6,8 +6,11 @@
 #include "TriangulatePolygon.h"
 #include "../loaders/loaders.h"
 #include "../utils/my_gltf.h"
+#define NLOHMANN_JSON_NAMESPACE_NO_VERSION 1
+#include <nlohmann/json.hpp>
 
 using namespace std;
+using nlohmann::json;
 
 void ComputeUV(vector<Vector3>& allVertices, vector<int>& polyVertices, Vector3& forward, Vector3& left)
 {
@@ -68,27 +71,42 @@ struct boneAnimExp {
 
 void addAnimation(tinygltf::Model& m, Animation &anim) {
     vector<float> timeline;
-    vector<boneAnimExp> expBones;
+    float curTime = 0;
+    timeline.push_back(0);
+    for (int i = 0; i < anim.frames.size(); i++) {
+        auto& f = anim.frames[i];
+        curTime += f.timestamp / 60.f;
+        timeline.push_back(curTime);
+    }
 
+    vector<boneAnimExp> expBones;
     expBones.resize(anim.frames[0].bones.size());
     for (int j = 0; j < anim.frames[0].bones.size(); j++) {
         expBones[j].type = anim.frames[0].bones[j].type;
+        //auto& r = m.nodes[j + 1].rotation;
+        //auto& t = m.nodes[j + 1].translation;
+        //auto& s = m.nodes[j + 1].scale;
+        //expBones[j].rotates[0] = { (float)r[0],(float)r[1],(float)r[2],(float)r[3] };
+        //expBones[j].translates[0] = { (float)t[0],(float)t[1],(float)t[2] };
+        //expBones[j].scales[0] = { (float)s[0],(float)s[1],(float)s[2] };
         switch (expBones[j].type) {
         case 0:
-            expBones[j].rotates.resize(anim.frames.size());
+            expBones[j].rotates.resize(timeline.size());
+            expBones[j].rotates[0] = { 0,0,0,0 };
             break;
         case 1:
-            expBones[j].translates.resize(anim.frames.size());
+            expBones[j].translates.resize(timeline.size());
+            expBones[j].translates[0] = { 0,0,0 };
             break;
         case 2:
-            expBones[j].scales.resize(anim.frames.size());
+            expBones[j].scales.resize(timeline.size());
+            expBones[j].scales[0] = { 0,0,0 };
             break;
         }
     }
 
     for (int i = 0; i < anim.frames.size(); i++) {
         auto& f = anim.frames[i];
-        timeline.push_back((float)f.timestamp / 50);
         for (int j = 0; j < f.bones.size(); j++) {
             auto& b = f.bones[j];
             auto& eb = expBones[j];
@@ -98,14 +116,16 @@ void addAnimation(tinygltf::Model& m, Animation &anim) {
                 eb.rotates[i] = GetAniRotation(b);
                 break;
             case 1:
-                //expBones[j].translates.resize(anim.frames.size());
+                eb.translates[i] = { b.delta[0] / 1000.0f, -b.delta[1] / 1000.0f, b.delta[2] / 1000.0f};
                 break;
             case 2:
-                //expBones[j].scales.resize(anim.frames.size());
+                eb.scales[i] = { b.delta[0] / 256.0f + 1.0f, b.delta[1] / 256.0f + 1.0f, b.delta[2] / 256.0f + 1.0f };
                 break;
             }
         }
     }
+
+    //First to last
 
     int vwTime = createBufferAndView(m, timeline.data(), timeline.size() * sizeof(float), 0);
     tinygltf::Accessor accTime;
@@ -130,8 +150,12 @@ void addAnimation(tinygltf::Model& m, Animation &anim) {
             accDataType = TINYGLTF_TYPE_VEC4;
             break;
         case 1:
+            vwData = createBufferAndView(m, expBones[i].translates.data(), timeline.size() * 3 * sizeof(float), 0);
+            aniTargetPath = "translation";
             break;
         case 2:
+            vwData = createBufferAndView(m, expBones[i].scales.data(), timeline.size() * 3 * sizeof(float), 0);
+            aniTargetPath = "scale";
             break;
         }
 
@@ -143,11 +167,12 @@ void addAnimation(tinygltf::Model& m, Animation &anim) {
         m.accessors.push_back(accData);
         int accDataIdx = m.accessors.size() - 1;
 
+        outAni.name = string("a_" + to_string(anim.id));
         outAni.samplers[i].input = accTimeIdx;
         outAni.samplers[i].output = accDataIdx;
         outAni.channels[i].sampler = i;
         outAni.channels[i].target_node = i + 1;
-        outAni.channels[i].target_path = "rotation";
+        outAni.channels[i].target_path = aniTargetPath;
     }
 
     m.animations.push_back(outAni);

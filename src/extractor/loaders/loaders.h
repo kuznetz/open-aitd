@@ -17,4 +17,4 @@ u8* getPalColor(u8 idx);
 vector<gameObjectStruct> loadGameObjects(string from);
 PakModel loadModel(char* data, int size);
 floorStruct loadFloorPak(string filename);
-Animation loadAnimation(u8* animPtr);
+Animation loadAnimation(int id, u8* animPtr);

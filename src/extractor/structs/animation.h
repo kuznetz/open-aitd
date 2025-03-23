@@ -23,5 +23,6 @@ typedef struct
 
 typedef struct
 {
+    int id;
     std::vector<AniFrame> frames;
 } Animation;

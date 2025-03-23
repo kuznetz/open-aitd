@@ -62,6 +62,20 @@ inline void processStages() {
 }
 
 void processModels() {
+    std::ifstream ifs("data/animation_links.json");
+    json animLinks = json::parse(ifs);
+
+    PakFile animPak("original/LISTANIM.PAK");
+    PakFile anim2Pak("original/LISTANI2.PAK");
+    vector<Animation> anims;
+    vector<Animation> anims2;
+    for (int i = 0; i < animPak.headers.size(); i++) {
+        auto& block = animPak.readBlock(i);
+        anims.push_back(loadAnimation(i, block.data()));
+        auto& block2 = anim2Pak.readBlock(i);
+        anims2.push_back(loadAnimation(i, block2.data()));
+    }
+
     PakFile bodyPak("original/LISTBODY.PAK");
     PakFile body2Pak("original/LISTBOD2.PAK");
     //int bodyId = 2;
@@ -73,24 +87,41 @@ void processModels() {
         auto h2 = body2Pak.headers[i];
         auto& testBody2 = body2Pak.readBlock(i);
 
-        bool bodiesEq = h2.uncompressedSize == h.uncompressedSize;
-        if (bodiesEq) {
-            bodiesEq = !memcmp(testBody.data(), testBody2.data(), testBody.size());
+        bool altBody = h2.uncompressedSize != h.uncompressedSize;
+        if (!altBody) {
+            altBody = !!memcmp(testBody.data(), testBody2.data(), testBody.size());
         }
 
-        string str = string("data/models/") + to_string(i);
-        if (!std::filesystem::exists(str)) {
+        std::vector<int> curAnims;
+        for (int j = 0; j < animLinks.size(); j++) {            
+            int modelId = animLinks[j]["modelId"];
+            if (modelId == i) {
+                curAnims = animLinks[j]["anims"].get<std::vector<int>>();
+                break;
+            }
+        }
+
+        string outDir = string("data/models/") + to_string(i);
+        if (!std::filesystem::exists(outDir)) {
             auto& model = loadModel((char*)testBody.data(), h.uncompressedSize);
-            std::filesystem::create_directories(str);
-            saveModelGLTF(model, {}, string(str));
+            vector<Animation*> animations;
+            for (int j = 0; j < curAnims.size(); j++) {
+                animations.push_back(&anims[curAnims[j]]);
+            }
+            std::filesystem::create_directories(outDir);
+            saveModelGLTF(model, animations, string(outDir));
         }
 
-        if (!bodiesEq) {
-            str = string("data/models/") + to_string(i) + "_alt";
-            if (!std::filesystem::exists(str)) {
+        if (altBody) {
+            outDir = string("data/models/") + to_string(i) + "_alt";
+            if (!std::filesystem::exists(outDir)) {
                 auto& model2 = loadModel((char*)testBody2.data(), h2.uncompressedSize);
-                std::filesystem::create_directories(str);
-                saveModelGLTF(model2, {}, string(str));
+                vector<Animation*> animations;
+                for (int j = 0; j < curAnims.size(); j++) {
+                    animations.push_back(&anims2[curAnims[j]]);
+                }
+                std::filesystem::create_directories(outDir);
+                saveModelGLTF(model2, animations, string(outDir));
             }
         }
     }
@@ -134,6 +165,30 @@ void processSounds() {
     }
 }
 
+void animTest() {
+    //Quaternion.identity
+    int modelId = 12;
+    int animId = 68;
+
+    PakFile animPak("original/LISTANIM.PAK");
+    Animation anim1;
+    Animation anim2;
+    {
+        auto& data = animPak.readBlock(animId);
+        anim1 = loadAnimation(animId, data.data());
+    }
+    {
+        auto& data = animPak.readBlock(16);
+        anim2 = loadAnimation(0, data.data());
+    }
+
+    PakFile bodyPak("original/LISTBODY.PAK");
+    auto h = bodyPak.headers[modelId];
+    auto& testBody = bodyPak.readBlock(modelId);
+    auto& model = loadModel((char*)testBody.data(), h.uncompressedSize);
+    saveModelGLTF(model, { &anim1 }, "data/test");
+}
+
 void extractAllData() {
     //processStages();
     //processModels();
@@ -141,29 +196,12 @@ void extractAllData() {
 
     //PakFile animPak("original/LISTANIM.PAK");
     //vector<Animation> anims;
-    //for (int i = 0; i < animPak.headers.size(); i++)
+    //for (int j = 0; j < animPak.headers.size(); j++)
     //{
-    //    auto& data = animPak.readBlock(i);
+    //    auto& data = animPak.readBlock(j);
     //    auto& anim = loadAnimation(data.data());
     //    anims.push_back(anim);
     //}
 
-    PakFile animPak("original/LISTANIM.PAK");
-    Animation anim1;
-    Animation anim2;
-    {
-        auto& data = animPak.readBlock(0);
-        anim1 = loadAnimation(data.data());
-    }
-    {
-        auto& data = animPak.readBlock(1);
-        anim2 = loadAnimation(data.data());
-    }
-    vector<Animation*> chestAni = {&anim1};
-
-    PakFile bodyPak("original/LISTBODY.PAK");
-    auto h = bodyPak.headers[1];
-    auto& testBody = bodyPak.readBlock(1);
-    auto& model = loadModel((char*)testBody.data(), h.uncompressedSize);
-    saveModelGLTF(model, { &anim1 }, "data/test");
+    animTest();
 }

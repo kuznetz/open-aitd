@@ -6,8 +6,9 @@
 
 using namespace std;
 
-Animation loadAnimation(u8* animPtr) {
+Animation loadAnimation(int id, u8* animPtr) {
     Animation result;
+    result.id = id;
 
     int FramesCount = READ_LE_U16(animPtr); animPtr += 2;
     int BonesCount = READ_LE_U16(animPtr); animPtr += 2;
