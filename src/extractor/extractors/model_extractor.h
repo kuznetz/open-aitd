@@ -89,20 +89,10 @@ void addAnimation(tinygltf::Model& m, Animation &anim) {
         //expBones[j].rotates[0] = { (float)r[0],(float)r[1],(float)r[2],(float)r[3] };
         //expBones[j].translates[0] = { (float)t[0],(float)t[1],(float)t[2] };
         //expBones[j].scales[0] = { (float)s[0],(float)s[1],(float)s[2] };
-        switch (expBones[j].type) {
-        case 0:
-            expBones[j].rotates.resize(timeline.size());
-            expBones[j].rotates[0] = { 0,0,0,0 };
-            break;
-        case 1:
-            expBones[j].translates.resize(timeline.size());
-            expBones[j].translates[0] = { 0,0,0 };
-            break;
-        case 2:
-            expBones[j].scales.resize(timeline.size());
-            expBones[j].scales[0] = { 0,0,0 };
-            break;
-        }
+
+        expBones[j].rotates.resize(timeline.size());
+        expBones[j].translates.resize(timeline.size());
+        expBones[j].scales.resize(timeline.size());
     }
 
     for (int i = 0; i < anim.frames.size(); i++) {
@@ -123,6 +113,14 @@ void addAnimation(tinygltf::Model& m, Animation &anim) {
                 break;
             }
         }
+    }
+
+    for (int j = 0; j < expBones.size(); j++) {
+        auto& eb = expBones[j];
+        int lastI = timeline.size() - 1;
+        eb.rotates[lastI] = eb.rotates[0];
+        eb.translates[lastI] = eb.translates[0];
+        eb.scales[lastI] = eb.scales[0];
     }
 
     //First to last

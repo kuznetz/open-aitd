@@ -95,6 +95,7 @@ void linkAnimations() {
         }
         auto last = std::unique(bodyAnims.begin(), bodyAnims.end());
         bodyAnims.erase(last, bodyAnims.end());
+        std::sort(bodyAnims.begin(), bodyAnims.end());
 
         auto rowJson = json::object();
         rowJson["modelId"] = bodyId;
