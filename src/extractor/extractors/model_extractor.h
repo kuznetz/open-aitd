@@ -63,11 +63,73 @@ Quaternion GetAniRotation(AniBone& bone)
 }
 
 struct boneAnimExp {
-    int type;
     vector<Vector4> rotates;
     vector<Vector3> translates;
     vector<Vector3> scales;
 };
+
+void addAniRotation(tinygltf::Model& m, tinygltf::Animation& outAni, vector<Vector4>& rotates, int accTimeIdx, int boneIdx) {
+    tinygltf::Accessor accData;
+    accData.bufferView = createBufferAndView(m, rotates.data(), rotates.size() * 4 * sizeof(float), 0);
+    accData.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
+    accData.count = rotates.size();
+    accData.type = TINYGLTF_TYPE_VEC4;
+    m.accessors.push_back(accData);
+    int accDataIdx = m.accessors.size() - 1;
+
+    tinygltf::AnimationSampler smp;
+    smp.input = accTimeIdx;
+    smp.output = accDataIdx;
+    outAni.samplers.push_back(smp);
+
+    tinygltf::AnimationChannel chn;
+    chn.sampler = outAni.samplers.size() -1;
+    chn.target_node = boneIdx;
+    chn.target_path = "rotation";
+    outAni.channels.push_back(chn);
+}
+
+void addAniTranslation(tinygltf::Model& m, tinygltf::Animation& outAni, vector<Vector3>& translates, int accTimeIdx, int boneIdx) {
+    tinygltf::Accessor accData;
+    accData.bufferView = createBufferAndView(m, translates.data(), translates.size() * 4 * sizeof(float), 0);
+    accData.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
+    accData.count = translates.size();
+    accData.type = TINYGLTF_TYPE_VEC3;
+    m.accessors.push_back(accData);
+    int accDataIdx = m.accessors.size() - 1;
+
+    tinygltf::AnimationSampler smp;
+    smp.input = accTimeIdx;
+    smp.output = accDataIdx;
+    outAni.samplers.push_back(smp);
+
+    tinygltf::AnimationChannel chn;
+    chn.sampler = outAni.samplers.size() - 1;
+    chn.target_node = boneIdx;
+    chn.target_path = "translation";
+    outAni.channels.push_back(chn);
+}
+
+void addAniScale(tinygltf::Model& m, tinygltf::Animation& outAni, vector<Vector3>& scales, int accTimeIdx, int boneIdx) {
+    tinygltf::Accessor accData;
+    accData.bufferView = createBufferAndView(m, scales.data(), scales.size() * 4 * sizeof(float), 0);
+    accData.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
+    accData.count = scales.size();
+    accData.type = TINYGLTF_TYPE_VEC3;
+    m.accessors.push_back(accData);
+    int accDataIdx = m.accessors.size() - 1;
+
+    tinygltf::AnimationSampler smp;
+    smp.input = accTimeIdx;
+    smp.output = accDataIdx;
+    outAni.samplers.push_back(smp);
+
+    tinygltf::AnimationChannel chn;
+    chn.sampler = outAni.samplers.size() - 1;
+    chn.target_node = boneIdx;
+    chn.target_path = "scale";
+    outAni.channels.push_back(chn);
+}
 
 void addAnimation(tinygltf::Model& m, Animation &anim) {
     vector<float> timeline;
@@ -82,14 +144,6 @@ void addAnimation(tinygltf::Model& m, Animation &anim) {
     vector<boneAnimExp> expBones;
     expBones.resize(anim.frames[0].bones.size());
     for (int j = 0; j < anim.frames[0].bones.size(); j++) {
-        expBones[j].type = anim.frames[0].bones[j].type;
-        //auto& r = m.nodes[j + 1].rotation;
-        //auto& t = m.nodes[j + 1].translation;
-        //auto& s = m.nodes[j + 1].scale;
-        //expBones[j].rotates[0] = { (float)r[0],(float)r[1],(float)r[2],(float)r[3] };
-        //expBones[j].translates[0] = { (float)t[0],(float)t[1],(float)t[2] };
-        //expBones[j].scales[0] = { (float)s[0],(float)s[1],(float)s[2] };
-
         expBones[j].rotates.resize(timeline.size());
         expBones[j].translates.resize(timeline.size());
         expBones[j].scales.resize(timeline.size());
@@ -100,8 +154,14 @@ void addAnimation(tinygltf::Model& m, Animation &anim) {
         for (int j = 0; j < f.bones.size(); j++) {
             auto& b = f.bones[j];
             auto& eb = expBones[j];
-            if (b.type != eb.type) throw new exception("Type changed");
-            switch (eb.type) {
+            
+            eb.rotates[i] = QuaternionIdentity();
+            auto& v = m.nodes[j + 1].translation;
+            eb.translates[i] = { (float)v[0], (float)v[1], (float)v[2] };
+            //eb.translates[i] = { 0,0,0 };
+            eb.scales[i] = { 1,1,1 };
+
+            switch (b.type) {
             case 0:
                 eb.rotates[i] = GetAniRotation(b);
                 break;
@@ -135,42 +195,12 @@ void addAnimation(tinygltf::Model& m, Animation &anim) {
     int accTimeIdx = m.accessors.size() - 1;
 
     tinygltf::Animation outAni;
-    outAni.samplers.resize(expBones.size());
-    outAni.channels.resize(expBones.size());
+    outAni.name = string("a_" + to_string(anim.id));
 
     for (int i = 0; i < expBones.size(); i++) {
-        int vwData = 0;
-        int accDataType = TINYGLTF_TYPE_VEC3;
-        string aniTargetPath = "rotation";
-        switch (expBones[i].type) {
-        case 0:
-            vwData = createBufferAndView(m, expBones[i].rotates.data(), timeline.size() * 4 * sizeof(float), 0);
-            accDataType = TINYGLTF_TYPE_VEC4;
-            break;
-        case 1:
-            vwData = createBufferAndView(m, expBones[i].translates.data(), timeline.size() * 3 * sizeof(float), 0);
-            aniTargetPath = "translation";
-            break;
-        case 2:
-            vwData = createBufferAndView(m, expBones[i].scales.data(), timeline.size() * 3 * sizeof(float), 0);
-            aniTargetPath = "scale";
-            break;
-        }
-
-        tinygltf::Accessor accData;
-        accData.bufferView = vwData;
-        accData.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
-        accData.count = timeline.size();
-        accData.type = accDataType;
-        m.accessors.push_back(accData);
-        int accDataIdx = m.accessors.size() - 1;
-
-        outAni.name = string("a_" + to_string(anim.id));
-        outAni.samplers[i].input = accTimeIdx;
-        outAni.samplers[i].output = accDataIdx;
-        outAni.channels[i].sampler = i;
-        outAni.channels[i].target_node = i + 1;
-        outAni.channels[i].target_path = aniTargetPath;
+        addAniRotation(m, outAni, expBones[i].rotates, accTimeIdx, i + 1);
+        addAniTranslation(m, outAni, expBones[i].translates, accTimeIdx, i + 1);
+        addAniScale(m, outAni, expBones[i].scales, accTimeIdx, i + 1);
     }
 
     m.animations.push_back(outAni);

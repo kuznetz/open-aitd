@@ -167,10 +167,10 @@ void processSounds() {
 
 void animTest() {
     //Quaternion.identity
-    //int modelId = 12;
-    //int animId = 68;
-    int modelId = 11;
-    int animId = 11;
+    int modelId = 12;
+    int animId = 68;
+    //int modelId = 11;
+    //int animId = 11;
 
     PakFile animPak("original/LISTANIM.PAK");
     Animation anim1;
@@ -193,7 +193,8 @@ void animTest() {
 
 void extractAllData() {
     //processStages();
-    //processModels();
+    processModels();
+    //animTest();
     //extractVars("original", "data/vars.json");
 
     //PakFile animPak("original/LISTANIM.PAK");
@@ -205,5 +206,4 @@ void extractAllData() {
     //    anims.push_back(anim);
     //}
 
-    animTest();
 }
