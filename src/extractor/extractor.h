@@ -1,6 +1,9 @@
 ﻿#pragma once
-#include "pak/pak.h"
-#include "structs/floor.h"
-#include "structs/model.h"
+#include <string>
 
+void processStages();
+void processModels();
+void processScripts();
+void processSounds();
+void processTracks();
 void extractAllData();

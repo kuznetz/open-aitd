@@ -12,6 +12,7 @@
 #include "extractors/sound_extractor.h"
 #include "extractors/model_extractor.h"
 #include "extractors/track_extractor.h"
+#include "extractors/vars_extractor.h"
 #include "life/life_extractor.h"
 
 inline void processStages() {
@@ -129,6 +130,8 @@ void processModels() {
 }
 
 void processScripts() {
+    extractVars("original", "data/vars.json");
+
     auto& gameObjs = loadGameObjects("original/OBJETS.ITD");
 
     PakFile lifePak("original/LISTLIFE.PAK");
@@ -152,6 +155,19 @@ void processScripts() {
     //auto& nodes = lifeOptimize(lifep);
     //lifesNodes.push_back(nodes);
 
+}
+
+void processTracks() {
+    PakFile trackPak("original/LISTTRAK.PAK");
+    for (int i = 0; i < trackPak.headers.size(); i++)
+    {
+        auto& data = trackPak.readBlock(i);
+        auto& track = loadTrack(data.data(), trackPak.headers[i].uncompressedSize);
+        auto s = string("data/tracks");
+        std::filesystem::create_directories(s);
+        extractTrack(track, s + "/" + to_string(i) + ".json");
+        //allTracks.push_back(track);
+    }
 }
 
 void processSounds() {
@@ -193,21 +209,12 @@ void animTest() {
 }
 
 void extractAllData() {
-    //processStages();
-    //processModels();
-    //animTest();
-    //extractVars("original", "data/vars.json");
-
-    PakFile trackPak("original/LISTTRAK.PAK");
-    for (int i = 0; i < trackPak.headers.size(); i++)
-    {
-        auto& data = trackPak.readBlock(i);
-        auto& track = loadTrack(data.data(), trackPak.headers[i].uncompressedSize);
-        auto s = string("data/tracks");
-        std::filesystem::create_directories(s);
-        extractTrack(track, s + "/" + to_string(i) + ".json");
-        //allTracks.push_back(track);
-    }
+    processStages();
+    processModels();
+    processScripts();
+    processTracks();
+    processSounds();
+    
 
     //PakFile animPak("original/LISTANIM.PAK");
     //vector<Animation> anims;
