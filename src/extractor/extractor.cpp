@@ -203,6 +203,9 @@ void extractAllData() {
     {
         auto& data = trackPak.readBlock(i);
         auto& track = loadTrack(data.data(), trackPak.headers[i].uncompressedSize);
+        auto s = string("data/tracks");
+        std::filesystem::create_directories(s);
+        extractTrack(track, s + "/" + to_string(i) + ".json");
         //allTracks.push_back(track);
     }
 

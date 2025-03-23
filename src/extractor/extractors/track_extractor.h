@@ -58,3 +58,66 @@ inline Track loadTrack(u8* data, int size)
 	}
 	return result;
 }
+
+inline void extractTrack(Track track, string jsonTo) {
+    json outJson = json::array();
+    for (int i = 0; i < track.size(); i++)
+    {
+        auto& tr = track[i];
+        json objJson = json::object();
+        objJson["type"] = tr.type->type;
+		switch (tr.type->type)
+		{
+		case TrackEnum::WARP:
+			objJson["room"] = tr.arguments[0];
+			objJson["pos"] = json::array();
+			objJson["pos"][0] = tr.arguments[1] / 1000.;
+			objJson["pos"][1] = -tr.arguments[2] / 1000.;
+			objJson["pos"][2] = tr.arguments[3] / 1000.;
+			break;
+
+		case TrackEnum::GOTO_POS:
+			objJson["pos"] = json::array();
+			objJson["pos"][0] = tr.arguments[0] / 1000.;
+			objJson["pos"][1] = -tr.arguments[1] / 1000.;
+			objJson["pos"][2] = tr.arguments[2] / 1000.;
+			break;
+
+		case TrackEnum::MARK:
+			objJson["mark"] = tr.arguments[0];
+			break;
+
+		case TrackEnum::ROTATE_X:
+			objJson["x"] = tr.arguments[0] * 2. * PI / 1024;
+			break;
+
+		case TrackEnum::WARP_ROT:
+			objJson["room"] = tr.arguments[0];
+			objJson["rot"] = json::array();
+			objJson["rot"][0] = tr.arguments[1];
+			objJson["rot"][1] = tr.arguments[2];
+			objJson["rot"][2] = tr.arguments[3];
+			objJson["rot"][2] = tr.arguments[4];
+			break;
+
+		case TrackEnum::STAIRS_X:
+		case TrackEnum::STAIRS_Z:
+			objJson["pos"] = json::array();
+			objJson["pos"][0] = tr.arguments[0] / 1000.;
+			objJson["pos"][1] = -tr.arguments[1] / 1000.;
+			objJson["pos"][2] = tr.arguments[2] / 1000.;
+			break;
+
+		case TrackEnum::ROTATE_XYZ:
+			objJson["rot"] = json::array();
+			objJson["rot"][0] = tr.arguments[0] * 2. * PI / 1024;
+			objJson["rot"][1] = tr.arguments[1] * 2. * PI / 1024;
+			objJson["rot"][2] = tr.arguments[2] * 2. * PI / 1024;
+			break;
+		}
+        outJson.push_back(objJson);
+    }
+
+    std::ofstream o(jsonTo.c_str());
+    o << std::setw(2) << outJson << std::endl;
+}
