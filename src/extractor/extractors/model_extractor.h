@@ -141,9 +141,14 @@ void addAnimation(tinygltf::Model& m, Animation &anim) {
         timeline.push_back(curTime);
     }
 
+    int maxBones = anim.frames[0].bones.size();
+    if (maxBones > m.nodes.size()-1) {
+        maxBones = m.nodes.size() - 1;
+    }
+
     vector<boneAnimExp> expBones;
-    expBones.resize(anim.frames[0].bones.size());
-    for (int j = 0; j < anim.frames[0].bones.size(); j++) {
+    expBones.resize(maxBones);
+    for (int j = 0; j < maxBones; j++) {
         expBones[j].rotates.resize(timeline.size());
         expBones[j].translates.resize(timeline.size());
         expBones[j].scales.resize(timeline.size());
@@ -151,7 +156,7 @@ void addAnimation(tinygltf::Model& m, Animation &anim) {
 
     for (int i = 0; i < anim.frames.size(); i++) {
         auto& f = anim.frames[i];
-        for (int j = 0; j < f.bones.size(); j++) {
+        for (int j = 0; j < maxBones; j++) {
             auto& b = f.bones[j];
             auto& eb = expBones[j];
             
