@@ -202,20 +202,20 @@ enum parseArgType {
 };
 
 struct parseLifeExpr {
-	EvalEnum::EvalEnum Type;
+	EvalEnum::EvalEnum type;
 	string typeStr;
 	vector<parseArgType> arguments;
 };
 
 struct parseLifeInstruction {
-	LifeEnum::LifeEnum Type;
+	LifeEnum::LifeEnum type;
 	string typeStr;
 	vector<parseArgType> arguments;
 };
 
 typedef struct LifeExpr
 {
-	const parseLifeExpr* Type = 0;
+	const parseLifeExpr* type = 0;
 	s16 Actor = -1;
 	s16 constVal = 0;
 	vector<LifeExpr> arguments;
@@ -223,7 +223,7 @@ typedef struct LifeExpr
 
 typedef struct LifeInstruction
 {
-	const parseLifeInstruction* Type = 0;
+	const parseLifeInstruction* type = 0;
 	vector<LifeExpr> arguments;
 	s16 Actor = -1;
 	int Goto = -1;

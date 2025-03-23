@@ -62,7 +62,7 @@ public:
     void addAnimsFromInstruct(int objectId, LifeInstruction& instr)
     {
         
-        switch (instr.Type->Type)
+        switch (instr.type->type)
         {
         //ANIM_RESET ??
         //ANIM_HYBRIDE_ONCE ??

@@ -40,9 +40,9 @@ inline LifeExpr readExpr(lifeBuffer& buf) {
 	varTypeN &= 0x7FFF;
 
 	auto& parse = ExprTable_v1[varTypeN];
-	result.Type = &parse;
+	result.type = &parse;
 
-	//if (result.Type == LifeEnum::READ) {}
+	//if (result.type == LifeEnum::READ) {}
 
 	for (int i = 0; i < parse.arguments.size(); i++)
 	{
@@ -75,9 +75,9 @@ inline LifeInstruction readInstruction(lifeBuffer &buf) {
 	opCodeN &= 0x7FFF;
 
 	auto& parse = LifeTable_v1[opCodeN];
-	result.Type = &parse;
+	result.type = &parse;
 
-	if (parse.Type == LifeEnum::MULTI_CASE)
+	if (parse.type == LifeEnum::MULTI_CASE)
 	{
 		int numCases = read16(buf);
 		for (int n = 0; n < numCases; n++)
@@ -125,7 +125,7 @@ inline vector<LifeInstruction> loadLife(u8* data, int size)
 		oper.Size = (buf.data - data) - pos;
 		oper.Position = pos;
 		life.push_back(oper);
-		if (oper.Type->Type == LifeEnum::ENDLIFE) break;
+		if (oper.type->type == LifeEnum::ENDLIFE) break;
 	}
 
 	//Fix Goto

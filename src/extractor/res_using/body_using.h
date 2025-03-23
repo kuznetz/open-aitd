@@ -46,7 +46,7 @@ public:
             auto& life = (*allLife)[lifeId];
             for (int j = 0; j < life.size(); j++) {
                 auto& instr = life[j];
-                if (instr.Type->Type != LifeEnum::BODY) continue;
+                if (instr.type->type != LifeEnum::BODY) continue;
                 auto& newBodyid = instr.arguments[0].constVal;
                 if (newBodyid == -1) continue;
                 if (instr.Actor == -1) {

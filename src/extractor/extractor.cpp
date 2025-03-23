@@ -11,6 +11,7 @@
 #include "extractors/mask_extractor.h"
 #include "extractors/sound_extractor.h"
 #include "extractors/model_extractor.h"
+#include "extractors/track_extractor.h"
 #include "life/life_extractor.h"
 
 inline void processStages() {
@@ -193,9 +194,17 @@ void animTest() {
 
 void extractAllData() {
     //processStages();
-    processModels();
+    //processModels();
     //animTest();
     //extractVars("original", "data/vars.json");
+
+    PakFile trackPak("original/LISTTRAK.PAK");
+    for (int i = 0; i < trackPak.headers.size(); i++)
+    {
+        auto& data = trackPak.readBlock(i);
+        auto& track = loadTrack(data.data(), trackPak.headers[i].uncompressedSize);
+        //allTracks.push_back(track);
+    }
 
     //PakFile animPak("original/LISTANIM.PAK");
     //vector<Animation> anims;

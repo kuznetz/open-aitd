@@ -16,14 +16,14 @@ inline void writeSpaces(ofstream& out, int level) {
 
 inline void writeLifeExpr(ofstream& out, LifeExpr& expr)
 {
-	if (!expr.Type) {
+	if (!expr.type) {
 		out << to_string(expr.constVal);
 		return;
 	}
 	if (expr.Actor != -1) {
 		out << expr.Actor << ".";
 	}
-	out << expr.Type->typeStr;
+	out << expr.type->typeStr;
 	out << "(";
 	if (expr.arguments.size() > 0) {
 		writeLifeExpr(out, expr.arguments[0]);
@@ -41,7 +41,7 @@ inline void writeLifeInstr(ofstream& out, LifeInstruction& instr)
 	if (instr.Actor != -1) {
 		out << instr.Actor << ".";
 	}
-	out << instr.Type->typeStr << "(";
+	out << instr.type->typeStr << "(";
 	for (int j = 0; j < instr.arguments.size(); j++) {
 		writeLifeExpr(out, instr.arguments[j]);
 		if (j < instr.arguments.size() - 1) {
@@ -78,7 +78,7 @@ inline void writeIfHead(ofstream& out, LifeNode& ifNode)
 
 		out << "(";
 		writeLifeExpr(out, cond->arguments[0]);
-		switch (cond->Type->Type) {
+		switch (cond->type->type) {
 		case LifeEnum::IF_EGAL:
 			out << " == ";
 			break;
@@ -96,12 +96,12 @@ inline void writeIfHead(ofstream& out, LifeNode& ifNode)
 
 inline void writeCaseExpr(ofstream& out, LifeInstruction& switchi, LifeInstruction& instr)
 {
-	if (instr.Type->Type == LifeEnum::CASE) {
+	if (instr.type->type == LifeEnum::CASE) {
 		writeLifeExpr(out, switchi.arguments[0]);
 		out << " == ";
 		out << instr.arguments[0].constVal;
 	}
-	else if(instr.Type->Type == LifeEnum::MULTI_CASE) {
+	else if(instr.type->type == LifeEnum::MULTI_CASE) {
 		for (int i = 0; i < instr.arguments.size(); i++) {
 			if (i > 0) {
 				out << " and ";

@@ -2,7 +2,7 @@
 #include "../structs/life.h"
 
 inline bool isIfInstr(LifeInstruction& instr) {
-	auto t = instr.Type->Type;
+	auto t = instr.type->type;
 	if (t == LifeEnum::IF_EGAL) return true;
 	if (t == LifeEnum::IF_DIFFERENT) return true;
 	if (t == LifeEnum::IF_SUP_EGAL) return true;
@@ -29,12 +29,12 @@ inline vector<LifeNode> lifeOptimize(LifeInstructionsP& instructs) {
 			result.push_back(ln);
 		}
 		else
-		if (ins->Type->Type == LifeEnum::SWITCH)
+		if (ins->type->type == LifeEnum::SWITCH)
 		{
 			LifeNode& ln = DetectSwitch(instructs, i);
 			result.push_back(ln);
 		}
-		else if (ins->Type->Type == LifeEnum::ENDLIFE)
+		else if (ins->type->type == LifeEnum::ENDLIFE)
 		{
 			i++;
 		}
@@ -65,7 +65,7 @@ inline LifeNode DetectIfElse(LifeInstructionsP& insructs, int &i)
 		ifInstructs.push_back(insructs[i]);
 		i++;
 	}
-	if (insructs[i]->Type->Type != LifeEnum::GOTO) {
+	if (insructs[i]->type->type != LifeEnum::GOTO) {
 		//Without Else
 		ifInstructs.push_back(insructs[i]);
 		i++;
@@ -92,7 +92,7 @@ inline LifeNode DetectSwitch(LifeInstructionsP& insructs, int& i)
 {
 	LifeNode result;
 	result.instr = insructs[i++];
-	auto t = insructs[i]->Type->Type;
+	auto t = insructs[i]->type->type;
 	while (t == LifeEnum::CASE || t == LifeEnum::MULTI_CASE) {
 		LifeCase lcase;
 		lcase.caseInstr = insructs[i++];
@@ -103,7 +103,7 @@ inline LifeNode DetectSwitch(LifeInstructionsP& insructs, int& i)
 		auto caseLast = insructs[i++];
 		t = LifeEnum::ENDLIFE;
 		if (i < insructs.size()) {
-			t = insructs[i]->Type->Type;
+			t = insructs[i]->type->type;
 		}
 		if (t != LifeEnum::CASE && t != LifeEnum::MULTI_CASE) {
 			//If current case last in chain - caseLast is not goto

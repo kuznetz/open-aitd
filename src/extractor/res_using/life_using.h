@@ -32,7 +32,7 @@ public:
             auto& life = (*allLife)[i];
             for (int j = 0; j < life.size(); j++) {
                 auto& instr = life[j];
-                if (instr.Type->Type != LifeEnum::LIFE) continue;
+                if (instr.type->type != LifeEnum::LIFE) continue;
                 if (instr.Actor == -1) continue;
                 auto& newLifeid = instr.arguments[0].constVal;
                 if (newLifeid == -1) continue;
@@ -45,7 +45,7 @@ public:
         auto& life = (*allLife)[lifeId];
         for (int j = 0; j < life.size(); j++) {
             auto& instr = life[j];
-            if (instr.Type->Type != LifeEnum::LIFE) continue;
+            if (instr.type->type != LifeEnum::LIFE) continue;
             if (instr.Actor != -1) continue;
             auto& newLifeid = instr.arguments[0].constVal;
             if (newLifeid == -1) continue;

@@ -47,10 +47,10 @@ Animation loadAnimation(int id, u8* animPtr) {
 //for (int bone = 0; bone < boneCount; bone++)
 //{
 //	Bone b = new Bone();
-//	b.Type = buffer.ReadShort(i + 0);
+//	b.type = buffer.ReadShort(i + 0);
 //	Vector3Int boneTransform = buffer.ReadVector(i + 2);
 //
-//	switch (b.Type)
+//	switch (b.type)
 //	{
 //	case 0: //rotate
 //		if (!isAITD2)
