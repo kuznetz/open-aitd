@@ -40,3 +40,13 @@ target_include_directories(extractor_cli PRIVATE ${ZLIB_INCLUDE_DIR} ${PNG_INCLU
 target_include_directories(extractor_cli PRIVATE ${CMAKE_SOURCE_DIR}/libs/includes)
 target_link_libraries(extractor_cli PRIVATE png_static raylib ZLIB::ZLIB libextractor )
 set_property(TARGET extractor_cli PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/data")
+
+#add_executable(open-aitd) WIN32
+add_executable(open-aitd)
+#target_compile_definitions(${PROJECT_NAME} PRIVATE XXX)
+file(GLOB_RECURSE AITD_SOURCES CONFIGURE_DEPENDS "src/engine/*.cpp" "src/engine/*.h" "src/engine/*.hpp")
+target_sources(open-aitd PRIVATE ${AITD_SOURCES} )
+target_include_directories(open-aitd PRIVATE ${ZLIB_INCLUDE_DIR} ${PNG_INCLUDE_DIR} ${GLFW_INCLUDE})
+target_include_directories(open-aitd PRIVATE ${CMAKE_SOURCE_DIR}/libs/includes)
+target_link_libraries(open-aitd PRIVATE png_static raylib ZLIB::ZLIB libextractor )
+set_property(TARGET open-aitd PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/data")
