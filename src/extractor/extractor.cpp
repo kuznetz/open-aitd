@@ -28,9 +28,9 @@ inline void processStages() {
         sprintf(str, "original/ETAGE%02d.PAK", fl);
         auto& curFloor = loadFloorPak(str);
 
-        sprintf(floordir, "data/floor_%02d", fl);
+        sprintf(floordir, "data/stages/%02d", fl);
         std::filesystem::create_directories(floordir);
-        sprintf(str, "%s/scene", floordir);
+        sprintf(str, "%s/stage", floordir);
         sprintf(str2, "%s.json", str);
         if (!std::filesystem::exists(str2)) {
             saveFloorGLTF(curFloor, str);

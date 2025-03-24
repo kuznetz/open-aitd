@@ -22,7 +22,6 @@ void extractBackground(u8* img, char* outPng) {
     savePng( outPng, 320, 200, data );
 
     delete[] data;
-    delete[] img;
 }
 
 

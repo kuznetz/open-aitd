@@ -168,24 +168,27 @@ void saveFloorGLTF(floorStruct& floor2, char* filename)
         auto& cam = floor->cameras[camIdx];
         
         json cameraJson;
-        cameraJson["roomViews"] = nlohmann::json::array();
+        //cameraJson["roomViews"] = nlohmann::json::array();
 
         addCamera(m, camIdx, cam);
 
         for (int viewIdx = 0; viewIdx < cam.viewedRoomTable.size(); viewIdx++) {
             auto& vw = cam.viewedRoomTable[viewIdx];
             auto roomIdx = vw.viewedRoomIdx;
+            cameraJson["rooms"].push_back(roomIdx);
 
-            json roomViewsJson;
-            roomViewsJson["roomIdx"] = roomIdx;
+            //json roomViewsJson;
+            //roomViewsJson["roomIdx"] = roomIdx;
 
             auto& roomN = roomNodes[vw.viewedRoomIdx];
             tinygltf::Node camRoomN;
             camRoomN.name = string("camera_room_") + to_string(camIdx) + "_" + to_string(roomIdx);
 
-            roomViewsJson["overlayV1Count"] = vw.overlays_V1.size();
+            //roomViewsJson["overlays"] = json::array();
             for (int ovlIdx = 0; ovlIdx < vw.overlays_V1.size(); ovlIdx++) {
                 auto& ovl = vw.overlays_V1[ovlIdx];
+                //json overlay = json::object();
+                //overlay["zoneCount"] = ovl.zones.size();
                 for (int ovlZIdx = 0; ovlZIdx < ovl.zones.size(); ovlZIdx++) {
                     auto& ovlZ = ovl.zones[ovlZIdx];
                     tinygltf::Node ovlZN;
@@ -205,9 +208,10 @@ void saveFloorGLTF(floorStruct& floor2, char* filename)
                     int ovlZNIdx = m.nodes.size() - 1;
                     camRoomN.children.push_back(ovlZNIdx);
                 }
+                //roomViewsJson["overlays"].push_back(overlay);
             }
 
-            roomViewsJson["coverZones"] = vw.coverZones.size();
+            //roomViewsJson["coverZones"] = vw.coverZones.size();
             for (int zoneIdx = 0; zoneIdx < vw.coverZones.size(); zoneIdx++) {
                 auto& camZone = vw.coverZones[zoneIdx];
                 vector<float> flzone(camZone.pointTable.size() * 3);
@@ -232,10 +236,10 @@ void saveFloorGLTF(floorStruct& floor2, char* filename)
             int idx = m.nodes.size() - 1;
             roomN.children.push_back(idx);
 
-            cameraJson["roomViews"].push_back(roomViewsJson);
+            //cameraJson["roomViews"].push_back(roomViewsJson);
         }
 
-        floorJson["rooms"].push_back(cameraJson);
+        floorJson["cameras"].push_back(cameraJson);
     }
 
     for (int roomIdx = 0; roomIdx < floor->rooms.size(); roomIdx++) {
