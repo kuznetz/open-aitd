@@ -1,8 +1,9 @@
 ﻿#pragma once
 #include <vector>
 #include <string>
-#include "./world/world.h"
-#include "./controllers/camera_renderer.h"
+#include "./resources/resources.h"
+//#include "./world/world.h"
+//#include "./controllers/camera_renderer.h"
 
 using namespace std;
 namespace openAITD {
@@ -19,14 +20,26 @@ namespace openAITD {
 
     int screenW = 1280;
     int screenH = 800;
-    World world;
-    CameraRenderer renderer;
+    
+    Resources resources;
+    //World world;
+    //CameraRenderer renderer;
 
     int main(void)
     {
-        world.loadGObjects("data/objects.json");
-        world.loadVars("data/vars.json");
+        resources.stages.resize(2);
+        resources.stages[0].load("data/stages/0");
+        //resources.stages[1].load("data/stages/1");
+
+
+        //world.loadGObjects("data/objects.json");
+        //world.loadVars("data/vars.json");
+
         return 0;
     }
+}
 
+int main(void)
+{
+    return openAITD::main();
 }

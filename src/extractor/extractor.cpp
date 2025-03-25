@@ -28,7 +28,7 @@ inline void processStages() {
         sprintf(str, "original/ETAGE%02d.PAK", fl);
         auto& curFloor = loadFloorPak(str);
 
-        sprintf(floordir, "data/stages/%02d", fl);
+        sprintf(floordir, "data/stages/%d", fl);
         std::filesystem::create_directories(floordir);
         sprintf(str, "%s/stage", floordir);
         sprintf(str2, "%s.json", str);
@@ -40,7 +40,7 @@ inline void processStages() {
         PakFile camPak(str);
         for (int cam = 0; cam < curFloor.cameras.size(); cam++) {
             //background
-            sprintf(cameradir, "%s/camera_%02d", floordir, cam);
+            sprintf(cameradir, "%s/camera_%d", floordir, cam);
             std::filesystem::create_directories(cameradir);
             sprintf(str2, "%s/background.png", cameradir);
             if (!std::filesystem::exists(str2)) {
@@ -53,7 +53,7 @@ inline void processStages() {
                 auto curVw = &curFloor.cameras[cam].viewedRoomTable[vw];
                 for (int ovl = 0; ovl < curVw->overlays_V1.size(); ovl++) {
                     auto polys = &curVw->overlays_V1[ovl].polygons;
-                    sprintf(str, "%s/mask_%02d_%02d.png", cameradir, vw, ovl);
+                    sprintf(str, "%s/mask_%d_%d.png", cameradir, vw, ovl);
                     if (!std::filesystem::exists(str)) {
                         extractV1Mask(polys, str);
                     }

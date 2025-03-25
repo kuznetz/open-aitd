@@ -1,79 +1,81 @@
 ﻿#pragma once
-#include <raylib.h>
+//#include <raymath.h>
 #include <algorithm>
 #include <fstream>
 
 #define NLOHMANN_JSON_NAMESPACE_NO_VERSION 1
 #include <nlohmann/json.hpp>
-using nlohmann::json;
-using namespace std;
 #define TINYGLTF_NO_INCLUDE_JSON
 #define TINYGLTF_NO_STB_IMAGE
 #define TINYGLTF_NO_STB_IMAGE_WRITE
 #include <tiny_gltf.h>
 
-
-inline bool isPointInPoly(Vector2 p, vector<Vector2> polygon)
-{
-	float minX = polygon[0].x;
-	float maxX = polygon[0].x;
-	float minY = polygon[0].y;
-	float maxY = polygon[0].y;
-	for (int i = 1; i < polygon.size(); i++)
-	{
-		Vector2& q = polygon[i];
-		minX = min(q.x, minX);
-		maxX = max(q.x, maxX);
-		minY = min(q.y, minY);
-		maxY = max(q.y, maxY);
-	}
-
-	if (p.x < minX || p.x > maxX || p.y < minY || p.y > maxY)
-	{
-		return false;
-	}
-
-	// https://wrf.ecse.rpi.edu/Research/Short_Notes/pnpoly.html
-	bool inside = false;
-	int j = polygon.size() - 1;
-	for (int i = 0; i < polygon.size(); i++)
-	{
-		if ((polygon[i].y > p.y) != (polygon[j].y > p.y) &&
-			p.x < (polygon[j].x - polygon[i].x) * (p.y - polygon[i].y) / (polygon[j].y - polygon[i].y) + polygon[i].x)
-		{
-			inside = !inside;
-		}
-		j = i;
-	}
-
-	return inside;
-}
-
-inline tinygltf::Node* findNode(tinygltf::Model& m, string name)
-{
-	for (int i = 0; i < m.nodes.size(); i++) {
-		if (m.nodes[i].name == name) return &m.nodes[i];
-	}
-	return 0;
-}
-
-inline BoundingBox NodeToBounds(tinygltf::Node& n)
-{
-	BoundingBox b;
-	//n.translation
-	//n.scale
-	return b;
-}
-
-inline vector<Vector2> loadLineAcc2d(tinygltf::Model& m, int accIdx)
-{
-	vector<Vector2> res;
-	//TODO: Get camera Poly
-	return res;
-}
-
+using nlohmann::json;
 using namespace std;
 namespace openAITD {
+    #include <raylib.h>
+
+	inline bool isPointInPoly(Vector2 p, vector<Vector2> polygon)
+	{
+		float minX = polygon[0].x;
+		float maxX = polygon[0].x;
+		float minY = polygon[0].y;
+		float maxY = polygon[0].y;
+		for (int i = 1; i < polygon.size(); i++)
+		{
+			Vector2& q = polygon[i];
+			minX = min(q.x, minX);
+			maxX = max(q.x, maxX);
+			minY = min(q.y, minY);
+			maxY = max(q.y, maxY);
+		}
+
+		if (p.x < minX || p.x > maxX || p.y < minY || p.y > maxY)
+		{
+			return false;
+		}
+
+		// https://wrf.ecse.rpi.edu/Research/Short_Notes/pnpoly.html
+		bool inside = false;
+		int j = polygon.size() - 1;
+		for (int i = 0; i < polygon.size(); i++)
+		{
+			if ((polygon[i].y > p.y) != (polygon[j].y > p.y) &&
+				p.x < (polygon[j].x - polygon[i].x) * (p.y - polygon[i].y) / (polygon[j].y - polygon[i].y) + polygon[i].x)
+			{
+				inside = !inside;
+			}
+			j = i;
+		}
+
+		return inside;
+	}
+
+	inline tinygltf::Node* findNode(tinygltf::Model& m, string name)
+	{
+		for (int i = 0; i < m.nodes.size(); i++) {
+			if (m.nodes[i].name == name) return &m.nodes[i];
+		}
+		return 0;
+	}
+
+	inline BoundingBox NodeToBounds(tinygltf::Node& n)
+	{
+		auto& t = n.translation;
+		auto& s = n.scale;
+		BoundingBox b = {
+			{ t[0], t[1], t[2] },
+			{ t[0] + s[0], t[1] + s[1], t[1] + s[1]}
+		};
+		return b;
+	}
+
+	inline vector<Vector2> loadLineAcc2d(tinygltf::Model& m, int accIdx)
+	{
+		vector<Vector2> res;
+		//TODO: Get camera Poly
+		return res;
+	}
 
 	struct RoomCollider
 	{

@@ -15,38 +15,24 @@ int createBoxNode(tinygltf::Model& m, string name, hardColStruct& coll) {
     tinygltf::Node collN;
     collN.name = name;
     collN.mesh = 0;
+
+    double SizeX = (double)(coll.zv.ZVX2 - coll.zv.ZVX1) / 1000;
+    double SizeY = (double)(coll.zv.ZVY2 - coll.zv.ZVY1) / 1000;
+    double SizeZ = (double)(coll.zv.ZVZ2 - coll.zv.ZVZ1) / 1000;
+
     collN.translation = {
         (double)coll.zv.ZVX1 / 1000,
-        -(double)coll.zv.ZVY1 / 1000,
-        -(double)coll.zv.ZVZ1 / 1000
+        -((double)coll.zv.ZVY1 / 1000) - SizeY,
+        -((double)coll.zv.ZVZ1 / 1000) - SizeZ
     };
     collN.scale = {
-        (double)(coll.zv.ZVX2 - coll.zv.ZVX1) / 1000,
-        -(double)(coll.zv.ZVY2 - coll.zv.ZVY1) / 1000,
-        -(double)(coll.zv.ZVZ2 - coll.zv.ZVZ1) / 1000,
+        SizeX,
+        SizeY,
+        SizeZ,
     };
+
     m.nodes.push_back(collN);
     return m.nodes.size() - 1;
-}
-
-void addZones(tinygltf::Model& m, string name, sceZoneStruct& zone) {
-    tinygltf::Node zoneN;
-    zoneN.name = name;
-    zoneN.mesh = 0;
-    zoneN.translation = {
-        (double)zone.zv.ZVX1 / 1000,
-        -(double)zone.zv.ZVY1 / 1000,
-        -(double)zone.zv.ZVZ1 / 1000
-    };
-    zoneN.scale = {
-        (double)(zone.zv.ZVX2 - zone.zv.ZVX1) / 1000,
-        -(double)(zone.zv.ZVY2 - zone.zv.ZVY1) / 1000,
-        -(double)(zone.zv.ZVZ2 - zone.zv.ZVZ1) / 1000,
-    };
-
-    /*zoneN.extras["collType"] = zone.parameter;
-    zoneN.extras["collParameter"] = zone.parameter;*/
-    m.nodes.push_back(zoneN);
 }
 
 void addCamera(tinygltf::Model& m, int camIdx, cameraStruct& cam) {
@@ -151,7 +137,7 @@ void saveFloorGLTF(floorStruct& floor2, char* filename)
             collJson["type"] = zone.type;
             roomJson["zones"].push_back(collJson);
 
-            addZones(m, string("zone_") + to_string(roomIdx) + "_" + to_string(zoneIdx), zone);
+            createBoxNode(m, string("zone_") + to_string(roomIdx) + "_" + to_string(zoneIdx), zone);
             int zoneNIdx = m.nodes.size() - 1;
             rootZone.children.push_back(zoneNIdx);
         }
@@ -194,15 +180,16 @@ void saveFloorGLTF(floorStruct& floor2, char* filename)
                     tinygltf::Node ovlZN;
                     ovlZN.name = string("overlay_zone_") + to_string(camIdx) + "_" + to_string(roomIdx) + "_" + to_string(ovlIdx) + "_" + to_string(ovlZIdx);
                     ovlZN.mesh = 0;
+                    float z = (float)(ovlZ.zoneZ2 - ovlZ.zoneZ1) / 100;
                     ovlZN.translation = {
                         (float)ovlZ.zoneX1 / 100,
                         0,
-                        -(float)ovlZ.zoneZ1 / 100
+                        -((float)ovlZ.zoneZ1 / 100) - z
                     };
                     ovlZN.scale = {
                         (float)(ovlZ.zoneX2 - ovlZ.zoneX1) / 100,
                         -0.1,
-                        -(float)(ovlZ.zoneZ2 - ovlZ.zoneZ1) / 100,
+                        z,
                     };
                     m.nodes.push_back(ovlZN);
                     int ovlZNIdx = m.nodes.size() - 1;
