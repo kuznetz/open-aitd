@@ -13,7 +13,7 @@ using namespace std;
 #include <tiny_gltf.h>
 
 
-inline bool IsPointInPoly(Vector2 p, vector<Vector2> polygon)
+inline bool isPointInPoly(Vector2 p, vector<Vector2> polygon)
 {
 	float minX = polygon[0].x;
 	float maxX = polygon[0].x;
@@ -57,6 +57,20 @@ inline tinygltf::Node* findNode(tinygltf::Model& m, string name)
 	return 0;
 }
 
+inline BoundingBox NodeToBounds(tinygltf::Node& n)
+{
+	BoundingBox b;
+	//n.translation
+	//n.scale
+	return b;
+}
+
+inline vector<Vector2> loadLineAcc2d(tinygltf::Model& m, int accIdx)
+{
+	vector<Vector2> res;
+	//TODO: Get camera Poly
+	return res;
+}
 
 using namespace std;
 namespace openAITD {
@@ -73,7 +87,6 @@ namespace openAITD {
 	struct Room {
 		Vector3 position;
 		std::vector<RoomCollider> colliders;
-		std::vector<int> cameraIds;
 	};
 
 	struct GCameraOverlay {
@@ -93,7 +106,7 @@ namespace openAITD {
 		{
 			for (int i = 0; i < coverZones.size(); i++) {
 				auto& poly = coverZones[i];
-				if (IsPointInPoly(p, poly)) {
+				if (isPointInPoly(p, poly)) {
 					return true;
 				}
 			}
@@ -120,31 +133,109 @@ namespace openAITD {
 
 	void Stage::load(string stageDir) {
 		this->stageDir = stageDir;
-		std::ifstream ifs(stageDir + "/scene.json");
+		std::ifstream ifs(stageDir + "/stage.json");
 		json stageJson = json::parse(ifs);
 
 		tinygltf::Model model;
 		tinygltf::TinyGLTF loader;
 		std::string err;
 		std::string warn;
-		bool ret = loader.LoadASCIIFromFile(&model, &err, &warn, stageDir + "/scene.gltf");
+		bool ret = loader.LoadASCIIFromFile(&model, &err, &warn, stageDir + "/stage.gltf");
 
-		this->cameras.resize(stageJson["cameras"].size());
-		for (int i = 0; i < stageJson["cameras"].size(); i++) {
-			auto n = findNode(model, string("camera_") + to_string(i));
+		int roomId = 0;
+		while (true) {
+			tinygltf::Node* roomN = findNode(model, string("room_") + to_string(roomId));
+			if (!roomN) break;
+			auto& room = rooms.emplace_back();
+			room.position = { (float)roomN->translation[0], (float)roomN->translation[1], (float)roomN->translation[2] };
 
-			
-			//auto& cam = model.cameras[i];
+			int collId = 0;
+			while (true) {
+				tinygltf::Node* collN = findNode(model, string("coll_") + to_string(roomId) + "_" + to_string(collId));
+				if (!collN) break;
+				auto& coll = room.colliders.emplace_back();
+				coll.isZone = false;
+				auto& collJson = stageJson["rooms"][roomId]["colliders"];
+			    coll.bounds = NodeToBounds(*collN);
+				coll.parameter = collJson["parameter"];
+				coll.type = collJson["type"];
+				collId++;
+			}
 
+			collId = 0;
+			while (true) {
+				tinygltf::Node* collN = findNode(model, string("zone_") + to_string(roomId) + "_" + to_string(collId));
+				if (!collN) break;
+				auto& coll = room.colliders.emplace_back();
+				coll.isZone = true;
+				auto& collJson = stageJson["rooms"][roomId]["zones"];
+				coll.bounds = NodeToBounds(*collN);
+				coll.parameter = collJson["parameter"];
+				coll.type = collJson["type"];
+				collId++;
+			}
+						
+			//room.cameraIds = stageJson["rooms"][roomId]["cameras"].get<std::vector<int>>();
+
+			roomId++;
 		}
 
-		this->rooms.resize(stageJson["rooms"].size());
-		for (int i = 0; i < stageJson["rooms"].size(); i++) {
-			auto n = findNode(model, string("room_") + to_string(i));
-			//auto& cam = model.cameras[i];
+		int cameraId = 0;
+		while (true) {
+			tinygltf::Node* cameraN = findNode(model, string("camera_") + to_string(cameraId));
+			if (!cameraN) break;
+			auto& cam = cameras.emplace_back();
+			cam.roomIds = stageJson["cameras"][cameraId]["rooms"].get<std::vector<int>>();
 
+			//TODO: Camera settings
+			//cam.modelview
+			//cam.prespective
+			//room.position = { (float)cameraN->translation[0], (float)cameraN->translation[1], (float)cameraN->translation[2] };
+			//cameraN->rotation
+			//room.position = { (float)cameraN->translation[0], (float)cameraN->translation[1], (float)cameraN->translation[2] };
+
+			for (int r = 0; r < cam.roomIds.size(); r++) {
+				int roomId = cam.roomIds[r];			
+
+				int overlayId = 0;
+				while (true) {
+					int overlayZoneId = 0;
+					GCameraOverlay overlay;
+					while (true) {
+						tinygltf::Node* ovlZN = findNode(model, 
+							string("overlay_zone_") + to_string(cameraId) + "_" + to_string(roomId) + "_" +
+							to_string(overlayId) + "_" + to_string(overlayZoneId)
+						);
+						if (!ovlZN) break;
+						overlay.bounds.push_back(NodeToBounds(*ovlZN));
+						overlayZoneId++;
+					}
+					if (overlay.bounds.size()) {
+						cam.overlays.push_back(overlay);
+					}
+					else {
+						break;
+					}
+					overlayId++;
+				}
+
+				int coverZoneId = 0;
+				while (true) {
+					tinygltf::Node* coverZoneN = findNode(model,
+						string("cam_zone_") + to_string(cameraId) + "_" + to_string(roomId) + "_" +
+						to_string(coverZoneId)
+					);
+					if (!coverZoneN) break;
+
+					int lineAccIdx = model.meshes[coverZoneN->mesh].primitives[0].attributes["POSITION"];
+					cam.coverZones.push_back(loadLineAcc2d(model, lineAccIdx));
+
+					coverZoneId++;
+				}
+
+			}
+			cameraId++;
 		}
-
 
 	}
 
