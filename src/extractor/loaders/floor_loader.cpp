@@ -244,22 +244,22 @@ void loadCameras(floorStruct& result, PakFile& pak) {
     {
         int k;
         unsigned int offset = READ_LE_U32(camerasRawData + (i * 4));
-        cameraStruct* curCamera = &result.cameras[i];
+        cameraStruct* curCameraId = &result.cameras[i];
 
         u8* cameraRawData = (u8*)(camerasRawData + offset);
-        //curCamera->offset = cameraRawData - camerasRawData;
+        //curCameraId->offset = cameraRawData - camerasRawData;
 
-        curCamera->alpha = READ_LE_U16(cameraRawData + 0x00);
-        curCamera->beta = READ_LE_U16(cameraRawData + 0x02);
-        curCamera->gamma = READ_LE_U16(cameraRawData + 0x04);
+        curCameraId->alpha = READ_LE_U16(cameraRawData + 0x00);
+        curCameraId->beta = READ_LE_U16(cameraRawData + 0x02);
+        curCameraId->gamma = READ_LE_U16(cameraRawData + 0x04);
 
-        curCamera->x = READ_LE_U16(cameraRawData + 0x06);
-        curCamera->y = READ_LE_U16(cameraRawData + 0x08);
-        curCamera->z = READ_LE_U16(cameraRawData + 0x0A);
+        curCameraId->x = READ_LE_U16(cameraRawData + 0x06);
+        curCameraId->y = READ_LE_U16(cameraRawData + 0x08);
+        curCameraId->z = READ_LE_U16(cameraRawData + 0x0A);
 
-        curCamera->nearDistance = READ_LE_U16(cameraRawData + 0x0C);
-        curCamera->focalX = READ_LE_U16(cameraRawData + 0x0E);
-        curCamera->focalY = READ_LE_U16(cameraRawData + 0x10);
+        curCameraId->nearDistance = READ_LE_U16(cameraRawData + 0x0C);
+        curCameraId->focalX = READ_LE_U16(cameraRawData + 0x0E);
+        curCameraId->focalY = READ_LE_U16(cameraRawData + 0x10);
 
         int numViewedRooms = READ_LE_U16(cameraRawData + 0x12);
         cameraRawData += 0x14;
@@ -267,10 +267,10 @@ void loadCameras(floorStruct& result, PakFile& pak) {
 
         addDebugBlock( "CameraHead", i, camerasRawData, cameraRawData);
 
-        curCamera->viewedRoomTable.resize(numViewedRooms);
+        curCameraId->viewedRoomTable.resize(numViewedRooms);
         for (k = 0; k < numViewedRooms; k++)
         {
-            loadCameraRoom(&curCamera->viewedRoomTable[k], cameraRawData, cameraStartRawData);
+            loadCameraRoom(&curCameraId->viewedRoomTable[k], cameraRawData, cameraStartRawData);
             cameraRawData += 0x0C;
         }
     }

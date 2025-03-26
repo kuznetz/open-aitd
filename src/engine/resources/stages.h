@@ -95,10 +95,15 @@ namespace openAITD {
 		vector<BoundingBox> bounds;
 	};
 
+	struct GCameraRoom {
+		int roomId;
+		vector<GCameraOverlay> overlays;
+		vector<vector<Vector2>> coverZones;
+	};
+
 	class GCamera {
 	public:
-		std::vector<int> roomIds;
-		vector<GCameraOverlay> overlays;
+		std::vector<GCameraRoom> rooms;
 		vector<vector<Vector2>> coverZones;
 		Matrix modelview;
 		Matrix prespective;
@@ -123,6 +128,10 @@ namespace openAITD {
 
 	//Store static data in game
 	class Stage {
+	private:
+		void loadRooms(tinygltf::Model& model, json& stageJson);
+		void loadCameras(tinygltf::Model& model, json& stageJson);
+
 	public:
 		string stageDir;
 		std::vector<Room> rooms;
@@ -144,6 +153,12 @@ namespace openAITD {
 		std::string warn;
 		bool ret = loader.LoadASCIIFromFile(&model, &err, &warn, stageDir + "/stage.gltf");
 
+
+		loadRooms(model, stageJson);
+		loadCameras(model, stageJson);
+	}
+
+	void Stage::loadRooms(tinygltf::Model& model, json& stageJson) {
 		int roomId = 0;
 		while (true) {
 			tinygltf::Node* roomN = findNode(model, string("room_") + to_string(roomId));
@@ -157,8 +172,8 @@ namespace openAITD {
 				if (!collN) break;
 				auto& coll = room.colliders.emplace_back();
 				coll.isZone = false;
-				auto& collJson = stageJson["rooms"][roomId]["colliders"];
-			    coll.bounds = NodeToBounds(*collN);
+				auto& collJson = stageJson["rooms"][roomId]["colliders"][collId];
+				coll.bounds = NodeToBounds(*collN);
 				coll.parameter = collJson["parameter"];
 				coll.type = collJson["type"];
 				collId++;
@@ -170,24 +185,26 @@ namespace openAITD {
 				if (!collN) break;
 				auto& coll = room.colliders.emplace_back();
 				coll.isZone = true;
-				auto& collJson = stageJson["rooms"][roomId]["zones"];
+				auto& collJson = stageJson["rooms"][roomId]["zones"][collId];
 				coll.bounds = NodeToBounds(*collN);
 				coll.parameter = collJson["parameter"];
 				coll.type = collJson["type"];
 				collId++;
 			}
-						
+
 			//room.cameraIds = stageJson["rooms"][roomId]["cameras"].get<std::vector<int>>();
 
 			roomId++;
 		}
+	}
 
+	void Stage::loadCameras(tinygltf::Model& model, json& stageJson) {
 		int cameraId = 0;
 		while (true) {
 			tinygltf::Node* cameraN = findNode(model, string("camera_") + to_string(cameraId));
 			if (!cameraN) break;
 			auto& cam = cameras.emplace_back();
-			cam.roomIds = stageJson["cameras"][cameraId]["rooms"].get<std::vector<int>>();
+			auto roomIds = stageJson["cameras"][cameraId]["rooms"].get<std::vector<int>>();
 
 			//TODO: Camera settings
 			//cam.modelview
@@ -196,24 +213,24 @@ namespace openAITD {
 			//cameraN->rotation
 			//room.position = { (float)cameraN->translation[0], (float)cameraN->translation[1], (float)cameraN->translation[2] };
 
-			for (int r = 0; r < cam.roomIds.size(); r++) {
-				int roomId = cam.roomIds[r];			
-
+			for (int r = 0; r < roomIds.size(); r++) {
+				auto& camRoom = cam.rooms.emplace_back();
+				camRoom.roomId = roomIds[r];
 				int overlayId = 0;
 				while (true) {
 					int overlayZoneId = 0;
 					GCameraOverlay overlay;
 					while (true) {
 						tinygltf::Node* ovlZN = findNode(model, 
-							string("overlay_zone_") + to_string(cameraId) + "_" + to_string(roomId) + "_" +
+							string("overlay_zone_") + to_string(cameraId) + "_" + to_string(camRoom.roomId) + "_" +
 							to_string(overlayId) + "_" + to_string(overlayZoneId)
 						);
-						if (!ovlZN) break;
+						if (!ovlZN) break;						
 						overlay.bounds.push_back(NodeToBounds(*ovlZN));
 						overlayZoneId++;
 					}
 					if (overlay.bounds.size()) {
-						cam.overlays.push_back(overlay);
+						camRoom.overlays.push_back(overlay);
 					}
 					else {
 						break;
@@ -224,7 +241,7 @@ namespace openAITD {
 				int coverZoneId = 0;
 				while (true) {
 					tinygltf::Node* coverZoneN = findNode(model,
-						string("cam_zone_") + to_string(cameraId) + "_" + to_string(roomId) + "_" +
+						string("cam_zone_") + to_string(cameraId) + "_" + to_string(camRoom.roomId) + "_" +
 						to_string(coverZoneId)
 					);
 					if (!coverZoneN) break;

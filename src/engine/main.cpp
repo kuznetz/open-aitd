@@ -2,8 +2,8 @@
 #include <vector>
 #include <string>
 #include "./resources/resources.h"
-//#include "./world/world.h"
-//#include "./controllers/camera_renderer.h"
+#include "./world/world.h"
+#include "./controllers/camera_renderer.h"
 
 using namespace std;
 namespace openAITD {
@@ -22,15 +22,19 @@ namespace openAITD {
     int screenH = 800;
     
     Resources resources;
-    //World world;
-    //CameraRenderer renderer;
+    World world;
+    CameraRenderer renderer(&resources, &world);
 
     int main(void)
     {
         resources.stages.resize(2);
         resources.stages[0].load("data/stages/0");
-        //resources.stages[1].load("data/stages/1");
+        resources.stages[1].load("data/stages/1");
 
+        world.curStageId = 0;
+        world.curCameraId = 0;
+
+        renderer.setCamera(0, 0);
 
         //world.loadGObjects("data/objects.json");
         //world.loadVars("data/vars.json");

@@ -23,7 +23,7 @@ namespace openAITD {
 		//Object to follow camera
 		int trackedGObjectId;
 		int curCameraId;
-		int currentStageId;
+		int curStageId;
 
 		void loadGObjects(string path);
 		void loadVars(string path);
