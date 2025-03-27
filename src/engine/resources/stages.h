@@ -10,10 +10,11 @@
 #define TINYGLTF_NO_STB_IMAGE_WRITE
 #include <tiny_gltf.h>
 
+#include "../raylib.h"
+
 using nlohmann::json;
 using namespace std;
 namespace openAITD {
-    #include <raylib.h>
 
 	inline bool isPointInPoly(Vector2 p, vector<Vector2> polygon)
 	{
@@ -107,7 +108,6 @@ namespace openAITD {
 		vector<vector<Vector2>> coverZones;
 		Matrix modelview;
 		Matrix prespective;
-		//MatrixPerspective(fovRes.fov * testFovK * DEG2RAD, cameraAspect, nearDist, CAMERA_CULL_DISTANCE_FAR);
 
 		bool IsPointInCamera(Vector2 p)
 		{
@@ -205,10 +205,23 @@ namespace openAITD {
 			if (!cameraN) break;
 			auto& cam = cameras.emplace_back();
 			auto roomIds = stageJson["cameras"][cameraId]["rooms"].get<std::vector<int>>();
+			auto& camPers = model.cameras[cameraN->camera].perspective;
 
 			//TODO: Camera settings
+			cam.prespective = MatrixPerspective(camPers.yfov, camPers.aspectRatio, camPers.znear, 100000);
+			
+			auto& r = cameraN->rotation;
+			auto& t = cameraN->translation;
+			Matrix m1 = QuaternionToMatrix({ (float)r[0], (float)r[1], (float)r[2], (float)r[3] });
+			//m1.m12 = (float)t[0];
+			//m1.m13 = (float)t[1];
+			//m1.m14 = (float)t[2];
+			cam.modelview = m1;
+			
+			//Matrix m2 = MatrixTranslate((float)t[0], (float)t[1], (float)t[2]);
+			//cam.modelview = m2;
+
 			//cam.modelview
-			//cam.prespective
 			//room.position = { (float)cameraN->translation[0], (float)cameraN->translation[1], (float)cameraN->translation[2] };
 			//cameraN->rotation
 			//room.position = { (float)cameraN->translation[0], (float)cameraN->translation[1], (float)cameraN->translation[2] };

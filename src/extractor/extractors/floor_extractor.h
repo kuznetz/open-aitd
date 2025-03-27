@@ -93,15 +93,15 @@ void saveFloorGLTF(floorStruct& floor2, char* filename)
     vector<tinygltf::Node> roomNodes(floor->rooms.size());
 
     floorJson["rooms"] = nlohmann::json::array();
-    for (int roomIdx = 0; roomIdx < floor->rooms.size(); roomIdx++) {
-        auto& room = floor->rooms[roomIdx];
+    for (int roomId = 0; roomId < floor->rooms.size(); roomId++) {
+        auto& room = floor->rooms[roomId];
         
         nlohmann::json roomJson;
         roomJson["colliders"] = nlohmann::json::array();
         roomJson["zones"] = nlohmann::json::array();
 
-        auto& roomN = roomNodes[roomIdx];
-        roomN.name = string("room_") + to_string(roomIdx);
+        auto& roomN = roomNodes[roomId];
+        roomN.name = string("room_") + to_string(roomId);
         roomN.translation = {
             (float)room.worldX / 100,
             -(float)room.worldY / 100,
@@ -109,7 +109,7 @@ void saveFloorGLTF(floorStruct& floor2, char* filename)
         };
 
         tinygltf::Node rootColl;
-        rootColl.name = string("colliders_") + to_string(roomIdx);
+        rootColl.name = string("colliders_") + to_string(roomId);
         for (int collIdx = 0; collIdx < room.hardColTable.size(); collIdx++) {
             auto& coll = room.hardColTable[collIdx];
 
@@ -118,7 +118,7 @@ void saveFloorGLTF(floorStruct& floor2, char* filename)
             collJson["type"] = coll.type;
             roomJson["colliders"].push_back(collJson);
 
-            createBoxNode(m, string("coll_") + to_string(roomIdx) + "_" + to_string(collIdx), coll);
+            createBoxNode(m, string("coll_") + to_string(roomId) + "_" + to_string(collIdx), coll);
             int collNIdx = m.nodes.size() - 1;
             rootColl.children.push_back(collNIdx);
         }
@@ -128,7 +128,7 @@ void saveFloorGLTF(floorStruct& floor2, char* filename)
 
 
         tinygltf::Node rootZone;
-        rootZone.name = string("zones_") + to_string(roomIdx);
+        rootZone.name = string("zones_") + to_string(roomId);
         for (int zoneIdx = 0; zoneIdx < room.sceZoneTable.size(); zoneIdx++) {
             auto& zone = room.sceZoneTable[zoneIdx];
 
@@ -137,7 +137,7 @@ void saveFloorGLTF(floorStruct& floor2, char* filename)
             collJson["type"] = zone.type;
             roomJson["zones"].push_back(collJson);
 
-            createBoxNode(m, string("zone_") + to_string(roomIdx) + "_" + to_string(zoneIdx), zone);
+            createBoxNode(m, string("zone_") + to_string(roomId) + "_" + to_string(zoneIdx), zone);
             int zoneNIdx = m.nodes.size() - 1;
             rootZone.children.push_back(zoneNIdx);
         }
@@ -160,15 +160,15 @@ void saveFloorGLTF(floorStruct& floor2, char* filename)
 
         for (int viewIdx = 0; viewIdx < cam.viewedRoomTable.size(); viewIdx++) {
             auto& vw = cam.viewedRoomTable[viewIdx];
-            auto roomIdx = vw.viewedRoomIdx;
-            cameraJson["rooms"].push_back(roomIdx);
+            auto roomId = vw.viewedRoomIdx;
+            cameraJson["rooms"].push_back(roomId);
 
             //json roomViewsJson;
-            //roomViewsJson["roomIdx"] = roomIdx;
+            //roomViewsJson["roomId"] = roomId;
 
             auto& roomN = roomNodes[vw.viewedRoomIdx];
             tinygltf::Node camRoomN;
-            camRoomN.name = string("camera_room_") + to_string(camIdx) + "_" + to_string(roomIdx);
+            camRoomN.name = string("camera_room_") + to_string(camIdx) + "_" + to_string(roomId);
 
             //roomViewsJson["overlays"] = json::array();
             for (int ovlIdx = 0; ovlIdx < vw.overlays_V1.size(); ovlIdx++) {
@@ -178,7 +178,7 @@ void saveFloorGLTF(floorStruct& floor2, char* filename)
                 for (int ovlZIdx = 0; ovlZIdx < ovl.zones.size(); ovlZIdx++) {
                     auto& ovlZ = ovl.zones[ovlZIdx];
                     tinygltf::Node ovlZN;
-                    ovlZN.name = string("overlay_zone_") + to_string(camIdx) + "_" + to_string(roomIdx) + "_" + to_string(ovlIdx) + "_" + to_string(ovlZIdx);
+                    ovlZN.name = string("overlay_zone_") + to_string(camIdx) + "_" + to_string(roomId) + "_" + to_string(ovlIdx) + "_" + to_string(ovlZIdx);
                     ovlZN.mesh = 0;
                     float z = (float)(ovlZ.zoneZ2 - ovlZ.zoneZ1) / 100;
                     ovlZN.translation = {
@@ -211,7 +211,7 @@ void saveFloorGLTF(floorStruct& floor2, char* filename)
                 auto lineMeshIdx = createLineMesh(m, flzone);
 
                 tinygltf::Node camZoneN;
-                camZoneN.name = string("cam_zone_") + to_string(camIdx) + "_" + to_string(roomIdx) + "_" + to_string(zoneIdx);
+                camZoneN.name = string("cam_zone_") + to_string(camIdx) + "_" + to_string(roomId) + "_" + to_string(zoneIdx);
                 camZoneN.mesh = lineMeshIdx;
 
                 m.nodes.push_back(camZoneN);
@@ -229,8 +229,8 @@ void saveFloorGLTF(floorStruct& floor2, char* filename)
         floorJson["cameras"].push_back(cameraJson);
     }
 
-    for (int roomIdx = 0; roomIdx < floor->rooms.size(); roomIdx++) {
-        m.nodes.push_back( roomNodes[roomIdx] );
+    for (int roomId = 0; roomId < floor->rooms.size(); roomId++) {
+        m.nodes.push_back( roomNodes[roomId] );
     }
 
     // Save it to a file

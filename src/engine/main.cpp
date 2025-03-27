@@ -35,12 +35,12 @@ namespace openAITD {
 
         world.curStageId = 0;
         world.curCameraId = 0;
-        //world.loadGObjects("data/objects.json");
+        world.loadGObjects("data/objects.json");
         //world.loadVars("data/vars.json");
 
         renderer.screenW = screenW;
         renderer.screenH = screenH;
-        renderer.loadCamera(1, 3);
+        renderer.loadCamera(0, 0);
 
         while (!WindowShouldClose()) {
             BeginDrawing();

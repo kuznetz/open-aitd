@@ -209,6 +209,11 @@ void animTest() {
 }
 
 void extractAllData() {
+    if (!std::filesystem::exists("data/objects.json")) {
+        auto& objs = loadGameObjects("original/OBJETS.ITD");
+        extractGameObjects(objs, "data/objects.json");
+    }
+
     processStages();
     processModels();
     processScripts();

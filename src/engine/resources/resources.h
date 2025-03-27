@@ -1,8 +1,9 @@
 ﻿#pragma once
 #include <vector>
 #include <string>
-#include <raymath.h>
 #include "stages.h"
+#include "models.h"
+#include "../raylib.h"
 
 using namespace std;
 namespace openAITD {
@@ -11,6 +12,7 @@ namespace openAITD {
 	class Resources {
 	public:
 		vector<Stage> stages;
+		RModels models;
 	};
 
 }

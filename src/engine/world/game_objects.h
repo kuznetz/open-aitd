@@ -1,27 +1,47 @@
 ﻿#pragma once
 #include <vector>
 #include <string>
-#include <raymath.h>
+#include "../raylib.h"
 
 using namespace std;
 namespace openAITD {
 
-	class GameObject
+	struct GOLocation
 	{
-	public:
-		int ownerIdx;
-		int modelIdx;
-		int animationIdx;
-		int lifeIdx;
-		int lifeMode;
-		int traceIdx;
-		int stageIdx;
-		int roomIdx;
+		int stageId = -1;
+		int roomId = -1;
 		Vector3 position;
 		Vector3 rotation;
 		Vector4 rotationQ;
-		int animationFrame;
-		float animationTime;
+	};
+
+	struct GOModel
+	{
+		int id = -1;
+		int animId = -1;
+		int animType = 0;
+		int animInfo = 0;
+		float animTime;
+	};
+
+	struct GOInvItem
+	{
+		int ownerId = -1;
+		int model = -1;
+		int name = 0;
+		int life = 0;
+	};
+
+	class GameObject
+	{
+	public:
+		GOLocation location;
+		GOModel model;
+		GOInvItem invItem;
+
+		int lifeIdx;
+		int lifeMode;
+		int traceIdx;
 	};
 
 }

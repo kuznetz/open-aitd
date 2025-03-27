@@ -18,40 +18,58 @@ inline void extractGameObjects(vector <gameObjectStruct> objects, string josnTo)
     {
         auto& obj = objects[i];
         json objJson = json::object();
-        
-        objJson["ownerIdx"] = obj.ownerIdx;
-        objJson["body"] = obj.body;
-        objJson["flags"] = obj.flags;
-        objJson["field_6"] = obj.field_6;
-        objJson["foundBody"] = obj.foundBody;
-        objJson["foundName"] = obj.foundName;
-        objJson["flags2"] = obj.flags2;
-        objJson["foundLife"] = obj.foundLife;
 
-        json position = json::array();
-        position.push_back((float)obj.x / 1000);
-        position.push_back(-(float)obj.y / 1000);
-        position.push_back((float)obj.z / 1000);
-        objJson["position"] = position;
+        //location
+        if (obj.floor != -1) {
+            objJson["location"] = json::object();
+            auto& loc = objJson["location"];
 
-        json rotation = json::array();
-        rotation.push_back((float)obj.alpha * 360 / 1024);
-        rotation.push_back((float)obj.beta * 360 / 1024);
-        rotation.push_back((float)obj.gamma * 360 / 1024);
-        objJson["rotation"] = rotation;
+            json position = json::array();
+            position.push_back((float)obj.x / 1000);
+            position.push_back(-(float)obj.y / 1000);
+            position.push_back((float)obj.z / 1000);
+            loc["position"] = position;
 
-        objJson["floor"] = obj.floor;
-        objJson["room"] = obj.room;
-        objJson["lifeMode"] = obj.lifeMode;
-        objJson["life"] = obj.life;
-        objJson["field_24"] = obj.field_24;
-        objJson["anim"] = obj.anim;
-        objJson["frame"] = obj.frame;
-        objJson["animType"] = obj.animType;
-        objJson["animInfo"] = obj.animInfo;
+            json rotation = json::array();
+            rotation.push_back((float)obj.alpha * 360 / 1024);
+            rotation.push_back((float)obj.beta * 360 / 1024);
+            rotation.push_back((float)obj.gamma * 360 / 1024);
+            loc["rotation"] = rotation;
+
+            loc["stageId"] = obj.floor;
+            loc["roomId"] = obj.room;
+        }
+
+        //model
+        if (obj.body != -1) {
+            objJson["model"] = json::object();
+            objJson["model"]["id"] = obj.body;
+            objJson["model"]["animId"] = obj.anim;
+            objJson["model"]["animType"] = obj.animType;
+            objJson["model"]["animInfo"] = obj.animInfo;
+        }
+
+        //inventory
+        if (obj.foundBody != -1) {
+            objJson["invItem"] = json::object();
+            objJson["invItem"]["ownerId"] = obj.ownerIdx;
+            objJson["invItem"]["model"] = obj.foundBody;
+            objJson["invItem"]["name"] = obj.foundName;
+            objJson["invItem"]["life"] = obj.foundLife;
+        }
+
         objJson["trackMode"] = obj.trackMode;
         objJson["trackNumber"] = obj.trackNumber;
-        objJson["positionInTrack"] = obj.positionInTrack;
+        //TODO: Convert trackPosition?
+        objJson["trackPosition"] = obj.positionInTrack;
+
+        objJson["lifeMode"] = obj.lifeMode;
+        objJson["life"] = obj.life;
+
+        objJson["flags"] = obj.flags;
+        objJson["flags2"] = obj.flags2;
+        objJson["field_6"] = obj.field_6;
+        objJson["field_24"] = obj.field_24;
 
         outJson.push_back(objJson);
     }

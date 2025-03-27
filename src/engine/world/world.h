@@ -1,8 +1,12 @@
 ﻿#pragma once
 #include <vector>
 #include <string>
-#include <raymath.h>
+#include "../raylib.h"
 #include "game_objects.h"
+
+#define NLOHMANN_JSON_NAMESPACE_NO_VERSION 1
+#include <nlohmann/json.hpp>
+using nlohmann::json;
 
 using namespace std;
 namespace openAITD {
@@ -32,7 +36,20 @@ namespace openAITD {
 
 	void World::loadGObjects(string path)
 	{
+		std::ifstream ifs(path);
+		json objsJson = json::parse(ifs);
 
+		gobjects.resize(objsJson.size());
+		for (int i = 0; i < objsJson.size(); i++) {
+			if (objsJson[i].contains("location")) {
+				auto& loc = gobjects[i].location;
+				auto& locJson = objsJson[i]["location"];
+				//loc.position = { locJson["position"][0], locJson["position"][1], locJson["position"][2] };
+				//loc.rotation = { locJson["rotation"][0], locJson["rotation"][1], locJson["rotation"][2] };
+				loc.stageId = locJson["stageId"];
+			    loc.roomId = locJson["roomId"];
+			}
+		}
 	};
 
 	void World::loadVars(string path)

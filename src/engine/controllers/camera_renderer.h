@@ -3,10 +3,18 @@
 #include <string>
 #include "../world/world.h"
 #include "../resources/resources.h"
+#include "../raylib.h"
 
 using namespace std;
 namespace openAITD {
-	#include <raylib.h>
+
+	const Camera initCamera = {
+		{ 0.0f, 0, -5 },
+		{ 0.0f, 0.0f, 0.0f },
+		{ 0.0f, 1.0f, 0.0f },   // mainCamera up vector (rotation towards target)
+		60.,
+		CAMERA_PERSPECTIVE
+	};
 
 	struct RenderBackground {
 		Image background;
@@ -154,17 +162,32 @@ namespace openAITD {
 				{ 0, 0 }, 0, WHITE
 			);
 
-			for (int i = 0; i < overlayTextures.size(); i++) {
-				for (int j = 0; j < overlayTextures[i].size(); j++) {
-					DrawTexturePro(
-						overlayTextures[i][j],
-						{ 0, 0, (float)screenW, (float)screenH },
-						{ 0, 0, (float)screenW, (float)screenH },
-						{ 0, 0 }, 0, WHITE
-					);
-				}
-			}
+			//for (int i = 0; i < overlayTextures.size(); i++) {
+			//	for (int j = 0; j < overlayTextures[i].size(); j++) {
+			//		DrawTexturePro(
+			//			overlayTextures[i][j],
+			//			{ 0, 0, (float)screenW, (float)screenH },
+			//			{ 0, 0, (float)screenW, (float)screenH },
+			//			{ 0, 0 }, 0, WHITE
+			//		);
+			//	}
+			//}
 
+
+
+			BeginMode3D(initCamera);
+			rlSetMatrixModelview(curCamera->modelview);
+			rlSetMatrixProjection(curCamera->prespective);
+
+			DrawCube({0,0,0}, 0.5, 0.5, 0.5, GREEN);
+
+			//for (int i = 0; i < this->world->gobjects.size(); i++) {
+			//	auto& gobj = this->world->gobjects[i];
+			//	if (gobj.location.stageId != curStageId) continue;
+			//    DrawCube(gobj.location.position, 0.5, 0.5, 0.5, RED);
+			//}
+			
+			EndMode3D();
 		}
 
 	};

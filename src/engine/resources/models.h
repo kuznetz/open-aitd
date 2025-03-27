@@ -2,14 +2,12 @@
 #include <vector>
 #include <map>
 #include <string>
-#include <raymath.h>
-#include <raylib.h>
-//#include <rmodels.h>
+
+#include "../raylib.h"
 
 using namespace std;
 namespace openAITD {
-
-	class WModel
+	class RModel
 	{
 	public:
 		Model* model;
@@ -21,20 +19,20 @@ namespace openAITD {
 		}
 	};
 
-	class WModels
+	class RModels
 	{
 	public:
 		string modelsPath = "data/models";
-		map<int, WModel> models;
+		map<int, RModel> models;
 		//For AITD1 - female character
-		map<int, WModel> altModels;
+		map<int, RModel> altModels;
 
-		WModel* getModel(int idx, bool alt = false);
+		RModel* getModel(int idx, bool alt = false);
 	};
 
-	WModel* WModels::getModel(int idx, bool alt = false)
+	RModel* RModels::getModel(int idx, bool alt)
 	{
-
+		return 0;
 	}
 
 }
