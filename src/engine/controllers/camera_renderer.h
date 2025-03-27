@@ -8,7 +8,7 @@
 using namespace std;
 namespace openAITD {
 
-	const Camera initCamera = {
+	Camera initCamera = {
 		{ 0.0f, 0, -5 },
 		{ 0.0f, 0.0f, 0.0f },
 		{ 0.0f, 1.0f, 0.0f },   // mainCamera up vector (rotation towards target)
@@ -130,6 +130,36 @@ namespace openAITD {
 			return result;
 		}
 
+		void DrawBounds(BoundingBox bb, Color color)
+		{
+			Vector3 vecs[8];
+			// Front face        
+			vecs[0] = { bb.min.x, bb.max.y, bb.max.z }; // Top left
+			vecs[1] = { bb.max.x, bb.max.y, bb.max.z }; // Top right
+			vecs[2] = { bb.min.x, bb.min.y, bb.max.z }; // Bottom left
+			vecs[3] = { bb.max.x, bb.min.y, bb.max.z }; // Bottom right
+			// Back face
+			vecs[4] = { bb.min.x, bb.max.y, bb.min.z }; // Top left
+			vecs[5] = { bb.max.x, bb.max.y, bb.min.z }; // Top right
+			vecs[6] = { bb.min.x, bb.min.y, bb.min.z }; // Bottom left
+			vecs[7] = { bb.max.x, bb.min.y, bb.min.z }; // Bottom right
+
+			DrawLine3D(vecs[0], vecs[1], color);
+			DrawLine3D(vecs[1], vecs[3], color);
+			DrawLine3D(vecs[3], vecs[2], color);
+			DrawLine3D(vecs[2], vecs[0], color);
+
+			DrawLine3D(vecs[4], vecs[5], color);
+			DrawLine3D(vecs[5], vecs[7], color);
+			DrawLine3D(vecs[7], vecs[6], color);
+			DrawLine3D(vecs[6], vecs[4], color);
+
+			DrawLine3D(vecs[0], vecs[4], color);
+			DrawLine3D(vecs[1], vecs[5], color);
+			DrawLine3D(vecs[2], vecs[6], color);
+			DrawLine3D(vecs[3], vecs[7], color);
+		}
+
 		void loadCamera(int newStageId, int newCameraId)
 		{
 			if ((newStageId == curStageId) && (newCameraId == curCameraId)) return;
@@ -150,6 +180,7 @@ namespace openAITD {
 			}
 			UnloadImage(fullBg);
 			curCameraId = newCameraId;
+			initCamera.position = curCamera->position;
 		}
 
 		void process() {
@@ -173,19 +204,30 @@ namespace openAITD {
 			//	}
 			//}
 
-
+			UpdateCamera(&initCamera, CAMERA_FREE);
 
 			BeginMode3D(initCamera);
-			rlSetMatrixModelview(curCamera->modelview);
+			//rlSetMatrixModelview(curCamera->modelview);
 			rlSetMatrixProjection(curCamera->prespective);
 
 			DrawCube({0,0,0}, 0.5, 0.5, 0.5, GREEN);
 
-			//for (int i = 0; i < this->world->gobjects.size(); i++) {
-			//	auto& gobj = this->world->gobjects[i];
-			//	if (gobj.location.stageId != curStageId) continue;
-			//    DrawCube(gobj.location.position, 0.5, 0.5, 0.5, RED);
-			//}
+			for (int r = 0; r < curCamera->rooms.size(); r++) {
+				auto& room = curStage->rooms[curCamera->rooms[r].roomId];
+				for (int collId = 0; collId < room.colliders.size(); collId++) {
+					if (room.colliders[collId].isZone) continue;
+					DrawBounds(room.colliders[collId].bounds, DARKBLUE);					
+				}
+			}
+
+			for (int i = 0; i < this->world->gobjects.size(); i++) {
+				auto& gobj = this->world->gobjects[i];
+				if (gobj.model.id == -1) continue;
+				if (gobj.location.stageId != curStageId) continue;
+				Vector3& pos = curStage->rooms[gobj.location.roomId].position;
+				pos = Vector3Add(pos, gobj.location.position);
+			    DrawCube(pos, 0.5, 0.5, 0.5, RED);
+			}
 			
 			EndMode3D();
 		}

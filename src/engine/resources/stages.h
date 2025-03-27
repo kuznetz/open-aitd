@@ -60,13 +60,13 @@ namespace openAITD {
 		return 0;
 	}
 
-	inline BoundingBox NodeToBounds(tinygltf::Node& n)
+	inline BoundingBox NodeToBounds(Vector3 offset, tinygltf::Node& n)
 	{
 		auto& t = n.translation;
 		auto& s = n.scale;
 		BoundingBox b = {
-			{ t[0], t[1], t[2] },
-			{ t[0] + s[0], t[1] + s[1], t[1] + s[1]}
+			Vector3Add(offset, { (float)t[0], (float)t[1], (float)t[2] }),
+			Vector3Add(offset, { (float)(t[0] + s[0]), (float)(t[1] + s[1]), (float)(t[2] + s[2])})
 		};
 		return b;
 	}
@@ -106,6 +106,7 @@ namespace openAITD {
 	public:
 		std::vector<GCameraRoom> rooms;
 		vector<vector<Vector2>> coverZones;
+		Vector3 position;
 		Matrix modelview;
 		Matrix prespective;
 
@@ -173,7 +174,7 @@ namespace openAITD {
 				auto& coll = room.colliders.emplace_back();
 				coll.isZone = false;
 				auto& collJson = stageJson["rooms"][roomId]["colliders"][collId];
-				coll.bounds = NodeToBounds(*collN);
+				coll.bounds = NodeToBounds(room.position, *collN);
 				coll.parameter = collJson["parameter"];
 				coll.type = collJson["type"];
 				collId++;
@@ -186,7 +187,7 @@ namespace openAITD {
 				auto& coll = room.colliders.emplace_back();
 				coll.isZone = true;
 				auto& collJson = stageJson["rooms"][roomId]["zones"][collId];
-				coll.bounds = NodeToBounds(*collN);
+				coll.bounds = NodeToBounds(room.position, *collN);
 				coll.parameter = collJson["parameter"];
 				coll.type = collJson["type"];
 				collId++;
@@ -208,18 +209,15 @@ namespace openAITD {
 			auto& camPers = model.cameras[cameraN->camera].perspective;
 
 			//TODO: Camera settings
-			cam.prespective = MatrixPerspective(camPers.yfov, camPers.aspectRatio, camPers.znear, 100000);
-			
+			cam.prespective = MatrixPerspective(camPers.yfov, camPers.aspectRatio, camPers.znear, camPers.zfar);
+
 			auto& r = cameraN->rotation;
 			auto& t = cameraN->translation;
+			cam.position = { (float)t[0], (float)t[1], (float)t[2] };
 			Matrix m1 = QuaternionToMatrix({ (float)r[0], (float)r[1], (float)r[2], (float)r[3] });
-			//m1.m12 = (float)t[0];
-			//m1.m13 = (float)t[1];
-			//m1.m14 = (float)t[2];
-			cam.modelview = m1;
-			
-			//Matrix m2 = MatrixTranslate((float)t[0], (float)t[1], (float)t[2]);
-			//cam.modelview = m2;
+		    //Matrix m1 = MatrixRotateY( 0*PI );
+			Matrix m2 = MatrixTranslate((float)-t[0], (float)-t[1], (float)-t[2]);
+			cam.modelview = MatrixMultiply( m1,m2 );
 
 			//cam.modelview
 			//room.position = { (float)cameraN->translation[0], (float)cameraN->translation[1], (float)cameraN->translation[2] };
@@ -229,6 +227,7 @@ namespace openAITD {
 			for (int r = 0; r < roomIds.size(); r++) {
 				auto& camRoom = cam.rooms.emplace_back();
 				camRoom.roomId = roomIds[r];
+				auto& room = rooms[camRoom.roomId];
 				int overlayId = 0;
 				while (true) {
 					int overlayZoneId = 0;
@@ -239,7 +238,7 @@ namespace openAITD {
 							to_string(overlayId) + "_" + to_string(overlayZoneId)
 						);
 						if (!ovlZN) break;						
-						overlay.bounds.push_back(NodeToBounds(*ovlZN));
+						overlay.bounds.push_back(NodeToBounds(room.position ,*ovlZN));
 						overlayZoneId++;
 					}
 					if (overlay.bounds.size()) {

@@ -44,10 +44,19 @@ namespace openAITD {
 			if (objsJson[i].contains("location")) {
 				auto& loc = gobjects[i].location;
 				auto& locJson = objsJson[i]["location"];
-				//loc.position = { locJson["position"][0], locJson["position"][1], locJson["position"][2] };
-				//loc.rotation = { locJson["rotation"][0], locJson["rotation"][1], locJson["rotation"][2] };
+				loc.position = { locJson["position"][0], locJson["position"][1], locJson["position"][2] };
+				loc.rotation = { locJson["rotation"][0], locJson["rotation"][1], locJson["rotation"][2] };
 				loc.stageId = locJson["stageId"];
 			    loc.roomId = locJson["roomId"];
+			}
+
+			if (objsJson[i].contains("model")) {
+				auto& mdl = gobjects[i].model;
+				auto& mdlJson = objsJson[i]["model"];
+				mdl.id = mdlJson["id"];
+				mdl.animId = mdlJson["animId"];
+				mdl.animType = mdlJson["animType"];
+				mdl.animInfo = mdlJson["animInfo"];
 			}
 		}
 	};
