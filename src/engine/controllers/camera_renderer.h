@@ -118,6 +118,7 @@ namespace openAITD {
 				((uint8_t*)maskImageScaled.data)[i * 4 + 2] = ((uint8_t*)fullBg.data)[i * 4 + 2];
 			}
 			Texture2D result = LoadTextureFromImage(maskImageScaled);
+			UnloadImage(maskImageScaled);
 			return result;
 		}
 
@@ -139,7 +140,7 @@ namespace openAITD {
 					overlayTextures[i][j] = generateMask(fullBg, m[i][j]);
 				}
 			}
-
+			UnloadImage(fullBg);
 			curCameraId = newCameraId;
 		}
 
