@@ -101,7 +101,7 @@ namespace openAITD {
 		vector<vector<Vector2>> coverZones;
 	};
 
-	class GCamera {
+	class WCamera {
 	public:
 		std::vector<GCameraRoom> rooms;
 		vector<vector<Vector2>> coverZones;
@@ -135,7 +135,7 @@ namespace openAITD {
 	public:
 		string stageDir;
 		std::vector<Room> rooms;
-		std::vector<GCamera> cameras;
+		std::vector<WCamera> cameras;
 
 		void load(string stageDir);
 		//int centredCamera(Vector3 p);
