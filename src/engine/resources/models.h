@@ -7,32 +7,57 @@
 
 using namespace std;
 namespace openAITD {
-	class RModel
+
+	struct RModel
 	{
-	public:
-		Model* model;
+		Model model;
 		map<int,ModelAnimation> animations;
 		BoundingBox bounds;
-
-		void load(string modelDir) {
-		
-		}
 	};
 
 	class RModels
 	{
-	public:
-		string modelsPath = "data/models";
+	private:
 		map<int, RModel> models;
 		//For AITD1 - female character
 		map<int, RModel> altModels;
-
+	public:
+		string modelsPath = "data/models";
+		~RModels();
 		RModel* getModel(int idx, bool alt = false);
+		void clear();
 	};
 
-	RModel* RModels::getModel(int idx, bool alt)
+
+
+	RModel* RModels::getModel(int id, bool alt)
 	{
-		return 0;
+		auto& modMap = alt ? models : altModels;
+		auto mi = modMap.find(id);
+		if (mi != modMap.end()) {
+			return &(*mi).second;
+		}
+		string str = modelsPath + "/" + to_string(id) + (alt ? "_alt" : "") + "/model.gltf";
+		auto& newMod = modMap[id];
+		newMod.model = LoadModel(str.c_str());
+		//TODO: animations
+
+		return &newMod;
+	}
+
+	void RModels::clear() {
+		for (const auto& kv : models) {
+			UnloadModel(kv.second.model);
+		}
+		models.clear();
+		for (const auto& kv : altModels) {
+			UnloadModel(kv.second.model);
+		}
+		altModels.clear();
+	}
+
+	RModels::~RModels() {
+		clear();
 	}
 
 }

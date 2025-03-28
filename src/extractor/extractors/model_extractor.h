@@ -319,8 +319,8 @@ void saveModelGLTF(const PakModel& model, vector<Animation*> animations, const s
     tinygltf::TinyGLTF gltf;
     gltf.WriteGltfSceneToFile(&m, dirname + "/model.gltf",
        false, // embedImages
-       true, // embedBuffers
-       true, // pretty print
+       false, // embedBuffers
+       false, // pretty print
        false
     );
 }

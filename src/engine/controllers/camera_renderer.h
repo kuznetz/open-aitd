@@ -180,7 +180,11 @@ namespace openAITD {
 			}
 			UnloadImage(fullBg);
 			curCameraId = newCameraId;
+
+			//It's ugly, but it didn't get any better.
 			initCamera.position = curCamera->position;
+			Matrix vw = QuaternionToMatrix(curCamera->rotation);
+			initCamera.target = Vector3Add(curCamera->position, Vector3Negate({ vw.m8, vw.m9, vw.m10 }));
 		}
 
 		void process() {
@@ -204,13 +208,13 @@ namespace openAITD {
 			//	}
 			//}
 
-			UpdateCamera(&initCamera, CAMERA_FREE);
+			//UpdateCamera(&initCamera, CAMERA_FREE);
 
 			BeginMode3D(initCamera);
 			//rlSetMatrixModelview(curCamera->modelview);
 			rlSetMatrixProjection(curCamera->prespective);
 
-			DrawCube({0,0,0}, 0.5, 0.5, 0.5, GREEN);
+			//DrawCube({0,0,0}, 0.5, 0.5, 0.5, GREEN);
 
 			for (int r = 0; r < curCamera->rooms.size(); r++) {
 				auto& room = curStage->rooms[curCamera->rooms[r].roomId];
@@ -224,9 +228,10 @@ namespace openAITD {
 				auto& gobj = this->world->gobjects[i];
 				if (gobj.model.id == -1) continue;
 				if (gobj.location.stageId != curStageId) continue;
-				Vector3& pos = curStage->rooms[gobj.location.roomId].position;
-				pos = Vector3Add(pos, gobj.location.position);
-			    DrawCube(pos, 0.5, 0.5, 0.5, RED);
+				Vector3& roomPos = curStage->rooms[gobj.location.roomId].position;
+				Vector3 pos = Vector3Add(roomPos, gobj.location.position);
+				auto mdl = resources->models.getModel(gobj.model.id);
+			    DrawModelEx(mdl->model, pos, {0,1,0}, 0, {1,1,1}, WHITE);
 			}
 			
 			EndMode3D();

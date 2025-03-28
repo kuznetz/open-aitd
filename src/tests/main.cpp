@@ -6,13 +6,17 @@ namespace PerspectiveTest {
     void runTest();
 }
 
+namespace ModelTest {
+    void runTest();
+}
+
 int main(void)
 {
     //CameraTest::runTest();
     //MaskTest::runTest();
-    //ModelTest::runTest();
     
-    PerspectiveTest::runTest();
+    ModelTest::runTest();    
+    //PerspectiveTest::runTest();
 
     return 0;
 }

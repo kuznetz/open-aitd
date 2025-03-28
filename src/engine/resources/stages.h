@@ -107,6 +107,7 @@ namespace openAITD {
 		std::vector<GCameraRoom> rooms;
 		vector<vector<Vector2>> coverZones;
 		Vector3 position;
+		Vector4 rotation;
 		Matrix modelview;
 		Matrix prespective;
 
@@ -214,10 +215,11 @@ namespace openAITD {
 			auto& r = cameraN->rotation;
 			auto& t = cameraN->translation;
 			cam.position = { (float)t[0], (float)t[1], (float)t[2] };
+			cam.rotation = { (float)r[0], (float)r[1], (float)r[2], (float)r[3] };
 			Matrix m1 = QuaternionToMatrix({ (float)r[0], (float)r[1], (float)r[2], (float)r[3] });
 		    //Matrix m1 = MatrixRotateY( 0*PI );
-			Matrix m2 = MatrixTranslate((float)-t[0], (float)-t[1], (float)-t[2]);
-			cam.modelview = MatrixMultiply( m1,m2 );
+			Matrix m2 = MatrixTranslate((float)t[0], (float)t[1], (float)t[2]);
+			cam.modelview = MatrixMultiply( m2, m1 );
 
 			//cam.modelview
 			//room.position = { (float)cameraN->translation[0], (float)cameraN->translation[1], (float)cameraN->translation[2] };

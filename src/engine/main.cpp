@@ -33,8 +33,8 @@ namespace openAITD {
         resources.stages[0].load("data/stages/0");
         resources.stages[1].load("data/stages/1");
 
-        world.curStageId = 0;
-        world.curCameraId = 0;
+        world.curStageId = 1;
+        world.curCameraId = 4;
         world.loadGObjects("data/objects.json");
         //world.loadVars("data/vars.json");
 

@@ -38,17 +38,39 @@ const float cubeVertices[] = {
 }; //24
 const int cubeVertSize = 24 * sizeof(float);
 
+int addDataToBuffer(tinygltf::Model& m, void* data, int dataSize) {
+    if (m.buffers.size() < 1) {
+        m.buffers.emplace_back();
+    }
+    int offset = m.buffers[0].data.size();
+    m.buffers[0].data.resize(offset + dataSize);
+    uint8_t* endData = m.buffers[0].data.data();
+    endData += offset;
+    memcpy(endData, data, dataSize);
+    return offset;
+}
+
+int createBufferAndView(tinygltf::Model& m, void* data, int size, int vwTarget) {
+    int offs = addDataToBuffer(m, (uint8_t*)data, size);
+
+    tinygltf::BufferView bufVw;
+    bufVw.buffer = 0;
+    bufVw.byteOffset = offs;
+    bufVw.byteLength = size;
+    bufVw.target = vwTarget;
+    m.bufferViews.push_back(bufVw);
+    int vwIdx = m.bufferViews.size() - 1;
+    return vwIdx;
+}
+
 int createCubeMesh(tinygltf::Model& m) {
     //Store Cube
-    tinygltf::Buffer cubeBuffer;
-    cubeBuffer.data.resize(cubeVertSize + 36);
-    memcpy(cubeBuffer.data.data(), cubeVertices, cubeVertSize);
-    memcpy(cubeBuffer.data.data() + cubeVertSize, cubeIndices, 36);
-    m.buffers.push_back(cubeBuffer);
+    int versOffs = addDataToBuffer(m, (uint8_t*)cubeVertices, cubeVertSize);
+    int indxOffs = addDataToBuffer(m, (uint8_t*)cubeIndices, 36);
 
     tinygltf::BufferView cubeVertVw;
     cubeVertVw.buffer = 0;
-    cubeVertVw.byteOffset = 0;
+    cubeVertVw.byteOffset = versOffs;
     cubeVertVw.byteLength = cubeVertSize;
     cubeVertVw.target = TINYGLTF_TARGET_ARRAY_BUFFER;
     m.bufferViews.push_back(cubeVertVw);
@@ -65,7 +87,7 @@ int createCubeMesh(tinygltf::Model& m) {
 
     tinygltf::BufferView cubeIdxVw;
     cubeIdxVw.buffer = 0;
-    cubeIdxVw.byteOffset = cubeVertSize;
+    cubeIdxVw.byteOffset = indxOffs;
     cubeIdxVw.byteLength = 36;
     cubeIdxVw.target = TINYGLTF_TARGET_ELEMENT_ARRAY_BUFFER;
     m.bufferViews.push_back(cubeIdxVw);
@@ -93,15 +115,11 @@ int createCubeMesh(tinygltf::Model& m) {
 
 int createLineMesh(tinygltf::Model& m, const vector<float>& line) {
     int lineBytes = line.size() * sizeof(float);
-    tinygltf::Buffer buffer;
-    buffer.data.resize(lineBytes);
-    memcpy(buffer.data.data(), line.data(), lineBytes);
-    m.buffers.push_back(buffer);
-    int bufIdx = m.buffers.size() - 1;
+    int lineOffs = addDataToBuffer(m, (uint8_t*)line.data(), lineBytes);
 
     tinygltf::BufferView lineVw;
-    lineVw.buffer = bufIdx;
-    lineVw.byteOffset = 0;
+    lineVw.buffer = 0;
+    lineVw.byteOffset = lineOffs;
     lineVw.byteLength = lineBytes;
     lineVw.target = TINYGLTF_TARGET_ELEMENT_ARRAY_BUFFER;
     m.bufferViews.push_back(lineVw);
@@ -128,15 +146,11 @@ int createLineMesh(tinygltf::Model& m, const vector<float>& line) {
 
 int createVertexes(tinygltf::Model& m, const vector<Vector3>& vertexes) {
     int vertBytes = vertexes.size() * sizeof(Vector3);
-    tinygltf::Buffer buffer;
-    buffer.data.resize(vertBytes);
-    memcpy(buffer.data.data(), vertexes.data(), vertBytes);
-    m.buffers.push_back(buffer);
-    int bufIdx = m.buffers.size() - 1;
+    int vertOffs = addDataToBuffer(m, (uint8_t*)vertexes.data(), vertBytes);
 
     tinygltf::BufferView vertVw;
-    vertVw.buffer = bufIdx;
-    vertVw.byteOffset = 0;
+    vertVw.buffer = 0;
+    vertVw.byteOffset = vertOffs;
     vertVw.byteLength = vertBytes;
     vertVw.target = TINYGLTF_TARGET_ARRAY_BUFFER;
     m.bufferViews.push_back(vertVw);
@@ -154,15 +168,11 @@ int createVertexes(tinygltf::Model& m, const vector<Vector3>& vertexes) {
 
 tinygltf::Primitive createPolyPrimitive(tinygltf::Model& m, const vector<unsigned int>& indices, int vertAccIdx, int material) {
     int indxBytes = indices.size() * sizeof(unsigned int);
-    tinygltf::Buffer buffer;
-    buffer.data.resize(indxBytes);
-    memcpy(buffer.data.data(), indices.data(), indxBytes);
-    m.buffers.push_back(buffer);
-    int bufIdx = m.buffers.size() - 1;
+    int indxOffs = addDataToBuffer(m, (uint8_t*)indices.data(), indxBytes);
 
     tinygltf::BufferView idxVw;
-    idxVw.buffer = bufIdx;
-    idxVw.byteOffset = 0;
+    idxVw.buffer = 0;
+    idxVw.byteOffset = indxOffs;
     idxVw.byteLength = indxBytes;
     idxVw.target = TINYGLTF_TARGET_ELEMENT_ARRAY_BUFFER;
     m.bufferViews.push_back(idxVw);
@@ -187,16 +197,13 @@ tinygltf::Primitive createPolyPrimitive(tinygltf::Model& m, const vector<unsigne
 int createPolyMesh(tinygltf::Model& m, const vector<Vector3>& vertexes, const vector<unsigned int>& indices) {
     int vertBytes = vertexes.size() * sizeof(Vector3);
     int indxBytes = indices.size() * sizeof(unsigned int);
-    tinygltf::Buffer buffer;
-    buffer.data.resize(vertBytes + indxBytes);
-    memcpy(buffer.data.data(), vertexes.data(), vertBytes);
-    memcpy(buffer.data.data() + vertBytes, indices.data(), indxBytes);
-    m.buffers.push_back(buffer);
-    int bufIdx = m.buffers.size() - 1;
+
+    int vertOffs = addDataToBuffer(m, (uint8_t*)vertexes.data(), vertBytes);
+    int indxOffs = addDataToBuffer(m, (uint8_t*)indices.data(), indxBytes);
 
     tinygltf::BufferView vertVw;
-    vertVw.buffer = bufIdx;
-    vertVw.byteOffset = 0;
+    vertVw.buffer = 0;
+    vertVw.byteOffset = vertOffs;
     vertVw.byteLength = vertBytes;
     vertVw.target = TINYGLTF_TARGET_ARRAY_BUFFER;
     m.bufferViews.push_back(vertVw);
@@ -211,8 +218,8 @@ int createPolyMesh(tinygltf::Model& m, const vector<Vector3>& vertexes, const ve
     auto vertAccIdx = m.accessors.size() - 1;
 
     tinygltf::BufferView idxVw;
-    idxVw.buffer = bufIdx;
-    idxVw.byteOffset = vertBytes;
+    idxVw.buffer = 0;
+    idxVw.byteOffset = indxOffs;
     idxVw.byteLength = indxBytes;
     idxVw.target = TINYGLTF_TARGET_ELEMENT_ARRAY_BUFFER;
     m.bufferViews.push_back(idxVw);
@@ -239,22 +246,22 @@ int createPolyMesh(tinygltf::Model& m, const vector<Vector3>& vertexes, const ve
 void addVertexSkin(tinygltf::Model& m, vector<unsigned char> vecBoneAffect) {
     int jointsBytes = vecBoneAffect.size() * 4;
     int weightsBytes = vecBoneAffect.size() * 4;
-    tinygltf::Buffer buffer;
-    buffer.data.resize(jointsBytes + weightsBytes);
-    unsigned char* b = buffer.data.data();
-    memset(b, 0, sizeof(jointsBytes + weightsBytes));
+    
+    vector<unsigned char> buffer(jointsBytes + weightsBytes);
+    memset(buffer.data(), 0, jointsBytes + weightsBytes);
+    unsigned char* b = buffer.data();
     for (int i = 0; i < vecBoneAffect.size(); i++) {
         b[i * 4] = vecBoneAffect[i];
     }
     for (int i = 0; i < vecBoneAffect.size(); i++) {
         b[jointsBytes + i * 4] = 1;
     }
-    m.buffers.push_back(buffer);
-    int bufIdx = m.buffers.size() - 1;
+    int jointsOffs = addDataToBuffer(m, buffer.data(), jointsBytes + weightsBytes);
+    int weightsOffs = jointsOffs + jointsBytes;
 
     tinygltf::BufferView jointsVw;
-    jointsVw.buffer = bufIdx;
-    jointsVw.byteOffset = 0;
+    jointsVw.buffer = 0;
+    jointsVw.byteOffset = jointsOffs;
     jointsVw.byteLength = jointsBytes;
     //jointsVw.target = TINYGLTF_TARGET_ARRAY_BUFFER;
     m.bufferViews.push_back(jointsVw);
@@ -269,8 +276,8 @@ void addVertexSkin(tinygltf::Model& m, vector<unsigned char> vecBoneAffect) {
     auto jointsAccIdx = m.accessors.size() - 1;
 
     tinygltf::BufferView weightsVw;
-    weightsVw.buffer = bufIdx;
-    weightsVw.byteOffset = jointsBytes;
+    weightsVw.buffer = 0;
+    weightsVw.byteOffset = weightsOffs;
     weightsVw.byteLength = weightsBytes;
     //weightsVw.target = TINYGLTF_TARGET_ELEMENT_ARRAY_BUFFER;
     m.bufferViews.push_back(weightsVw);
@@ -289,21 +296,4 @@ void addVertexSkin(tinygltf::Model& m, vector<unsigned char> vecBoneAffect) {
         prim.attributes["JOINTS_0"] = jointsAccIdx;
         prim.attributes["WEIGHTS_0"] = weightsAccIdx;
     }
-}
-
-int createBufferAndView(tinygltf::Model& m, void* data, int size, int vwTarget) {
-    tinygltf::Buffer buffer;
-    buffer.data.resize(size);
-    memcpy(buffer.data.data(), data, size);
-    m.buffers.push_back(buffer);
-    int bufIdx = m.buffers.size() - 1;
-
-    tinygltf::BufferView bufVw;
-    bufVw.buffer = bufIdx;
-    bufVw.byteOffset = 0;
-    bufVw.byteLength = size;
-    bufVw.target = vwTarget;
-    m.bufferViews.push_back(bufVw);
-    int vwIdx = m.bufferViews.size() - 1;
-    return vwIdx;
 }
