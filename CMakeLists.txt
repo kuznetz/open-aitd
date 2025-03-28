@@ -50,3 +50,12 @@ target_include_directories(open-aitd PRIVATE ${ZLIB_INCLUDE_DIR} ${PNG_INCLUDE_D
 target_include_directories(open-aitd PRIVATE ${CMAKE_SOURCE_DIR}/libs/includes)
 target_link_libraries(open-aitd PRIVATE png_static raylib ZLIB::ZLIB libextractor )
 set_property(TARGET open-aitd PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/data")
+
+#add_executable(open-aitd) WIN32
+add_executable(open-aitd-tests)
+file(GLOB_RECURSE AITD_SOURCES CONFIGURE_DEPENDS "src/tests/*.cpp" "src/tests/*.h" "src/tests/*.hpp")
+target_sources(open-aitd-tests PRIVATE ${AITD_SOURCES} )
+target_include_directories(open-aitd-tests PRIVATE ${ZLIB_INCLUDE_DIR} ${PNG_INCLUDE_DIR} ${GLFW_INCLUDE})
+target_include_directories(open-aitd-tests PRIVATE ${CMAKE_SOURCE_DIR}/libs/includes)
+target_link_libraries(open-aitd-tests PRIVATE png_static raylib ZLIB::ZLIB libextractor )
+set_property(TARGET open-aitd-tests PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/data")

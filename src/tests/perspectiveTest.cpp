@@ -3,12 +3,13 @@
 #include <string.h>
 #include <string>
 #include <iostream>
-#include <renderer.h>
 #include <rcamera.h>
 #include <raymath.h>
-#include "legacy_camera.h"
 #include <vector>
 #include <list>
+
+#include "legacy_camera.h"
+#include "../extractor/loaders/loaders.h"
 
 floorStruct loadFloorPak(std::string filename);
 
@@ -368,7 +369,7 @@ namespace PerspectiveTest {
         Matrix mz = MatrixRotateZ((float)curCamera->gamma * 2 * PI / 1024);
         matrixView = MatrixTranspose(MatrixMultiply(MatrixMultiply(my, mx), mz));
         
-        cameraForw = { matrixView2.m8,matrixView2.m9,matrixView2.m10 };
+        cameraForw = Vector3Normalize({ matrixView2.m8,matrixView2.m9,matrixView2.m10 });
         auto q = QuaternionFromMatrix(matrixView);
 
         float nearDist = (float)curCamera->nearDistance / 1000;
@@ -398,7 +399,7 @@ namespace PerspectiveTest {
     void changeCamera(int floor, int camera) {
         if (!curFloor || curFloorId != floor) {
             char fname[50];
-            sprintf(fname, "original/ETAGE0%d", floor);
+            sprintf(fname, "original/ETAGE0%d.pak", floor);
             curFloor2 = loadFloorPak(fname);
             curFloor = &curFloor2;
             //saveFloorTxt(fname, fs);
@@ -406,7 +407,7 @@ namespace PerspectiveTest {
         if (!backgroundTex.id || curFloorId != floor || curCameraId != camera) {
             curCamera = &curFloor->cameras[camera];
             char str[100];
-            sprintf(str, "data/floor_%02d/camera_%02d/background.png", floor, camera);
+            sprintf(str, "data/stages/%d/camera_%d/background.png", floor, camera);
             Image image = LoadImage(str);
             backgroundTex = LoadTextureFromImage(image);
             

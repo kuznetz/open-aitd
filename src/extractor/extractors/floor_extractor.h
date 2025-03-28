@@ -53,10 +53,10 @@ void addCamera(tinygltf::Model& m, int camIdx, cameraStruct& cam) {
     float legcFocalY = (float)cam.focalY / 200;
     float aspect = legcFocalY / legcFocalX;
     float fovY = 2.0 * atan(1.0 / (legcFocalY * 2)); //in radians
-    float nearDist = cam.nearDistance / 1000;
-    Vector3 cameraForw = { myxz.m8, myxz.m9, myxz.m10 };
+    float nearDist = (float)cam.nearDistance / 1000;
+    Vector3 cameraForw = Vector3Normalize({ myxz.m8, myxz.m9, myxz.m10 });
     Vector3 camPosition = { (float)cam.x / 100, (float)cam.y / 100, (float)cam.z / 100 };
-    camPosition = Vector3Add(camPosition, Vector3Scale(cameraForw, -nearDist));
+    camPosition = Vector3Add(camPosition, Vector3Scale(cameraForw, nearDist));
 
     tinygltf::Camera camera;
     camera.name = string("camera_") + to_string(camIdx);

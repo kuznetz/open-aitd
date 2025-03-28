@@ -1,16 +1,18 @@
 ﻿//#include "tests/tests.h"
-#include "extractor/extractor.h"
-#include "extractor/anim_linker.h"
+//#include "../extractor/extractor.h"
+//#include "../extractor/anim_linker.h"
+
+namespace PerspectiveTest {
+    void runTest();
+}
 
 int main(void)
 {
-    //linkAnimations();
-    extractAllData();
-
     //CameraTest::runTest();
     //MaskTest::runTest();
     //ModelTest::runTest();
-    //PerspectiveTest::runTest();
+    
+    PerspectiveTest::runTest();
 
     return 0;
 }
