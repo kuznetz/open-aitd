@@ -256,7 +256,7 @@ void saveModelGLTF(const PakModel& model, vector<Animation*> animations, const s
             for (int i = 0; i < prim.vertexIdxs.size(); i++) {
                 int vIdx = prim.vertexIdxs[i] / 6;
                 idxMap[i] = vIdx;
-                auto qwe = (float)model.vertices[vIdx * 3 + 0];
+                //auto qwe = (float)model.vertices[vIdx * 3 + 0];
                 Vector3& vec = modelVerts[vIdx];
                 polygon.emplace_back(vec.x, vec.y, vec.z);
             }
@@ -281,7 +281,8 @@ void saveModelGLTF(const PakModel& model, vector<Animation*> animations, const s
     m.nodes.push_back(zoneN);
 
     if (model.bones.size()) {
-        vector<u8> vecBoneAffect(model.vertices.size(), 0);
+        vector<float> boneMatrices(16 * model.bones.size(), 0);
+        vector<u8> vecBoneAffect(modelVerts.size(), 0);
         tinygltf::Skin skin;
 
         for (int bIdx = 0; bIdx < model.bones.size(); bIdx++) {
@@ -294,6 +295,10 @@ void saveModelGLTF(const PakModel& model, vector<Animation*> animations, const s
                 -(float)model.vertices[rIdx * 3 + 1] / 1000,
                 (float)model.vertices[rIdx * 3 + 2] / 1000
             };
+
+            float* mat = &boneMatrices[bIdx * 16];
+            mat[0] = 1; mat[5] = 1; mat[10] = 1; mat[15] = 1;
+
             for (int j = 0; j < model.bones.size(); j++) {
                 if (bIdx == j) continue;
                 if (model.bones[j].parentBoneIdx == model.bones[bIdx].boneIdx) {
@@ -307,8 +312,28 @@ void saveModelGLTF(const PakModel& model, vector<Animation*> animations, const s
             }
         }
 
+        int boneMatBytes = boneMatrices.size() * 4;
+        int boneMatOffs = addDataToBuffer(m, boneMatrices.data(), boneMatBytes);
+
+        tinygltf::BufferView boneMatVw;
+        boneMatVw.buffer = 0;
+        boneMatVw.byteOffset = boneMatOffs;
+        boneMatVw.byteLength = boneMatBytes;
+        m.bufferViews.push_back(boneMatVw);
+
+        tinygltf::Accessor boneMatAcc;
+        boneMatAcc.bufferView = m.bufferViews.size() - 1;
+        boneMatAcc.byteOffset = 0;
+        boneMatAcc.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
+        boneMatAcc.count = boneMatrices.size() / 16;
+        boneMatAcc.type = TINYGLTF_TYPE_MAT4;
+        m.accessors.push_back(boneMatAcc);
+        auto boneMatIdx = m.accessors.size() - 1;
+
+        skin.inverseBindMatrices = boneMatIdx;
         m.skins.push_back(skin);
         m.nodes[0].skin = 0;
+
         addVertexSkin(m, vecBoneAffect);
     }
 

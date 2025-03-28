@@ -58,6 +58,7 @@ namespace ModelTest {
         unsigned int animIndex = 0;
         unsigned int animCurrentFrame = 0;
         ModelAnimation* modelAnimations = LoadModelAnimations("modeltest/model.gltf", &animsCount);
+        ModelAnimation anim;
 
         SetTargetFPS(60);                   // Set our game to run at 60 frames-per-second
         //--------------------------------------------------------------------------------------
@@ -74,9 +75,11 @@ namespace ModelTest {
             else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) animIndex = (animIndex + animsCount - 1) % animsCount;
 
             // Update model animation
-            ModelAnimation anim = modelAnimations[animIndex];
-            animCurrentFrame = (animCurrentFrame + 1) % anim.frameCount;
-            UpdateModelAnimation(model, anim, animCurrentFrame);
+            if (animsCount) {
+                anim = modelAnimations[animIndex];
+                animCurrentFrame = (animCurrentFrame + 1) % anim.frameCount;
+                UpdateModelAnimation(model, anim, animCurrentFrame);
+            }
             //----------------------------------------------------------------------------------
 
             // Draw
@@ -90,8 +93,10 @@ namespace ModelTest {
             DrawGrid(10, 1.0f);
             EndMode3D();
 
-            DrawText("Use the LEFT/RIGHT mouse buttons to switch animation", 10, 10, 20, GRAY);
-            DrawText(TextFormat("Animation: %s", anim.name), 10, GetScreenHeight() - 20, 10, DARKGRAY);
+            if (animsCount) {
+                DrawText("Use the LEFT/RIGHT mouse buttons to switch animation", 10, 10, 20, GRAY);
+                DrawText(TextFormat("Animation: %s", anim.name), 10, GetScreenHeight() - 20, 10, DARKGRAY);
+            }
 
             EndDrawing();
             //----------------------------------------------------------------------------------

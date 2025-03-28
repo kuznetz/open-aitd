@@ -14,6 +14,7 @@ extern const uint8_t cubeIndices[];
 extern const float cubeVertices[];
 extern const int cubeVertSize;
 
+int addDataToBuffer(tinygltf::Model& m, void* data, int dataSize);
 int createBufferAndView(tinygltf::Model& m, void* data, int size, int vwTarget);
 int createCubeMesh(tinygltf::Model& m);
 int createLineMesh(tinygltf::Model& m, const vector<float>& line);

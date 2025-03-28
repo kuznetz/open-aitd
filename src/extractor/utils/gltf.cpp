@@ -244,20 +244,24 @@ int createPolyMesh(tinygltf::Model& m, const vector<Vector3>& vertexes, const ve
 }
 
 void addVertexSkin(tinygltf::Model& m, vector<unsigned char> vecBoneAffect) {
-    int jointsBytes = vecBoneAffect.size() * 4;
-    int weightsBytes = vecBoneAffect.size() * 4;
     
-    vector<unsigned char> buffer(jointsBytes + weightsBytes);
-    memset(buffer.data(), 0, jointsBytes + weightsBytes);
+    int jointsBytes = vecBoneAffect.size() * 4;
+    vector<unsigned char> buffer(jointsBytes);
+    memset(buffer.data(), 0, jointsBytes);
     unsigned char* b = buffer.data();
     for (int i = 0; i < vecBoneAffect.size(); i++) {
         b[i * 4] = vecBoneAffect[i];
     }
+    int jointsOffs = addDataToBuffer(m, buffer.data(), jointsBytes);
+    
+    int weightsBytes = vecBoneAffect.size() * 4;
+    vector<unsigned char> buffer2(vecBoneAffect.size() * 4);
+    memset(buffer2.data(), 0, weightsBytes);
+    unsigned char* b2 = buffer2.data();
     for (int i = 0; i < vecBoneAffect.size(); i++) {
-        b[jointsBytes + i * 4] = 1;
+        b2[i * 4] = 1;
     }
-    int jointsOffs = addDataToBuffer(m, buffer.data(), jointsBytes + weightsBytes);
-    int weightsOffs = jointsOffs + jointsBytes;
+    int weightsOffs = addDataToBuffer(m, buffer2.data(), weightsBytes);
 
     tinygltf::BufferView jointsVw;
     jointsVw.buffer = 0;
