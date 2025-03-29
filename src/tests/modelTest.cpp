@@ -105,6 +105,7 @@ namespace ModelTest {
         // De-Initialization
         //--------------------------------------------------------------------------------------
         UnloadModel(model);         // Unload model and meshes/material
+        UnloadModelAnimations(modelAnimations, animsCount);
 
         CloseWindow();              // Close window and OpenGL context
         //--------------------------------------------------------------------------------------

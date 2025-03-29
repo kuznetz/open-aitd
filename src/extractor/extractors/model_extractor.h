@@ -132,6 +132,7 @@ void addAniScale(tinygltf::Model& m, tinygltf::Animation& outAni, vector<Vector3
 }
 
 void addAnimation(tinygltf::Model& m, Animation &anim) {
+    const int bonesOffset = 0;
     vector<float> timeline;
     float curTime = 0;
     timeline.push_back(0);
@@ -142,7 +143,7 @@ void addAnimation(tinygltf::Model& m, Animation &anim) {
     }
 
     int maxBones = anim.frames[0].bones.size();
-    if (maxBones > m.nodes.size()-1) {
+    if (maxBones > m.nodes.size() - 1) {
         maxBones = m.nodes.size() - 1;
     }
 
@@ -161,7 +162,7 @@ void addAnimation(tinygltf::Model& m, Animation &anim) {
             auto& eb = expBones[j];
             
             eb.rotates[i] = QuaternionIdentity();
-            auto& v = m.nodes[j + 1].translation;
+            auto& v = m.nodes[j + bonesOffset].translation;
             eb.translates[i] = { (float)v[0], (float)v[1], (float)v[2] };
             //eb.translates[i] = { 0,0,0 };
             eb.scales[i] = { 1,1,1 };
@@ -203,16 +204,142 @@ void addAnimation(tinygltf::Model& m, Animation &anim) {
     outAni.name = string("a_" + to_string(anim.id));
 
     for (int i = 0; i < expBones.size(); i++) {
-        addAniRotation(m, outAni, expBones[i].rotates, accTimeIdx, i + 1);
-        addAniTranslation(m, outAni, expBones[i].translates, accTimeIdx, i + 1);
-        addAniScale(m, outAni, expBones[i].scales, accTimeIdx, i + 1);
+        addAniRotation(m, outAni, expBones[i].rotates, accTimeIdx, i + bonesOffset);
+        addAniTranslation(m, outAni, expBones[i].translates, accTimeIdx, i + bonesOffset);
+        addAniScale(m, outAni, expBones[i].scales, accTimeIdx, i + bonesOffset);
     }
 
     m.animations.push_back(outAni);
 }
 
+vector<triangulate::TriangleIdx> triangulate1(int numPoints) {
+    vector<triangulate::TriangleIdx> result;
+
+    int v0 = 0;
+    int v1 = 1;
+    int v2 = numPoints - 1;
+    bool swap = true;
+
+    while (v1 < v2)
+    {
+        result.push_back({ v0,v1,v2 });
+        if (swap)
+        {
+            v0 = v1;
+            v1++;
+        }
+        else
+        {
+            v0 = v2;
+            v2--;
+        }
+
+        swap = !swap;
+    }
+
+    return result;
+}
+
+/*
+vector triangulate2(int numPoints) {
+    std::vector<triangulate::Point> polygon;
+    for (int i = 0; i < prim.vertexIdxs.size(); i++) {
+        int vIdx = prim.vertexIdxs[i] / 6;
+        idxMap[i] = vIdx;
+        //auto qwe = (float)model.vertices[vIdx * 3 + 0];
+        Vector3& vec = modelVerts[vIdx];
+        polygon.emplace_back(vec.x, vec.y, vec.z);
+    }
+    const auto triangles = triangulate::triangulate(polygon);
+}
+*/
+
+
+void addPrimitive(tinygltf::Model& m, tinygltf::Mesh& mesh, const PakModelPrimitive& prim, vector<Vector3>& modelVerts, int vertAccIdx) {
+    if (prim.type == 1) {
+        auto matIdx = getMaterialIdx(m, prim.colorIndex, prim.subType);
+
+        /*
+        UV:
+            ComputeUV(polyVertices, out forward, out left);
+            foreach (int pointIndex in polyVertices)
+            {
+                Vector3 poly = allVertices[pointIndex];
+                uv.Add(new Vector2(
+                    Vector3.Dot(poly, left) * noisesize,
+                    Vector3.Dot(poly, forward) * noisesize
+                ));
+            }
+        */
+
+        std::vector<int> idxMap(prim.vertexIdxs.size());
+        for (int i = 0; i < prim.vertexIdxs.size(); i++) {
+            int vIdx = prim.vertexIdxs[i] / 6;
+            if (vIdx >= modelVerts.size()) {
+                throw new exception("vIdx >= modelVerts.size()");
+            }
+            idxMap[i] = vIdx;
+        }
+
+        const auto& triangles = triangulate1(prim.vertexIdxs.size());
+
+        vector<unsigned int> modelIdxs;
+        for (int i = 0; i < triangles.size(); i++) {
+            modelIdxs.emplace_back(idxMap[triangles[i].p0]);
+            modelIdxs.emplace_back(idxMap[triangles[i].p1]);
+            modelIdxs.emplace_back(idxMap[triangles[i].p2]);
+        }
+
+        if (modelIdxs.size() < 3) {
+            throw new exception("modelIdxs.size() < 3");
+        }
+
+        tinygltf::Primitive prim2 = createPolyPrimitive(m, modelIdxs, vertAccIdx, matIdx);
+        mesh.primitives.push_back(prim2);
+    }
+}
+
+int getParent(tinygltf::Model& m, int childIdx) {
+    for (int i = 0; i < m.nodes.size(); i++) {
+        auto& chld = m.nodes[i].children;
+        if (std::find(chld.begin(), chld.end(), childIdx) != chld.end()) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+int addBoneMatrices(tinygltf::Model& m, map<int, Vector3>& boneWorldPosition, int boneCount)
+{
+    vector<Matrix> boneMatrices(boneCount);
+    for (int bIdx = 0; bIdx < boneCount; bIdx++) {
+        auto& v = boneWorldPosition[bIdx];
+        boneMatrices[bIdx] = MatrixTranslate(-v.x*10, -v.y*20 + 10, -v.z*10);
+    }
+
+    int boneMatBytes = boneCount * sizeof(Matrix);
+    int boneMatOffs = addDataToBuffer(m, boneMatrices.data(), boneMatBytes);
+
+    tinygltf::BufferView boneMatVw;
+    boneMatVw.buffer = 0;
+    boneMatVw.byteOffset = boneMatOffs;
+    boneMatVw.byteLength = boneMatBytes;
+    m.bufferViews.push_back(boneMatVw);
+
+    tinygltf::Accessor boneMatAcc;
+    boneMatAcc.bufferView = m.bufferViews.size() - 1;
+    boneMatAcc.byteOffset = 0;
+    boneMatAcc.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
+    boneMatAcc.count = boneCount;
+    boneMatAcc.type = TINYGLTF_TYPE_MAT4;
+    m.accessors.push_back(boneMatAcc);
+
+    return m.accessors.size() - 1;
+}
+
 void saveModelGLTF(const PakModel& model, vector<Animation*> animations, const string dirname)
 {
+    const bool splitPrimitives = false;
     tinygltf::Model m;
     m.asset.version = "2.0";
     m.asset.generator = "open-AITD";  
@@ -226,68 +353,16 @@ void saveModelGLTF(const PakModel& model, vector<Animation*> animations, const s
             (float)model.vertices[i * 3 + 2] / 1000
         };
     }
-    int vertsIdx = createVertexes(m, modelVerts);
 
-    tinygltf::Mesh mesh;
-    for (int pIdx = 0; pIdx < model.primitives.size(); pIdx++) {
-        auto& prim = model.primitives[pIdx];
-
-        //prim.subType
-        //prim.colorIndex
-
-        if (prim.type == 1) {
-            auto matIdx = getMaterialIdx(m, prim.colorIndex, prim.subType);
-
-            /*
-            UV:
-                ComputeUV(polyVertices, out forward, out left);
-                foreach (int pointIndex in polyVertices)
-                {
-                    Vector3 poly = allVertices[pointIndex];
-                    uv.Add(new Vector2(
-                        Vector3.Dot(poly, left) * noisesize,
-                        Vector3.Dot(poly, forward) * noisesize
-                    ));
-                }
-            */
-
-            std::vector<int> idxMap(prim.vertexIdxs.size());
-            std::vector<triangulate::Point> polygon;
-            for (int i = 0; i < prim.vertexIdxs.size(); i++) {
-                int vIdx = prim.vertexIdxs[i] / 6;
-                idxMap[i] = vIdx;
-                //auto qwe = (float)model.vertices[vIdx * 3 + 0];
-                Vector3& vec = modelVerts[vIdx];
-                polygon.emplace_back(vec.x, vec.y, vec.z);
-            }
-            const auto triangles = triangulate::triangulate(polygon);
-            vector<unsigned int> modelIdxs;
-            for (int i = 0; i < triangles.size(); i++) {
-                modelIdxs.emplace_back(idxMap[triangles[i].p0]);
-                modelIdxs.emplace_back(idxMap[triangles[i].p1]);
-                modelIdxs.emplace_back(idxMap[triangles[i].p2]);
-            }
-            auto prim = createPolyPrimitive(m, modelIdxs, vertsIdx, matIdx);
-            mesh.primitives.push_back(prim);
-        }
-
-    }
-    m.meshes.push_back(mesh);
-    auto meshIdx = m.meshes.size()-1;
-
-    tinygltf::Node zoneN;
-    zoneN.name = string("model");
-    zoneN.mesh = meshIdx;
-    m.nodes.push_back(zoneN);
+    tinygltf::Skin skin;
+    vector<u8> vecBoneAffect(modelVerts.size(), 0);
 
     if (model.bones.size()) {
-        vector<float> boneMatrices(16 * model.bones.size(), 0);
-        vector<u8> vecBoneAffect(modelVerts.size(), 0);
-        tinygltf::Skin skin;
 
         for (int bIdx = 0; bIdx < model.bones.size(); bIdx++) {
-            skin.joints.push_back(bIdx + 1);
+            skin.joints.push_back(bIdx);
             auto& bone = model.bones[bIdx];
+
             tinygltf::Node boneN;
             auto rIdx = bone.rootVertexIdx / 6;
             boneN.translation = {
@@ -295,16 +370,15 @@ void saveModelGLTF(const PakModel& model, vector<Animation*> animations, const s
                 -(float)model.vertices[rIdx * 3 + 1] / 1000,
                 (float)model.vertices[rIdx * 3 + 2] / 1000
             };
-
-            float* mat = &boneMatrices[bIdx * 16];
-            mat[0] = 1; mat[5] = 1; mat[10] = 1; mat[15] = 1;
-
+            
+            //Add children
             for (int j = 0; j < model.bones.size(); j++) {
                 if (bIdx == j) continue;
                 if (model.bones[j].parentBoneIdx == model.bones[bIdx].boneIdx) {
-                    boneN.children.push_back(j + 1);
+                    boneN.children.push_back(j);
                 }
             }
+
             m.nodes.push_back(boneN);
             int vfrom = (bone.fromVertexIdx / 6);
             for (int j = vfrom; j < vfrom+bone.vertexCount; j++) {
@@ -312,33 +386,80 @@ void saveModelGLTF(const PakModel& model, vector<Animation*> animations, const s
             }
         }
 
-        int boneMatBytes = boneMatrices.size() * 4;
-        int boneMatOffs = addDataToBuffer(m, boneMatrices.data(), boneMatBytes);
+        map<int, Vector3> boneWorldPosition;
+        for (int bIdx = 0; bIdx < model.bones.size(); bIdx++) {
+            int curBoneIdx = bIdx;
+            auto& boneT = m.nodes[curBoneIdx].translation;
+            Vector3 curVector = { (float)boneT[0], (float)boneT[1], (float)boneT[2] };
+            while (true) {
+                curBoneIdx = getParent(m, curBoneIdx);
+                if (curBoneIdx == -1) break;
+                auto& T = m.nodes[curBoneIdx].translation;
+                Vector3 v = { (float)T[0], (float)T[1], (float)T[2] };
+                curVector = Vector3Add(curVector, v);
+            }
+            boneWorldPosition[bIdx] = curVector;
+        }
 
-        tinygltf::BufferView boneMatVw;
-        boneMatVw.buffer = 0;
-        boneMatVw.byteOffset = boneMatOffs;
-        boneMatVw.byteLength = boneMatBytes;
-        m.bufferViews.push_back(boneMatVw);
+        for (int i = 0; i < vecBoneAffect.size(); i++ ) {
+            auto& v = boneWorldPosition[vecBoneAffect[i]];
+            modelVerts[i] = Vector3Add(modelVerts[i], v);
+        }
 
-        tinygltf::Accessor boneMatAcc;
-        boneMatAcc.bufferView = m.bufferViews.size() - 1;
-        boneMatAcc.byteOffset = 0;
-        boneMatAcc.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
-        boneMatAcc.count = boneMatrices.size() / 16;
-        boneMatAcc.type = TINYGLTF_TYPE_MAT4;
-        m.accessors.push_back(boneMatAcc);
-        auto boneMatIdx = m.accessors.size() - 1;
-
-        skin.inverseBindMatrices = boneMatIdx;
-        m.skins.push_back(skin);
-        m.nodes[0].skin = 0;
-
-        addVertexSkin(m, vecBoneAffect);
+        skin.inverseBindMatrices = addBoneMatrices(m, boneWorldPosition, model.bones.size());
     }
 
-    for (int i = 0; i < animations.size(); i++) {
-        addAnimation(m, *animations[i]);
+    int vertAccIdx = createVertexes(m, modelVerts);
+
+    if (splitPrimitives)
+    {
+        //=== multi mesh (for test) ===
+        for (int pIdx = 0; pIdx < model.primitives.size(); pIdx++)
+        {
+            tinygltf::Mesh mesh;
+            auto& prim = model.primitives[pIdx];
+            //auto& prim = model.primitives[model.primitives.size()-1];
+            addPrimitive(m, mesh, prim, modelVerts, vertAccIdx);
+
+            if (!mesh.primitives.size()) continue;
+            m.meshes.push_back(mesh);
+            auto meshIdx = m.meshes.size() - 1;
+
+            tinygltf::Node zoneN;
+            zoneN.name = string("model_" + to_string(pIdx));
+            zoneN.mesh = meshIdx;
+            m.nodes.push_back(zoneN);
+        }
+    }
+    else 
+    {
+        //=== single mesh ===
+        tinygltf::Mesh mesh;
+        for (int pIdx = 0; pIdx < model.primitives.size(); pIdx++)
+        {
+            auto& prim = model.primitives[pIdx];
+            //auto& prim = model.primitives[model.primitives.size()-1];
+            addPrimitive(m, mesh, prim, modelVerts, vertAccIdx);
+        }
+        m.meshes.push_back(mesh);
+        auto meshIdx = m.meshes.size()-1;
+
+        tinygltf::Node zoneN;
+        zoneN.name = string("model");
+        zoneN.mesh = meshIdx;
+        m.nodes.push_back(zoneN);
+        int nodeSkinIdx = m.nodes.size() - 1;
+
+        if (model.bones.size()) {
+            //addVertexSkin(m, vecBoneAffect);
+            //m.nodes[nodeSkinIdx].skin = 0;
+            //skin.skeleton = 0;
+            //m.skins.push_back(skin);
+
+            /*for (int i = 0; i < animations.size(); i++) {
+                addAnimation(m, *animations[i]);
+            }*/
+        }
     }
 
     tinygltf::TinyGLTF gltf;
