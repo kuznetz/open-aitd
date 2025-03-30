@@ -42,6 +42,14 @@ namespace openAITD {
 		newMod.model = LoadModel(str.c_str());
 		//TODO: animations
 
+		str = modelsPath + "/" + to_string(id) + (alt ? "_alt" : "") + "/data.json";
+		std::ifstream ifs(str);
+		json dataJson = json::parse(ifs);
+		auto& b = dataJson["bounds"];
+
+		newMod.bounds.min = { b[0], b[1], b[2] };
+		newMod.bounds.max = { b[3], b[4], b[5] };
+
 		return &newMod;
 	}
 

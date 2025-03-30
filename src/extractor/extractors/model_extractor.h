@@ -354,8 +354,8 @@ void saveModelGLTF(const PakModel& model, vector<Animation*> animations, const s
     const bool splitPrimitives = false;
     tinygltf::Model m;
     m.asset.version = "2.0";
-    m.asset.generator = "open-AITD";  
-
+    m.asset.generator = "open-AITD";
+    
     vector<Vector3> modelVerts;
     modelVerts.resize(model.vertices.size() / 3);
     for (int i = 0; i < modelVerts.size(); i++) {
@@ -480,4 +480,15 @@ void saveModelGLTF(const PakModel& model, vector<Animation*> animations, const s
        false, // pretty print
        false
     );
+
+    json dataJson;
+    dataJson["bounds"] = json::array();
+    dataJson["bounds"].push_back(model.bounds.ZVX1 / 1000.);
+    dataJson["bounds"].push_back(-model.bounds.ZVY2 / 1000.);
+    dataJson["bounds"].push_back(model.bounds.ZVZ1 / 1000.);
+    dataJson["bounds"].push_back(model.bounds.ZVX2 / 1000.);
+    dataJson["bounds"].push_back(-model.bounds.ZVY1 / 1000.);
+    dataJson["bounds"].push_back(model.bounds.ZVZ2 / 1000.);
+    std::ofstream o(dirname + "/data.json");
+    o << std::setw(2) << dataJson;
 }

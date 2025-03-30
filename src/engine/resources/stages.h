@@ -104,12 +104,15 @@ namespace openAITD {
 
 	class WCamera {
 	public:
-		std::vector<GCameraRoom> rooms;
-		vector<vector<Vector2>> coverZones;
+		//For test
 		Vector3 position;
 		Vector4 rotation;
+		tinygltf::PerspectiveCamera pers;
+
+		std::vector<GCameraRoom> rooms;
+		vector<vector<Vector2>> coverZones;
 		Matrix modelview;
-		Matrix prespective;
+		Matrix perspective;
 
 		bool IsPointInCamera(Vector2 p)
 		{
@@ -210,7 +213,8 @@ namespace openAITD {
 			auto& camPers = model.cameras[cameraN->camera].perspective;
 
 			//TODO: Camera settings
-			cam.prespective = MatrixPerspective(camPers.yfov, camPers.aspectRatio, camPers.znear, camPers.zfar);
+			cam.pers = camPers;
+			//cam.perspective = MatrixPerspective(camPers.yfov, camPers.aspectRatio, camPers.znear, camPers.zfar);
 
 			auto& r = cameraN->rotation;
 			auto& t = cameraN->translation;

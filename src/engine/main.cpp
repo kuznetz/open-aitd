@@ -29,20 +29,42 @@ namespace openAITD {
     {
         InitWindow(screenW, screenH, "AITD Mask Test");
 
-        resources.stages.resize(2);
-        resources.stages[0].load("data/stages/0");
-        resources.stages[1].load("data/stages/1");
+        resources.stages.resize(8);
+        for (int i = 0; i < 8; i++) {
+            resources.stages[i].load(string("data/stages/")+to_string(i));
+        }
 
         world.curStageId = 1;
-        world.curCameraId = 4;
+        world.curCameraId = 3;
         world.loadGObjects("data/objects.json");
         //world.loadVars("data/vars.json");
 
         renderer.screenW = screenW;
         renderer.screenH = screenH;
-        renderer.loadCamera(0, 0);
+        renderer.loadCamera(world.curStageId, world.curCameraId);
+        DisableCursor();
 
         while (!WindowShouldClose()) {
+
+            if (IsKeyPressed(KEY_RIGHT)) {
+                if (world.curCameraId++);
+                renderer.loadCamera(world.curStageId, world.curCameraId);
+            }
+            if (IsKeyPressed(KEY_LEFT)) {
+                if (world.curCameraId--);
+                renderer.loadCamera(world.curStageId, world.curCameraId);
+            }
+            if (IsKeyPressed(KEY_UP)) {
+                world.curStageId++;
+                world.curCameraId = 0;
+                renderer.loadCamera(world.curStageId, world.curCameraId);
+            }
+            if (IsKeyPressed(KEY_DOWN)) {
+                world.curStageId--;
+                world.curCameraId = 0;
+                renderer.loadCamera(world.curStageId, world.curCameraId);
+            }
+
             BeginDrawing();
             renderer.process();
             EndDrawing();
