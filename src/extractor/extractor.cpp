@@ -11,6 +11,7 @@
 #include "extractors/mask_extractor.h"
 #include "extractors/sound_extractor.h"
 #include "extractors/model_extractor.h"
+//#include "extractors/skeleton_extractor.h"
 #include "extractors/track_extractor.h"
 #include "extractors/vars_extractor.h"
 #include "life/life_extractor.h"
@@ -110,7 +111,6 @@ void processModels() {
             for (int j = 0; j < curAnims.size(); j++) {
                 animations.push_back(&anims[curAnims[j]]);
             }
-            std::filesystem::create_directories(outDir);
             saveModelGLTF(model, animations, string(outDir));
         }
 
@@ -122,7 +122,6 @@ void processModels() {
                 for (int j = 0; j < curAnims.size(); j++) {
                     animations.push_back(&anims2[curAnims[j]]);
                 }
-                std::filesystem::create_directories(outDir);
                 saveModelGLTF(model2, animations, string(outDir));
             }
         }

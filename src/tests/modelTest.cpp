@@ -60,6 +60,21 @@ namespace ModelTest {
         ModelAnimation* modelAnimations = LoadModelAnimations("modeltest/model.gltf", &animsCount);
         ModelAnimation anim;
 
+        Quaternion q = { 0, 0, 0, 1 };
+        if (animsCount) {
+            anim = modelAnimations[0];
+            for (unsigned int j = 0; j < anim.frameCount; j++) {
+                auto& fp = anim.framePoses[j];
+                for (unsigned int b = 0; b < anim.boneCount; b++) {
+                    auto& t = fp[b];
+                    if ( memcmp(&q, &t.rotation, sizeof(q)) != 0 ) {
+                        printf("Roft");
+                    }
+
+                }
+            }
+        }
+
         SetTargetFPS(60);                   // Set our game to run at 60 frames-per-second
         //--------------------------------------------------------------------------------------
 
@@ -79,6 +94,7 @@ namespace ModelTest {
                 anim = modelAnimations[animIndex];
                 animCurrentFrame = (animCurrentFrame + 1) % anim.frameCount;
                 UpdateModelAnimation(model, anim, animCurrentFrame);
+                //UpdateModelAnimation(model, anim, 1);
             }
             //----------------------------------------------------------------------------------
 

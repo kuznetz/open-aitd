@@ -250,7 +250,7 @@ void addVertexSkin(tinygltf::Model& m, vector<unsigned char> vecBoneAffect) {
     memset(buffer.data(), 0, jointsBytes);
     unsigned char* b = buffer.data();
     for (int i = 0; i < vecBoneAffect.size(); i++) {
-        b[i * 4] = vecBoneAffect[i];
+        b[i * 4 + 1] = vecBoneAffect[i];
     }
     int jointsOffs = addDataToBuffer(m, buffer.data(), jointsBytes);
     
@@ -259,7 +259,7 @@ void addVertexSkin(tinygltf::Model& m, vector<unsigned char> vecBoneAffect) {
     memset(buffer2.data(), 0, weightsBytes);
     unsigned char* b2 = buffer2.data();
     for (int i = 0; i < vecBoneAffect.size(); i++) {
-        b2[i * 4] = 1;
+        b2[i * 4 + 1] = 255;
     }
     int weightsOffs = addDataToBuffer(m, buffer2.data(), weightsBytes);
 
