@@ -21,6 +21,20 @@ namespace openAITD {
 		vector<vector<Image>> masks;
 	};
 
+	struct RenderOrder {
+		GameObject* obj;
+		Vector3 zPos;
+	};
+
+	struct RenderOverlay {
+		//int x,y,w,h;
+		Texture2D texture;
+		int roomId;
+		GCameraOverlay* res;
+		//Render overlay after this object
+		GameObject* renderAfterObj = 0;
+	};
+
 	class CameraRenderer {
 	public:
 		World* world;
@@ -28,14 +42,20 @@ namespace openAITD {
 		int screenW = 0;
 		int screenH = 0;
 
+		int invX = 0;
+		int invZ = 0;
+
 		vector<RenderBackground> backgrounds;
 		Texture2D backgroundTex = {0,0,0};
-		vector<vector<Texture2D>> overlayTextures;
+		vector<RenderOverlay> curOverlays;
+
 
 		Stage* curStage = 0;
 		int curStageId = -1;
 		WCamera* curCamera = 0;
 		int curCameraId = -1;
+
+		bool flyMode = false;
 
 		CameraRenderer(Resources* res, World* world) {
 			this->resources = res;
@@ -45,6 +65,19 @@ namespace openAITD {
 		~CameraRenderer() {
 			clearCamera();
 			clearStage();
+		}
+
+		Vector3 GetWorldToScreenZ(Vector3 position) {
+			int width = GetScreenWidth();
+			int height = GetScreenHeight();
+			auto& matProj = curCamera->perspective;
+			Matrix matView = MatrixLookAt(initCamera.position, initCamera.target, initCamera.up);
+			Quaternion worldPos = { position.x, position.y, position.z, 1.0f };
+			worldPos = QuaternionTransform(worldPos, matView);
+			worldPos = QuaternionTransform(worldPos, matProj);
+			Vector3 ndcPos = { worldPos.x / worldPos.w, -worldPos.y / worldPos.w, worldPos.z / worldPos.w };
+			Vector3 screenPosition = { (ndcPos.x + 1.0f) / 2.0f * (float)width, (ndcPos.y + 1.0f) / 2.0f * (float)height, ndcPos.z };
+			return screenPosition;
 		}
 
 		void clearStage()
@@ -89,15 +122,11 @@ namespace openAITD {
 		{
 			if (curCameraId == -1) return;
 			UnloadTexture(backgroundTex);
-			for (int i = 0; i < overlayTextures.size(); i++) {
-				for (int j = 0; j < overlayTextures[i].size(); j++) {
-					UnloadTexture(overlayTextures[i][j]);
-				}
+			for (int i = 0; i < curOverlays.size(); i++) {
+				UnloadTexture(curOverlays[i].texture);
 			}
-			overlayTextures.clear();
-
+			curOverlays.clear();
 			curCameraId = -1;
-			vector<vector<int>> overlayTextures;
 		}
 
 		Image resizeImg(Image& src, int w, int h) {
@@ -120,7 +149,7 @@ namespace openAITD {
 		Texture2D generateMask(Image& fullBg, Image& mask) {
 			Image maskImageScaled = resizeImg(mask, screenW, screenH);
 			for (int i = 0; i < (screenW * screenH); i++) {
-				((uint8_t*)maskImageScaled.data)[i * 4 + 3] = ((uint8_t*)fullBg.data)[i * 4 + 0];
+				((uint8_t*)maskImageScaled.data)[i * 4 + 3] = ((uint8_t*)maskImageScaled.data)[i * 4 + 0];
 				((uint8_t*)maskImageScaled.data)[i * 4 + 0] = ((uint8_t*)fullBg.data)[i * 4 + 0];
 				((uint8_t*)maskImageScaled.data)[i * 4 + 1] = ((uint8_t*)fullBg.data)[i * 4 + 1];
 				((uint8_t*)maskImageScaled.data)[i * 4 + 2] = ((uint8_t*)fullBg.data)[i * 4 + 2];
@@ -171,14 +200,17 @@ namespace openAITD {
 			auto& fullBg = resizeImg(backgrounds[curCameraId].background, screenW, screenH);
 			backgroundTex = LoadTextureFromImage(fullBg);
 			auto& m = backgrounds[curCameraId].masks;
-			overlayTextures.resize(m.size());
+			
 			for (int i = 0; i < m.size(); i++) {
 				auto& m2 = m[i];
-				overlayTextures[i].resize(m2.size());
 				for (int j = 0; j < m2.size(); j++) {
-					overlayTextures[i][j] = generateMask(fullBg, m[i][j]);
+					auto& ovl = curOverlays.emplace_back();
+					ovl.roomId = curCamera->rooms[i].roomId;
+					ovl.res = &curCamera->rooms[i].overlays[j];
+					ovl.texture = generateMask(fullBg, m[i][j]);
 				}
 			}
+
 			UnloadImage(fullBg);
 
 			auto& camPers = curCamera->pers;
@@ -195,9 +227,21 @@ namespace openAITD {
 			//auto& room = curStage->rooms[curCamera->rooms[r].roomId];
 			for (int r = 0; r < curStage->rooms.size(); r++) {
 				auto& room = curStage->rooms[r];
+				DrawCube(room.position, 0.1, 0.1, 0.1, DARKBLUE);
 				for (int collId = 0; collId < room.colliders.size(); collId++) {
 					if (room.colliders[collId].isZone) continue;
 					DrawBounds(room.colliders[collId].bounds, DARKBLUE);
+				}
+			}
+		}
+
+		void renderOvlBounds() {
+			for (int r = 0; r < curCamera->rooms.size(); r++) {
+				auto& room = curCamera->rooms[r];
+				for (int ovId = 0; ovId < room.overlays.size(); ovId++) {
+					for (int b = 0; b < room.overlays[ovId].bounds.size(); b++) {
+						DrawBounds(room.overlays[ovId].bounds[b], DARKGREEN);
+					}
 				}
 			}
 		}
@@ -207,7 +251,7 @@ namespace openAITD {
 			auto& t = initCamera.target;
 			auto s1 = string("POS: ") + to_string(p.x) + " " + to_string(p.y) + " " + to_string(p.z);
 			auto s2 = string("TAR: ") + to_string(t.x) + " " + to_string(t.y) + " " + to_string(t.z);
-			auto s3 = string("FOV: ") + to_string(initCamera.fovy);
+			auto s3 = string("IND: ") + to_string(invX) + " " + to_string(invZ);
 
 			int y = 0;
 			DrawText(s1.c_str(), 0, y, 30, WHITE);
@@ -231,16 +275,34 @@ namespace openAITD {
 			//Matrix matRotation = MatrixRotate({ 0,1,0 }, PI);
 			Vector3 pos = gobj.location.position;
 			auto rot = gobj.location.rotation;
-			if (pos.x < 0) {
-				rot.y += 180;
-			}
-			Matrix mx = MatrixRotateX(rot.x * 2 * PI / 360);
-			Matrix my = MatrixRotateY(rot.y * 2 * PI / 360);
-			Matrix mz = MatrixRotateZ(rot.z * 2 * PI / 360);
-			Matrix matRotation = MatrixTranspose(MatrixMultiply(MatrixMultiply(my, mx), mz));
+			
+			auto mirriorMat = MatrixIdentity();
+			//float mmx = invX ? 1: -1;
+			//float mmz = invZ ? 1 : -1;
+			//float mmx = 1;
+			//float mmz = -1;
+			//if (pos.x > 0) {
+			//	mmx = -1;
+			//	mmz = (pos.z > 0)? -1: 1;
+			//} else {
+			//	mmz = (pos.z > 0) ? 1: -1;
+			//}
+			mirriorMat = MatrixScale(1, 1, 1);
 
 			Vector3& roomPos = curStage->rooms[gobj.location.roomId].position;
 			pos = Vector3Add(roomPos, pos);
+
+			Matrix mx = MatrixRotateX(rot.x * 2 * PI / 360);
+			Matrix my = MatrixRotateY(rot.y * 2 * PI / 360);
+			Matrix mz = MatrixRotateZ(rot.z * 2 * PI / 360);
+			Matrix matRotation = MatrixMultiply(MatrixMultiply(my, mx), mz);
+			matRotation = MatrixTranspose(matRotation);
+
+			auto q = QuaternionFromMatrix(matRotation);
+			q = QuaternionInvert(q);
+			matRotation = QuaternionToMatrix(q);
+
+
 			//Vector3& pos = gobj.location.position;
 			Matrix matTranslation = MatrixTranslate(pos.x, pos.y, pos.z);
 
@@ -250,7 +312,6 @@ namespace openAITD {
 
 			// Combine model transformation matrix (model.transform) with matrix generated by function parameters (matTransform)
 			auto transform = MatrixMultiply(model.transform, matTransform);
-
 			for (int i = 0; i < model.meshCount; i++)
 			{
 				Color color = model.materials[model.meshMaterial[i]].maps[MATERIAL_MAP_DIFFUSE].color;
@@ -265,6 +326,38 @@ namespace openAITD {
 				DrawMesh(model.meshes[i], model.materials[model.meshMaterial[i]], transform);
 				model.materials[model.meshMaterial[i]].maps[MATERIAL_MAP_DIFFUSE].color = color;
 			}
+
+			if (flyMode) {
+				rlPushMatrix();
+				rlMultMatrixf(MatrixToFloat(matTransform));
+				DrawCube({ 0,0,0 }, 0.1, 0.1, 0.1, RED);
+				auto b = rmodel->bounds;
+				/*b.min.z = -b.min.z;
+				b.max.z = -b.max.z;*/
+				DrawBounds(b, RED);
+				rlPopMatrix();
+			}
+		}
+
+		bool checkOverlay(GCameraOverlay& ovl, GameObject& gobj) {
+			auto* mdl = resources->models.getModel(gobj.model.id);
+			auto objBnd = mdl->bounds;
+
+			Vector3 pos = gobj.location.position;
+			Vector3& roomPos = curStage->rooms[gobj.location.roomId].position;
+			pos = Vector3Add(roomPos, pos);
+			objBnd.min.x += pos.x;
+			objBnd.max.x += pos.x;
+			objBnd.min.z += pos.z;
+			objBnd.max.z += pos.z;
+			objBnd.min.y = -10000;
+			objBnd.max.y = 10000;
+			for (int i = 0; i < ovl.bounds.size(); i++) {
+				if (CheckCollisionBoxes(objBnd, ovl.bounds[i])) {
+					return true;
+				}
+			}
+			return false;
 		}
 
 		void process() {
@@ -277,36 +370,113 @@ namespace openAITD {
 				{ 0, 0 }, 0, WHITE
 			);
 
-			//for (int i = 0; i < overlayTextures.size(); i++) {
-			//	for (int j = 0; j < overlayTextures[i].size(); j++) {
-			//		DrawTexturePro(
-			//			overlayTextures[i][j],
-			//			{ 0, 0, (float)screenW, (float)screenH },
-			//			{ 0, 0, (float)screenW, (float)screenH },
-			//			{ 0, 0 }, 0, WHITE
-			//		);
-			//	}
-			//}
+			if (flyMode)
+			{
+				UpdateCamera(&initCamera, CAMERA_FREE);
+			}
 
-			UpdateCamera(&initCamera, CAMERA_FREE);
-
-			BeginMode3D(initCamera);
-			//rlSetMatrixModelview(curCamera->modelview);
-			rlSetMatrixProjection(curCamera->perspective);
-			
-			DrawCube({0,0,0}, 0.2, 0.2, 0.2, GREEN);
-			renderBounds();
-
+			/*
 			for (int i = 0; i < this->world->gobjects.size(); i++) {
 				auto& gobj = this->world->gobjects[i];
 				if (gobj.model.id == -1) continue;
 				if (gobj.location.stageId != curStageId) continue;
 				renderObject(gobj, WHITE);
 			}
-			
-			EndMode3D();
+			*/
 
-			renderCamPos();
+			//TODO: Remove memory allocation
+			list<RenderOrder> renderQueue;
+			for (int i = 0; i < this->world->gobjects.size(); i++) {
+				auto& gobj = this->world->gobjects[i];
+				if (gobj.model.id == -1) continue;
+				if (gobj.location.stageId != curStageId) continue;
+				
+				int curCamRoom = -1;
+				for (int j = 0; j < curCamera->rooms.size(); j++) {
+					if (gobj.location.roomId == curCamera->rooms[j].roomId) {
+						curCamRoom = j;
+						break;
+					}
+				}
+				if (curCamRoom == -1) continue;
+
+				Vector3 pos = gobj.location.position;
+				Vector3& roomPos = curStage->rooms[gobj.location.roomId].position;
+				pos = Vector3Add(roomPos, pos);
+
+				auto& screenPos = GetWorldToScreenZ(pos);
+				if (screenPos.z < 0) continue;
+				renderObject(gobj, WHITE);
+				
+				bool inserted = false;
+				for (auto it = renderQueue.begin(); it != renderQueue.end(); it++) {
+					if ((*it).zPos.z < screenPos.z) {
+						renderQueue.insert( it, { &gobj, screenPos } );
+						inserted = true;
+						break;
+					}
+				}
+				if (!inserted) {
+					renderQueue.push_back({ &gobj, screenPos });
+				}
+			}
+
+			for (auto i = 0; i < curOverlays.size(); i++) {
+				curOverlays[i].renderAfterObj = 0;
+			}
+
+			//TODO: Revese for can be faster (no overwrite result)
+			for (auto it = renderQueue.begin(); it != renderQueue.end(); it++) {
+				auto& obj = *it->obj;
+				for (auto i = 0; i < curOverlays.size(); i++) {
+					/*if (obj.model.id == 24 && i == 6) {
+						[]() {}();
+					}*/
+					auto& ovl = curOverlays[i];					
+					if ((ovl.roomId == it->obj->location.roomId) && checkOverlay(*ovl.res, obj)) {
+						ovl.renderAfterObj = &obj;
+					}
+				}
+			}
+
+			
+			int num = 1;
+			for (auto it = renderQueue.begin(); it != renderQueue.end(); it++) {
+				BeginMode3D(initCamera);
+					//rlSetMatrixModelview(curCamera->modelview);
+					rlSetMatrixProjection(curCamera->perspective);
+					renderObject(*it->obj, WHITE);
+				EndMode3D();
+
+				if (!flyMode) {
+					for (auto i = 0; i < curOverlays.size(); i++) {
+						if (it->obj == curOverlays[i].renderAfterObj) {
+							DrawTexturePro(
+								curOverlays[i].texture,
+								{ 0, 0, (float)screenW, (float)screenH },
+								{ 0, 0, (float)screenW, (float)screenH },
+								{ 0, 0 }, 0, WHITE
+							);
+						}
+					}
+				}
+
+				//auto s = to_string(num);
+				//auto s = to_string(it->zPos.z);
+				//DrawText(s.c_str(), floor(it->zPos.x), floor(it->zPos.y), 20, WHITE);
+				//num++;
+			}
+			
+			if (flyMode) {
+				BeginMode3D(initCamera);
+					//rlSetMatrixModelview(curCamera->modelview);
+					rlSetMatrixProjection(curCamera->perspective);
+					DrawCube({ 0,0,0 }, 0.2, 0.2, 0.2, GREEN);
+					renderBounds();
+					renderOvlBounds();
+				EndMode3D();
+				renderCamPos();
+			}
 		}
 
 	};

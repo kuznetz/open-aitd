@@ -38,7 +38,7 @@ int getMaterialIdx(tinygltf::Model& m, u8 colorIdx, u8 subType = 0)
     }
     tinygltf::Material newMat;
     newMat.name = matName;
-    newMat.doubleSided = true;
+    newMat.doubleSided = false;
 
     auto col = getPalColor(colorIdx);
     newMat.pbrMetallicRoughness.baseColorFactor = { 
@@ -59,7 +59,10 @@ Quaternion GetAniRotation(AniBone& bone)
     auto q1 = QuaternionFromAxisAngle({ 0,0,1 }, -(float)bone.delta[2] * 2 * PI / 1024);
     auto q2 = QuaternionFromAxisAngle({ 1,0,0 }, -(float)bone.delta[0] * 2 * PI / 1024);
     auto q3 = QuaternionFromAxisAngle({ 0,1,0 }, -(float)bone.delta[1] * 2 * PI / 1024);
-    return QuaternionMultiply(QuaternionMultiply(q1, q2), q3);
+    auto& q = QuaternionMultiply(QuaternionMultiply(q1, q2), q3);
+    auto m = MatrixRotateY(PI);
+    q = QuaternionTransform(q, m);
+    return q;
 }
 
 struct boneAnimExp {
@@ -171,7 +174,7 @@ void addAnimation(tinygltf::Model& m, Animation &anim, vector<Vector3>& bonePos,
                 eb.rotates[i] = GetAniRotation(b);
                 break;
             case 1:
-                eb.translates[i] = { b.delta[0] / 1000.0f, -b.delta[1] / 1000.0f, b.delta[2] / 1000.0f};
+                eb.translates[i] = { b.delta[0] / 1000.0f, b.delta[1] / -1000.0f, -b.delta[2] / 1000.0f};
                 break;
             case 2:
                 eb.scales[i] = { b.delta[0] / 256.0f + 1.0f, b.delta[1] / 256.0f + 1.0f, b.delta[2] / 256.0f + 1.0f };
@@ -284,9 +287,10 @@ void addPrimitive(tinygltf::Model& m, tinygltf::Mesh& mesh, const PakModelPrimit
 
         vector<unsigned int> modelIdxs;
         for (int i = 0; i < triangles.size(); i++) {
+            //Strange order to wrap normals
             modelIdxs.emplace_back(idxMap[triangles[i].p0]);
-            modelIdxs.emplace_back(idxMap[triangles[i].p1]);
             modelIdxs.emplace_back(idxMap[triangles[i].p2]);
+            modelIdxs.emplace_back(idxMap[triangles[i].p1]);
         }
 
         if (modelIdxs.size() < 3) {
@@ -360,9 +364,9 @@ void saveModelGLTF(const PakModel& model, vector<Animation*> animations, const s
     modelVerts.resize(model.vertices.size() / 3);
     for (int i = 0; i < modelVerts.size(); i++) {
         modelVerts[i] = {
-            (float)model.vertices[i * 3 + 0] / 1000,
-            -(float)model.vertices[i * 3 + 1] / 1000,
-            (float)model.vertices[i * 3 + 2] / 1000
+            (float)(model.vertices[i * 3 + 0] / 1000.),
+            (float)(model.vertices[i * 3 + 1] / -1000.),
+            (float)(model.vertices[i * 3 + 2] / -1000.)
         };
     }
 
@@ -378,11 +382,7 @@ void saveModelGLTF(const PakModel& model, vector<Animation*> animations, const s
             tinygltf::Node boneN;
             boneN.name = string("bone_") + to_string(bIdx);
             auto rIdx = bone.rootVertexIdx / 6;
-            bonePos[bIdx] = {
-                (float)model.vertices[rIdx * 3 + 0] / 1000,
-                -(float)model.vertices[rIdx * 3 + 1] / 1000,
-                (float)model.vertices[rIdx * 3 + 2] / 1000
-            };
+            bonePos[bIdx] = modelVerts[rIdx];
             boneN.translation = { bonePos[bIdx].x, bonePos[bIdx].y, bonePos[bIdx].z };
             
             //Add children
@@ -485,10 +485,10 @@ void saveModelGLTF(const PakModel& model, vector<Animation*> animations, const s
     dataJson["bounds"] = json::array();
     dataJson["bounds"].push_back(model.bounds.ZVX1 / 1000.);
     dataJson["bounds"].push_back(-model.bounds.ZVY2 / 1000.);
-    dataJson["bounds"].push_back(model.bounds.ZVZ1 / 1000.);
+    dataJson["bounds"].push_back(-model.bounds.ZVZ1 / 1000.);
     dataJson["bounds"].push_back(model.bounds.ZVX2 / 1000.);
     dataJson["bounds"].push_back(-model.bounds.ZVY1 / 1000.);
-    dataJson["bounds"].push_back(model.bounds.ZVZ2 / 1000.);
+    dataJson["bounds"].push_back(-model.bounds.ZVZ2 / 1000.);
     std::ofstream o(dirname + "/data.json");
     o << std::setw(2) << dataJson;
 }

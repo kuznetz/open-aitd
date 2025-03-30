@@ -45,24 +45,37 @@ namespace openAITD {
         DisableCursor();
 
         while (!WindowShouldClose()) {
-
-            if (IsKeyPressed(KEY_RIGHT)) {
-                if (world.curCameraId++);
-                renderer.loadCamera(world.curStageId, world.curCameraId);
+            if (IsKeyPressed(KEY_O)) {
+                renderer.flyMode = !renderer.flyMode;
             }
-            if (IsKeyPressed(KEY_LEFT)) {
-                if (world.curCameraId--);
-                renderer.loadCamera(world.curStageId, world.curCameraId);
+            if (!renderer.flyMode) {
+                if (IsKeyPressed(KEY_RIGHT) && (world.curCameraId < renderer.curStage->cameras.size() - 1)) {
+                    if (world.curCameraId++);
+                    renderer.loadCamera(world.curStageId, world.curCameraId);
+                }
+                if (IsKeyPressed(KEY_LEFT) && (world.curCameraId > 0)) {
+                    if (world.curCameraId--);
+                    renderer.loadCamera(world.curStageId, world.curCameraId);
+                }
+                if (IsKeyPressed(KEY_UP)) {
+                    world.curStageId++;
+                    world.curCameraId = 0;
+                    renderer.loadCamera(world.curStageId, world.curCameraId);
+                }
+                if (IsKeyPressed(KEY_DOWN)) {
+                    world.curStageId--;
+                    world.curCameraId = 0;
+                    renderer.loadCamera(world.curStageId, world.curCameraId);
+                }
+                if (IsKeyPressed(KEY_LEFT_BRACKET)) {
+                    renderer.invX = !renderer.invX;
+                }
+                if (IsKeyPressed(KEY_RIGHT_BRACKET)) {
+                    renderer.invZ = !renderer.invZ;
+                }
             }
-            if (IsKeyPressed(KEY_UP)) {
-                world.curStageId++;
-                world.curCameraId = 0;
-                renderer.loadCamera(world.curStageId, world.curCameraId);
-            }
-            if (IsKeyPressed(KEY_DOWN)) {
-                world.curStageId--;
-                world.curCameraId = 0;
-                renderer.loadCamera(world.curStageId, world.curCameraId);
+            else
+            {
             }
 
             BeginDrawing();

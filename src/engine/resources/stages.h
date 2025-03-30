@@ -243,8 +243,10 @@ namespace openAITD {
 							string("overlay_zone_") + to_string(cameraId) + "_" + to_string(camRoom.roomId) + "_" +
 							to_string(overlayId) + "_" + to_string(overlayZoneId)
 						);
-						if (!ovlZN) break;						
-						overlay.bounds.push_back(NodeToBounds(room.position ,*ovlZN));
+						if (!ovlZN) break;
+						auto b = NodeToBounds(room.position, *ovlZN);
+						b.max.y = b.min.y + 1;
+						overlay.bounds.push_back(b);
 						overlayZoneId++;
 					}
 					if (overlay.bounds.size()) {

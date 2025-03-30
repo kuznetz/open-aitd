@@ -8,6 +8,7 @@
 #include "extractors/background_extractor.h"
 #include "extractors/object_extractor.h"
 #include "extractors/floor_extractor.h"
+//#include "extractors/floor_extractor_2.h"
 #include "extractors/mask_extractor.h"
 #include "extractors/sound_extractor.h"
 #include "extractors/model_extractor.h"
