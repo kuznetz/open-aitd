@@ -24,6 +24,7 @@ namespace openAITD {
 	struct RenderOrder {
 		GameObject* obj;
 		Vector3 zPos;
+		string marker;
 	};
 
 	struct RenderOverlay {
@@ -109,7 +110,7 @@ namespace openAITD {
 					auto& msk = bg.masks.emplace_back();
 					for (int i = 0; i < camRooms[cr].overlays.size(); i++) {
 						auto& msk2 = msk.emplace_back();
-						msk2 = LoadImage((dir + "/mask_" + to_string(camRooms[cr].roomId) + "_" + to_string(i) + ".png").c_str());
+						msk2 = LoadImage((dir + "/mask_" + to_string(cr) + "_" + to_string(i) + ".png").c_str());
 						//auto& o = camRooms[cr].overlays[camId];
 					}
 				}
@@ -199,18 +200,16 @@ namespace openAITD {
 
 			auto& fullBg = resizeImg(backgrounds[curCameraId].background, screenW, screenH);
 			backgroundTex = LoadTextureFromImage(fullBg);
-			auto& m = backgrounds[curCameraId].masks;
-			
-			for (int i = 0; i < m.size(); i++) {
-				auto& m2 = m[i];
+			auto& masks = backgrounds[curCameraId].masks;			
+			for (int i = 0; i < masks.size(); i++) {
+				auto& m2 = masks[i];
 				for (int j = 0; j < m2.size(); j++) {
 					auto& ovl = curOverlays.emplace_back();
 					ovl.roomId = curCamera->rooms[i].roomId;
 					ovl.res = &curCamera->rooms[i].overlays[j];
-					ovl.texture = generateMask(fullBg, m[i][j]);
+					ovl.texture = generateMask(fullBg, m2[j]);
 				}
 			}
-
 			UnloadImage(fullBg);
 
 			auto& camPers = curCamera->pers;
@@ -440,6 +439,7 @@ namespace openAITD {
 			}
 
 			
+
 			int num = 1;
 			for (auto it = renderQueue.begin(); it != renderQueue.end(); it++) {
 				BeginMode3D(initCamera);
@@ -448,25 +448,30 @@ namespace openAITD {
 					renderObject(*it->obj, WHITE);
 				EndMode3D();
 
-				if (!flyMode) {
-					for (auto i = 0; i < curOverlays.size(); i++) {
-						if (it->obj == curOverlays[i].renderAfterObj) {
-							DrawTexturePro(
+				auto s = to_string(num)+" R" + to_string(it->obj->location.roomId);
+
+				for (auto i = 0; i < curOverlays.size(); i++) {
+					if (it->obj == curOverlays[i].renderAfterObj) {
+						if (!flyMode) {
+								DrawTexturePro(
 								curOverlays[i].texture,
 								{ 0, 0, (float)screenW, (float)screenH },
 								{ 0, 0, (float)screenW, (float)screenH },
 								{ 0, 0 }, 0, WHITE
 							);
 						}
+						s += string(" ") + to_string(i)+"."+to_string(curOverlays[i].roomId);
 					}
 				}
 
 				//auto s = to_string(num);
 				//auto s = to_string(it->zPos.z);
+				//auto s = to_string(it->obj->location.roomId);
 				//DrawText(s.c_str(), floor(it->zPos.x), floor(it->zPos.y), 20, WHITE);
-				//num++;
+				it->marker = s;
+				num++;
 			}
-			
+
 			if (flyMode) {
 				BeginMode3D(initCamera);
 					//rlSetMatrixModelview(curCamera->modelview);
@@ -475,6 +480,9 @@ namespace openAITD {
 					renderBounds();
 					renderOvlBounds();
 				EndMode3D();
+				for (auto it = renderQueue.begin(); it != renderQueue.end(); it++) {
+					DrawText(it->marker.c_str(), floor(it->zPos.x), floor(it->zPos.y), 20, WHITE);				
+				}
 				renderCamPos();
 			}
 		}
