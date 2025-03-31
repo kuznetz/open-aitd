@@ -408,15 +408,16 @@ namespace openAITD {
 				renderObject(gobj, WHITE);
 				
 				bool inserted = false;
+				string s = to_string(i);
 				for (auto it = renderQueue.begin(); it != renderQueue.end(); it++) {
 					if ((*it).zPos.z < screenPos.z) {
-						renderQueue.insert( it, { &gobj, screenPos } );
+						renderQueue.insert( it, { &gobj, screenPos, s });
 						inserted = true;
 						break;
 					}
 				}
 				if (!inserted) {
-					renderQueue.push_back({ &gobj, screenPos });
+					renderQueue.push_back({ &gobj, screenPos, s });
 				}
 			}
 
@@ -448,7 +449,8 @@ namespace openAITD {
 					renderObject(*it->obj, WHITE);
 				EndMode3D();
 
-				auto s = to_string(num)+" R" + to_string(it->obj->location.roomId);
+				//auto s = to_string(num)+" R" + to_string(it->obj->location.roomId);
+				//auto s = to_string(it->obj->);
 
 				for (auto i = 0; i < curOverlays.size(); i++) {
 					if (it->obj == curOverlays[i].renderAfterObj) {
@@ -460,15 +462,10 @@ namespace openAITD {
 								{ 0, 0 }, 0, WHITE
 							);
 						}
-						s += string(" ") + to_string(i)+"."+to_string(curOverlays[i].roomId);
+						//s += string(" ") + to_string(i)+"."+to_string(curOverlays[i].roomId);
 					}
 				}
-
-				//auto s = to_string(num);
-				//auto s = to_string(it->zPos.z);
-				//auto s = to_string(it->obj->location.roomId);
-				//DrawText(s.c_str(), floor(it->zPos.x), floor(it->zPos.y), 20, WHITE);
-				it->marker = s;
+				//it->marker = s;
 				num++;
 			}
 
