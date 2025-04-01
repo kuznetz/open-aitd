@@ -16,7 +16,53 @@ using nlohmann::json;
 using namespace std;
 namespace openAITD {
 
-	inline bool isPointInPoly(Vector2 p, vector<Vector2> polygon)
+	/*inline int isInPoly(int x1, int x2, int z1, int z2, cameraViewedRoomStruct* pCameraZoneDef)
+	{
+		int xMid = (x1 + x2) / 2;
+		int zMid = (z1 + z2) / 2;
+
+		int i;
+
+		for (i = 0; i < pCameraZoneDef->numCoverZones; i++)
+		{
+			int j;
+			int flag = 0;
+
+			for (j = 0; j < pCameraZoneDef->coverZones[i].numPoints; j++)
+			{
+				int zoneX1;
+				int zoneZ1;
+				int zoneX2;
+				int zoneZ2;
+
+				zoneX1 = pCameraZoneDef->coverZones[i].pointTable[j].x;
+				zoneZ1 = pCameraZoneDef->coverZones[i].pointTable[j].y;
+				zoneX2 = pCameraZoneDef->coverZones[i].pointTable[j + 1].x;
+				zoneZ2 = pCameraZoneDef->coverZones[i].pointTable[j + 1].y;
+
+				if (testCrossProduct(xMid, zMid, xMid - 10000, zMid, zoneX1, zoneZ1, zoneX2, zoneZ2))
+				{
+					flag |= 1;
+				}
+
+				if (testCrossProduct(xMid, zMid, xMid + 10000, zMid, zoneX1, zoneZ1, zoneX2, zoneZ2))
+				{
+					flag |= 2;
+				}
+			}
+
+			if (flag == 3)
+			{
+				return(1);
+			}
+		}
+
+		return(0);
+	}*/
+
+	/*
+	Not works
+	inline bool isPointInPoly(const Vector2 p, const vector<Vector2>& polygon)
 	{
 		float minX = polygon[0].x;
 		float maxX = polygon[0].x;
@@ -24,7 +70,7 @@ namespace openAITD {
 		float maxY = polygon[0].y;
 		for (int i = 1; i < polygon.size(); i++)
 		{
-			Vector2& q = polygon[i];
+			auto& q = polygon[i];
 			minX = min(q.x, minX);
 			maxX = max(q.x, maxX);
 			minY = min(q.y, minY);
@@ -51,6 +97,44 @@ namespace openAITD {
 
 		return inside;
 	}
+	*/
+
+	/*
+	inline bool isPointInPoly(const Vector2 p, const vector<Vector2>& polygon)
+	{
+		char flag;
+		Vector2 p1;
+		Vector2 p2 = polygon[polygon.size() - 1];
+		for (int j = 0; j < polygon.size(); j++) {
+			p1 = p2;
+			p2 = polygon[j];
+		}
+		if (flag == 3)
+		{
+			return true;
+		}
+		return false;
+	}
+	*/
+
+	inline bool isPointInPoly(const Vector2 p, const vector<Vector2>& polygon) {
+		size_t n = polygon.size();
+		bool result = false;
+		for (size_t i = 0; i < n; ++i) {
+			size_t j = (i + 1) % n;
+			if (
+				// Does p0.y lies in half open y range of edge.
+				// N.B., horizontal edges never contribute
+				((polygon[j].y <= p.y && p.y < polygon[i].y) ||
+					(polygon[i].y <= p.y && p.y < polygon[j].y)) &&
+				// is p to the left of edge?
+				(p.x < polygon[j].x + (polygon[i].x - polygon[j].x) * (p.y - polygon[j].y) /
+					(polygon[i].y - polygon[j].y))
+				)
+				result = !result;
+		}
+		return result;
+	}
 
 	inline tinygltf::Node* findNode(tinygltf::Model& m, string name)
 	{
@@ -76,8 +160,15 @@ namespace openAITD {
 
 	inline vector<Vector2> loadLineAcc2d(tinygltf::Model& m, int accIdx)
 	{
-		vector<Vector2> res;
-		//TODO: Get camera Poly
+		vector<Vector2> res;		
+		auto& acc = m.accessors[accIdx];
+		auto& bufVW = m.bufferViews[acc.bufferView];
+		char* data = (char*)m.buffers[bufVW.buffer].data.data() + bufVW.byteOffset;
+		float* dataf = (float*)data;
+		for (int i = 0; i < acc.count; i++) {
+			res.push_back({ dataf[0], dataf[2] });
+			dataf += 3;
+		}
 		return res;
 	}
 
@@ -102,7 +193,7 @@ namespace openAITD {
 	struct GCameraRoom {
 		int roomId;
 		vector<GCameraOverlay> overlays;
-		vector<vector<Vector2>> coverZones;
+		//vector<vector<Vector2>> coverZones;
 	};
 
 	class WCamera {
@@ -146,8 +237,9 @@ namespace openAITD {
 		std::vector<WCamera> cameras;
 
 		void load(string stageDir);
+		bool pointInCamera(const Vector2 p, WCamera& camera);
+		int closestCamera(Vector3 p);
 		//int centredCamera(Vector3 p);
-		//int closestCamera(Vector3 p);
 	};
 
 	void Stage::load(string stageDir) {
@@ -278,6 +370,40 @@ namespace openAITD {
 			cameraId++;
 		}
 
+	}
+
+	bool Stage::pointInCamera(const Vector2 p, WCamera& camera)
+	{
+		for (int i = 0; i < camera.coverZones.size(); i++) {
+			if (isPointInPoly(p, camera.coverZones[i])) {
+				return true;
+			}
+		}
+		/*for (int r = 0; r < camera.rooms.size(); r++) {
+			auto& camRoom = camera.rooms[r];
+			for (int i = 0; i < camRoom.coverZones.size(); i++) {
+				if (isPointInPoly(p, camRoom.coverZones[i])) {
+					return true;
+				}
+			}
+		}*/
+		return false;		
+	}
+
+	int Stage::closestCamera(Vector3 p)
+	{
+		int result = -1;
+		float sqrDist = 0;
+		for (int cId = 0; cId < cameras.size(); cId++) {
+			auto& cam = cameras[cId];
+			if (!pointInCamera({p.x, p.z}, cam)) continue;
+			float curDist = Vector3DistanceSqr(p, cam.position);
+			if (sqrDist == 0 || sqrDist > curDist) {
+				sqrDist = curDist;
+				result = cId;
+			}
+		}
+		return result;
 	}
 
 }

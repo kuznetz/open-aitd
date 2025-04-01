@@ -245,6 +245,19 @@ namespace openAITD {
 			}
 		}
 
+		void renderCameraZones() {
+			for (int i = 0; i < curCamera->coverZones.size(); i++) {
+				auto& poly = curCamera->coverZones[i];				
+				Vector3 oldP;
+				Vector3 p = { poly[poly.size() - 1].x, 0 ,poly[poly.size() - 1].y };
+				for (int j = 0; j < poly.size(); j++) {
+					oldP = p;
+					p = { poly[j].x, 0 ,poly[j].y };
+					DrawLine3D(oldP, p, RED);
+				}
+			}
+		}
+
 		void renderCamPos() {
 			auto& p = initCamera.position;
 			auto& t = initCamera.target;
@@ -448,7 +461,8 @@ namespace openAITD {
 					rlSetMatrixProjection(curCamera->perspective);
 					DrawCube({ 0,0,0 }, 0.2, 0.2, 0.2, GREEN);
 					renderBounds();
-					renderOvlBounds();
+					renderCameraZones();
+					//renderOvlBounds();
 				EndMode3D();
 				for (auto it = renderQueue.begin(); it != renderQueue.end(); it++) {
 					DrawText(it->marker.c_str(), floor(it->zPos.x), floor(it->zPos.y), 20, WHITE);				

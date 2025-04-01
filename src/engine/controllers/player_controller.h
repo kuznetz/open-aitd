@@ -70,6 +70,13 @@ namespace openAITD {
 				player->model.animId = anims.idle;
 			}
 
+			if (world->curStageId == player->location.stageId) {
+				auto camId = resources->stages[world->curStageId].closestCamera(player->location.position);
+				if (camId != -1) {
+					world->curCameraId = camId;
+				}
+			}
+
 			if (IsKeyDown(KEY_SPACE)) {
 				player->location.stageId = world->curStageId;
 				auto newRoom = resources->stages[world->curStageId].cameras[world->curCameraId].rooms[0].roomId;
