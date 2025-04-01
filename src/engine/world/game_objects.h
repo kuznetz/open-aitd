@@ -11,8 +11,7 @@ namespace openAITD {
 		int stageId = -1;
 		int roomId = -1;
 		Vector3 position;
-		Vector3 rotation;
-		Vector4 rotationQ;
+		Vector4 rotation;
 	};
 
 	struct GOModel

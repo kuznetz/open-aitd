@@ -11,6 +11,8 @@
 using json = nlohmann::json;
 using namespace std;
 
+inline Matrix roomMat;
+
 void addCamera(tinygltf::Model& m, int camIdx, cameraStruct& cam) {
     //auto tx = (float)cam.alpha * 360 / 1024;
     //auto ty = (float)cam.beta * 360 / 1024;
@@ -61,19 +63,27 @@ int createBoxNode(tinygltf::Model& m, string name, hardColStruct& coll) {
     collN.name = name;
     collN.mesh = 0;
 
-    double SizeX = (double)(coll.zv.ZVX2 - coll.zv.ZVX1) / 1000;
-    double SizeY = (double)(coll.zv.ZVY2 - coll.zv.ZVY1) / 1000;
-    double SizeZ = (double)(coll.zv.ZVZ2 - coll.zv.ZVZ1) / 1000;
+    Vector3 v1 = Vector3Transform({ 
+        coll.zv.ZVX1 / 1000.f ,
+        coll.zv.ZVY1 / 1000.f ,
+        coll.zv.ZVZ1 / 1000.f
+    }, roomMat);
+    Vector3 v2 = Vector3Transform({
+        coll.zv.ZVX2 / 1000.f ,
+        coll.zv.ZVY2 / 1000.f ,
+        coll.zv.ZVZ2 / 1000.f
+    }, roomMat);
+    Vector3 size = Vector3Subtract(v2, v1);
 
     collN.translation = {
-        (double)coll.zv.ZVX1 / 1000,
-        (double)coll.zv.ZVY1 / 1000,
-        (double)coll.zv.ZVZ1 / 1000
+        v1.x,
+        v1.y,
+        v1.z
     };
     collN.scale = {
-        SizeX,
-        SizeY,
-        SizeZ,
+        size.x,
+        size.y,
+        size.z,
     };
 
     m.nodes.push_back(collN);
@@ -87,6 +97,9 @@ void saveFloorGLTF(floorStruct& floor2, char* filename)
     tinygltf::Model m;
     m.asset.version = "2.0";
     m.asset.generator = "open-AITD";
+    
+    //Rotate every in room by x 180 deg by room center
+    roomMat = MatrixRotateX(PI);
 
     createCubeMesh(m);
 
@@ -103,9 +116,9 @@ void saveFloorGLTF(floorStruct& floor2, char* filename)
         auto& roomN = roomNodes[roomId];
         roomN.name = string("room_") + to_string(roomId);
         roomN.translation = {
-            (float)room.worldX / 100,
-            (float)room.worldY / 100,
-            (float)room.worldZ / 100
+            room.worldX / 100.,
+            room.worldY / 100.,
+            room.worldZ / 100.
         };
 
         tinygltf::Node rootColl;
@@ -180,16 +193,21 @@ void saveFloorGLTF(floorStruct& floor2, char* filename)
                     tinygltf::Node ovlZN;
                     ovlZN.name = string("overlay_zone_") + to_string(camIdx) + "_" + to_string(roomId) + "_" + to_string(ovlIdx) + "_" + to_string(ovlZIdx);
                     ovlZN.mesh = 0;
-                    ovlZN.translation = {
-                        ovlZ.zoneX1 / 100.,
-                        0,
-                        ovlZ.zoneZ1 / 100.
-                    };
-                    ovlZN.scale = {
-                        (ovlZ.zoneX2 - ovlZ.zoneX1) / 100.,
-                        0.1,
-                        (ovlZ.zoneZ2 - ovlZ.zoneZ1) / 100.,
-                    };
+                    
+                    Vector3 v1 = Vector3Transform({
+                        ovlZ.zoneX1 / 100.f,
+                        0.1f,
+                        ovlZ.zoneZ1 / 100.f
+                    }, roomMat);
+                    Vector3 v2 = Vector3Transform({
+                        ovlZ.zoneX2 / 100.f,
+                        0.0f,
+                        ovlZ.zoneZ2 / 100.f
+                    }, roomMat);
+                    Vector3 size = Vector3Subtract(v2, v1);
+
+                    ovlZN.translation = { v1.x, v1.y, v1.z };
+                    ovlZN.scale = { size.x, size.y, size.z };
                     m.nodes.push_back(ovlZN);
                     int ovlZNIdx = m.nodes.size() - 1;
                     camRoomN.children.push_back(ovlZNIdx);
@@ -203,9 +221,10 @@ void saveFloorGLTF(floorStruct& floor2, char* filename)
                 vector<float> flzone(camZone.pointTable.size() * 3);
                 for (int pIdx = 0; pIdx < camZone.pointTable.size(); pIdx++) {
                     auto& p = camZone.pointTable[pIdx];
-                    flzone[pIdx * 3 + 0] = p.x / 100.;
-                    flzone[pIdx * 3 + 1] = 0;
-                    flzone[pIdx * 3 + 2] = p.y / 100.;
+                    Vector3 v = Vector3Transform({ p.x / 100.f, 0.0f, p.y / 100.f }, roomMat);
+                    flzone[pIdx * 3 + 0] = v.x;
+                    flzone[pIdx * 3 + 1] = v.y;
+                    flzone[pIdx * 3 + 2] = v.z;
                 }
                 auto lineMeshIdx = createLineMesh(m, flzone);
 

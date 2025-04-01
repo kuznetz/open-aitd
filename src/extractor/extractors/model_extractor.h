@@ -12,6 +12,8 @@
 using namespace std;
 using nlohmann::json;
 
+inline Matrix roomMatMdl;
+
 void ComputeUV(vector<Vector3>& allVertices, vector<int>& polyVertices, Vector3& forward, Vector3& left)
 {
     int lastPoly = polyVertices.size() - 1;
@@ -55,14 +57,23 @@ int getMaterialIdx(tinygltf::Model& m, u8 colorIdx, u8 subType = 0)
 
 Quaternion GetAniRotation(AniBone& bone)
 {
-    //zxy
-    auto q1 = QuaternionFromAxisAngle({ 0,0,1 }, -(float)bone.delta[2] * 2 * PI / 1024);
-    auto q2 = QuaternionFromAxisAngle({ 1,0,0 }, -(float)bone.delta[0] * 2 * PI / 1024);
-    auto q3 = QuaternionFromAxisAngle({ 0,1,0 }, -(float)bone.delta[1] * 2 * PI / 1024);
-    auto& q = QuaternionMultiply(QuaternionMultiply(q1, q2), q3);
-    auto m = MatrixRotateY(PI);
-    q = QuaternionTransform(q, m);
+    auto qX = QuaternionFromAxisAngle({ 1,0,0 }, -(float)bone.delta[0] * 2 * PI / 1024);
+    auto qY = QuaternionFromAxisAngle({ 0,1,0 }, -(float)bone.delta[1] * 2 * PI / 1024);
+    auto qZ = QuaternionFromAxisAngle({ 0,0,1 }, -(float)bone.delta[2] * 2 * PI / 1024);
+    auto& q = QuaternionMultiply(QuaternionMultiply(qZ, qX), qY);
+    //X  mirror
+    q.x = -q.x;
+    q.w = -q.w;
+
+    //q = QuaternionTransform(q, roomMatMdl);
     return q;
+
+    //Matrix mx = MatrixRotateX(bone.delta[0] * -2.f * PI / 1024);
+    //Matrix my = MatrixRotateY(bone.delta[1] * -2.f * PI / 1024);
+    //Matrix mz = MatrixRotateZ(bone.delta[2] * -2.f * PI / 1024);
+    //Matrix matRotation = MatrixMultiply(MatrixMultiply(my, mx), mz);
+    //matRotation = MatrixTranspose(matRotation);
+    //return QuaternionTransform(QuaternionFromMatrix(matRotation), roomMatMdl);
 }
 
 struct boneAnimExp {
@@ -164,20 +175,24 @@ void addAnimation(tinygltf::Model& m, Animation &anim, vector<Vector3>& bonePos,
             auto& eb = expBones[j];
             
             //auto& v = m.nodes[j + bonesOffset].translation;
-            eb.rotates[i] = QuaternionIdentity();
-            eb.translates[i] = bonePos[j];
+            eb.rotates[i+1] = QuaternionIdentity();
+            eb.translates[i+1] = bonePos[j];
             //eb.translates[i] = { 0,0,0 };
-            eb.scales[i] = { 1,1,1 };
+            eb.scales[i+1] = { 1,1,1 };
 
+            Vector3 v;
             switch (b.type) {
             case 0:
-                eb.rotates[i] = GetAniRotation(b);
+                eb.rotates[i+1] = GetAniRotation(b);
                 break;
             case 1:
-                eb.translates[i] = { b.delta[0] / 1000.0f, b.delta[1] / -1000.0f, -b.delta[2] / 1000.0f};
+                //eb.translates[i] = { b.delta[0] / 1000.0f, b.delta[1] / 1000.0f, b.delta[2] / 1000.0f };
+                eb.translates[i+1] = Vector3Transform(
+                    { b.delta[0] / 1000.0f, b.delta[1] / 1000.0f, b.delta[2] / 1000.0f },
+                    roomMatMdl);
                 break;
             case 2:
-                eb.scales[i] = { b.delta[0] / 256.0f + 1.0f, b.delta[1] / 256.0f + 1.0f, b.delta[2] / 256.0f + 1.0f };
+                eb.scales[i+1] = { b.delta[0] / 256.0f + 1.0f, b.delta[1] / 256.0f + 1.0f, b.delta[2] / 256.0f + 1.0f };
                 break;
             }
         }
@@ -185,10 +200,10 @@ void addAnimation(tinygltf::Model& m, Animation &anim, vector<Vector3>& bonePos,
 
     for (int j = 0; j < expBones.size(); j++) {
         auto& eb = expBones[j];
-        int lastI = timeline.size() - 1;
-        eb.rotates[lastI] = eb.rotates[0];
-        eb.translates[lastI] = eb.translates[0];
-        eb.scales[lastI] = eb.scales[0];
+        //int lastI = timeline.size() - 1;
+        eb.rotates[0] = eb.rotates[1];
+        eb.translates[0] = eb.translates[1];
+        eb.scales[0] = eb.scales[1];
     }
 
     //First to last
@@ -356,6 +371,7 @@ int addBoneMatrices(tinygltf::Model& m, vector<Vector3>& position, int boneCount
 void saveModelGLTF(const PakModel& model, vector<Animation*> animations, const string dirname)
 {
     const bool splitPrimitives = false;
+    roomMatMdl = MatrixMultiply(MatrixRotateX(PI), MatrixRotateY(PI)); //MatrixIdentity();
     tinygltf::Model m;
     m.asset.version = "2.0";
     m.asset.generator = "open-AITD";
@@ -363,11 +379,11 @@ void saveModelGLTF(const PakModel& model, vector<Animation*> animations, const s
     vector<Vector3> modelVerts;
     modelVerts.resize(model.vertices.size() / 3);
     for (int i = 0; i < modelVerts.size(); i++) {
-        modelVerts[i] = {
-            (float)(model.vertices[i * 3 + 0] / 1000.),
-            (float)(model.vertices[i * 3 + 1] / -1000.),
-            (float)(model.vertices[i * 3 + 2] / -1000.)
-        };
+        modelVerts[i] = Vector3Transform({
+            model.vertices[i * 3 + 0] / 1000.f,
+            model.vertices[i * 3 + 1] / 1000.f,
+            model.vertices[i * 3 + 2] / 1000.f
+            }, roomMatMdl);
     }
 
     tinygltf::Skin skin;
@@ -467,6 +483,7 @@ void saveModelGLTF(const PakModel& model, vector<Animation*> animations, const s
             m.skins.push_back(skin);
 
             for (int i = 0; i < animations.size(); i++) {
+                //if (animations[i]->id != 262) continue;
                 addAnimation(m, *animations[i], bonePos, model.bones.size());
             }
         }
@@ -481,14 +498,25 @@ void saveModelGLTF(const PakModel& model, vector<Animation*> animations, const s
        false
     );
 
+    Vector3 v1 = Vector3Transform({
+        model.bounds.ZVX1 / 1000.f ,
+        model.bounds.ZVY1 / 1000.f ,
+        model.bounds.ZVZ1 / 1000.f
+        }, roomMatMdl);
+    Vector3 v2 = Vector3Transform({
+        model.bounds.ZVX2 / 1000.f ,
+        model.bounds.ZVY2 / 1000.f ,
+        model.bounds.ZVZ2 / 1000.f
+        }, roomMatMdl);
+
     json dataJson;
     dataJson["bounds"] = json::array();
-    dataJson["bounds"].push_back(model.bounds.ZVX1 / 1000.);
-    dataJson["bounds"].push_back(-model.bounds.ZVY2 / 1000.);
-    dataJson["bounds"].push_back(-model.bounds.ZVZ1 / 1000.);
-    dataJson["bounds"].push_back(model.bounds.ZVX2 / 1000.);
-    dataJson["bounds"].push_back(-model.bounds.ZVY1 / 1000.);
-    dataJson["bounds"].push_back(-model.bounds.ZVZ2 / 1000.);
+    dataJson["bounds"].push_back(v1.x);
+    dataJson["bounds"].push_back(v1.y);
+    dataJson["bounds"].push_back(v1.z);
+    dataJson["bounds"].push_back(v2.x);
+    dataJson["bounds"].push_back(v2.y);
+    dataJson["bounds"].push_back(v2.z);
     std::ofstream o(dirname + "/data.json");
     o << std::setw(2) << dataJson;
 }

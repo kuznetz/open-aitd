@@ -266,44 +266,15 @@ namespace openAITD {
 
 		void renderObject(GameObject& gobj, Color tint)
 		{
-			//Matrix matScale = MatrixScale(scale.x, scale.y, scale.z);
-			//Matrix matRotation = MatrixRotate(rotationAxis, rotationAngle * DEG2RAD);
-			Matrix matScale = MatrixScale(1,1,1);
-			
-			//Matrix matRotation = MatrixRotate({0,1,0}, 0);
-			//Matrix matRotation = MatrixRotate({ 0,1,0 }, PI);
 			Vector3 pos = gobj.location.position;
-			auto rot = gobj.location.rotation;
-			
-			auto mirriorMat = MatrixIdentity();
-			//float mmx = invX ? 1: -1;
-			//float mmz = invZ ? 1 : -1;
-			//float mmx = 1;
-			//float mmz = -1;
-			//if (pos.x > 0) {
-			//	mmx = -1;
-			//	mmz = (pos.z > 0)? -1: 1;
-			//} else {
-			//	mmz = (pos.z > 0) ? 1: -1;
-			//}
-			mirriorMat = MatrixScale(1, 1, 1);
-
 			Vector3& roomPos = curStage->rooms[gobj.location.roomId].position;
 			pos = Vector3Add(roomPos, pos);
-
-			Matrix mx = MatrixRotateX(rot.x * 2 * PI / 360);
-			Matrix my = MatrixRotateY(rot.y * 2 * PI / 360);
-			Matrix mz = MatrixRotateZ(rot.z * 2 * PI / 360);
-			Matrix matRotation = MatrixMultiply(MatrixMultiply(my, mx), mz);
-			matRotation = MatrixTranspose(matRotation);
-
-			auto q = QuaternionFromMatrix(matRotation);
-			q = QuaternionInvert(q);
-			matRotation = QuaternionToMatrix(q);
-
-
-			//Vector3& pos = gobj.location.position;
 			Matrix matTranslation = MatrixTranslate(pos.x, pos.y, pos.z);
+
+			auto rot = gobj.location.rotation;
+			Matrix matRotation = QuaternionToMatrix(rot);
+
+			Matrix matScale = MatrixScale(1, 1, 1);
 
 			Matrix matTransform = MatrixMultiply(MatrixMultiply(matScale, matRotation), matTranslation);
 			auto rmodel = resources->models.getModel(gobj.model.id);
@@ -331,8 +302,6 @@ namespace openAITD {
 				rlMultMatrixf(MatrixToFloat(matTransform));
 				DrawCube({ 0,0,0 }, 0.1, 0.1, 0.1, RED);
 				auto b = rmodel->bounds;
-				/*b.min.z = -b.min.z;
-				b.max.z = -b.max.z;*/
 				DrawBounds(b, RED);
 				rlPopMatrix();
 			}
@@ -360,6 +329,10 @@ namespace openAITD {
 		}
 
 		void process() {
+			if (world->curStageId != curStageId || world->curCameraId != curCameraId) {
+				loadCamera(world->curStageId, world->curCameraId);
+			}
+
 			ClearBackground(DARKGRAY);
 
 			DrawTexturePro(

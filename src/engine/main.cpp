@@ -5,6 +5,7 @@
 #include "./world/world.h"
 #include "./controllers/camera_renderer.h"
 #include "./controllers/player_controller.h"
+#include "./controllers/animation_controller.h"
 
 using namespace std;
 namespace openAITD {
@@ -26,6 +27,7 @@ namespace openAITD {
     World world;
     CameraRenderer renderer(&resources, &world);
     PlayerController playerContr(&resources, &world);
+    AnimationController animContr(&resources, &world);
 
     int main(void)
     {
@@ -55,24 +57,21 @@ namespace openAITD {
             }
             if (!renderer.flyMode) {
                 playerContr.process(timeDelta);
+                animContr.process(timeDelta);
 
                 if (IsKeyPressed(KEY_D) && (world.curCameraId < renderer.curStage->cameras.size() - 1)) {
                     if (world.curCameraId++);
-                    renderer.loadCamera(world.curStageId, world.curCameraId);
                 }
                 if (IsKeyPressed(KEY_A) && (world.curCameraId > 0)) {
                     if (world.curCameraId--);
-                    renderer.loadCamera(world.curStageId, world.curCameraId);
                 }
                 if (IsKeyPressed(KEY_W)) {
                     world.curStageId++;
                     world.curCameraId = 0;
-                    renderer.loadCamera(world.curStageId, world.curCameraId);
                 }
                 if (IsKeyPressed(KEY_S)) {
                     world.curStageId--;
                     world.curCameraId = 0;
-                    renderer.loadCamera(world.curStageId, world.curCameraId);
                 }
             }
             else

@@ -11,7 +11,9 @@ namespace openAITD {
 	struct RModel
 	{
 		Model model;
-		map<int,ModelAnimation> animations;
+		ModelAnimation* animationsPtr;
+		map<int,ModelAnimation*> animations;
+		int animCount;
 		BoundingBox bounds;
 	};
 
@@ -28,8 +30,6 @@ namespace openAITD {
 		void clear();
 	};
 
-
-
 	RModel* RModels::getModel(int id, bool alt)
 	{
 		auto& modMap = alt ? models : altModels;
@@ -39,8 +39,13 @@ namespace openAITD {
 		}
 		string str = modelsPath + "/" + to_string(id) + (alt ? "_alt" : "") + "/model.gltf";
 		auto& newMod = modMap[id];
-		newMod.model = LoadModel(str.c_str());
-		//TODO: animations
+		newMod.model = LoadModel(str.c_str());		
+		newMod.animationsPtr = LoadModelAnimations(str.c_str(), &newMod.animCount);
+		for (int i = 0; i < newMod.animCount; i++) {
+			char* s = newMod.animationsPtr[i].name + 2;
+			int aNum = std::stoi(s);
+			newMod.animations[aNum] = &newMod.animationsPtr[i];
+		}
 
 		str = modelsPath + "/" + to_string(id) + (alt ? "_alt" : "") + "/data.json";
 		std::ifstream ifs(str);
@@ -56,10 +61,16 @@ namespace openAITD {
 	void RModels::clear() {
 		for (const auto& kv : models) {
 			UnloadModel(kv.second.model);
+			if (kv.second.animCount) {
+				UnloadModelAnimations(kv.second.animationsPtr, kv.second.animCount);
+			}
 		}
 		models.clear();
 		for (const auto& kv : altModels) {
 			UnloadModel(kv.second.model);
+			if (kv.second.animCount) {
+				UnloadModelAnimations(kv.second.animationsPtr, kv.second.animCount);
+			}
 		}
 		altModels.clear();
 	}

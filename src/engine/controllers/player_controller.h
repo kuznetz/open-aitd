@@ -5,11 +5,22 @@
 using namespace std;
 namespace openAITD {
 
+	struct PlayerAnimations {
+		int idle = 4;
+		int walkForw = 254;
+		int runForw = 255;
+		int idle2 = 4;
+		int walkBackw = 256;
+		int turnCW = 257;
+		int turnCCW = 258;
+	};
+
 	class PlayerController {
 	public:
 		World* world;
 		Resources* resources;
 		GameObject* player = 0;
+		PlayerAnimations anims;
 		
 		PlayerController(Resources* res, World* world) {
 			this->resources = res;
@@ -17,21 +28,47 @@ namespace openAITD {
 		}
 
 		void process(float timeDelta) {
-			if (!player) return;
-			Vector3 move = { 0,0,0 };
+			
+			float rotate = 0;
             if (IsKeyDown(KEY_LEFT)) {
-				move.x = -1;
+				rotate = 1;
+				player->model.animId = anims.turnCCW;
             }
             if (IsKeyDown(KEY_RIGHT)) {
-				move.x = 1;
-            }
-            if (IsKeyDown(KEY_DOWN)) {
-				move.z = -1;
-            }
-			if (IsKeyDown(KEY_UP)) {
-				move.z = 1;
+				rotate = -1;
+				player->model.animId = anims.turnCW;
 			}
-			player->location.position += Vector3Scale(move, 4 * timeDelta);
+			if (rotate != 0) {
+				rotate = rotate * PI * timeDelta;
+				auto q = QuaternionFromAxisAngle({ 0,1,0 }, rotate);
+				auto r = player->location.rotation;
+				player->location.rotation = QuaternionMultiply(r, q);
+			}
+
+			float move = 0;
+			if (IsKeyDown(KEY_DOWN)) {
+				move = -1;
+				player->model.animId = anims.walkBackw;
+			}
+			if (IsKeyDown(KEY_UP)) {
+				if (IsKeyDown(KEY_LEFT_SHIFT)) {
+					move = 3;
+					player->model.animId = anims.runForw;
+				} else {
+					move = 1;
+					player->model.animId = anims.walkForw;
+				}
+			}
+			if (move != 0) {
+				move = -move * timeDelta;
+				auto& m = QuaternionToMatrix(player->location.rotation);
+				auto& p = player->location.position;
+				Vector3 v = { m.m8, m.m9, m.m10 };
+				player->location.position = Vector3Add(p, Vector3Scale(v, move));
+			}
+			if (move == 0 && rotate == 0) {
+				player->model.animId = anims.idle;
+			}
 
 			if (IsKeyDown(KEY_SPACE)) {
 				player->location.stageId = world->curStageId;

@@ -5,6 +5,7 @@
 #include <string>
 #include <fstream>
 #include <iomanip>
+#include <raymath.h>
 
 #define NLOHMANN_JSON_NAMESPACE_NO_VERSION 1
 #include <nlohmann/json.hpp>
@@ -12,7 +13,20 @@
 using namespace std;
 using json = nlohmann::json;
 
+inline Matrix roomMatObj;
+
+inline Quaternion convertRotate(int alpha, int beta, int gamma) {
+    Matrix mx = MatrixRotateX(alpha * 2.f * PI / 1024);
+    Matrix my = MatrixRotateY((beta + 512) * 2.f * PI / 1024);
+    Matrix mz = MatrixRotateZ(gamma * 2.f * PI / 1024);
+    Matrix matRotation = MatrixMultiply(MatrixMultiply(my, mx), mz);
+    matRotation = MatrixTranspose(matRotation);
+    return QuaternionFromMatrix(matRotation);
+}
+
 inline void extractGameObjects(vector <gameObjectStruct> objects, string josnTo) {
+    roomMatObj = MatrixRotateX(PI);
+
     json outJson = json::array();
     for (int i = 0; i < objects.size(); i++)
     {
@@ -24,16 +38,25 @@ inline void extractGameObjects(vector <gameObjectStruct> objects, string josnTo)
             objJson["location"] = json::object();
             auto& loc = objJson["location"];
 
+            Vector3 v = Vector3Transform({
+                obj.x / 1000.f,
+                obj.y / 1000.f,
+                obj.z / 1000.f,
+            }, roomMatObj);
             json position = json::array();
-            position.push_back((float)obj.x / 1000);
-            position.push_back(-(float)obj.y / 1000);
-            position.push_back((float)obj.z / 1000);
+            position.push_back(v.x);
+            position.push_back(v.y);
+            position.push_back(v.z);
             loc["position"] = position;
 
+            Vector4 q = QuaternionTransform(convertRotate(
+                obj.alpha, obj.beta, obj.gamma
+            ), roomMatObj);
             json rotation = json::array();
-            rotation.push_back((float)obj.alpha * 360 / 1024);
-            rotation.push_back((float)obj.beta * 360 / 1024);
-            rotation.push_back((float)obj.gamma * 360 / 1024);
+            rotation.push_back(q.x);
+            rotation.push_back(q.y);
+            rotation.push_back(q.z);
+            rotation.push_back(q.w);
             loc["rotation"] = rotation;
 
             loc["stageId"] = obj.floor;

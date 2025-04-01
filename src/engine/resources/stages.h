@@ -62,8 +62,11 @@ namespace openAITD {
 
 	inline BoundingBox NodeToBounds(Vector3 offset, tinygltf::Node& n)
 	{
-		auto& t = n.translation;
-		auto& s = n.scale;
+		auto t = n.translation;
+		auto s = n.scale;
+		if (s[0] < 0) {	s[0] = -s[0]; t[0] -= s[0];	}
+		if (s[1] < 0) {	s[1] = -s[1]; t[1] -= s[1]; }
+		if (s[2] < 0) {	s[2] = -s[2]; t[2] -= s[2];	}
 		BoundingBox b = {
 			Vector3Add(offset, { (float)t[0], (float)t[1], (float)t[2] }),
 			Vector3Add(offset, { (float)(t[0] + s[0]), (float)(t[1] + s[1]), (float)(t[2] + s[2])})
@@ -212,7 +215,6 @@ namespace openAITD {
 			auto roomIds = stageJson["cameras"][cameraId]["rooms"].get<std::vector<int>>();
 			auto& camPers = model.cameras[cameraN->camera].perspective;
 
-			//TODO: Camera settings
 			cam.pers = camPers;
 			//cam.perspective = MatrixPerspective(camPers.yfov, camPers.aspectRatio, camPers.znear, camPers.zfar);
 

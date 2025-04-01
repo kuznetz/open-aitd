@@ -45,8 +45,7 @@ namespace openAITD {
 				auto& loc = gobjects[i].location;
 				auto& locJson = objsJson[i]["location"];
 				loc.position = { locJson["position"][0], locJson["position"][1], locJson["position"][2] };
-				loc.position.z = -loc.position.z;
-				loc.rotation = { locJson["rotation"][0], locJson["rotation"][1], locJson["rotation"][2] };
+				loc.rotation = { locJson["rotation"][0], locJson["rotation"][1], locJson["rotation"][2], locJson["rotation"][3] };
 				loc.stageId = locJson["stageId"];
 			    loc.roomId = locJson["roomId"];
 			}
