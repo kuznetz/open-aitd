@@ -44,7 +44,8 @@ namespace openAITD {
         world.curStageId = 1;
         world.curCameraId = 3;
         world.loadGObjects("data/objects.json");
-        playerContr.player = &world.gobjects[1];        
+        world.renderTarget = &world.gobjects[1];
+        playerContr.player = &world.gobjects[1];
         //world.loadVars("data/vars.json");
 
         renderer.screenW = screenW;

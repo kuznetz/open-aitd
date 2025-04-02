@@ -191,7 +191,7 @@ namespace openAITD {
 			pos = Vector3Add(roomPos, pos);
 			Matrix matTranslation = MatrixTranslate(pos.x, pos.y, pos.z);
 
-			auto rot = gobj.location.rotation;
+			auto& rot = gobj.location.rotation;
 			Matrix matRotation = QuaternionToMatrix(rot);
 
 			Matrix matScale = MatrixScale(1, 1, 1);
@@ -223,8 +223,8 @@ namespace openAITD {
 			auto objBnd = mdl->bounds;
 
 			Vector3 pos = gobj.location.position;
-			Vector3& roomPos = curStage->rooms[gobj.location.roomId].position;
-			pos = Vector3Add(roomPos, pos);
+			//Vector3& roomPos = curStage->rooms[gobj.location.roomId].position;
+			//pos = Vector3Add(roomPos, pos);
 			objBnd.min.x += pos.x;
 			objBnd.max.x += pos.x;
 			objBnd.min.z += pos.z;

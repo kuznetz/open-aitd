@@ -144,7 +144,7 @@ namespace openAITD {
 		return 0;
 	}
 
-	inline BoundingBox NodeToBounds(Vector3 offset, tinygltf::Node& n)
+	inline BoundingBox NodeToBounds(tinygltf::Node& n)
 	{
 		auto t = n.translation;
 		auto s = n.scale;
@@ -152,8 +152,8 @@ namespace openAITD {
 		if (s[1] < 0) {	s[1] = -s[1]; t[1] -= s[1]; }
 		if (s[2] < 0) {	s[2] = -s[2]; t[2] -= s[2];	}
 		BoundingBox b = {
-			Vector3Add(offset, { (float)t[0], (float)t[1], (float)t[2] }),
-			Vector3Add(offset, { (float)(t[0] + s[0]), (float)(t[1] + s[1]), (float)(t[2] + s[2])})
+			{ (float)t[0], (float)t[1], (float)t[2] },
+			{ (float)(t[0] + s[0]), (float)(t[1] + s[1]), (float)(t[2] + s[2])}
 		};
 		return b;
 	}
@@ -174,28 +174,32 @@ namespace openAITD {
 
 	struct RoomCollider
 	{
-		enum class RoomZoneType {
-			RZTChangeRoom = 0,
-			RZTTrigger = 9,
-			RZTChangeStage = 10
+		enum class ColliderType {
+			Need = 0,
 		};
 
-		/*enum class ColliderType {
-			RZTChangeRoom = 0,
-			RZTTrigger = 9,
-			RZTChangeStage = 10
-		};*/
+		BoundingBox bounds;
+		int type;
+		int parameter;
+	};
+
+	struct RoomZone
+	{
+		enum class RoomZoneType {
+			ChangeRoom = 0,
+			Trigger = 9,
+			ChangeStage = 10
+		};
 
 		BoundingBox bounds;
-		//TODO: enums
-		bool isZone;
-		int type;
+		RoomZoneType type;
 		int parameter;
 	};
 
 	struct Room {
 		Vector3 position;
 		std::vector<RoomCollider> colliders;
+		std::vector<RoomZone> zones;
 	};
 
 	struct GCameraOverlay {
@@ -283,9 +287,8 @@ namespace openAITD {
 				tinygltf::Node* collN = findNode(model, string("coll_") + to_string(roomId) + "_" + to_string(collId));
 				if (!collN) break;
 				auto& coll = room.colliders.emplace_back();
-				coll.isZone = false;
 				auto& collJson = stageJson["rooms"][roomId]["colliders"][collId];
-				coll.bounds = NodeToBounds(room.position, *collN);
+				coll.bounds = NodeToBounds(*collN);
 				coll.parameter = collJson["parameter"];
 				coll.type = collJson["type"];
 				collId++;
@@ -295,12 +298,11 @@ namespace openAITD {
 			while (true) {
 				tinygltf::Node* collN = findNode(model, string("zone_") + to_string(roomId) + "_" + to_string(collId));
 				if (!collN) break;
-				auto& coll = room.colliders.emplace_back();
-				coll.isZone = true;
-				auto& collJson = stageJson["rooms"][roomId]["zones"][collId];
-				coll.bounds = NodeToBounds(room.position, *collN);
-				coll.parameter = collJson["parameter"];
-				coll.type = collJson["type"];
+				auto& zone = room.zones.emplace_back();
+				auto& zoneJson = stageJson["rooms"][roomId]["zones"][collId];
+				zone.bounds = NodeToBounds(*collN);
+				zone.parameter = zoneJson["parameter"];
+				zone.type = zoneJson["type"];
 				collId++;
 			}
 
@@ -350,7 +352,7 @@ namespace openAITD {
 							to_string(overlayId) + "_" + to_string(overlayZoneId)
 						);
 						if (!ovlZN) break;
-						auto b = NodeToBounds(room.position, *ovlZN);
+						auto b = NodeToBounds(*ovlZN);
 						b.max.y = b.min.y + 1;
 						overlay.bounds.push_back(b);
 						overlayZoneId++;

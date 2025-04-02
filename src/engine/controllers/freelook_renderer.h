@@ -32,8 +32,6 @@ namespace openAITD {
 		WCamera* curCamera = 0;
 		int curCameraId = -1;
 
-		bool flyMode = false;
-
 		FreelookRenderer(Resources* res, World* world) {
 			this->resources = res;
 			this->world = world;
@@ -128,12 +126,30 @@ namespace openAITD {
 			//auto& room = curStage->rooms[curCamera->rooms[r].roomId];
 			for (int r = 0; r < curStage->rooms.size(); r++) {
 				auto& room = curStage->rooms[r];
-				DrawCube(room.position, 0.1, 0.1, 0.1, DARKBLUE);
+				int curRoomId = world->renderTarget->location.roomId;
+				Color c = (r == curRoomId) ? WHITE : DARKBLUE;
+				DrawCube(room.position, 0.1, 0.1, 0.1, c);
+				rlPushMatrix();
+				rlTranslatef(room.position.x, room.position.y, room.position.z);
 				for (int collId = 0; collId < room.colliders.size(); collId++) {
-					if (room.colliders[collId].isZone) continue;
-					DrawBounds(room.colliders[collId].bounds, DARKBLUE);
+					DrawBounds(room.colliders[collId].bounds, c);
 				}
+				rlPopMatrix();
+				/*for (int collId = 0; collId < room.zondes.size(); collId++) {
+					DrawBounds(room.colliders[collId].bounds, DARKBLUE);
+				}*/
 			}
+		}
+
+		void renderZones() {
+			int curRoomId = world->renderTarget->location.roomId;
+			auto& room = curStage->rooms[curRoomId];
+			rlPushMatrix();
+			rlTranslatef(room.position.x, room.position.y, room.position.z);
+			for (int z = 0; z < room.zones.size(); z++) {
+				DrawBounds(room.zones[z].bounds, YELLOW);
+			}
+			rlPopMatrix();
 		}
 
 		void renderOvlBounds() {
@@ -212,14 +228,12 @@ namespace openAITD {
 				model.materials[model.meshMaterial[i]].maps[MATERIAL_MAP_DIFFUSE].color = color;
 			}
 
-			if (flyMode) {
-				rlPushMatrix();
-				rlMultMatrixf(MatrixToFloat(matTransform));
-				DrawCube({ 0,0,0 }, 0.1, 0.1, 0.1, RED);
-				auto b = rmodel->bounds;
-				DrawBounds(b, RED);
-				rlPopMatrix();
-			}
+			rlPushMatrix();
+			rlMultMatrixf(MatrixToFloat(matTransform));
+			DrawCube({ 0,0,0 }, 0.1, 0.1, 0.1, RED);
+			auto b = rmodel->bounds;
+			DrawBounds(b, RED);
+			rlPopMatrix();
 		}
 
 		void process() {
@@ -240,69 +254,53 @@ namespace openAITD {
 			*/
 
 			//TODO: Remove memory allocation
-			list<RenderOrder> renderQueue;
+			//list<RenderOrder> renderQueue;
 			for (int i = 0; i < this->world->gobjects.size(); i++) {
 				auto& gobj = this->world->gobjects[i];
 				if (gobj.model.id == -1) continue;
 				if (gobj.location.stageId != curStageId) continue;
 				
-				int curCamRoom = -1;
-				for (int j = 0; j < curCamera->rooms.size(); j++) {
-					if (gobj.location.roomId == curCamera->rooms[j].roomId) {
-						curCamRoom = j;
-						break;
-					}
-				}
-				if (curCamRoom == -1) continue;
-
 				Vector3 pos = gobj.location.position;
 				Vector3& roomPos = curStage->rooms[gobj.location.roomId].position;
-				pos = Vector3Add(roomPos, pos);
 
 				auto& screenPos = GetWorldToScreenZ(pos);
-				if (screenPos.z < 0) continue;
+				//if (screenPos.z < 0) continue;
+				BeginMode3D(initCamera);
+				rlSetMatrixProjection(curCamera->perspective);
 				renderObject(gobj, WHITE);
-				
-				bool inserted = false;
+				EndMode3D();
+
 				string s = to_string(i);
-				for (auto it = renderQueue.begin(); it != renderQueue.end(); it++) {
-					if ((*it).zPos.z < screenPos.z) {
-						renderQueue.insert( it, { &gobj, screenPos, s });
-						inserted = true;
-						break;
-					}
-				}
-				if (!inserted) {
-					renderQueue.push_back({ &gobj, screenPos, s });
-				}
+				pos = Vector3Add(roomPos, pos);
+				DrawText(s.c_str(), (int)(pos.x), (int)(pos.y), 20, WHITE);
 			}
 			
 
-			int num = 1;
-			for (auto it = renderQueue.begin(); it != renderQueue.end(); it++) {
-				BeginMode3D(initCamera);
-					//rlSetMatrixModelview(curCamera->modelview);
-					rlSetMatrixProjection(curCamera->perspective);
-					renderObject(*it->obj, WHITE);
-				EndMode3D();
+			//int num = 1;
+			//for (auto it = renderQueue.begin(); it != renderQueue.end(); it++) {
+			//	BeginMode3D(initCamera);
+			//		//rlSetMatrixModelview(curCamera->modelview);
+			//		rlSetMatrixProjection(curCamera->perspective);
+			//		renderObject(*it->obj, WHITE);
+			//	EndMode3D();
 
-				//auto s = to_string(num)+" R" + to_string(it->obj->location.roomId);
-				//auto s = to_string(it->obj->);
-				//it->marker = s;
-				num++;
-			}
+			//	//auto s = to_string(num)+" R" + to_string(it->obj->location.roomId);
+			//	//auto s = to_string(it->obj->);
+			//	//it->marker = s;
+			//	num++;
+			//}
 
 			BeginMode3D(initCamera);
 				//rlSetMatrixModelview(curCamera->modelview);
 				rlSetMatrixProjection(curCamera->perspective);
 				DrawCube({ 0,0,0 }, 0.2, 0.2, 0.2, GREEN);
 				renderBounds();
+				renderZones();
 				renderCameraZones();
 				//renderOvlBounds();
 			EndMode3D();
-			for (auto it = renderQueue.begin(); it != renderQueue.end(); it++) {
-				DrawText(it->marker.c_str(), (int)(it->zPos.x), (int)(it->zPos.y), 20, WHITE);
-			}
+			/*for (auto it = renderQueue.begin(); it != renderQueue.end(); it++) {
+			}*/
 			renderCamPos();
 		}
 

@@ -27,6 +27,12 @@ namespace openAITD {
 			this->world = world;
 		}
 
+		bool objectInZone(GameObject& gobj, RoomZone* zone) {
+			auto& p = gobj.location.position;
+			auto& b = zone->bounds;
+			return ((p.x > b.min.x) && (p.x < b.max.x) && (p.z > b.min.z) && (p.z < b.max.z));
+		}
+
 		void process(float timeDelta) {
 			
 			float rotate = 0;
@@ -60,11 +66,10 @@ namespace openAITD {
 				}
 			}
 			if (move != 0) {
-				move = -move * timeDelta;
-				auto& m = QuaternionToMatrix(player->location.rotation);
 				auto& p = player->location.position;
-				Vector3 v = { m.m8, m.m9, m.m10 };
-				player->location.position = Vector3Add(p, Vector3Scale(v, move));
+				Vector3 v = { 0, 0, -move * timeDelta };
+				v = Vector3RotateByQuaternion(v, player->location.rotation);
+				player->location.position = Vector3Add(p, v);
 			}
 			if (move == 0 && rotate == 0) {
 				player->model.animId = anims.idle;
@@ -72,15 +77,22 @@ namespace openAITD {
 
 			if (world->curStageId == player->location.stageId) {
 				auto& curStage = resources->stages[world->curStageId];
-				auto camId = curStage.closestCamera(player->location.position);
+				auto* curRoom = &curStage.rooms[player->location.roomId];
+				for (int i = 0; i < curRoom->zones.size(); i++) {
+					if (!objectInZone(*player, &curRoom->zones[i])) continue;
+					if (curRoom->zones[i].type == RoomZone::RoomZoneType::ChangeRoom) {
+						Vector3 oldRoomPos = curRoom->position;
+						player->location.roomId = curRoom->zones[i].parameter;
+						curRoom = &curStage.rooms[player->location.roomId];
+						player->location.position = Vector3Subtract(Vector3Add(player->location.position, oldRoomPos), curRoom->position);
+					}
+				}
+
+				Vector3 pos = Vector3Add(player->location.position, curRoom->position);
+				auto camId = curStage.closestCamera(pos);
 				if (camId != -1) {
 					world->curCameraId = camId;
-
 					//TODO: Replace camera change to trigger					
-					Vector3 oldRoomPos = curStage.rooms[player->location.roomId].position;
-					player->location.roomId = curStage.cameras[camId].rooms[0].roomId;
-					Vector3 newRoomPos = curStage.rooms[player->location.roomId].position;
-					player->location.position = Vector3Subtract(Vector3Add(player->location.position, oldRoomPos), newRoomPos);
 				}
 			}
 

@@ -25,9 +25,12 @@ namespace openAITD {
 		vector<short int> vars;
 		vector<short int> cVars;
 		//Object to follow camera
+		
 		int trackedGObjectId;
 		int curCameraId;
 		int curStageId;
+
+		GameObject* renderTarget;
 
 		void loadGObjects(string path);
 		void loadVars(string path);
