@@ -71,9 +71,16 @@ namespace openAITD {
 			}
 
 			if (world->curStageId == player->location.stageId) {
-				auto camId = resources->stages[world->curStageId].closestCamera(player->location.position);
+				auto& curStage = resources->stages[world->curStageId];
+				auto camId = curStage.closestCamera(player->location.position);
 				if (camId != -1) {
 					world->curCameraId = camId;
+
+					//TODO: Replace camera change to trigger					
+					Vector3 oldRoomPos = curStage.rooms[player->location.roomId].position;
+					player->location.roomId = curStage.cameras[camId].rooms[0].roomId;
+					Vector3 newRoomPos = curStage.rooms[player->location.roomId].position;
+					player->location.position = Vector3Subtract(Vector3Add(player->location.position, oldRoomPos), newRoomPos);
 				}
 			}
 

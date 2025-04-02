@@ -174,6 +174,18 @@ namespace openAITD {
 
 	struct RoomCollider
 	{
+		enum class RoomZoneType {
+			RZTChangeRoom = 0,
+			RZTTrigger = 9,
+			RZTChangeStage = 10
+		};
+
+		/*enum class ColliderType {
+			RZTChangeRoom = 0,
+			RZTTrigger = 9,
+			RZTChangeStage = 10
+		};*/
+
 		BoundingBox bounds;
 		//TODO: enums
 		bool isZone;
@@ -361,8 +373,11 @@ namespace openAITD {
 					if (!coverZoneN) break;
 
 					int lineAccIdx = model.meshes[coverZoneN->mesh].primitives[0].attributes["POSITION"];
-					cam.coverZones.push_back(loadLineAcc2d(model, lineAccIdx));
-
+					auto zone = loadLineAcc2d(model, lineAccIdx);
+					for (int z = 0; z < zone.size(); z++) {
+						zone[z] += {room.position.x, room.position.z};
+					}
+					cam.coverZones.push_back(zone);
 					coverZoneId++;
 				}
 
