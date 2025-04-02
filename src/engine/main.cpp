@@ -4,6 +4,7 @@
 #include "./resources/resources.h"
 #include "./world/world.h"
 #include "./controllers/camera_renderer.h"
+#include "./controllers/freelook_renderer.h"
 #include "./controllers/player_controller.h"
 #include "./controllers/animation_controller.h"
 
@@ -26,8 +27,10 @@ namespace openAITD {
     Resources resources;
     World world;
     CameraRenderer renderer(&resources, &world);
+    FreelookRenderer flRenderer(&resources, &world);
     PlayerController playerContr(&resources, &world);
     AnimationController animContr(&resources, &world);
+    bool freeLook = false;
 
     int main(void)
     {
@@ -52,10 +55,12 @@ namespace openAITD {
         float timeDelta = 0;        
         while (!WindowShouldClose()) {
             timeDelta = GetFrameTime();
+
             if (IsKeyPressed(KEY_O)) {
-                renderer.flyMode = !renderer.flyMode;
+                freeLook = !freeLook;
             }
-            if (!renderer.flyMode) {
+
+            if (!freeLook) {
                 playerContr.process(timeDelta);
                 animContr.process(timeDelta);
 
@@ -76,16 +81,21 @@ namespace openAITD {
             }
             else
             {
-                if (IsKeyPressed(KEY_LEFT_BRACKET)) {
-                    renderer.invX = !renderer.invX;
-                }
-                if (IsKeyPressed(KEY_RIGHT_BRACKET)) {
-                    renderer.invZ = !renderer.invZ;
-                }
+                //if (IsKeyPressed(KEY_LEFT_BRACKET)) {
+                //    renderer.invX = !renderer.invX;
+                //}
+                //if (IsKeyPressed(KEY_RIGHT_BRACKET)) {
+                //    renderer.invZ = !renderer.invZ;
+                //}
             }
 
             BeginDrawing();
-            renderer.process();
+            if (freeLook) {
+                flRenderer.process();
+            }
+            else {
+                renderer.process();
+            }
             EndDrawing();
         }
 
