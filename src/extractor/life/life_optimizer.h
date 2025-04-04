@@ -88,29 +88,45 @@ inline LifeNode DetectIfElse(LifeInstructionsP& insructs, int &i)
 	return ln;
 }
 
-inline LifeNode DetectSwitch(LifeInstructionsP& insructs, int& i)
+inline LifeNode DetectSwitch(LifeInstructionsP& instructs, int& i)
 {
 	LifeNode result;
-	result.instr = insructs[i++];
-	auto t = insructs[i]->type->type;
+	result.instr = instructs[i++];
+	auto t = instructs[i]->type->type;
+	LifeInstruction* elseGoto = 0;
 	while (t == LifeEnum::CASE || t == LifeEnum::MULTI_CASE) {
 		LifeCase lcase;
-		lcase.caseInstr = insructs[i++];
+		lcase.caseInstr = instructs[i++];
 		LifeInstructionsP caseInstructs;
-		while (insructs[i]->Position < lcase.caseInstr->Goto - 1) {
-			caseInstructs.push_back(insructs[i++]);
+		while (instructs[i]->Position < lcase.caseInstr->Goto - 1) {
+			caseInstructs.push_back(instructs[i++]);
 		}
-		auto caseLast = insructs[i++];
+		auto caseLast = instructs[i++];
 		t = LifeEnum::ENDLIFE;
-		if (i < insructs.size()) {
-			t = insructs[i]->type->type;
+		if (i < instructs.size()) {
+			t = instructs[i]->type->type;
 		}
 		if (t != LifeEnum::CASE && t != LifeEnum::MULTI_CASE) {
 			//If current case last in chain - caseLast is not goto
-			caseInstructs.push_back(caseLast);
+			if (caseLast->type->type == LifeEnum::GOTO) {
+				elseGoto = caseLast;
+			} else {
+				caseInstructs.push_back(caseLast);
+			}
 		}
 		lcase.instructs = lifeOptimize(caseInstructs);
 		result.cases.push_back(lcase);
 	}
+	//CASE ELSE
+	if (elseGoto) {
+		LifeCase lcase = { 0, {}, true };
+		LifeInstructionsP caseInstructs;
+		while (i < instructs.size() && instructs[i]->Position < elseGoto->Goto) {
+			caseInstructs.push_back(instructs[i++]);
+		}
+		lcase.instructs = lifeOptimize(caseInstructs);
+		result.cases.push_back(lcase);
+	}
+
 	return result;
 }

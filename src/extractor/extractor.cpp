@@ -145,7 +145,7 @@ namespace AITDExtractor {
         }
 
         //for test
-        //int n = 1;
+        //int n = 12;
         //LifeInstructionsP lifep;
         //auto& life = allLifes[n];
         //auto lifeData = life.data();

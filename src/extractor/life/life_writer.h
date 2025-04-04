@@ -162,11 +162,12 @@ inline void writeIfHead(ofstream& out, LifeNode& ifNode)
 	out << " then\n";
 }
 
-inline void writeCaseExpr(ofstream& out, LifeInstruction& switchi, LifeInstruction& instr)
+inline void writeCaseExpr(ofstream& out, string varsw, LifeInstruction& instr)
 {
 	if (instr.type->type == LifeEnum::CASE) {
-		writeLifeExpr(out, switchi.arguments[0]);
-		out << " == ";
+
+	} if (instr.type->type == LifeEnum::CASE) {
+		out << varsw << " == ";
 		out << instr.arguments[0].constVal;
 	}
 	else if(instr.type->type == LifeEnum::MULTI_CASE) {
@@ -175,8 +176,7 @@ inline void writeCaseExpr(ofstream& out, LifeInstruction& switchi, LifeInstructi
 				out << " and ";
 			}
 			out << "(";
-			writeLifeExpr(out, switchi.arguments[0]);
-			out << " == ";
+			out << varsw << " == ";
 			out << instr.arguments[i].constVal;
 			out << ")";
 	    }
@@ -185,15 +185,25 @@ inline void writeCaseExpr(ofstream& out, LifeInstruction& switchi, LifeInstructi
 
 inline void writeSwitch(ofstream& out, int level, LifeNode& ifNode)
 {
+	writeSpaces(out, level);
+	string varsw = string("sw_") + to_string(level);
+	out << varsw << " = ";
+	writeLifeExpr(out, ifNode.instr->arguments[0]);
+	out << "\n";
 	for (int i = 0; i < ifNode.cases.size(); i++) {
 		writeSpaces(out, level);
 		if (i == 0) {
 			out << "if ";
-		} else {
+			writeCaseExpr(out, varsw, *ifNode.cases[i].caseInstr);
+			out << " then\n";
+		} else if (!ifNode.cases[i].isElse) {
 			out << "elseif ";
+			writeCaseExpr(out, varsw, *ifNode.cases[i].caseInstr);
+			out << " then\n";
 		}
-		writeCaseExpr(out, *ifNode.instr, *ifNode.cases[i].caseInstr);
-		out << " then\n";
+		else {
+			out << "else\n";
+		}
 		writeLifeNodes(out, level+1, ifNode.cases[i].instructs);
 	}
 	writeSpaces(out, level);

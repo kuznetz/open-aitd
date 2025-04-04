@@ -88,6 +88,7 @@ namespace LifeEnum {
 		SET_LIFE_MODE,
 		SWITCH,
 		CASE,
+		CASE_ELSE,
 		CAMERA,
 		START_CHRONO,
 		MULTI_CASE,
@@ -242,6 +243,7 @@ typedef struct LifeCase
 {
 	LifeInstruction* caseInstr;
 	vector<LifeNode> instructs;
+	bool isElse = false;
 } LifeCase;
 
 struct LifeNode

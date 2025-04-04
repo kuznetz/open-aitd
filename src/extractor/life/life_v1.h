@@ -20,7 +20,7 @@ inline const vector<parseLifeInstruction> LifeParams =
 	{ LifeEnum::SET_TRACKMODE, "SET_TRACKMODE", { lifeConst, lifeConst }, true},
 	{ LifeEnum::HIT, "HIT", { lifeConst, lifeConst, lifeConst, lifeConst, lifeExpr, lifeConst }, true},
 	{ LifeEnum::MESSAGE, "MESSAGE", { lifeConst }},
-	{ LifeEnum::MESSAGE_VALUE, "MESSAGE_VALUE", { }},
+	{ LifeEnum::MESSAGE_VALUE, "MESSAGE_VALUE", { }}, //NOT_USE
 	{ LifeEnum::SET, "SET", { lifeConst, lifeExpr }},
 	{ LifeEnum::INC, "INC", { lifeConst }},
 	{ LifeEnum::DEC, "DEC", { lifeConst }},
@@ -76,7 +76,7 @@ inline const vector<parseLifeInstruction> LifeParams =
 	{ LifeEnum::DEF_ZV, "DEF_ZV", { lifeConst, lifeConst, lifeConst, lifeConst, lifeConst, lifeConst }, true},
 	{ LifeEnum::HIT_OBJECT, "HIT_OBJECT", { lifeConst, lifeConst }, true},
 	{ LifeEnum::GET_HARD_CLIP, "GET_HARD_CLIP", { }},
-	{ LifeEnum::SET_ANGLE, "ANGLE", { lifeConst, lifeConst, lifeConst }, true},
+	{ LifeEnum::SET_ANGLE, "SET_ANGLE", { lifeConst, lifeConst, lifeConst }, true},
 	{ LifeEnum::REP_SOUND, "REP_SOUND", { lifeExpr, lifeConst }},
 	{ LifeEnum::THROW, "THROW", { lifeConst, lifeConst, lifeConst, lifeConst, lifeConst, lifeConst, lifeConst }, true},
 	{ LifeEnum::WATER, "WATER", { lifeConst }},
