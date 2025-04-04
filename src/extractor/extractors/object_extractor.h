@@ -32,19 +32,20 @@ inline void extractGameObjects(vector <gameObjectStruct> objects, string josnTo)
     {
         auto& obj = objects[i];
         json objJson = json::object();
+        objJson["id"] = i;
 
         if (obj.boundsType == 4) {
             //static object
             objJson["static"] = json::object();
             auto& loc = objJson["static"];
-            loc["stageId"] = obj.floor;
-            loc["roomId"] = obj.room;
+            loc["stageId"] = obj.stageId;
+            loc["roomId"] = obj.roomId;
             loc["staticIdx"] = obj.inventoryName;
 
             if (obj.body != -1) throw new exception("Static has body");
             if (obj.inventoryBody != -1) throw new exception("Static has inventoryBody");
         }
-        else if (obj.floor != -1) {
+        else if (obj.stageId != -1) {
             //location                       
             objJson["location"] = json::object();
             auto& loc = objJson["location"];
@@ -70,8 +71,8 @@ inline void extractGameObjects(vector <gameObjectStruct> objects, string josnTo)
             rotation.push_back(q.w);
             loc["rotation"] = rotation;
 
-            loc["stageId"] = obj.floor;
-            loc["roomId"] = obj.room;
+            loc["stageId"] = obj.stageId;
+            loc["roomId"] = obj.roomId;
         }
 
         //model

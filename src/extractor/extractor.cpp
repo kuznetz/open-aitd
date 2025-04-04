@@ -19,6 +19,7 @@
 
 namespace AITDExtractor {
     vector <gameObjectStruct> gameObjs;
+    vector <floorStruct> stages;
 
     inline void processStages() {
         char floordir[100];
@@ -27,16 +28,15 @@ namespace AITDExtractor {
         char str2[100];
 
         int tmp = 3;
-        for (int fl = 0; fl < 8; fl++) {
-            sprintf(str, "original/ETAGE%02d.PAK", fl);
-            auto& curFloor = loadFloorPak(str);
+        for (int fl = 0; fl < stages.size(); fl++) {
+            auto& curFloor = stages[fl];
 
             sprintf(floordir, "data/stages/%d", fl);
             std::filesystem::create_directories(floordir);
             sprintf(str, "%s/stage", floordir);
             sprintf(str2, "%s.json", str);
             if (!std::filesystem::exists(str2)) {
-                saveFloorGLTF(curFloor, gameObjs, str);
+                saveFloorGLTF(fl, curFloor, gameObjs, str);
             }
 
             sprintf(str, "original/CAMERA%02d.PAK", fl);
@@ -210,9 +210,14 @@ namespace AITDExtractor {
     }
 
     void extractAllData() {
+        gameObjs = loadGameObjects("original/OBJETS.ITD");
         if (!std::filesystem::exists("data/objects.json")) {
-            gameObjs = loadGameObjects("original/OBJETS.ITD");
             extractGameObjects(gameObjs, "data/objects.json");
+        }
+        for (int fl = 0; fl < 8; fl++) {
+            char str[100];
+            sprintf(str, "original/ETAGE%02d.PAK", fl);
+            stages.push_back(loadFloorPak(str));
         }
 
         processStages();

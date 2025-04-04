@@ -90,7 +90,7 @@ int createBoxNode(tinygltf::Model& m, string name, hardColStruct& coll) {
     return m.nodes.size() - 1;
 }
 
-void saveFloorGLTF(floorStruct& floor2, const vector<gameObjectStruct>& gameObjs, char* filename)
+void saveFloorGLTF(int stageId, floorStruct& floor2, const vector<gameObjectStruct>& gameObjs, char* filename)
 {
     floorStruct* floor = &floor2;
     nlohmann::json floorJson;
@@ -121,6 +121,7 @@ void saveFloorGLTF(floorStruct& floor2, const vector<gameObjectStruct>& gameObjs
             room.worldZ / 100.
         };
 
+
         tinygltf::Node rootColl;
         rootColl.name = string("colliders_") + to_string(roomId);
         for (int collIdx = 0; collIdx < room.hardColTable.size(); collIdx++) {
@@ -129,6 +130,30 @@ void saveFloorGLTF(floorStruct& floor2, const vector<gameObjectStruct>& gameObjs
             json collJson;
             collJson["parameter"] = coll.parameter;
             collJson["type"] = coll.type;
+
+            /*
+            if (coll.type == 9) {
+                //Link collider with object
+                bool linked = false;
+                for (int objI = 0; objI < gameObjs.size(); objI++) {
+                    auto& gobj = gameObjs[objI];
+                    if (gobj.stageId != stageId || gobj.roomId != roomId) continue;
+                    if (gobj.boundsType == 4 && gobj.inventoryName == coll.parameter) {
+                        if (!linked) {
+                            collJson["linkedObject"] = objI;
+                            linked = true;
+                        }
+                        else {
+                            throw new exception("Collider with object - two links");
+                        }
+                    }
+                }
+                if (!linked) {
+                    throw new exception("Collider with object - link not found");
+                }
+            }
+            */
+
             roomJson["colliders"].push_back(collJson);
 
             createBoxNode(m, string("coll_") + to_string(roomId) + "_" + to_string(collIdx), coll);

@@ -23,6 +23,17 @@ set(BUILD_GAMES    OFF CACHE BOOL "" FORCE) # don't build the supplied example g
 add_subdirectory( ${CMAKE_SOURCE_DIR}/libs/raylib ${CMAKE_CURRENT_BINARY_DIR}/libs/raylib )
 set(GLFW_INCLUDE "${CMAKE_SOURCE_DIR}/libs/raylib/external/glfw/include/GLFW")
 
+#LUA
+#set(LUA_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/libs/lua-5.4.7/src")
+#set(LUA_SRC_DIR "${CMAKE_SOURCE_DIR}/libs/lua-5.4.7/src")
+#add_library(liblua STATIC)
+#file(GLOB_RECURSE LUA_SOURCES CONFIGURE_DEPENDS "${LUA_SRC_DIR}/*.c" "${LUA_SRC_DIR}/*.h")
+#target_sources(lua_static PRIVATE ${LUA_SOURCES})
+
+#LUACPP
+set(LUA_SRC_DIR "${CMAKE_SOURCE_DIR}/libs/lua-5.4.7/src")
+add_subdirectory( ${CMAKE_SOURCE_DIR}/libs/luacpp ${CMAKE_CURRENT_BINARY_DIR}/libs/luacpp )
+
 # Adding our source files
 # set(PROJECT_INCLUDE "${CMAKE_CURRENT_LIST_DIR}/src/")
 
@@ -48,7 +59,7 @@ file(GLOB_RECURSE AITD_SOURCES CONFIGURE_DEPENDS "src/engine/*.cpp" "src/engine/
 target_sources(open-aitd PRIVATE ${AITD_SOURCES} )
 target_include_directories(open-aitd PRIVATE ${ZLIB_INCLUDE_DIR} ${PNG_INCLUDE_DIR} ${GLFW_INCLUDE})
 target_include_directories(open-aitd PRIVATE ${CMAKE_SOURCE_DIR}/libs/includes)
-target_link_libraries(open-aitd PRIVATE png_static raylib ZLIB::ZLIB libextractor )
+target_link_libraries(open-aitd PRIVATE png_static raylib ZLIB::ZLIB libextractor lua_static luacpp_static)
 set_property(TARGET open-aitd PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/data")
 
 #add_executable(open-aitd) WIN32

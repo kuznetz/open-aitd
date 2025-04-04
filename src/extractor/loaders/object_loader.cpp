@@ -62,10 +62,10 @@ vector <gameObjectStruct> loadGameObjects(string from) {
         obj.gamma = READ_LE_S16(pObjectData + 4);
         pObjectData += 6;
 
-        obj.floor = READ_LE_S16(pObjectData);
+        obj.stageId = READ_LE_S16(pObjectData);
         pObjectData += 2;
 
-        obj.room = READ_LE_S16(pObjectData);
+        obj.roomId = READ_LE_S16(pObjectData);
         pObjectData += 2;
 
         obj.lifeMode = READ_LE_S16(pObjectData);

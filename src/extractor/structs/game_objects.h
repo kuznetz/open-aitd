@@ -39,8 +39,8 @@ struct gameObjectStruct
 	short int alpha;
 	short int beta;
 	short int gamma;
-	short int floor;
-	short int room;
+	short int stageId;
+	short int roomId;
 	short int lifeMode;
 	short int life;
 	short int stageLife;

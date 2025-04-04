@@ -13,3 +13,5 @@ libs/json.hpp
 libs/tinygltf-2.9.5/
 libs/tiny_gltf.h
 libs/includes/
+libs/lua-5.4.7/
+libs/luacpp/
