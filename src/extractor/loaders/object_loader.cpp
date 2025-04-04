@@ -37,19 +37,19 @@ vector <gameObjectStruct> loadGameObjects(string from) {
         obj.flags = READ_LE_S16(pObjectData);
         pObjectData += 2;
 
-        obj.field_6 = READ_LE_S16(pObjectData);
+        obj.boundsType = READ_LE_S16(pObjectData);
         pObjectData += 2;
 
-        obj.foundBody = READ_LE_S16(pObjectData);
+        obj.inventoryBody = READ_LE_S16(pObjectData);
         pObjectData += 2;
 
-        obj.foundName = READ_LE_S16(pObjectData);
+        obj.inventoryName = READ_LE_S16(pObjectData);
         pObjectData += 2;
 
         obj.flags2 = READ_LE_S16(pObjectData);
         pObjectData += 2;
 
-        obj.foundLife = READ_LE_S16(pObjectData);
+        obj.inventoryLife = READ_LE_S16(pObjectData);
         pObjectData += 2;
 
         obj.x = READ_LE_S16(pObjectData + 0);
@@ -74,7 +74,7 @@ vector <gameObjectStruct> loadGameObjects(string from) {
         obj.life = READ_LE_S16(pObjectData);
         pObjectData += 2;
 
-        obj.field_24 = READ_LE_S16(pObjectData);
+        obj.stageLife = READ_LE_S16(pObjectData);
         pObjectData += 2;
 
         obj.anim = READ_LE_S16(pObjectData);

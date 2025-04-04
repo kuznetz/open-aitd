@@ -60,6 +60,7 @@ namespace openAITD {
 				mdl.animId = mdlJson["animId"];
 				mdl.animType = mdlJson["animType"];
 				mdl.animInfo = mdlJson["animInfo"];
+				mdl.boundsType = mdlJson["boundsType"];
 			}
 		}
 	};

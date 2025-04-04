@@ -230,9 +230,19 @@ namespace openAITD {
 
 			rlPushMatrix();
 			rlMultMatrixf(MatrixToFloat(matTransform));
-			DrawCube({ 0,0,0 }, 0.1, 0.1, 0.1, RED);
+			//DrawCube({ 0,0,0 }, 0.1, 0.1, 0.1, RED);
 			auto b = rmodel->bounds;
 			DrawBounds(b, RED);
+			rlPopMatrix();
+
+			rlPushMatrix();
+			rlMultMatrixf(MatrixToFloat(MatrixTranslate(roomPos.x,roomPos.y,roomPos.z)));
+			rlMultMatrixf(MatrixToFloat(MatrixTranslate(pos.x, pos.y, pos.z)));
+			auto m = rmodel;
+			Vector3 mMin = Vector3RotateByQuaternion(m->bounds.min, gobj.location.rotation);
+			Vector3 mMax = Vector3RotateByQuaternion(m->bounds.max, gobj.location.rotation);
+			DrawCube(mMin, 0.1, 0.1, 0.1, YELLOW);
+			DrawCube(mMax, 0.1, 0.1, 0.1, MAGENTA);
 			rlPopMatrix();
 		}
 

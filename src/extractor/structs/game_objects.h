@@ -1,22 +1,22 @@
 ﻿#pragma once
 struct actorFlags
 {
-	u16 flag0x0001 : 1;
-	u16 flag0x0002 : 1;
-	u16 flag0x0004 : 1;
-	u16 flag0x0008 : 1;
-	u16 flag0x0010 : 1;
-	u16 flag0x0020 : 1;
-	u16 flag0x0040 : 1;
-	u16 tackable : 1;
-	u16 flag0x0100 : 1;
-	u16 flag0x0200 : 1;
-	u16 flag0x0400 : 1;
-	u16 flag0x0800 : 1;
-	u16 flag0x1000 : 1;
-	u16 flag0x2000 : 1;
-	u16 flag0x4000 : 1;
-	u16 flag0x8000 : 1;
+	u8 flag0x0001 : 1;
+	u8 flag0x0002 : 1;
+	u8 flag0x0004 : 1;
+	u8 flag0x0008 : 1;
+	u8 flag0x0010 : 1;
+	u8 flag0x0020 : 1;
+	u8 flag0x0040 : 1;
+	u8 tackable : 1;
+	u8 flag0x0100 : 1;
+	u8 flag0x0200 : 1;
+	u8 flag0x0400 : 1;
+	u8 flag0x0800 : 1;
+	u8 flag0x1000 : 1;
+	u8 flag0x2000 : 1;
+	u8 flag0x4000 : 1;
+	u8 flag0x8000 : 1;
 };
 
 struct gameObjectStruct
@@ -28,11 +28,11 @@ struct gameObjectStruct
 		short int flags;
 		actorFlags bitField;
 	};
-	short int field_6;
-	short int foundBody;
-	short int foundName;
+	short int boundsType;
+	short int inventoryBody;
+	short int inventoryName;
 	short int flags2;
-	short int foundLife;
+	short int inventoryLife;
 	short int x;
 	short int y;
 	short int z;
@@ -43,7 +43,7 @@ struct gameObjectStruct
 	short int room;
 	short int lifeMode;
 	short int life;
-	short int field_24;
+	short int stageLife;
 	short int anim;
 	short int frame;
 	short int animType;

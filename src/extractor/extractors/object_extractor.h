@@ -33,8 +33,19 @@ inline void extractGameObjects(vector <gameObjectStruct> objects, string josnTo)
         auto& obj = objects[i];
         json objJson = json::object();
 
-        //location
-        if (obj.floor != -1) {
+        if (obj.boundsType == 4) {
+            //static object
+            objJson["static"] = json::object();
+            auto& loc = objJson["static"];
+            loc["stageId"] = obj.floor;
+            loc["roomId"] = obj.room;
+            loc["staticIdx"] = obj.inventoryName;
+
+            if (obj.body != -1) throw new exception("Static has body");
+            if (obj.inventoryBody != -1) throw new exception("Static has inventoryBody");
+        }
+        else if (obj.floor != -1) {
+            //location                       
             objJson["location"] = json::object();
             auto& loc = objJson["location"];
 
@@ -42,7 +53,7 @@ inline void extractGameObjects(vector <gameObjectStruct> objects, string josnTo)
                 obj.x / 1000.f,
                 obj.y / 1000.f,
                 obj.z / 1000.f,
-            }, roomMatObj);
+                }, roomMatObj);
             json position = json::array();
             position.push_back(v.x);
             position.push_back(v.y);
@@ -70,29 +81,29 @@ inline void extractGameObjects(vector <gameObjectStruct> objects, string josnTo)
             objJson["model"]["animId"] = obj.anim;
             objJson["model"]["animType"] = obj.animType;
             objJson["model"]["animInfo"] = obj.animInfo;
+            objJson["model"]["boundsType"] = (obj.boundsType != 0)? obj.boundsType: 2;
         }
 
         //inventory
-        if (obj.foundBody != -1) {
+        if (obj.inventoryBody != -1) {
             objJson["invItem"] = json::object();
             objJson["invItem"]["ownerId"] = obj.ownerIdx;
-            objJson["invItem"]["model"] = obj.foundBody;
-            objJson["invItem"]["name"] = obj.foundName;
-            objJson["invItem"]["life"] = obj.foundLife;
+            objJson["invItem"]["model"] = obj.inventoryBody;
+            objJson["invItem"]["name"] = obj.inventoryName;
+            objJson["invItem"]["life"] = obj.inventoryLife;
         }
 
-        objJson["trackMode"] = obj.trackMode;
-        objJson["trackNumber"] = obj.trackNumber;
-        //TODO: Convert trackPosition?
-        objJson["trackPosition"] = obj.positionInTrack;
+        objJson["track"] = json::object();
+        objJson["track"]["id"] = obj.trackNumber;
+        objJson["track"]["mode"] = obj.trackMode;
+        objJson["track"]["position"] = obj.positionInTrack;
 
         objJson["lifeMode"] = obj.lifeMode;
         objJson["life"] = obj.life;
+        objJson["stageLife"] = obj.stageLife;
 
         objJson["flags"] = obj.flags;
         objJson["flags2"] = obj.flags2;
-        objJson["field_6"] = obj.field_6;
-        objJson["field_24"] = obj.field_24;
 
         outJson.push_back(objJson);
     }
