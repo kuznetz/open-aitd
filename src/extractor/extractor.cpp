@@ -133,11 +133,8 @@ namespace AITDExtractor {
     void processScripts() {
         extractVars("original", "data/vars.json");
 
-        auto& gameObjs = loadGameObjects("original/OBJETS.ITD");
-
         PakFile lifePak("original/LISTLIFE.PAK");
         vector<LifeInstructions> allLifes;
-        vector<vector<LifeNode>> lifesNodes;
         //int i2 = 514;
         for (int i = 0; i < lifePak.headers.size(); i++)
         {
@@ -147,14 +144,45 @@ namespace AITDExtractor {
 
         }
 
-        //for allLifes
+        //for test
+        //int n = 1;
         //LifeInstructionsP lifep;
+        //auto& life = allLifes[n];
         //auto lifeData = life.data();
         //for (int j = 0; j < life.size(); j++) {
         //    lifep.push_back(lifeData + j);
         //}
         //auto& nodes = lifeOptimize(lifep);
-        //lifesNodes.push_back(nodes);
+
+        //ofstream out(string("data/life_")+to_string(n)+".lua", ios::trunc | ios::out);
+        //out << "function life_" << n << "(obj)\n";
+        //writeLifeNodes(out, 1, nodes);
+        //out << "end\n\n";
+        //out.close();
+
+
+        //for allLifes
+        vector<vector<LifeNode>> lifesNodes;
+        LifeInstructionsP lifep;
+        for (int i = 0; i < allLifes.size(); i++) {
+            auto& life = allLifes[i];
+            auto lifeData = life.data();
+            lifep.clear();
+            for (int j = 0; j < life.size(); j++) {
+                lifep.push_back(lifeData + j);
+            }
+            auto& nodes = lifeOptimize(lifep);
+            lifesNodes.push_back(nodes);
+        }
+
+        ofstream out("data/all_life.lua", ios::trunc | ios::out);
+        for (int j = 0; j < lifesNodes.size(); j++)
+        {
+            out << "function life_" << j << "(obj)\n";
+            writeLifeNodes(out, 1, lifesNodes[j]);
+            out << "end\n\n";
+        }
+        out.close();
 
     }
 

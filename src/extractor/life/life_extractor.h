@@ -24,6 +24,13 @@ inline s16 read16(lifeBuffer& buf) {
 	return res;
 }
 
+inline parseLifeExpr getParseExpr(EvalEnum::EvalEnum l) {
+	for (int i = 0; i < LifeExprParams.size(); i++) {
+		if (LifeExprParams[i].type == l) return LifeExprParams[i];
+	}
+	throw new exception("Not found");
+}
+
 inline LifeExpr readExpr(lifeBuffer& buf) {
 	LifeExpr result;
 	s16 varTypeN = read16(buf);
@@ -39,7 +46,7 @@ inline LifeExpr readExpr(lifeBuffer& buf) {
 	}
 	varTypeN &= 0x7FFF;
 
-	auto& parse = ExprTable_v1[varTypeN];
+	auto& parse = LifeExprParams[varTypeN]; //getParseExpr(ExprTable_v1[varTypeN]);
 	result.type = &parse;
 
 	//if (result.type == LifeEnum::READ) {}
@@ -62,6 +69,12 @@ inline LifeExpr readExpr(lifeBuffer& buf) {
 	return result;
 }
 
+inline parseLifeInstruction getParseLife(LifeEnum::LifeEnum l) {
+	for (int i = 0; i < LifeParams.size(); i++) {
+		if (LifeParams[i].type == l) return LifeParams[i];
+	}
+	throw new exception("Not found");
+}
 
 inline LifeInstruction readInstruction(lifeBuffer &buf) {
 	LifeInstruction result;
@@ -74,7 +87,7 @@ inline LifeInstruction readInstruction(lifeBuffer &buf) {
 	}
 	opCodeN &= 0x7FFF;
 
-	auto& parse = LifeTable_v1[opCodeN];
+	auto& parse = LifeParams[opCodeN]; //getParseLife(LifeTable_v1[opCodeN]);
 	result.type = &parse;
 
 	if (parse.type == LifeEnum::MULTI_CASE)

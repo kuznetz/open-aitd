@@ -83,7 +83,7 @@ public:
             addNewAnim(objectId, instr.arguments[0].constVal);
             addNewAnim(objectId, instr.arguments[5].constVal);
             break;
-        case LifeEnum::ANIM_MOVE:
+        case LifeEnum::SET_ANIM_MOVE:
             addNewAnim(objectId, instr.arguments[0].constVal);
             addNewAnim(objectId, instr.arguments[1].constVal);
             addNewAnim(objectId, instr.arguments[2].constVal);
