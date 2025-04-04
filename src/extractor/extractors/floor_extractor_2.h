@@ -90,7 +90,7 @@ int createBoxNode(tinygltf::Model& m, string name, hardColStruct& coll) {
     return m.nodes.size() - 1;
 }
 
-void saveFloorGLTF(floorStruct& floor2, char* filename)
+void saveFloorGLTF(floorStruct& floor2, const vector<gameObjectStruct>& gameObjs, char* filename)
 {
     floorStruct* floor = &floor2;
     nlohmann::json floorJson;
