@@ -17,6 +17,7 @@ namespace openAITD {
 		int roomId = -1;
 		Vector3 position;
 		Vector4 rotation;
+		//don't save
 		Vector3 moveVec;
 	};
 
@@ -27,13 +28,14 @@ namespace openAITD {
 			cube = 2,
 			rotated = 3
 		};
-
 		int id = -1;
 		int animId = -1;
 		int animType = 0;
 		int animInfo = 0;
-		BoundsType boundsType = BoundsType::simple;
 		float animTime;
+		BoundsType boundsType = BoundsType::simple;
+		bool boundsCached;
+		BoundingBox bounds;
 	};
 
 	struct GOInvItem
@@ -50,7 +52,6 @@ namespace openAITD {
 		GOLocation location;
 		GOModel model;
 		GOInvItem invItem;
-        BoundingBox bounds;
 
 		int lifeIdx;
 		int lifeMode;

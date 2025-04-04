@@ -174,13 +174,10 @@ namespace openAITD {
 
 	struct RoomCollider
 	{
-		enum class ColliderType {
-			Need = 0,
-		};
-
 		BoundingBox bounds;
-		int type;
+		int type; // 1 - simple, 9 - linked
 		int parameter;
+		int objectLink = -1;
 	};
 
 	struct RoomZone

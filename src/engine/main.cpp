@@ -6,6 +6,7 @@
 #include "./controllers/camera_renderer.h"
 #include "./controllers/freelook_renderer.h"
 #include "./controllers/player_controller.h"
+#include "./controllers/physics_controller.h"
 #include "./controllers/animation_controller.h"
 
 using namespace std;
@@ -29,6 +30,7 @@ namespace openAITD {
     CameraRenderer renderer(&resources, &world);
     FreelookRenderer flRenderer(&resources, &world);
     PlayerController playerContr(&resources, &world);
+    PhysicsController physContr(&resources, &world);
     AnimationController animContr(&resources, &world);
     bool freeLook = false;
 
@@ -41,8 +43,8 @@ namespace openAITD {
             resources.stages[i].load(string("data/stages/")+to_string(i));
         }
 
-        world.curStageId = 1;
-        world.curCameraId = 3;
+        world.curStageId = 0;
+        world.curCameraId = 0;
         world.loadGObjects("data/objects.json");
         world.renderTarget = &world.gobjects[1];
         playerContr.player = &world.gobjects[1];
@@ -63,31 +65,8 @@ namespace openAITD {
 
             if (!freeLook) {
                 playerContr.process(timeDelta);
+                physContr.process(timeDelta);
                 animContr.process(timeDelta);
-
-                if (IsKeyPressed(KEY_D) && (world.curCameraId < renderer.curStage->cameras.size() - 1)) {
-                    if (world.curCameraId++);
-                }
-                if (IsKeyPressed(KEY_A) && (world.curCameraId > 0)) {
-                    if (world.curCameraId--);
-                }
-                if (IsKeyPressed(KEY_W)) {
-                    world.curStageId++;
-                    world.curCameraId = 0;
-                }
-                if (IsKeyPressed(KEY_S)) {
-                    world.curStageId--;
-                    world.curCameraId = 0;
-                }
-            }
-            else
-            {
-                //if (IsKeyPressed(KEY_LEFT_BRACKET)) {
-                //    renderer.invX = !renderer.invX;
-                //}
-                //if (IsKeyPressed(KEY_RIGHT_BRACKET)) {
-                //    renderer.invZ = !renderer.invZ;
-                //}
             }
 
             BeginDrawing();

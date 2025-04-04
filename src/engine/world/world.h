@@ -29,6 +29,7 @@ namespace openAITD {
 		int trackedGObjectId;
 		int curCameraId;
 		int curStageId;
+		int curRoomId;
 
 		GameObject* renderTarget;
 
