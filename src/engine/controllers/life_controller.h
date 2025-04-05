@@ -27,6 +27,30 @@ namespace openAITD {
 		}
 
 		void initExpressions() {
+			auto lfunc = lua->CreateFunction([](const char* msg) -> int {
+				cout << "LUA: " << msg << endl;
+				return 0;
+			}, "MODEL");
+			auto lfunc = lua->CreateFunction([](const char* msg) -> int {
+				cout << "LUA: " << msg << endl;
+				return 0;
+			}, "COL_BY");
+			auto lfunc = lua->CreateFunction([](const char* msg) -> int {
+				cout << "LUA: " << msg << endl;
+				return 0;
+			}, "ANIM");
+			auto lfunc = lua->CreateFunction([](const char* msg) -> int {
+				cout << "LUA: " << msg << endl;
+				return 0;
+			}, "END_ANIM");
+			auto lfunc = lua->CreateFunction([](const char* msg) -> int {
+				cout << "LUA: " << msg << endl;
+				return 0;
+			}, "POSREL");
+			auto lfunc = lua->CreateFunction([](const char* msg) -> int {
+				cout << "LUA: " << msg << endl;
+				return 0;
+			}, "POSREL");
 			/*
 			GET_MODEL
 			COL_BY
@@ -38,6 +62,10 @@ namespace openAITD {
 		}
 
 		void initInstructions() {
+			auto lfunc = lua->CreateFunction([](const char* msg) -> int {
+				cout << "LUA: " << msg << endl;
+				return 0;
+			}, "LOG");
 			/*
 			MESSAGE
 			SET_MODEL
@@ -53,23 +81,17 @@ namespace openAITD {
 		void initLua() {
 			lua = new LuaState(luaL_newstate(), true);
 
-			auto lfunc = lua->CreateFunction([](const char* msg) -> int {
-				cout << "LUA: " << msg << endl;
-				return 0;
-			}, "LOG");
-			auto lfunc2 = lua->CreateFunction([]() {
-				cout << "TEST" << endl;
-				return 5;
-			}, "TEST");
+			initExpressions();
+			initInstructions();
 
+			//"data/life/life_123.lua"
 			string errstr;
-			if (!lua->DoFile("data/life/life_123.lua", &errstr)) {
-				cout << "Load life_123 failed!";
+			if (!lua->DoFile("data/scripts.lua", &errstr)) {
+				cout << "Load life failed: " << errstr;
 			}
-
-			testF = new LuaFunction(lua->GetFunction("life_123"));
+			testF = new LuaFunction(lua->GetFunction("life_0"));
 			if (testF->GetType() != LUA_TFUNCTION) {
-				cout << "life_123 is not function!";
+				cout << "life_0 is not function!";
 			}
 		}
 
@@ -79,8 +101,9 @@ namespace openAITD {
 				return true;
 			});
 			string errstr;
-			//lua->DoString("life_123(321)", &errstr);
-			testF->Execute(callback, &errstr, 333);
+			if (!testF->Execute(callback, &errstr, 333)) {
+				cout << "Execute life_0 error: " << errstr;				
+			}
 
 			//auto& testF2 = lua->GetFunction("life_123");
 			//testF2.Execute(callback, &errstr, 333);

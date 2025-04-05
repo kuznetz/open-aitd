@@ -46,7 +46,7 @@ vector <gameObjectStruct> loadGameObjects(string from) {
         obj.inventoryName = READ_LE_S16(pObjectData);
         pObjectData += 2;
 
-        obj.flags2 = READ_LE_S16(pObjectData);
+        obj.invFlags = READ_LE_S16(pObjectData);
         pObjectData += 2;
 
         obj.inventoryLife = READ_LE_S16(pObjectData);

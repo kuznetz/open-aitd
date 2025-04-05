@@ -15,11 +15,12 @@ inline bool isIfInstr(LifeInstruction& instr) {
 }
 
 LifeNode DetectIfElse(LifeInstructionsP& insructs, int& i);
-LifeNode DetectSwitch(LifeInstructionsP& insructs, int& i);
+LifeNode DetectSwitch(LifeInstruction* switchInstr, LifeInstructionsP& instructs, int& i);
 
 inline vector<LifeNode> lifeOptimize(LifeInstructionsP& instructs) {
 	vector<LifeNode> result;
 	int i = 0;
+	LifeInstruction* switchInstr = 0;
 	while (i<instructs.size())
 	{
 		auto& ins = instructs[i];
@@ -31,8 +32,14 @@ inline vector<LifeNode> lifeOptimize(LifeInstructionsP& instructs) {
 		else
 		if (ins->type->type == LifeEnum::SWITCH)
 		{
-			LifeNode& ln = DetectSwitch(instructs, i);
+			switchInstr = ins;
+			i++;
+		}
+		else if (ins->type->type == LifeEnum::CASE || ins->type->type == LifeEnum::MULTI_CASE) {
+			if (!switchInstr) throw new exception("Case without switch");
+			LifeNode& ln = DetectSwitch(switchInstr, instructs, i);
 			result.push_back(ln);
+			switchInstr = 0;
 		}
 		else if (ins->type->type == LifeEnum::ENDLIFE)
 		{
@@ -88,10 +95,10 @@ inline LifeNode DetectIfElse(LifeInstructionsP& insructs, int &i)
 	return ln;
 }
 
-inline LifeNode DetectSwitch(LifeInstructionsP& instructs, int& i)
+inline LifeNode DetectSwitch(LifeInstruction* switchInstr, LifeInstructionsP& instructs, int& i)
 {
 	LifeNode result;
-	result.instr = instructs[i++];
+	result.instr = switchInstr;
 	auto t = instructs[i]->type->type;
 	LifeInstruction* elseGoto = 0;
 	while (t == LifeEnum::CASE || t == LifeEnum::MULTI_CASE) {

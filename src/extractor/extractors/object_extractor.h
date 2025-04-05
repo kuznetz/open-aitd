@@ -104,7 +104,7 @@ inline void extractGameObjects(vector <gameObjectStruct> objects, string josnTo)
         objJson["stageLife"] = obj.stageLife;
 
         objJson["flags"] = obj.flags;
-        objJson["flags2"] = obj.flags2;
+        objJson["flags2"] = obj.invFlags;
 
         outJson.push_back(objJson);
     }

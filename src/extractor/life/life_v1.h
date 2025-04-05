@@ -45,8 +45,8 @@ inline const vector<parseLifeInstruction> LifeParams =
 	{ LifeEnum::SET_FLAGS, "SET_FLAGS", { lifeConst }, true},
 	{ LifeEnum::GAME_OVER, "GAME_OVER", { }},
 	{ LifeEnum::MANUAL_ROT, "MANUAL_ROT", { }, true},
-	{ LifeEnum::RND_FREQ, "RND_FREQ", { lifeConst }},
-	{ LifeEnum::MUSIC, "MUSIC", { lifeConst }},
+	{ LifeEnum::RND_FREQ, "RND_FREQ", { lifeConst }}, //Randomize sound frequency
+	{ LifeEnum::SET_MUSIC, "SET_MUSIC", { lifeConst }},
 	{ LifeEnum::SET_BETA, "SET_BETA", { lifeConst, lifeConst }, true},
 	{ LifeEnum::DO_ROT_ZV, "DO_ROT_ZV", { }},
 	{ LifeEnum::CHANGE_ROOM, "CHANGE_ROOM", { lifeConst, lifeConst, lifeConst, lifeConst, lifeConst }, true},
@@ -133,7 +133,7 @@ inline const vector<parseLifeExpr> LifeExprParams =
 	{ EvalEnum::ROOM_CHRONO, "ROOM_CHRONO", { }},
 	{ EvalEnum::DIST, "DIST", { lifeConst }},
 	{ EvalEnum::COL_BY, "COL_BY", { }},
-	{ EvalEnum::ISFOUND, "ISFOUND", { lifeExpr }},
+	{ EvalEnum::IN_INVENTORY, "IN_INVENTORY", { lifeExpr }},
 	{ EvalEnum::ACTION, "ACTION", { }},
 	{ EvalEnum::POSREL, "POSREL", { lifeConst }},
 	{ EvalEnum::KEYBOARD_INPUT, "KEYBOARD_INPUT", { }},
@@ -149,13 +149,13 @@ inline const vector<parseLifeExpr> LifeExprParams =
 	{ EvalEnum::FALLING, "FALLING", { }},
 	{ EvalEnum::ROOM, "ROOM", { }, true },
 	{ EvalEnum::LIFE, "LIFE", { }, true },
-	{ EvalEnum::OBJECT, "OBJECT", { lifeConst }},
+	{ EvalEnum::IS_FOUND, "IS_FOUND", { lifeConst }},
 	{ EvalEnum::ROOMY, "ROOMY", { }, true },
 	{ EvalEnum::TEST_ZV_END_ANIM, "TEST_ZV_END_ANIM", { lifeConst, lifeConst }},
 	{ EvalEnum::MUSIC, "MUSIC", { }},
 	{ EvalEnum::GET_C, "GET_C", { lifeConst }},
 	{ EvalEnum::STAGE, "STAGE", { }, true },
-	{ EvalEnum::THROW, "THROW", { lifeConst }}
+	{ EvalEnum::THROWING, "THROWING", { lifeConst }}
 };
 
 inline const vector<LifeEnum::LifeEnum> LifeTable_v1 = {
@@ -203,7 +203,7 @@ inline const vector<LifeEnum::LifeEnum> LifeTable_v1 = {
 	LifeEnum::GAME_OVER,
 	LifeEnum::MANUAL_ROT,
 	LifeEnum::RND_FREQ,
-	LifeEnum::MUSIC,
+	LifeEnum::SET_MUSIC,
 	LifeEnum::SET_BETA,
 	LifeEnum::DO_ROT_ZV,
 	LifeEnum::CHANGE_ROOM,
@@ -288,7 +288,7 @@ inline const vector<EvalEnum::EvalEnum> ExprTable_v1 = {
 	EvalEnum::ROOM_CHRONO,
 	EvalEnum::DIST,
 	EvalEnum::COL_BY,
-	EvalEnum::ISFOUND,
+	EvalEnum::IN_INVENTORY,
 	EvalEnum::ACTION,
 	EvalEnum::POSREL,
 	EvalEnum::KEYBOARD_INPUT,
@@ -304,11 +304,11 @@ inline const vector<EvalEnum::EvalEnum> ExprTable_v1 = {
 	EvalEnum::FALLING,
 	EvalEnum::ROOM,
 	EvalEnum::LIFE,
-	EvalEnum::OBJECT,
+	EvalEnum::IS_FOUND,
 	EvalEnum::ROOMY,
 	EvalEnum::TEST_ZV_END_ANIM,
 	EvalEnum::MUSIC,
 	EvalEnum::GET_C,
 	EvalEnum::STAGE,
-	EvalEnum::THROW,
+	EvalEnum::THROWING,
 };
