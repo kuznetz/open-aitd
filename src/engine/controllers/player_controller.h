@@ -31,6 +31,10 @@ namespace openAITD {
 			bool isAction = false;
 			int nextAnimation = player->model.animId;
 
+			if (player->trackMode == 0) {
+				isAction = true;
+			}
+
 			//Rotate Player
 			if (!isAction) {
 				float rotate = 0;

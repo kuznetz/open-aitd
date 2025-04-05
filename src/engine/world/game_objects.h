@@ -75,8 +75,10 @@ namespace openAITD {
 		};
 		int id = -1;
 		int animId = -1;
-		int animEnd = 1; //0 = First cycle after changing animaton from script
 		int nextAnimId = -1;
+		int animEnd = 1; //0 = First cycle after changing animaton from script
+		int scriptAnimId = -1; //scriptAnimId stay after change to next anim
+		int animFrame;
 		float animTime;
 		BoundsType boundsType = BoundsType::simple;
 		union {
@@ -87,7 +89,6 @@ namespace openAITD {
 
 	struct GOInvItem
 	{
-		int ownerId = -1;
 		int model = -1;
 		int name = 0;
 		int life = 0;
@@ -102,11 +103,14 @@ namespace openAITD {
 		bool boundsCached;
 		BoundingBox bounds;
 		Vector3 moveVec;
+		int collidedBy = -1;
 	};
 
 	class GameObject
 	{
 	public:
+		int id = -1;
+
 		GOLocation location;
 		GOModel model;
 		GOInvItem invItem;
@@ -117,9 +121,12 @@ namespace openAITD {
 			GOFlags bitField;
 		};
 
-		int lifeIdx;
+		int lifeId;
 		int lifeMode;
-		int traceIdx;
+		
+		int trackId;
+		int trackPos;
+		int trackMode;
 	};
 
 }

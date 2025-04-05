@@ -37,6 +37,8 @@ namespace openAITD {
 		void loadVars(string path);
 		void setCharacter(bool alt) {}
 		void setRepeatAnimation(GameObject& gobj, int animId);
+		void setOnceAnimation(GameObject& gobj, int animId, int nextAnimId);
+		void setModel(GameObject& gobj, int modelId);
 	};
 
 	void World::loadGObjects(string path)
@@ -46,6 +48,8 @@ namespace openAITD {
 
 		gobjects.resize(objsJson.size());
 		for (int i = 0; i < objsJson.size(); i++) {
+			gobjects[i].id = i;
+
 			if (objsJson[i].contains("location")) {
 				auto& loc = gobjects[i].location;
 				auto& locJson = objsJson[i]["location"];
@@ -64,14 +68,33 @@ namespace openAITD {
 				mdl.nextAnimId = mdlJson["animInfo"];
 				mdl.boundsType = mdlJson["boundsType"];
 			}
+
+			gobjects[i].trackMode = objsJson[i]["track"]["mode"];
+			gobjects[i].lifeId = objsJson[i]["life"];
 		}
 	};
 
 	void World::setRepeatAnimation(GameObject& gobj, int animId) {
+		gobj.model.scriptAnimId = animId;
 		gobj.model.animId = animId;
 		gobj.model.nextAnimId = -1;
 		gobj.model.animTime = 0;
+		gobj.model.animEnd = 0;
 		gobj.model.flags = 1;
+	}
+
+	void World::setOnceAnimation(GameObject& gobj, int animId, int nextAnimId) {
+		gobj.model.scriptAnimId = animId;
+		gobj.model.animId = animId;
+		gobj.model.nextAnimId = nextAnimId;
+		gobj.model.animTime = 0;
+		gobj.model.animEnd = 0;
+		gobj.model.flags = 0;
+	}
+
+	void World::setModel(GameObject& gobj, int modelId) {
+		gobj.model.id = modelId;
+		gobj.model.animTime = 0;
 	}
 
 	void World::loadVars(string path)

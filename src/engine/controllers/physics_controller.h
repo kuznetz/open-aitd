@@ -215,12 +215,8 @@ namespace openAITD {
 
 			v = Vector3Negate(v2);
 
-			if (c) {
-				printf("c");
-			}
-			if (c2) {
-				printf("c2");
-			}
+			//if (c) printf("c");
+			//if (c2) printf("c2");
 			return c || c2;
 		}
 
@@ -281,7 +277,11 @@ namespace openAITD {
 				if (gobj2.location.stageId != gobj.location.stageId) continue;
 				if (gobj2.location.roomId != gobj.location.roomId) continue;
 				BoundingBox& objB2 = getObjectBounds(gobj2);
-				BoxToBox(objB, v, objB2);
+				bool collided = BoxToBox(objB, v, objB2);
+				if (collided) {
+					gobj.physics.collidedBy = gobj2.id;
+					gobj2.physics.collidedBy = gobj.id;
+				}
 			}
 
 			gobj.physics.moveVec = v;
@@ -293,6 +293,7 @@ namespace openAITD {
 			for (int i = 0; i < world->gobjects.size(); i++) {
 				auto& gobj = world->gobjects[i];
 				if (gobj.location.stageId != world->curStageId) continue;
+				gobj.physics.collidedBy = -1;
 				if (Vector3Equals(gobj.physics.moveVec, { 0,0,0 })) continue;
 				gobj.physics.boundsCached = false;
 			}

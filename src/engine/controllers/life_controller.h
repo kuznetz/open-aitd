@@ -33,24 +33,21 @@ namespace openAITD {
 				return this->world->gobjects[obj].model.id;
 			}, "MODEL");
 			lua->CreateFunction([this](int obj) -> int {
-				//TODO: realize
-				return 0;
+				return this->world->gobjects[obj].physics.collidedBy;
 			}, "COL_BY");
 			lua->CreateFunction([this](int obj) -> int {
-				//TODO: realize
-				return this->world->gobjects[obj].model.animId;
+				return this->world->gobjects[obj].model.scriptAnimId;
 			}, "ANIM");
 			lua->CreateFunction([this](int obj) -> int {
-				//TODO: realize
-				return 0;
+				return this->world->gobjects[obj].model.animEnd;
 			}, "END_ANIM");
 			lua->CreateFunction([this](int obj) -> int {
 				//TODO: realize
-				return 0;
+				return 2;
 			}, "POSREL");
 			lua->CreateFunction([this](int obj) -> int {
-				//TODO: realize
-				return this->world->gobjects[obj].model.animId;
+				int r = (this->world->gobjects[obj].invItem.flags & 0xC000) ? 1 : 0;
+				return r;
 			}, "IS_FOUND");
 		}
 
@@ -58,27 +55,48 @@ namespace openAITD {
 			lua->CreateFunction([this](const char* message) {
 				cout << "LUA: " << message << endl;
 			}, "LOG");
+			
 			lua->CreateFunction([this](int obj) {
 				//
 			}, "MESSAGE");
-			lua->CreateFunction([this](int obj) {
-				//
+			
+			lua->CreateFunction([this](int obj, int modelId) {
+				this->world->setModel(this->world->gobjects[obj], modelId);
 			}, "SET_MODEL");
-			lua->CreateFunction([this](int obj) {
-				//
+
+			lua->CreateFunction([this](int obj, int lifeId) {
+				this->world->gobjects[obj].lifeId = lifeId;
+			}, "SET_LIFE");			
+			
+			lua->CreateFunction([this](int obj, int animId, int nextAnimId) {
+				this->world->setOnceAnimation(this->world->gobjects[obj], animId, nextAnimId);
 			}, "SET_ANIM_ONCE");
-			lua->CreateFunction([this](int obj) {
-				//
+			
+			lua->CreateFunction([this](int obj, int trackMode, int trackId, int positionInTrack) {
+				auto& gobj = this->world->gobjects[obj];
+				gobj.trackMode = trackMode;
+				gobj.trackId = trackId;
+				gobj.trackPos = positionInTrack;
 			}, "SET_TRACKMODE");
+			
 			lua->CreateFunction([this](int obj) {
 				//
 			}, "SET_FLAGS");
-			lua->CreateFunction([this](int obj) {
-				//
+			
+			lua->CreateFunction([this](int obj, int soundId, int animId, int animFrame) {
+				//TODO: remember frame, not play in life
+				if (this->world->gobjects[obj].model.animId != animId) return;
+				if (this->world->gobjects[obj].model.animTime != animFrame) return;
+				cout << "SET_ANIM_SOUND " << soundId << endl;
 			}, "SET_ANIM_SOUND");
+
+			lua->CreateFunction([this](int soundId) {
+				cout << "SOUND " << soundId << endl;
+			}, "SOUND");			
+
 			lua->CreateFunction([this](int obj) {
-				//
 			}, "FOUND");
+
 		}
 
 		void initLua() {
@@ -108,8 +126,8 @@ namespace openAITD {
 		void process() {
 			for (int i = 0; i < world->gobjects.size(); i++) {
 				auto& gobj = world->gobjects[i];
-				if (gobj.lifeIdx == -1) continue;
-				auto& f = funcs.find(gobj.lifeIdx);
+				if (gobj.lifeId == -1) continue;
+				auto& f = funcs.find(gobj.lifeId);
 				if (f == funcs.end()) continue;
 
 				string errstr;

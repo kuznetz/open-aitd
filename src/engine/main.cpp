@@ -38,7 +38,7 @@ namespace openAITD {
 
     int main(void)
     {
-        InitWindow(screenW, screenH, "AITD Mask Test");
+        InitWindow(screenW, screenH, "Open-AITD");
 
         resources.stages.resize(8);
         for (int i = 0; i < 8; i++) {
