@@ -3,6 +3,7 @@
 #include "../world/world.h"
 #include <luacpp/luacpp.h>
 #include <iostream>
+#include <string>
 
 using namespace std;
 using namespace luacpp;
@@ -14,7 +15,8 @@ namespace openAITD {
 		World* world;
 		Resources* resources;
 		LuaState* lua = 0;
-		LuaFunction* testF;
+		map <int,LuaFunction*> funcs;
+		std::function<bool(uint32_t, const LuaObject&)> execCb;
 
 		LifeController(Resources* res, World* world) {
 			this->resources = res;
@@ -27,87 +29,94 @@ namespace openAITD {
 		}
 
 		void initExpressions() {
-			auto lfunc = lua->CreateFunction([](const char* msg) -> int {
-				cout << "LUA: " << msg << endl;
-				return 0;
+			lua->CreateFunction([this](int obj) -> int {
+				return this->world->gobjects[obj].model.id;
 			}, "MODEL");
-			auto lfunc = lua->CreateFunction([](const char* msg) -> int {
-				cout << "LUA: " << msg << endl;
+			lua->CreateFunction([this](int obj) -> int {
+				//TODO: realize
 				return 0;
 			}, "COL_BY");
-			auto lfunc = lua->CreateFunction([](const char* msg) -> int {
-				cout << "LUA: " << msg << endl;
-				return 0;
+			lua->CreateFunction([this](int obj) -> int {
+				//TODO: realize
+				return this->world->gobjects[obj].model.animId;
 			}, "ANIM");
-			auto lfunc = lua->CreateFunction([](const char* msg) -> int {
-				cout << "LUA: " << msg << endl;
+			lua->CreateFunction([this](int obj) -> int {
+				//TODO: realize
 				return 0;
 			}, "END_ANIM");
-			auto lfunc = lua->CreateFunction([](const char* msg) -> int {
-				cout << "LUA: " << msg << endl;
+			lua->CreateFunction([this](int obj) -> int {
+				//TODO: realize
 				return 0;
 			}, "POSREL");
-			auto lfunc = lua->CreateFunction([](const char* msg) -> int {
-				cout << "LUA: " << msg << endl;
-				return 0;
-			}, "POSREL");
-			/*
-			GET_MODEL
-			COL_BY
-			GET_ANIM
-			END_ANIM
-			POSREL
-			OBJECT
-			*/
+			lua->CreateFunction([this](int obj) -> int {
+				//TODO: realize
+				return this->world->gobjects[obj].model.animId;
+			}, "IS_FOUND");
 		}
 
 		void initInstructions() {
-			auto lfunc = lua->CreateFunction([](const char* msg) -> int {
-				cout << "LUA: " << msg << endl;
-				return 0;
+			lua->CreateFunction([this](const char* message) {
+				cout << "LUA: " << message << endl;
 			}, "LOG");
-			/*
-			MESSAGE
-			SET_MODEL
-			ANIM_ONCE
-			ANIM_SOUND
-			TRACKMODE
-			SET
-			FLAGS
-			FOUND
-			*/
+			lua->CreateFunction([this](int obj) {
+				//
+			}, "MESSAGE");
+			lua->CreateFunction([this](int obj) {
+				//
+			}, "SET_MODEL");
+			lua->CreateFunction([this](int obj) {
+				//
+			}, "SET_ANIM_ONCE");
+			lua->CreateFunction([this](int obj) {
+				//
+			}, "SET_TRACKMODE");
+			lua->CreateFunction([this](int obj) {
+				//
+			}, "SET_FLAGS");
+			lua->CreateFunction([this](int obj) {
+				//
+			}, "SET_ANIM_SOUND");
+			lua->CreateFunction([this](int obj) {
+				//
+			}, "FOUND");
 		}
 
 		void initLua() {
 			lua = new LuaState(luaL_newstate(), true);
+			execCb = ([](uint32_t x, const LuaObject& lobj) -> bool {
+				cout << "out: " << lobj.ToInteger() << endl;
+				return true;
+			});
 
 			initExpressions();
 			initInstructions();
 
-			//"data/life/life_123.lua"
+			//TODO: load vars
+
 			string errstr;
 			if (!lua->DoFile("data/scripts.lua", &errstr)) {
 				cout << "Load life failed: " << errstr;
 			}
-			testF = new LuaFunction(lua->GetFunction("life_0"));
-			if (testF->GetType() != LUA_TFUNCTION) {
-				cout << "life_0 is not function!";
+			for (int i = 0; i < 1000; i++) {
+				auto s = string("life_") + to_string(i);
+				auto f = new LuaFunction(lua->GetFunction(s.c_str()));
+				if (f->GetType() != LUA_TFUNCTION) continue;
+				funcs[i] = f;
 			}
 		}
 
 		void process() {
-			const std::function<bool(uint32_t, const LuaObject&)> callback([](uint32_t x, const LuaObject& lobj) -> bool {
-				cout << "output from resiter1: " << lobj.ToString() << endl;
-				return true;
-			});
-			string errstr;
-			if (!testF->Execute(callback, &errstr, 333)) {
-				cout << "Execute life_0 error: " << errstr;				
+			for (int i = 0; i < world->gobjects.size(); i++) {
+				auto& gobj = world->gobjects[i];
+				if (gobj.lifeIdx == -1) continue;
+				auto& f = funcs.find(gobj.lifeIdx);
+				if (f == funcs.end()) continue;
+
+				string errstr;
+				if (!f->second->Execute(execCb, &errstr, i)) {
+					cout << "Execute life_" << i << " error: " << errstr;
+				}
 			}
-
-			//auto& testF2 = lua->GetFunction("life_123");
-			//testF2.Execute(callback, &errstr, 333);
-
 		}
 
 	};

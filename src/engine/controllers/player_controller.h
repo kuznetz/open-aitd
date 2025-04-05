@@ -28,46 +28,68 @@ namespace openAITD {
 		}
 
 		void process(float timeDelta) {
-			//Rotate Player
-			float rotate = 0;
-            if (IsKeyDown(KEY_LEFT)) {
-				rotate = 1;
-				player->model.animId = anims.turnCCW;
-            }
-            if (IsKeyDown(KEY_RIGHT)) {
-				rotate = -1;
-				player->model.animId = anims.turnCW;
-			}
-			if (rotate != 0) {
-				rotate = rotate * PI * timeDelta;
-				auto q = QuaternionFromAxisAngle({ 0,1,0 }, rotate);
-				auto r = player->location.rotation;
-				player->location.rotation = QuaternionMultiply(r, q);
-			}
+			bool isAction = false;
+			int nextAnimation = player->model.animId;
 
-			//Get Move Vec
-			player->location.moveVec = { 0,0,0 };
-			float move = 0;
-			if (IsKeyDown(KEY_DOWN)) {
-				move = -1;
-				player->model.animId = anims.walkBackw;
-			}
-			if (IsKeyDown(KEY_UP)) {
-				if (IsKeyDown(KEY_LEFT_SHIFT)) {
-					move = 3;
-					player->model.animId = anims.runForw;
-				} else {
-					move = 1;
-					player->model.animId = anims.walkForw;
+			//Rotate Player
+			if (!isAction) {
+				float rotate = 0;
+				if (IsKeyDown(KEY_LEFT)) {
+					rotate = 1;
+					nextAnimation = anims.turnCCW;
+				}
+				if (IsKeyDown(KEY_RIGHT)) {
+					rotate = -1;
+					nextAnimation = anims.turnCW;
+				}
+				if (rotate != 0) {
+					rotate = rotate * PI * timeDelta;
+					auto q = QuaternionFromAxisAngle({ 0,1,0 }, rotate);
+					auto r = player->location.rotation;
+					player->location.rotation = QuaternionMultiply(r, q);
+					isAction = true;
+				}
+
+				//Get Move Vec
+				player->physics.moveVec = { 0,0,0 };
+				float move = 0;
+				if (IsKeyDown(KEY_Z)) {
+					move = 0.25;
+					nextAnimation = 2;
+					isAction = true;
+				}
+				else if (IsKeyDown(KEY_X)) {
+					move = 0.25;
+					nextAnimation = 5;
+					isAction = true;
+				}
+				else if (IsKeyDown(KEY_DOWN)) {
+					move = -0.75;
+					nextAnimation = anims.walkBackw;
+				}
+				else if (IsKeyDown(KEY_UP)) {
+					if (IsKeyDown(KEY_LEFT_SHIFT)) {
+						move = 3;
+						nextAnimation = anims.runForw;
+					}
+					else {
+						move = 0.75;
+						nextAnimation = anims.walkForw;
+					}
+				}
+				if (move != 0) {
+					auto& p = player->location.position;
+					Vector3 v = { 0, 0, -move * timeDelta };
+					player->physics.moveVec = Vector3RotateByQuaternion(v, player->location.rotation);
+					isAction = true;
 				}
 			}
-			if (move != 0) {
-				auto& p = player->location.position;
-				Vector3 v = { 0, 0, -move * timeDelta };
-				player->location.moveVec = Vector3RotateByQuaternion(v, player->location.rotation);
+
+			if (!isAction) {
+				nextAnimation = anims.idle;
 			}
-			if (move == 0 && rotate == 0) {
-				player->model.animId = anims.idle;
+			if (nextAnimation != player->model.animId) {
+				world->setRepeatAnimation(*player, nextAnimation);
 			}
 
 			auto& curStage = resources->stages[world->curStageId];

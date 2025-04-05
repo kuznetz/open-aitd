@@ -13,27 +13,6 @@ namespace openAITD {
 		return r;
 	}
 
-	inline BoundingBox getObjectBounds(GameObject& obj, int boundsType) {
-		if (obj.model.id == -1) return defaultObjBounds;
-		switch (boundsType)
-		{
-		case 1:
-			//Simple Body
-			break;
-		case 3:
-			//RotatedBody
-			break;
-		case 2:
-			//CubeBody
-			//getZvCube(bodyPtr, zvPtr);
-			break;
-			//getZvRot(bodyPtr, zvPtr, alpha, beta, gamma);
-			break;
-		default:
-			throw new exception("Unsupported boundsType");
-		}
-	}
-
 	class PhysicsController {
 	public:
 		World* world;
@@ -48,26 +27,6 @@ namespace openAITD {
 			auto& p = gobj.location.position;
 			auto& b = zone->bounds;
 			return ((p.x > b.min.x) && (p.x < b.max.x) && (p.z > b.min.z) && (p.z < b.max.z));
-		}
-
-		bool processColliders2(const Vector3& p, Vector3& v, BoundingBox& b) {
-			Vector3& p2 = Vector3Add(p, v);
-			auto inB = (p2.x > b.min.x) && (p2.x < b.max.x) && (p2.z > b.min.z) && (p2.z < b.max.z);
-			if (!inB) return false;
-
-			float halfX = (b.min.x + b.max.x) / 2;
-			float halfZ = (b.min.z + b.max.z) / 2;
-
-			float revX = (p2.x < halfX) ? (b.min.x - p2.x) : (b.max.x - p2.x);
-			float revZ = (p2.z < halfZ) ? (b.min.z - p2.z) : (b.max.z - p2.z);
-
-			if (abs(revX) < abs(revZ)) {
-				v.x += revX;
-			}
-			else {
-				v.z += revZ;
-			}
-			return true;
 		}
 
 		//BoundingBox handleCollision(BoundingBox& startZv, BoundingBox& nextZv, BoundingBox& collZv)
@@ -215,64 +174,138 @@ namespace openAITD {
 		//	}
 		//}
 
-		void processColliders(GameObject& gobj, Room& room) {
+		bool PointToBox(const Vector3& p, Vector3& v, BoundingBox& b) {
+			Vector3& p2 = Vector3Add(p, v);
+			auto inB = (p2.x > b.min.x) && (p2.x < b.max.x) && (p2.z > b.min.z) && (p2.z < b.max.z);
+			if (!inB) return false;
+
+			float halfX = (b.min.x + b.max.x) / 2;
+			float halfZ = (b.min.z + b.max.z) / 2;
+
+			float revX = (p2.x < halfX) ? (b.min.x - p2.x) : (b.max.x - p2.x);
+			float revZ = (p2.z < halfZ) ? (b.min.z - p2.z) : (b.max.z - p2.z);
+
+			if (abs(revX) < abs(revZ)) {
+				v.x += revX;
+			}
+			else {
+				v.z += revZ;
+			}
+			return true;
+		}
+
+		bool BoxToBox(BoundingBox& b1, Vector3& v, BoundingBox& b2) {
+			if (
+				(b1.min.y > b2.max.y || b1.max.y < b2.min.y) &&
+				(b2.min.y > b1.max.y || b2.max.y < b1.min.y)
+			)  return false;
+
+			bool c = false;
+			c = PointToBox({ b1.min.x, 0, b1.min.z }, v, b2) || c;
+			c = PointToBox({ b1.max.x, 0, b1.min.z }, v, b2) || c;
+			c = PointToBox({ b1.min.x, 0, b1.max.z }, v, b2) || c;
+			c = PointToBox({ b1.max.x, 0, b1.max.z }, v, b2) || c;
+
+			auto v2 = Vector3Negate(v);
+			bool c2 = false;
+			c2 = PointToBox({ b2.min.x, 0, b2.min.z }, v2, b1) || c2;
+			c2 = PointToBox({ b2.max.x, 0, b2.min.z }, v2, b1) || c2;
+			c2 = PointToBox({ b2.min.x, 0, b2.max.z }, v2, b1) || c2;
+			c2 = PointToBox({ b2.max.x, 0, b2.max.z }, v2, b1) || c2;
+
+			v = Vector3Negate(v2);
+
+			if (c) {
+				printf("c");
+			}
+			if (c2) {
+				printf("c2");
+			}
+			return c || c2;
+		}
+
+		BoundingBox correctBounds(const BoundingBox& b) {
+			BoundingBox r = b;
+			if (b.min.x > b.max.x) {
+				r.min.x = b.max.x;
+				r.max.x = b.min.x;
+			}
+			if (b.min.y > b.max.y) {
+				r.min.y = b.max.y;
+				r.max.y = b.min.y;
+			}
+			if (b.min.z > b.max.z) {
+				r.min.z = b.max.z;
+				r.max.z = b.min.z;
+			}
+			return  r;
+		}
+
+		BoundingBox getObjectBounds(GameObject& gobj) {
+			if (gobj.physics.boundsCached) {
+				return gobj.physics.bounds;
+			}
 			Vector3& p = gobj.location.position;
 			auto& m = *resources->models.getModel(gobj.model.id);
-			Vector3 v = gobj.location.moveVec;
-			Vector3 v2;
+			BoundingBox objB = correctBounds(m.bounds);
+			if (gobj.model.boundsType == GOModel::BoundsType::cube) {
+				objB = getCubeBounds(objB);
+			}
+			if (gobj.model.boundsType == GOModel::BoundsType::rotated) {
+				objB.min = Vector3RotateByQuaternion(objB.min, gobj.location.rotation);
+				objB.max = Vector3RotateByQuaternion(objB.max, gobj.location.rotation);
+				objB = correctBounds(objB);
+			}
+			objB.min = Vector3Add(objB.min, p);
+			objB.max = Vector3Add(objB.max, p);
+			if (!gobj.physics.boundsCached) {
+				gobj.physics.bounds = objB;
+				gobj.physics.boundsCached = true;
+			}
+			return objB;
+		}
 
+		void processColliders(GameObject& gobj, Room& room) {
+			BoundingBox& objB = getObjectBounds(gobj);
+			Vector3 v = gobj.physics.moveVec;
 			for (int i = 0; i < room.colliders.size(); i++) {
 				if (!v.x && !v.y && !v.z) continue;
-
-				//TODO: cache for not movable objs
-				BoundingBox& objB = getCubeBounds(m.bounds);
-				objB.min = Vector3Add(objB.min, p);
-				objB.max = Vector3Add(objB.max, p);
-
 				BoundingBox& colB = room.colliders[i].bounds;
-
-				if (
-					(objB.min.y > colB.max.y || objB.max.y < colB.min.y) &&
-					(colB.min.y > objB.max.y || colB.max.y < objB.min.y)
-					)  continue;
-
-				bool c = false;
-				c = processColliders2({ objB.min.x, 0, objB.min.z }, v, colB) || c;
-				c = processColliders2({ objB.max.x, 0, objB.min.z }, v, colB) || c;
-				c = processColliders2({ objB.min.x, 0, objB.max.z }, v, colB) || c;
-				c = processColliders2({ objB.max.x, 0, objB.max.z }, v, colB) || c;
-
-				v2 = Vector3Invert(v);
-
-				bool c2 = false;
-				c2 = processColliders2({ colB.min.x, 0, colB.min.z }, v2, objB) || c2;
-				c2 = processColliders2({ colB.max.x, 0, colB.min.z }, v2, objB) || c2;
-				c2 = processColliders2({ colB.min.x, 0, colB.max.z }, v2, objB) || c2;
-				c2 = processColliders2({ colB.max.x, 0, colB.max.z }, v2, objB) || c2;
-
-				v = Vector3Invert(v2);
-
-				if (c) {
-					printf("c");
-				}
-				if (c2) {
-					printf("c2");
-				}
+				BoxToBox(objB, v, colB);
 			}
 
-			gobj.location.moveVec = v;
+			for (int i = 0; i < world->gobjects.size(); i++) {
+				auto& gobj2 = world->gobjects[i];
+				if (&gobj == &gobj2) continue;
+				if (gobj2.model.id == -1) continue;
+				if (gobj2.location.stageId != gobj.location.stageId) continue;
+				if (gobj2.location.roomId != gobj.location.roomId) continue;
+				BoundingBox& objB2 = getObjectBounds(gobj2);
+				BoxToBox(objB, v, objB2);
+			}
+
+			gobj.physics.moveVec = v;
 		}
 
 		void process(float timeDelta) {
 			auto& curStage = resources->stages[world->curStageId];
+
 			for (int i = 0; i < world->gobjects.size(); i++) {
 				auto& gobj = world->gobjects[i];
 				if (gobj.location.stageId != world->curStageId) continue;
-				if (Vector3Equals(gobj.location.moveVec, {0,0,0})) continue;
+				if (Vector3Equals(gobj.physics.moveVec, { 0,0,0 })) continue;
+				gobj.physics.boundsCached = false;
+			}
+
+			for (int i = 0; i < world->gobjects.size(); i++) {
+				auto& gobj = world->gobjects[i];
+				if (gobj.location.stageId != world->curStageId) continue;
+				if (Vector3Equals(gobj.physics.moveVec, {0,0,0})) continue;
 				auto* curRoom = &curStage.rooms[world->curRoomId];
 
 				processColliders(gobj, *curRoom);
-				gobj.location.position = Vector3Add(gobj.location.position, gobj.location.moveVec);
+				gobj.location.position = Vector3Add(gobj.location.position, gobj.physics.moveVec);
+
 				//Check Zones
 				for (int i = 0; i < curRoom->zones.size(); i++) {
 					if (!objectInZone(gobj, &curRoom->zones[i])) continue;

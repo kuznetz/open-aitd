@@ -67,7 +67,7 @@ namespace AITDExtractor {
     }
 
     void processModels() {
-        std::ifstream ifs("data/animation_links.json");
+        std::ifstream ifs("newdata/animation_links.json");
         json animLinks = json::parse(ifs);
 
         PakFile animPak("original/LISTANIM.PAK");
@@ -273,8 +273,8 @@ namespace AITDExtractor {
 
         processStages();
         processModels();
-        processTestScript();
-        //processScripts();
+        //processTestScript();
+        processScripts();
         processTracks();
         processSounds();
 

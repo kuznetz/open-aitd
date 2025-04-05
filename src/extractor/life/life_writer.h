@@ -164,9 +164,7 @@ inline void writeIfHead(ofstream& out, LifeNode& ifNode)
 
 inline void writeCaseExpr(ofstream& out, string varsw, LifeInstruction& instr)
 {
-	if (instr.type->type == LifeEnum::CASE) {
-
-	} if (instr.type->type == LifeEnum::CASE) {
+    if (instr.type->type == LifeEnum::CASE) {
 		out << varsw << " == ";
 		out << instr.arguments[0].constVal;
 	}

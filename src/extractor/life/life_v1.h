@@ -132,7 +132,7 @@ inline const vector<parseLifeExpr> LifeExprParams =
 	{ EvalEnum::CHRONO, "CHRONO", { }, true },
 	{ EvalEnum::ROOM_CHRONO, "ROOM_CHRONO", { }},
 	{ EvalEnum::DIST, "DIST", { lifeConst }},
-	{ EvalEnum::COL_BY, "COL_BY", { }},
+	{ EvalEnum::COL_BY, "COL_BY", { }, true },
 	{ EvalEnum::IN_INVENTORY, "IN_INVENTORY", { lifeExpr }},
 	{ EvalEnum::ACTION, "ACTION", { }},
 	{ EvalEnum::POSREL, "POSREL", { lifeConst }},

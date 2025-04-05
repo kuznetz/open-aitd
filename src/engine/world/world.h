@@ -36,6 +36,7 @@ namespace openAITD {
 		void loadGObjects(string path);
 		void loadVars(string path);
 		void setCharacter(bool alt) {}
+		void setRepeatAnimation(GameObject& gobj, int animId);
 	};
 
 	void World::loadGObjects(string path)
@@ -59,12 +60,19 @@ namespace openAITD {
 				auto& mdlJson = objsJson[i]["model"];
 				mdl.id = mdlJson["id"];
 				mdl.animId = mdlJson["animId"];
-				mdl.animType = mdlJson["animType"];
-				mdl.animInfo = mdlJson["animInfo"];
+				mdl.flags = mdlJson["animType"];
+				mdl.nextAnimId = mdlJson["animInfo"];
 				mdl.boundsType = mdlJson["boundsType"];
 			}
 		}
 	};
+
+	void World::setRepeatAnimation(GameObject& gobj, int animId) {
+		gobj.model.animId = animId;
+		gobj.model.nextAnimId = -1;
+		gobj.model.animTime = 0;
+		gobj.model.flags = 1;
+	}
 
 	void World::loadVars(string path)
 	{

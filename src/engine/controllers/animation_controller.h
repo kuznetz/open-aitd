@@ -32,11 +32,23 @@ namespace openAITD {
 				}
 				gobj.model.animTime += timeDelta;
 				int curFrame = (gobj.model.animTime / frameT);
-				while (curFrame >= anim->frameCount) {
-					gobj.model.animTime -= anim->frameCount * frameT;
-					curFrame -= anim->frameCount;
+				if (curFrame >= anim->frameCount) {
+					gobj.model.animEnd = 1;
+					if (!gobj.model.bitField.repeat) {
+						gobj.model.animId = gobj.model.nextAnimId;
+						gobj.model.animTime = 0;
+						curFrame = 0;
+					}
+					else {
+						while (curFrame >= anim->frameCount) {
+							gobj.model.animTime -= anim->frameCount * frameT;
+							curFrame -= anim->frameCount;
+						}
+					}
 				}
-				UpdateModelAnimation(mdl->model, *anim, curFrame);
+				if (gobj.model.animId != -1) {
+					UpdateModelAnimation(mdl->model, *anim, curFrame);
+				}				
 			}
 		}
 	};
