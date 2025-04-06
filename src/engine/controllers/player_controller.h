@@ -108,31 +108,31 @@ namespace openAITD {
 			}
 
 			bool teleportPlayer = false;
-			if (IsKeyPressed(KEY_D) && (world->curCameraId < curStage.cameras.size() - 1)) {
-				if (world->curCameraId++);
+			if (IsKeyPressed(KEY_D) && (world->curRoomId < curStage.rooms.size() - 1)) {
+				if (world->curRoomId++);
 				teleportPlayer = true;
 			}
-			if (IsKeyPressed(KEY_A) && (world->curCameraId > 0)) {
-				if (world->curCameraId--);
+			if (IsKeyPressed(KEY_A) && (world->curRoomId > 0)) {
+				if (world->curRoomId--);
 				teleportPlayer = true;
 			}
 			if (IsKeyPressed(KEY_W)) {
 				world->curStageId++;
-				world->curCameraId = 0;
+				world->curRoomId = 0;
 				teleportPlayer = true;
 			}
 			if (IsKeyPressed(KEY_S)) {
 				teleportPlayer = true;
 				world->curStageId--;
-				world->curCameraId = 0;
+				world->curRoomId = 0;
 			}
 			if (IsKeyDown(KEY_SPACE)) {
 				teleportPlayer = true;
 			}
 			if (teleportPlayer) {
+				world->curCameraId = 0;
 				player->location.stageId = world->curStageId;
-				auto newRoom = resources->stages[world->curStageId].cameras[world->curCameraId].rooms[0].roomId;
-				player->location.roomId = newRoom;
+				player->location.roomId = world->curRoomId;
 				player->location.position = { 0,0,0 };//resources->stages[world->curStageId].rooms[newRoom].position;
 			}
 

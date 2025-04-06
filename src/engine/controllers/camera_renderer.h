@@ -66,11 +66,12 @@ namespace openAITD {
 			int height = GetScreenHeight();
 			auto& matProj = curCamera->perspective;
 			Matrix matView = MatrixLookAt(initCamera.position, initCamera.target, initCamera.up);
+			Vector3 depth = Vector3Transform(position, matView);
 			Quaternion worldPos = { position.x, position.y, position.z, 1.0f };
 			worldPos = QuaternionTransform(worldPos, matView);
 			worldPos = QuaternionTransform(worldPos, matProj);
 			Vector3 ndcPos = { worldPos.x / worldPos.w, -worldPos.y / worldPos.w, worldPos.z / worldPos.w };
-			Vector3 screenPosition = { (ndcPos.x + 1.0f) / 2.0f * (float)width, (ndcPos.y + 1.0f) / 2.0f * (float)height, ndcPos.z };
+			Vector3 screenPosition = { (ndcPos.x + 1.0f) / 2.0f * (float)width, (ndcPos.y + 1.0f) / 2.0f * (float)height, -depth.z };
 			return screenPosition;
 		}
 
