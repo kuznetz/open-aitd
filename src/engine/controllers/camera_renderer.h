@@ -265,17 +265,7 @@ namespace openAITD {
 		}
 
 		bool checkOverlay(GCameraOverlay& ovl, GameObject& gobj) {
-			Vector3& roomPos = curStage->rooms[gobj.location.roomId].position;
-			//
-			//objBnd.min.x += pos.x;
-			//objBnd.max.x += pos.x;
-			//objBnd.min.z += pos.z;
-			//objBnd.max.z += pos.z;
-			//objBnd.min.y = -10000;
-			//objBnd.max.y = 10000;
-
 			Vector3 pos = gobj.location.position;
-			pos = Vector3Add(roomPos, pos);
 			for (int i = 0; i < ovl.bounds.size(); i++) {
 				auto& b = ovl.bounds[i];
 				//if (CheckCollisionBoxes(objBnd, ovl.bounds[i])) {
@@ -360,20 +350,15 @@ namespace openAITD {
 			}
 
 			//TODO: Revese for can be faster (no overwrite result)
-			for (auto it = renderQueue.begin(); it != renderQueue.end(); it++) {
-				auto& obj = *it->obj;
-				for (auto i = 0; i < curOverlays.size(); i++) {
-					/*if (obj.model.id == 24 && i == 6) {
-						[]() {}();
-					}*/
-					auto& ovl = curOverlays[i];					
-					if ((ovl.roomId == it->obj->location.roomId) && checkOverlay(*ovl.res, obj)) {
-						ovl.renderAfterObj = &obj;
-					}
-				}
-			}
-
-			
+			//for (auto it = renderQueue.begin(); it != renderQueue.end(); it++) {
+			//	auto& obj = *it->obj;
+			//	for (auto i = 0; i < curOverlays.size(); i++) {
+			//		auto& ovl = curOverlays[i];					
+			//		if ((ovl.roomId == it->obj->location.roomId) && checkOverlay(*ovl.res, obj)) {
+			//			ovl.renderAfterObj = &obj;
+			//		}
+			//	}
+			//}
 
 			int num = 1;
 			for (auto it = renderQueue.begin(); it != renderQueue.end(); it++) {
@@ -386,14 +371,16 @@ namespace openAITD {
 				//auto s = to_string(num)+" R" + to_string(it->obj->location.roomId);
 				//auto s = to_string(it->obj->);
 
-				for (auto i = 0; i < curOverlays.size(); i++) {
-					if (it->obj == curOverlays[i].renderAfterObj) {
-						Rectangle r = {
-							(int)it->screenMin.x,
-							(int)it->screenMin.x,
-							(int)(it->screenMax.x - it->screenMin.x) + 1,
-							(int)(it->screenMax.y - it->screenMin.y) + 1
-						};
+				Rectangle r = {
+					(int)it->screenMin.x,
+					(int)it->screenMin.y,
+					(int)(it->screenMax.x - it->screenMin.x) + 1,
+					(int)(it->screenMax.y - it->screenMin.y) + 1
+				};
+
+				for (auto i = 0; i < curOverlays.size(); i++) {			
+					if (it->obj->location.roomId != curOverlays[i].roomId) continue;
+					if (checkOverlay(*curOverlays[i].res, *it->obj)) {
 						DrawTexturePro(
 							curOverlays[i].texture, r, r, { 0, 0 }, 0, WHITE
 						);
