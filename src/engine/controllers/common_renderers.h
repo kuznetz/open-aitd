@@ -10,8 +10,9 @@ namespace openAITD {
 
 	struct RenderOrder {
 		GameObject* obj;
-		Vector3 zPos;
-		string marker;
+		float zPos;
+		Vector2 screenMin;
+		Vector2 screenMax;
 	};
 
 }

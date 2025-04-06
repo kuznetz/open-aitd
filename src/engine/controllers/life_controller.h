@@ -36,6 +36,9 @@ namespace openAITD {
 				return this->world->gobjects[obj].physics.collidedBy;
 			}, "COL_BY");
 			lua->CreateFunction([this](int obj) -> int {
+				return -1;
+			}, "HIT_BY");			
+			lua->CreateFunction([this](int obj) -> int {
 				return this->world->gobjects[obj].model.scriptAnimId;
 			}, "ANIM");
 			lua->CreateFunction([this](int obj) -> int {

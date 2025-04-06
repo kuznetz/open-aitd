@@ -74,6 +74,52 @@ namespace openAITD {
 			return screenPosition;
 		}
 
+		void fillScreenBounds(RenderOrder& ord, GameObject& gobj)
+		{
+			ord.obj = &gobj;
+
+			//Calc matrix
+			Vector3& roomPos = curStage->rooms[gobj.location.roomId].position;
+			auto pos = Vector3Add(roomPos, gobj.location.position);
+			Matrix matTranslation = MatrixTranslate(pos.x, pos.y, pos.z);
+			auto& rot = gobj.location.rotation;
+			Matrix matRotation = QuaternionToMatrix(rot);
+			Matrix matScale = MatrixScale(1, 1, 1);
+			Matrix matTransform = MatrixMultiply(MatrixMultiply(matScale, matRotation), matTranslation);
+
+			auto rmodel = resources->models.getModel(gobj.model.id);
+			auto& bb = rmodel->bounds;
+			Vector3 vecs[8];
+			vecs[0] = { bb.min.x, bb.max.y, bb.max.z }; // Top left
+			vecs[1] = { bb.max.x, bb.max.y, bb.max.z }; // Top right
+			vecs[2] = { bb.min.x, bb.min.y, bb.max.z }; // Bottom left
+			vecs[3] = { bb.max.x, bb.min.y, bb.max.z }; // Bottom right
+			// Back face
+			vecs[4] = { bb.min.x, bb.max.y, bb.min.z }; // Top left
+			vecs[5] = { bb.max.x, bb.max.y, bb.min.z }; // Top right
+			vecs[6] = { bb.min.x, bb.min.y, bb.min.z }; // Bottom left
+			vecs[7] = { bb.max.x, bb.min.y, bb.min.z }; // Bottom right
+
+			for (int i = 0; i < 8; i++) {
+				Vector3 v = GetWorldToScreenZ(Vector3Transform(vecs[i], matTransform));
+				if (i == 0 || ord.zPos < v.z) {
+					ord.zPos = v.z;
+				}
+				if (i == 0 || ord.screenMin.x > v.x) {
+					ord.screenMin.x = v.x;
+				}
+				if (i == 0 || ord.screenMin.y > v.y) {
+					ord.screenMin.y = v.y;
+				}
+				if (i == 0 || ord.screenMax.x < v.x) {
+					ord.screenMax.x = v.x;
+				}
+				if (i == 0 || ord.screenMax.y < v.y) {
+					ord.screenMax.y = v.y;
+				}
+			}
+		}
+
 		void clearStage()
 		{
 			for (int i = 0; i < backgrounds.size(); i++) {
@@ -219,20 +265,21 @@ namespace openAITD {
 		}
 
 		bool checkOverlay(GCameraOverlay& ovl, GameObject& gobj) {
-			auto* mdl = resources->models.getModel(gobj.model.id);
-			auto objBnd = mdl->bounds;
+			Vector3& roomPos = curStage->rooms[gobj.location.roomId].position;
+			//
+			//objBnd.min.x += pos.x;
+			//objBnd.max.x += pos.x;
+			//objBnd.min.z += pos.z;
+			//objBnd.max.z += pos.z;
+			//objBnd.min.y = -10000;
+			//objBnd.max.y = 10000;
 
 			Vector3 pos = gobj.location.position;
-			//Vector3& roomPos = curStage->rooms[gobj.location.roomId].position;
-			//pos = Vector3Add(roomPos, pos);
-			objBnd.min.x += pos.x;
-			objBnd.max.x += pos.x;
-			objBnd.min.z += pos.z;
-			objBnd.max.z += pos.z;
-			objBnd.min.y = -10000;
-			objBnd.max.y = 10000;
+			pos = Vector3Add(roomPos, pos);
 			for (int i = 0; i < ovl.bounds.size(); i++) {
-				if (CheckCollisionBoxes(objBnd, ovl.bounds[i])) {
+				auto& b = ovl.bounds[i];
+				//if (CheckCollisionBoxes(objBnd, ovl.bounds[i])) {
+				if (pos.x >= b.min.x && pos.x <= b.max.x && pos.z >= b.min.z && pos.z <= b.max.z) {
 					return true;
 				}
 			}
@@ -282,21 +329,29 @@ namespace openAITD {
 				Vector3& roomPos = curStage->rooms[gobj.location.roomId].position;
 				pos = Vector3Add(roomPos, pos);
 
-				auto& screenPos = GetWorldToScreenZ(pos);
-				if (screenPos.z < 0) continue;
+				//auto& screenPos = GetWorldToScreenZ(pos);
+				//if (screenPos.z < 0) continue;
+
+				RenderOrder ro;
+				fillScreenBounds(ro, gobj);
+				if (ro.zPos < 0) continue;
+				if (ro.screenMax.x < 0 || ro.screenMin.x > screenW) continue;
+				if (ro.screenMax.y < 0 || ro.screenMin.y > screenH) continue;
+
 				renderObject(gobj, WHITE);
 				
 				bool inserted = false;
-				string s = to_string(i);
+				//string s = to_string(i);
+
 				for (auto it = renderQueue.begin(); it != renderQueue.end(); it++) {
-					if ((*it).zPos.z < screenPos.z) {
-						renderQueue.insert( it, { &gobj, screenPos, s });
+					if ((*it).zPos < ro.zPos) {
+						renderQueue.insert( it, ro);
 						inserted = true;
 						break;
 					}
 				}
 				if (!inserted) {
-					renderQueue.push_back({ &gobj, screenPos, s });
+					renderQueue.push_back(ro);
 				}
 			}
 
@@ -333,11 +388,14 @@ namespace openAITD {
 
 				for (auto i = 0; i < curOverlays.size(); i++) {
 					if (it->obj == curOverlays[i].renderAfterObj) {
+						Rectangle r = {
+							(int)it->screenMin.x,
+							(int)it->screenMin.x,
+							(int)(it->screenMax.x - it->screenMin.x) + 1,
+							(int)(it->screenMax.y - it->screenMin.y) + 1
+						};
 						DrawTexturePro(
-							curOverlays[i].texture,
-							{ 0, 0, (float)screenW, (float)screenH },
-							{ 0, 0, (float)screenW, (float)screenH },
-							{ 0, 0 }, 0, WHITE
+							curOverlays[i].texture, r, r, { 0, 0 }, 0, WHITE
 						);
 						//s += string(" ") + to_string(i)+"."+to_string(curOverlays[i].roomId);
 					}
@@ -345,6 +403,13 @@ namespace openAITD {
 				//it->marker = s;
 				num++;
 			}
+
+			//for (auto it = renderQueue.begin(); it != renderQueue.end(); it++) {
+			//	DrawLine(it->screenMin.x, it->screenMin.y, it->screenMax.x, it->screenMin.y, RED);
+			//	DrawLine(it->screenMin.x, it->screenMin.y, it->screenMin.x, it->screenMax.y, RED);
+			//	DrawLine(it->screenMax.x, it->screenMax.y, it->screenMax.x, it->screenMin.y, RED);
+			//	DrawLine(it->screenMax.x, it->screenMax.y, it->screenMin.x, it->screenMax.y, RED);
+			//}
 
 		}
 

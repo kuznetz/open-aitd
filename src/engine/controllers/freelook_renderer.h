@@ -156,6 +156,7 @@ namespace openAITD {
 			for (int r = 0; r < curCamera->rooms.size(); r++) {
 				auto& room = curCamera->rooms[r];
 				for (int ovId = 0; ovId < room.overlays.size(); ovId++) {
+					if (ovId != 2) continue;
 					for (int b = 0; b < room.overlays[ovId].bounds.size(); b++) {
 						DrawBounds(room.overlays[ovId].bounds[b], DARKGREEN);
 					}
@@ -313,7 +314,7 @@ namespace openAITD {
 				renderBounds();
 				renderZones();
 				renderCameraZones();
-				//renderOvlBounds();
+				renderOvlBounds();
 			EndMode3D();
 			/*for (auto it = renderQueue.begin(); it != renderQueue.end(); it++) {
 			}*/

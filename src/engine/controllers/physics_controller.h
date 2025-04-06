@@ -194,30 +194,47 @@ namespace openAITD {
 			return true;
 		}
 
-		bool BoxToBox(BoundingBox& b1, Vector3& v, BoundingBox& b2) {
+		bool BoxToBox(BoundingBox& b1_0, Vector3& v, BoundingBox& b2) {
+			BoundingBox b1 = { Vector3Add(b1_0.min, v), Vector3Add(b1_0.max, v) };
+			if (
+				(b1.min.x > b2.max.x || b1.max.x < b2.min.x) &&
+				(b2.min.x > b1.max.x || b2.max.x < b1.min.x)
+			)  return false;
 			if (
 				(b1.min.y > b2.max.y || b1.max.y < b2.min.y) &&
 				(b2.min.y > b1.max.y || b2.max.y < b1.min.y)
 			)  return false;
+			if (
+				(b1.min.z > b2.max.z || b1.max.z < b2.min.z) &&
+				(b2.min.z > b1.max.z || b2.max.z < b1.min.z)
+			)  return false;
 
-			bool c = false;
-			c = PointToBox({ b1.min.x, 0, b1.min.z }, v, b2) || c;
-			c = PointToBox({ b1.max.x, 0, b1.min.z }, v, b2) || c;
-			c = PointToBox({ b1.min.x, 0, b1.max.z }, v, b2) || c;
-			c = PointToBox({ b1.max.x, 0, b1.max.z }, v, b2) || c;
+			float revX = (v.x < 0) ? (b2.max.x - b1.min.x) : (b2.min.x - b1.max.x);
+			float revZ = (v.z < 0) ? (b2.max.z - b1.min.z) : (b2.min.z - b1.max.z);
+			if (abs(revX) < abs(revZ)) {
+				v.x += revX;
+			}
+			else {
+				v.z += revZ;
+			}
 
-			auto v2 = Vector3Negate(v);
-			bool c2 = false;
-			c2 = PointToBox({ b2.min.x, 0, b2.min.z }, v2, b1) || c2;
-			c2 = PointToBox({ b2.max.x, 0, b2.min.z }, v2, b1) || c2;
-			c2 = PointToBox({ b2.min.x, 0, b2.max.z }, v2, b1) || c2;
-			c2 = PointToBox({ b2.max.x, 0, b2.max.z }, v2, b1) || c2;
+			//bool c = false;
+			//c = PointToBox({ b1_0.min.x, 0, b1_0.min.z }, v, b2) || c;
+			//c = PointToBox({ b1_0.max.x, 0, b1_0.min.z }, v, b2) || c;
+			//c = PointToBox({ b1_0.min.x, 0, b1_0.max.z }, v, b2) || c;
+			//c = PointToBox({ b1_0.max.x, 0, b1_0.max.z }, v, b2) || c;
 
-			v = Vector3Negate(v2);
+			//auto v2 = Vector3Negate(v);
+			//bool c2 = false;
+			//c2 = PointToBox({ b2.min.x, 0, b2.min.z }, v2, b1_0) || c2;
+			//c2 = PointToBox({ b2.max.x, 0, b2.min.z }, v2, b1_0) || c2;
+			//c2 = PointToBox({ b2.min.x, 0, b2.max.z }, v2, b1_0) || c2;
+			//c2 = PointToBox({ b2.max.x, 0, b2.max.z }, v2, b1_0) || c2;
+			/*v = Vector3Negate(v2);*/
 
 			//if (c) printf("c");
 			//if (c2) printf("c2");
-			return c || c2;
+			return true;
 		}
 
 		BoundingBox correctBounds(const BoundingBox& b) {
@@ -250,10 +267,10 @@ namespace openAITD {
 			if (gobj.model.boundsType == GOModel::BoundsType::rotated) {
 				objB.min = Vector3RotateByQuaternion(objB.min, gobj.location.rotation);
 				objB.max = Vector3RotateByQuaternion(objB.max, gobj.location.rotation);
-				objB = correctBounds(objB);
 			}
 			objB.min = Vector3Add(objB.min, p);
 			objB.max = Vector3Add(objB.max, p);
+			objB = correctBounds(objB);
 			if (!gobj.physics.boundsCached) {
 				gobj.physics.bounds = objB;
 				gobj.physics.boundsCached = true;
