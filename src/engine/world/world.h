@@ -33,19 +33,22 @@ namespace openAITD {
 		Room* curRoom = 0;
 		int curCameraId = -1;
 		//Object to follow camera
-		GameObject* followTarget;
+		GameObject* followTarget = 0;
 
 		World(Resources* res) {
 			this->resources = res;
 		}
 
 		void setCurRoom(int stageId, int roomId) {
-			curStageId = stageId;
-			curStage = &resources->stages[stageId];
-			curRoomId = roomId;
-			curRoom = &curStage->rooms[roomId];
 			if (curStageId != stageId) {
+				curStageId = stageId;
+				curStage = &resources->stages[stageId];
+				curRoomId = -1;
 				curCameraId = -1;
+			}
+			if (curRoomId != roomId) {
+				curRoomId = roomId;
+				curRoom = &curStage->rooms[roomId];
 			}
 		}
 		void loadGObjects(string path);

@@ -127,7 +127,8 @@ namespace openAITD {
 				player->location.position = { 0,0,0 };//resources->stages[world->curStageId].rooms[newRoom].position;
 			}
 
-			world->curRoomId = player->location.roomId;
+			world->setCurRoom(player->location.stageId, player->location.roomId);
+			player->moveFlag;
 		}
 	};
 

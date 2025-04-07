@@ -261,6 +261,7 @@ namespace AITDExtractor {
     }
 
     void extractAllData() {
+        dumpInstructions("instr.txt");
         gameObjs = loadGameObjects("original/OBJETS.ITD");
         if (!std::filesystem::exists("data/objects.json")) {
             extractGameObjects(gameObjs, "data/objects.json");

@@ -52,6 +52,12 @@ namespace openAITD {
 				int r = (this->world->gobjects[obj].invItem.flags & 0xC000) ? 1 : 0;
 				return r;
 			}, "IS_FOUND");
+			lua->CreateFunction([this](int obj) -> int {
+				return (this->world->gobjects[obj].track.mark);
+			}, "MARK");
+			lua->CreateFunction([this](int obj) -> int {
+				return (this->world->gobjects[obj].track.id);
+			}, "NUM_TRACK");
 		}
 
 		void initInstructions() {
@@ -86,16 +92,25 @@ namespace openAITD {
 				//
 			}, "SET_FLAGS");
 			
-			lua->CreateFunction([this](int obj, int soundId, int animId, int animFrame) {
+			lua->CreateFunction([this](int obj, int sampleId, int animId, int animFrame) {
 				//TODO: remember frame, not play in life
 				if (this->world->gobjects[obj].model.animId != animId) return;
 				if (this->world->gobjects[obj].model.animTime != animFrame) return;
-				cout << "SET_ANIM_SOUND " << soundId << endl;
+				//cout << "SET_ANIM_SOUND " << sampleId << endl;
 			}, "SET_ANIM_SOUND");
-
-			lua->CreateFunction([this](int soundId) {
-				cout << "SOUND " << soundId << endl;
+			lua->CreateFunction([this](int sampleId) {
+				//cout << "SOUND " << sampleId << endl;
 			}, "SOUND");			
+			lua->CreateFunction([this](int freq) {
+				//TODO: Random sound frequency
+			}, "RND_FREQ");
+			lua->CreateFunction([this](int sampleId, int reserve) {
+				//TODO: REP_SOUND
+			}, "REP_SOUND");
+			lua->CreateFunction([this](int sampleId, int nextSampleId) {
+				//TODO: SOUND_THEN
+			}, "SOUND_THEN");
+			
 
 			lua->CreateFunction([this](int obj) {
 			}, "FOUND");
@@ -103,6 +118,18 @@ namespace openAITD {
 			lua->CreateFunction([this](int obj) {
 				this->world->gobjects[obj].moveFlag = true;
 			}, "DO_MOVE");
+
+			lua->CreateFunction([this](int obj) {
+				this->world->followTarget = &this->world->gobjects[obj];
+			}, "SET_CAMERA_TARGET");
+			lua->CreateFunction([this](int obj, int stage, int room, int x, int y, int z) {
+				auto& gobj = this->world->gobjects[obj];
+				gobj.location.stageId = stage;
+				gobj.location.roomId = room;
+				gobj.location.position.x = x/1000.;
+				gobj.location.position.y = y / 1000.;
+				gobj.location.position.z = z / 1000.;
+			}, "CHANGE_ROOM");
 		}
 
 		void initLua() {

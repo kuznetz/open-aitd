@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string>
 #include <fstream>
+#include <sstream>
 #include <iomanip>
 #include <fstream>
 #include "life_v1.h"
@@ -205,4 +206,31 @@ inline void extractLife(string fname, string outFile)
 		out << "end\n\n";
 	}
 	out.close();
+}
+
+inline string to_hex(int i) {
+	std::stringstream strs;
+	strs << "0x"
+		<< std::setfill('0') << std::setw(4)
+		<< std::hex << i;
+	return strs.str();
+}
+
+inline void dumpInstructions(string outFile) {
+	ofstream out(outFile, ios::trunc | ios::out);
+	out << "EXPR:\n";
+	for (int j = 0; j < LifeExprParams.size(); j++)
+	{
+		auto& e = LifeExprParams[j];
+		out << e.typeStr << " " << to_string(j) << " " << to_hex(j) << "\n";
+	}
+
+	out << "\nLIFE:\n";
+	for (int j = 0; j < LifeParams.size(); j++)
+	{
+		auto& e = LifeParams[j];
+		out << e.typeStr << " " << to_string(j) << " " << to_hex(j) << "\n";
+	}
+	out.close();
+
 }
