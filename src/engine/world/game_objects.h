@@ -114,6 +114,13 @@ namespace openAITD {
 		camera = 3
 	};
 
+	struct GOTrack {
+		int mark = -1;
+		int id = -1;
+		int pos;
+		int mode = -1;
+	};
+
 	class GameObject
 	{
 	public:
@@ -123,6 +130,7 @@ namespace openAITD {
 		GOModel model;
 		GOInvItem invItem;
 		GOPhysics physics;
+		GOTrack track;
 
 		union {
 			short int flags;
@@ -130,11 +138,9 @@ namespace openAITD {
 		};
 
 		int lifeId;
-		GOLifeMode lifeMode;
-		
-		int trackId;
-		int trackPos;
-		int trackMode;
+		GOLifeMode lifeMode;		
+
+		bool moveFlag = false;
 	};
 
 }

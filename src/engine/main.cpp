@@ -44,11 +44,13 @@ namespace openAITD {
         for (int i = 0; i < 8; i++) {
             resources.stages[i].load(string("data/stages/")+to_string(i));
         }
+        resources.loadTracks("data/tracks");
+
         world.loadGObjects("data/objects.json");
-        world.followTarget = &world.gobjects[1];
-        playerContr.player = &world.gobjects[1];
-        world.setCurRoom(0, 0);
-        //world.setCurRoom(7, 1);
+        //world.followTarget = &world.gobjects[1];
+        //playerContr.player = &world.gobjects[1];
+        //world.setCurRoom(0, 0);
+        world.setCurRoom(7, 1);
         
         //world.loadVars("data/vars.json");
 

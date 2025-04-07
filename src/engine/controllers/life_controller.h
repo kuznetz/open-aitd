@@ -77,9 +77,9 @@ namespace openAITD {
 			
 			lua->CreateFunction([this](int obj, int trackMode, int trackId, int positionInTrack) {
 				auto& gobj = this->world->gobjects[obj];
-				gobj.trackMode = trackMode;
-				gobj.trackId = trackId;
-				gobj.trackPos = positionInTrack;
+				gobj.track.mode = trackMode;
+				gobj.track.id = trackId;
+				gobj.track.pos = positionInTrack;
 			}, "SET_TRACKMODE");
 			
 			lua->CreateFunction([this](int obj) {
@@ -100,6 +100,9 @@ namespace openAITD {
 			lua->CreateFunction([this](int obj) {
 			}, "FOUND");
 
+			lua->CreateFunction([this](int obj) {
+				this->world->gobjects[obj].moveFlag = true;
+			}, "DO_MOVE");
 		}
 
 		void initLua() {
@@ -130,16 +133,19 @@ namespace openAITD {
 			for (int i = 0; i < world->gobjects.size(); i++) {
 				auto& gobj = world->gobjects[i];
 				if (gobj.lifeId == -1) continue;
-				if (gobj.lifeMode == GOLifeMode::none || gobj.lifeMode == GOLifeMode::off) continue;
 				if (gobj.location.stageId != world->curStageId) continue;
-				if ((gobj.lifeMode == GOLifeMode::room || gobj.lifeMode == GOLifeMode::camera) && (gobj.location.roomId != world->curRoomId)) continue;
+				//if (gobj.lifeMode == GOLifeMode::none || gobj.lifeMode == GOLifeMode::off) continue;
+				//if ((gobj.lifeMode == GOLifeMode::room || gobj.lifeMode == GOLifeMode::camera) && (gobj.location.roomId != world->curRoomId)) continue;
 
 				auto& f = funcs.find(gobj.lifeId);
-				if (f == funcs.end()) continue;
+				if (f == funcs.end()) {
+					cout << "Life " << gobj.lifeId << "(obj: " << i << ") not found, " << endl;
+					continue;
+				}
 
 				string errstr;
 				if (!f->second->Execute(execCb, &errstr, i)) {
-					cout << "Execute life_" << i << " error: " << errstr;
+					cout << "Execute life_" << i << " error: " << errstr << endl;
 				}
 			}
 		}

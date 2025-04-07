@@ -84,7 +84,12 @@ namespace openAITD {
 				mdl.boundsType = mdlJson["boundsType"];
 			}
 
-			gobjects[i].trackMode = objsJson[i]["track"]["mode"];
+			if (objsJson[i].contains("track")) {
+				gobjects[i].track.id = objsJson[i]["track"]["id"];
+				gobjects[i].track.mode = objsJson[i]["track"]["mode"];
+				gobjects[i].track.pos = objsJson[i]["track"]["position"];
+			}
+
 			gobjects[i].lifeMode = objsJson[i]["lifeMode"];			
 			gobjects[i].lifeId = objsJson[i]["life"];
 		}

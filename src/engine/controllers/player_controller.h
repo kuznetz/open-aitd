@@ -28,10 +28,13 @@ namespace openAITD {
 		}
 
 		void process(float timeDelta) {
+			if (!player) return;
+			if (!player->moveFlag) return;
+
 			bool isAction = false;
 			int nextAnimation = player->model.animId;
 
-			if (player->trackMode == 0) {
+			if (player->track.mode == 0) {
 				isAction = true;
 			}
 

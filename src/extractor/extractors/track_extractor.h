@@ -2,7 +2,7 @@
 
 inline const vector<ParseTrackNode> TrackTable_v1 =
 {
-  {TrackEnum::WARP, "WARP", 4},
+  {TrackEnum::WARP, "WARP", 4}, //0
   {TrackEnum::GOTO_POS, "GOTO_POS", 3},
   {TrackEnum::END, "END", 0},
   {TrackEnum::REWIND, "REWIND", 0},
@@ -11,17 +11,17 @@ inline const vector<ParseTrackNode> TrackTable_v1 =
   {TrackEnum::SPEED_5, "SPEED_5", 0},
   {TrackEnum::SPEED_0, "SPEED_0", 0},
   {TrackEnum::UNUSED, "UNUSED", 0}, //set SPEED to -1
-  {TrackEnum::ROTATE_X, "ROTATE_X", 1},
-  {TrackEnum::COLLISION_DISABLE, "COLLISION_DISABLE", 0},
+  {TrackEnum::ROTATE_Y, "ROTATE_Y", 1},
+  {TrackEnum::COLLISION_DISABLE, "COLLISION_DISABLE", 0}, //10
   {TrackEnum::COLLISION_ENABLE, "COLLISION_ENABLE", 0},
   {TrackEnum::UNUSED, "UNUSED", 0}, //do not do anything (increase offset by 2)
   {TrackEnum::TRIGGERS_DISABLE, "TRIGGERS_DISABLE", 0},
   {TrackEnum::TRIGGERS_ENABLE, "TRIGGERS_ENABLE", 0},
-  {TrackEnum::WARP_ROT, "WARP_ROT", 5},
+  {TrackEnum::GOTO_3D, "GOTO_3D", 5},
   {TrackEnum::STORE_POS, "STORE_POS", 0},
   {TrackEnum::STAIRS_X, "STAIRS_X", 3},
   {TrackEnum::STAIRS_Z, "STAIRS_Z", 3},
-  {TrackEnum::ROTATE_XYZ, "ROTATE_XYZ",3 }
+  {TrackEnum::ROTATE_XYZ, "ROTATE_XYZ",3 } //19
 };
 
 struct TrackBuffer {
@@ -77,9 +77,10 @@ inline void extractTrack(Track track, string jsonTo) {
 			break;
 
 		case TrackEnum::GOTO_POS:
+			objJson["room"] = tr.arguments[0];
 			objJson["pos"] = json::array();
 			objJson["pos"][0] = tr.arguments[0] / 1000.;
-			objJson["pos"][1] = -tr.arguments[1] / 1000.;
+			objJson["pos"][1] = 0;
 			objJson["pos"][2] = tr.arguments[2] / 1000.;
 			break;
 
@@ -87,17 +88,20 @@ inline void extractTrack(Track track, string jsonTo) {
 			objJson["mark"] = tr.arguments[0];
 			break;
 
-		case TrackEnum::ROTATE_X:
-			objJson["x"] = tr.arguments[0] * 2. * PI / 1024;
+		case TrackEnum::ROTATE_Y:
+			objJson["rot"] = json::array();
+			objJson["rot"][0] = 0;
+			objJson["rot"][1] = tr.arguments[0] * 2. * PI / 1024;
+			objJson["rot"][2] = 0;
 			break;
 
-		case TrackEnum::WARP_ROT:
+		case TrackEnum::GOTO_3D:
 			objJson["room"] = tr.arguments[0];
-			objJson["rot"] = json::array();
-			objJson["rot"][0] = tr.arguments[1];
-			objJson["rot"][1] = tr.arguments[2];
-			objJson["rot"][2] = tr.arguments[3];
-			objJson["rot"][2] = tr.arguments[4];
+			objJson["pos"] = json::array();
+			objJson["pos"][0] = tr.arguments[1];
+			objJson["pos"][1] = tr.arguments[2];
+			objJson["pos"][2] = tr.arguments[3];
+			objJson["time"] = tr.arguments[4] / 60.;
 			break;
 
 		case TrackEnum::STAIRS_X:
