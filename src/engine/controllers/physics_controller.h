@@ -29,151 +29,6 @@ namespace openAITD {
 			return ((p.x > b.min.x) && (p.x < b.max.x) && (p.z > b.min.z) && (p.z < b.max.z));
 		}
 
-		//BoundingBox handleCollision(BoundingBox& startZv, BoundingBox& nextZv, BoundingBox& collZv)
-		//{
-		//	int flag = 0;
-		//	int var_8;
-		//	float halfX;
-		//	float halfZ;
-		//	int var_A;
-		//	int var_6;
-
-		//	if (startZv.max.x > collZv.min.x)
-		//	{
-		//		if (collZv.max.x <= startZv.min.x)
-		//		{
-		//			flag = 8;
-		//		}
-		//	}
-		//	else
-		//	{
-		//		flag = 4;
-		//	}
-
-		//	if (startZv.max.z > collZv.min.z)
-		//	{
-		//		if (startZv.min.z >= collZv.max.z)
-		//		{
-		//			flag |= 2;
-		//		}
-		//	}
-		//	else
-		//	{
-		//		flag |= 1;
-		//	}
-
-		//	if (flag == 5 || flag == 9 || flag == 6 || flag == 10)
-		//	{
-		//		var_8 = 2;
-		//	}
-		//	else
-		//	{
-		//		if (!flag)
-		//		{
-		//			var_8 = 0;
-
-		//			globHardColStepZ = 0;
-		//			globHardColStepX = 0;
-
-		//			return;
-		//		}
-		//		else
-		//		{
-		//			var_8 = 1;
-		//		}
-		//	}
-
-		//	halfX = (nextZv.min.x + nextZv.max.x) / 2;
-		//	halfZ = (nextZv.min.z + nextZv.max.z) / 2;
-
-		//	if (collZv.min.x > halfX)
-		//	{
-		//		var_A = 4;
-		//	}
-		//	else
-		//	{
-		//		if (collZv.max.x < halfX)
-		//		{
-		//			var_A = 0;
-		//		}
-		//		else
-		//		{
-		//			var_A = 8;
-		//		}
-		//	}
-
-		//	if (collZv.min.z > halfZ)
-		//	{
-		//		var_A |= 1;
-		//	}
-		//	else
-		//	{
-		//		if (collZv.max.z < halfZ)
-		//		{
-		//			var_A |= 0; // once again, not that much usefull
-		//		}
-		//		else
-		//		{
-		//			var_A |= 2;
-		//		}
-		//	}
-
-		//	if (var_A == 5 || var_A == 9 || var_A == 6 || var_A == 10)
-		//	{
-		//		var_6 = 2;
-		//	}
-		//	else
-		//	{
-		//		if (!var_A)
-		//		{
-		//			var_6 = 0;
-		//		}
-		//		else
-		//		{
-		//			var_6 = 1;
-		//		}
-		//	}
-
-		//	if (var_8 == 1)
-		//	{
-		//		hardColSuB1Sub1(flag);
-		//		return;
-		//	}
-
-		//	if (var_6 == 1 && (var_A & flag))
-		//	{
-		//		hardColSuB1Sub1(var_A);
-		//		return;
-		//	}
-
-		//	if (var_A == flag || flag == 15)
-		//	{
-		//		int Xmod = abs(nextZv.min.x - startZv.min.x); // recheck
-		//		int Zmod = abs(nextZv.min.z - startZv.min.z);
-
-		//		if (Xmod > Zmod)
-		//		{
-		//			globHardColStepZ = 0;
-		//		}
-		//		else
-		//		{
-		//			globHardColStepX = 0;
-		//		}
-		//	}
-		//	else
-		//	{
-		//		if (!var_6 || (var_6 == 1 && !(var_A & flag)))
-		//		{
-		//			globHardColStepZ = 0;
-		//			globHardColStepX = 0;
-		//		}
-		//		else
-		//		{
-		//			hardColSuB1Sub1(flag & var_A);
-		//		}
-		//	}
-		//}
-
 		bool PointToBox(const Vector3& p, Vector3& v, BoundingBox& b) {
 			Vector3& p2 = Vector3Add(p, v);
 			auto inB = (p2.x > b.min.x) && (p2.x < b.max.x) && (p2.z > b.min.z) && (p2.z < b.max.z);
@@ -304,6 +159,19 @@ namespace openAITD {
 			gobj.physics.moveVec = v;
 		}
 
+		void followCameraProcess() {
+			if (!world->followTarget) return;
+			auto& loc = world->followTarget->location;
+			if (loc.stageId == -1) return;
+			world->setCurRoom(loc.stageId, loc.roomId);
+			//Select Camera
+			Vector3 pos = Vector3Add(loc.position, world->curRoom->position);
+			auto camId = world->curStage->closestCamera(pos);
+			if (camId != -1) {
+				world->curCameraId = camId;
+			}
+		}
+
 		void process(float timeDelta) {
 			auto& curStage = resources->stages[world->curStageId];
 
@@ -335,7 +203,154 @@ namespace openAITD {
 					}
 				}			
 			}
+
+			followCameraProcess();
 		}
 	};
 
 }
+
+//BoundingBox handleCollision(BoundingBox& startZv, BoundingBox& nextZv, BoundingBox& collZv)
+//{
+//	int flag = 0;
+//	int var_8;
+//	float halfX;
+//	float halfZ;
+//	int var_A;
+//	int var_6;
+
+//	if (startZv.max.x > collZv.min.x)
+//	{
+//		if (collZv.max.x <= startZv.min.x)
+//		{
+//			flag = 8;
+//		}
+//	}
+//	else
+//	{
+//		flag = 4;
+//	}
+
+//	if (startZv.max.z > collZv.min.z)
+//	{
+//		if (startZv.min.z >= collZv.max.z)
+//		{
+//			flag |= 2;
+//		}
+//	}
+//	else
+//	{
+//		flag |= 1;
+//	}
+
+//	if (flag == 5 || flag == 9 || flag == 6 || flag == 10)
+//	{
+//		var_8 = 2;
+//	}
+//	else
+//	{
+//		if (!flag)
+//		{
+//			var_8 = 0;
+
+//			globHardColStepZ = 0;
+//			globHardColStepX = 0;
+
+//			return;
+//		}
+//		else
+//		{
+//			var_8 = 1;
+//		}
+//	}
+
+//	halfX = (nextZv.min.x + nextZv.max.x) / 2;
+//	halfZ = (nextZv.min.z + nextZv.max.z) / 2;
+
+//	if (collZv.min.x > halfX)
+//	{
+//		var_A = 4;
+//	}
+//	else
+//	{
+//		if (collZv.max.x < halfX)
+//		{
+//			var_A = 0;
+//		}
+//		else
+//		{
+//			var_A = 8;
+//		}
+//	}
+
+//	if (collZv.min.z > halfZ)
+//	{
+//		var_A |= 1;
+//	}
+//	else
+//	{
+//		if (collZv.max.z < halfZ)
+//		{
+//			var_A |= 0; // once again, not that much usefull
+//		}
+//		else
+//		{
+//			var_A |= 2;
+//		}
+//	}
+
+//	if (var_A == 5 || var_A == 9 || var_A == 6 || var_A == 10)
+//	{
+//		var_6 = 2;
+//	}
+//	else
+//	{
+//		if (!var_A)
+//		{
+//			var_6 = 0;
+//		}
+//		else
+//		{
+//			var_6 = 1;
+//		}
+//	}
+
+//	if (var_8 == 1)
+//	{
+//		hardColSuB1Sub1(flag);
+//		return;
+//	}
+
+//	if (var_6 == 1 && (var_A & flag))
+//	{
+//		hardColSuB1Sub1(var_A);
+//		return;
+//	}
+
+//	if (var_A == flag || flag == 15)
+//	{
+//		int Xmod = abs(nextZv.min.x - startZv.min.x); // recheck
+//		int Zmod = abs(nextZv.min.z - startZv.min.z);
+
+//		if (Xmod > Zmod)
+//		{
+//			globHardColStepZ = 0;
+//		}
+//		else
+//		{
+//			globHardColStepX = 0;
+//		}
+//	}
+//	else
+//	{
+//		if (!var_6 || (var_6 == 1 && !(var_A & flag)))
+//		{
+//			globHardColStepZ = 0;
+//			globHardColStepX = 0;
+//		}
+//		else
+//		{
+//			hardColSuB1Sub1(flag & var_A);
+//		}
+//	}
+//}

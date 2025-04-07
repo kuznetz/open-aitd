@@ -126,7 +126,7 @@ namespace openAITD {
 			//auto& room = curStage->rooms[curCamera->rooms[r].roomId];
 			for (int r = 0; r < curStage->rooms.size(); r++) {
 				auto& room = curStage->rooms[r];
-				int curRoomId = world->renderTarget->location.roomId;
+				int curRoomId = world->followTarget->location.roomId;
 				Color c = (r == curRoomId) ? WHITE : DARKBLUE;
 				DrawCube(room.position, 0.1, 0.1, 0.1, c);
 				rlPushMatrix();
@@ -142,7 +142,7 @@ namespace openAITD {
 		}
 
 		void renderZones() {
-			int curRoomId = world->renderTarget->location.roomId;
+			int curRoomId = world->followTarget->location.roomId;
 			auto& room = curStage->rooms[curRoomId];
 			rlPushMatrix();
 			rlTranslatef(room.position.x, room.position.y, room.position.z);

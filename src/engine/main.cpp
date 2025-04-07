@@ -27,7 +27,7 @@ namespace openAITD {
     int screenH = 960;
     
     Resources resources;
-    World world;
+    World world(&resources);
     CameraRenderer renderer(&resources, &world);
     FreelookRenderer flRenderer(&resources, &world);
     PlayerController playerContr(&resources, &world);
@@ -44,18 +44,20 @@ namespace openAITD {
         for (int i = 0; i < 8; i++) {
             resources.stages[i].load(string("data/stages/")+to_string(i));
         }
-
-        world.curStageId = 0;
-        world.curCameraId = 0;
         world.loadGObjects("data/objects.json");
-        world.renderTarget = &world.gobjects[1];
+        world.followTarget = &world.gobjects[1];
         playerContr.player = &world.gobjects[1];
+        world.setCurRoom(0, 0);
+        //world.setCurRoom(7, 1);
+        
         //world.loadVars("data/vars.json");
 
         renderer.screenW = screenW;
         renderer.screenH = screenH;
-        renderer.loadCamera(world.curStageId, world.curCameraId);
+        //renderer.loadCamera(world.curStageId, world.curCameraId);
         DisableCursor();
+
+        //startGame(7, 1, 0);
 
         float timeDelta = 0;        
         while (!WindowShouldClose()) {

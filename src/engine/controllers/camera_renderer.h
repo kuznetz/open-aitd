@@ -278,6 +278,7 @@ namespace openAITD {
 		}
 
 		void process() {
+			if (world->curStageId == -1 || world->curCameraId == -1) return;
 			if (world->curStageId != curStageId || world->curCameraId != curCameraId) {
 				loadCamera(world->curStageId, world->curCameraId);
 			}

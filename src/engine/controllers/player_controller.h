@@ -96,19 +96,8 @@ namespace openAITD {
 				world->setRepeatAnimation(*player, nextAnimation);
 			}
 
-			auto& curStage = resources->stages[world->curStageId];
-			auto* curRoom = &curStage.rooms[player->location.roomId];
-			if (world->curStageId == player->location.stageId) {
-				//Select Camera
-				Vector3 pos = Vector3Add(player->location.position, curRoom->position);
-				auto camId = curStage.closestCamera(pos);
-				if (camId != -1) {
-					world->curCameraId = camId;
-				}
-			}
-
 			bool teleportPlayer = false;
-			if (IsKeyPressed(KEY_D) && (world->curRoomId < curStage.rooms.size() - 1)) {
+			if (IsKeyPressed(KEY_D) && (world->curRoomId < world->curStage->rooms.size() - 1)) {
 				if (world->curRoomId++);
 				teleportPlayer = true;
 			}
@@ -130,7 +119,6 @@ namespace openAITD {
 				teleportPlayer = true;
 			}
 			if (teleportPlayer) {
-				world->curCameraId = 0;
 				player->location.stageId = world->curStageId;
 				player->location.roomId = world->curRoomId;
 				player->location.position = { 0,0,0 };//resources->stages[world->curStageId].rooms[newRoom].position;

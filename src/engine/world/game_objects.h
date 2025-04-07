@@ -106,6 +106,14 @@ namespace openAITD {
 		int collidedBy = -1;
 	};
 
+	enum class GOLifeMode {
+		none = -1,
+		off = 0,
+		stage = 1,
+		room = 2,
+		camera = 3
+	};
+
 	class GameObject
 	{
 	public:
@@ -122,7 +130,7 @@ namespace openAITD {
 		};
 
 		int lifeId;
-		int lifeMode;
+		GOLifeMode lifeMode;
 		
 		int trackId;
 		int trackPos;

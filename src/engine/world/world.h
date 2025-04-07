@@ -3,6 +3,7 @@
 #include <string>
 #include "../raylib.h"
 #include "game_objects.h"
+#include "../resources/resources.h"
 
 #define NLOHMANN_JSON_NAMESPACE_NO_VERSION 1
 #include <nlohmann/json.hpp>
@@ -20,19 +21,33 @@ namespace openAITD {
 	//Store all dynamic data in game
 	class World {
 	public:
+		Resources* resources;
 		vector<string> dataDirectories = { "./mods", "./oaitd", "./data" };
 		vector<GameObject> gobjects;
 		vector<short int> vars;
 		vector<short int> cVars;
-		//Object to follow camera
 		
-		int trackedGObjectId;
-		int curCameraId;
-		int curStageId;
-		int curRoomId;
+		int curStageId  = -1;
+		Stage* curStage = 0;
+		int curRoomId = -1;
+		Room* curRoom = 0;
+		int curCameraId = -1;
+		//Object to follow camera
+		GameObject* followTarget;
 
-		GameObject* renderTarget;
+		World(Resources* res) {
+			this->resources = res;
+		}
 
+		void setCurRoom(int stageId, int roomId) {
+			curStageId = stageId;
+			curStage = &resources->stages[stageId];
+			curRoomId = roomId;
+			curRoom = &curStage->rooms[roomId];
+			if (curStageId != stageId) {
+				curCameraId = -1;
+			}
+		}
 		void loadGObjects(string path);
 		void loadVars(string path);
 		void setCharacter(bool alt) {}
@@ -70,6 +85,7 @@ namespace openAITD {
 			}
 
 			gobjects[i].trackMode = objsJson[i]["track"]["mode"];
+			gobjects[i].lifeMode = objsJson[i]["lifeMode"];			
 			gobjects[i].lifeId = objsJson[i]["life"];
 		}
 	};

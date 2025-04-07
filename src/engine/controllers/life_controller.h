@@ -130,6 +130,10 @@ namespace openAITD {
 			for (int i = 0; i < world->gobjects.size(); i++) {
 				auto& gobj = world->gobjects[i];
 				if (gobj.lifeId == -1) continue;
+				if (gobj.lifeMode == GOLifeMode::none || gobj.lifeMode == GOLifeMode::off) continue;
+				if (gobj.location.stageId != world->curStageId) continue;
+				if ((gobj.lifeMode == GOLifeMode::room || gobj.lifeMode == GOLifeMode::camera) && (gobj.location.roomId != world->curRoomId)) continue;
+
 				auto& f = funcs.find(gobj.lifeId);
 				if (f == funcs.end()) continue;
 
