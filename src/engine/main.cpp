@@ -9,6 +9,7 @@
 #include "./controllers/physics_controller.h"
 #include "./controllers/animation_controller.h"
 #include "./controllers/life_controller.h"
+#include "./controllers/tracks_controller.h"
 
 using namespace std;
 namespace openAITD {
@@ -34,6 +35,7 @@ namespace openAITD {
     PhysicsController physContr(&resources, &world);
     AnimationController animContr(&resources, &world);
     LifeController lifeContr(&resources, &world);
+    TracksController tracksContr(&world);
     bool freeLook = false;
 
     int main(void)
@@ -71,6 +73,7 @@ namespace openAITD {
 
             if (!freeLook) {
                 playerContr.process(timeDelta);
+                tracksContr.process(timeDelta);
                 physContr.process(timeDelta);
                 animContr.process(timeDelta);
                 lifeContr.process();

@@ -2,7 +2,7 @@
 
 inline const vector<parseLifeInstruction> LifeParams =
 {
-	{ LifeEnum::DO_MOVE, "DO_MOVE", { }},
+	{ LifeEnum::DO_MOVE, "DO_MOVE", { }, true},
 	{ LifeEnum::ANIM_ONCE, "SET_ANIM_ONCE", { lifeConst, lifeConst }, true},
 	{ LifeEnum::ANIM_ALL_ONCE, "SET_ANIM_ALL_ONCE", { lifeConst, lifeConst }, true},
 	{ LifeEnum::SET_MODEL, "SET_MODEL", { lifeExpr }, true},
@@ -121,14 +121,14 @@ inline const vector<parseLifeExpr> LifeExprParams =
 	{ EvalEnum::TRIGGER_COLLIDER, "TRIGGER_COLLIDER", { }, true },
 	{ EvalEnum::HARD_COLLIDER, "HARD_COLLIDER", { }, true },
 	{ EvalEnum::HIT, "HIT", { }, true },
-	{ EvalEnum::HIT_BY, "HIT_BY", { }},
+	{ EvalEnum::HIT_BY, "HIT_BY", { }, true},
 	{ EvalEnum::ANIM, "ANIM", { }, true },
 	{ EvalEnum::END_ANIM, "END_ANIM", { }, true },
-	{ EvalEnum::FRAME, "FRAME", { }},
+	{ EvalEnum::FRAME, "FRAME", { }, true},
 	{ EvalEnum::END_FRAME, "END_FRAME", { }},
 	{ EvalEnum::MODEL, "MODEL", { }, true },
-	{ EvalEnum::MARK, "MARK", { }},
-	{ EvalEnum::NUM_TRACK, "NUM_TRACK", { }},
+	{ EvalEnum::MARK, "MARK", { }, true },
+	{ EvalEnum::NUM_TRACK, "NUM_TRACK", { }, true },
 	{ EvalEnum::CHRONO, "CHRONO", { }, true },
 	{ EvalEnum::ROOM_CHRONO, "ROOM_CHRONO", { }},
 	{ EvalEnum::DIST, "DIST", { lifeConst }},

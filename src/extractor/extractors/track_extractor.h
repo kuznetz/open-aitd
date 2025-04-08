@@ -79,7 +79,7 @@ inline void extractTrack(Track track, string jsonTo) {
 		case TrackEnum::GOTO_POS:
 			objJson["room"] = tr.arguments[0];
 			objJson["pos"] = json::array();
-			objJson["pos"][0] = tr.arguments[0] / 1000.;
+			objJson["pos"][0] = tr.arguments[1] / 1000.;
 			objJson["pos"][1] = 0;
 			objJson["pos"][2] = tr.arguments[2] / 1000.;
 			break;

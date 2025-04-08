@@ -114,11 +114,19 @@ namespace openAITD {
 		camera = 3
 	};
 
+	enum class GOTrackMode {
+		none = 0,
+		manual = 1,
+		follow = 2,
+		track = 3
+	};
+
 	struct GOTrack {
 		int mark = -1;
 		int id = -1;
 		int pos;
-		int mode = -1;
+		GOTrackMode mode;
+		Vector3 target;
 	};
 
 	class GameObject

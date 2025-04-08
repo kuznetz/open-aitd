@@ -34,7 +34,7 @@ namespace openAITD {
 			bool isAction = false;
 			int nextAnimation = player->model.animId;
 
-			if (player->track.mode == 0) {
+			if (player->track.mode == GOTrackMode::manual) {
 				isAction = true;
 			}
 

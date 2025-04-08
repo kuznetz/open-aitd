@@ -83,7 +83,7 @@ namespace openAITD {
 			
 			lua->CreateFunction([this](int obj, int trackMode, int trackId, int positionInTrack) {
 				auto& gobj = this->world->gobjects[obj];
-				gobj.track.mode = trackMode;
+				gobj.track.mode = GOTrackMode(trackMode);
 				gobj.track.id = trackId;
 				gobj.track.pos = positionInTrack;
 			}, "SET_TRACKMODE");
