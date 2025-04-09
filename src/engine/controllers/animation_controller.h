@@ -28,6 +28,7 @@ namespace openAITD {
 				auto anim = mdl->animations[gobj.model.animId];
 				if (anim == 0) {
 					printf("Miss animation %d in model %d", gobj.model.animId, gobj.model.id);
+					gobj.model.animId = -1;
 					continue;
 				}
 				gobj.model.animTime += timeDelta;

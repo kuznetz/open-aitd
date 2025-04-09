@@ -72,26 +72,34 @@ namespace openAITD {
 			lua->CreateFunction([this](int obj, int modelId) {
 				this->world->setModel(this->world->gobjects[obj], modelId);
 			}, "SET_MODEL");
-
 			lua->CreateFunction([this](int obj, int lifeId) {
 				this->world->gobjects[obj].lifeId = lifeId;
-			}, "SET_LIFE");			
-			
+			}, "SET_LIFE");	
+			lua->CreateFunction([this](int obj, int coll) {
+				this->world->gobjects[obj].bitField.coll = coll;
+			}, "TEST_COL");			
 			lua->CreateFunction([this](int obj, int animId, int nextAnimId) {
 				this->world->setOnceAnimation(this->world->gobjects[obj], animId, nextAnimId);
 			}, "SET_ANIM_ONCE");
-			
+			lua->CreateFunction([this](int obj, int animId) {
+				this->world->setRepeatAnimation(this->world->gobjects[obj], animId);
+			}, "SET_ANIM_REPEAT");
 			lua->CreateFunction([this](int obj, int trackMode, int trackId, int positionInTrack) {
 				auto& gobj = this->world->gobjects[obj];
 				gobj.track.mode = GOTrackMode(trackMode);
 				gobj.track.id = trackId;
 				gobj.track.pos = positionInTrack;
-			}, "SET_TRACKMODE");
-			
+			}, "SET_TRACKMODE");			
 			lua->CreateFunction([this](int obj) {
 				//
 			}, "SET_FLAGS");
-			
+			lua->CreateFunction([this](int obj) {
+				auto& gobj = this->world->gobjects[obj];
+				gobj.location.roomId = -1;
+				gobj.location.stageId = -1;
+				//ListWorldObjets[lifeTempVar1].flags2 |= 0x4000;
+			}, "DELETE_OBJ");
+
 			lua->CreateFunction([this](int obj, int sampleId, int animId, int animFrame) {
 				//TODO: remember frame, not play in life
 				if (this->world->gobjects[obj].model.animId != animId) return;
@@ -110,7 +118,9 @@ namespace openAITD {
 			lua->CreateFunction([this](int sampleId, int nextSampleId) {
 				//TODO: SOUND_THEN
 			}, "SOUND_THEN");
-			
+			lua->CreateFunction([this](int musicId) {
+				//TODO: SOUND_THEN
+			}, "FADE_MUSIC");
 
 			lua->CreateFunction([this](int obj) {
 			}, "FOUND");
@@ -130,6 +140,20 @@ namespace openAITD {
 				gobj.location.position.y = y / 1000.;
 				gobj.location.position.z = z / 1000.;
 			}, "CHANGE_ROOM");
+
+			//SFX
+			lua->CreateFunction([this](int water) {
+				//TODO: SOUND_THEN
+				}, "WATER");
+			lua->CreateFunction([this](int shaking) {
+				//TODO: SET_SHAKING
+				}, "SET_SHAKING");
+			lua->CreateFunction([this](int light) {
+				//TODO: SET_LIGHT
+				}, "SET_LIGHT");
+			lua->CreateFunction([this]() {
+				//TODO: DO_CARRE_ZV???
+				}, "DO_CARRE_ZV");
 		}
 
 		void initLua() {

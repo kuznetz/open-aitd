@@ -143,6 +143,7 @@ namespace openAITD {
 
 		void renderZones() {
 			int curRoomId = world->followTarget->location.roomId;
+			if (curRoomId == -1) return;
 			auto& room = curStage->rooms[curRoomId];
 			rlPushMatrix();
 			rlTranslatef(room.position.x, room.position.y, room.position.z);
@@ -257,6 +258,20 @@ namespace openAITD {
 			rlPopMatrix();
 		}
 
+		void renderTrack()
+		{
+			auto& track = resources->tracks[29];
+			Vector3 from = { 0,0,0 };
+			Vector3 to;
+			for (int i = 0; i < track.size(); i++) {
+				if (track[i].type == TrackItemType::GOTO_POS) {
+					to = Vector3Add(track[i].pos, world->curStage->rooms[track[i].room].position);
+					DrawLine3D(from, to, ORANGE);
+					from = to;
+				}
+			}
+		}
+
 		void process() {
 			if (world->curStageId != curStageId || world->curCameraId != curCameraId) {
 				loadCamera(world->curStageId, world->curCameraId);
@@ -319,6 +334,7 @@ namespace openAITD {
 				renderZones();
 				renderCameraZones();
 				renderOvlBounds();
+				renderTrack();
 			EndMode3D();
 			/*for (auto it = renderQueue.begin(); it != renderQueue.end(); it++) {
 			}*/
