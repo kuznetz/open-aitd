@@ -43,38 +43,3 @@ Animation loadAnimation(int id, u8* animPtr) {
 
     return result;
 }
-
-//for (int bone = 0; bone < boneCount; bone++)
-//{
-//	Bone b = new Bone();
-//	b.type = buffer.ReadShort(i + 0);
-//	Vector3Int boneTransform = buffer.ReadVector(i + 2);
-//
-//	switch (b.type)
-//	{
-//	case 0: //rotate
-//		if (!isAITD2)
-//		{
-//			b.Rotate = GetRotation(new Vector3(-boneTransform.x * 360 / 1024.0f, -boneTransform.y * 360 / 1024.0f, -boneTransform.z * 360 / 1024.0f));
-//		}
-//		break;
-//
-//	case 1: //translate
-//		b.Position = new Vector3(boneTransform.x / 1000.0f, -boneTransform.y / 1000.0f, boneTransform.z / 1000.0f);
-//		break;
-//
-//	case 2: //scale
-//		b.Scale = new Vector3(boneTransform.x / 256.0f + 1.0f, boneTransform.y / 256.0f + 1.0f, boneTransform.z / 256.0f + 1.0f);
-//		break;
-//	}
-//
-//	i += 8;
-//	if (isAITD2)
-//	{
-//		boneTransform = buffer.ReadVector(i + 0);
-//		b.Rotate = GetRotation(new Vector3(-boneTransform.x * 360 / 1024.0f, -boneTransform.y * 360 / 1024.0f, -boneTransform.z * 360 / 1024.0f));
-//		i += 8;
-//	}
-//
-//	f.Bones.Add(b);
-//}

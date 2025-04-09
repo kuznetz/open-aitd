@@ -206,6 +206,17 @@ void addAnimation(tinygltf::Model& m, Animation &anim, vector<Vector3>& bonePos,
         eb.scales[0] = eb.scales[1];
     }
 
+    auto& t = expBones[0].translates;
+    Vector3 pos = { 0,0,0 };
+    for (int i = 0; i < anim.frames.size(); i++) {
+        auto& f = anim.frames[i];
+        pos = Vector3Add(pos,Vector3Transform(
+            { f.offset[0] / 1000.0f, f.offset[1] / 1000.0f, f.offset[2] / 1000.0f },
+            roomMatMdl
+        ));
+        t[i + 1] = pos;
+    }
+
     //First to last
 
     int vwTime = createBufferAndView(m, timeline.data(), timeline.size() * sizeof(float), 0);
