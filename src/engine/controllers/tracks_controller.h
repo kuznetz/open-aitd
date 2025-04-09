@@ -15,9 +15,8 @@ namespace openAITD {
 
 		bool gotoPos(GameObject& gobj, TrackItem& trackItm, float timeDelta) {
 			
-			//TODO: CACHE targetV
 			Vector3 targetPos = trackItm.pos;
-			//targetPos = { trackItm.pos.x * 10, 0, trackItm.pos.z * 10 };
+			targetPos = { trackItm.pos.x, 0, -trackItm.pos.z };
 			if (trackItm.room != gobj.location.roomId)
 			{
 				targetPos.x -= world->curStage->rooms[gobj.location.roomId].position.x - world->curStage->rooms[trackItm.room].position.x;
@@ -30,14 +29,15 @@ namespace openAITD {
 			//DISTANCE_TO_POINT_TRESSHOLD = 0.1m
 			if (distanceToPoint >= 0.0001) // not yet at position
 			{
-				Vector3 forw = Vector3RotateByQuaternion({ 0, 0, 1 }, gobj.location.rotation);
+				///Vector3 forw = Vector3RotateByQuaternion({ 0, 0, 1 }, gobj.location.rotation);
+				//TODO: CACHE targetV
 				Vector3 targetV = Vector3Normalize(Vector3Subtract(targetPos, gobj.location.position));
 				//gobj.location.rotation = QuaternionFromVector3ToVector3({ 0,0,1 }, targetV);
 
 				//TODO: rotate
 
                 //speed = 4;
-				gobj.physics.moveVec = Vector3Scale(targetV, 2.4*timeDelta);
+				gobj.physics.moveVec = Vector3Scale(targetV, 1.2*timeDelta);
 				return false;
 			}
 			else // reached position
@@ -97,7 +97,6 @@ namespace openAITD {
 					if (nextPos) gobj.track.pos++;// else break;
 					break;
 				}
-
 
 				gobj.moveFlag = false;
 			}

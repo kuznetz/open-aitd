@@ -36,7 +36,9 @@ namespace openAITD {
     AnimationController animContr(&resources, &world);
     LifeController lifeContr(&resources, &world);
     TracksController tracksContr(&world);
+    
     bool freeLook = false;
+    bool pause = false;
 
     int main(void)
     {
@@ -70,8 +72,15 @@ namespace openAITD {
             if (IsKeyPressed(KEY_O)) {
                 freeLook = !freeLook;
             }
+            if (IsKeyPressed(KEY_P)) {
+                pause = !pause;
+            }
+            if (IsKeyDown(KEY_I)) {
+                timeDelta *= 8;
+            }
 
-            if (!freeLook) {
+
+            if (!pause) {
                 playerContr.process(timeDelta);
                 tracksContr.process(timeDelta);
                 physContr.process(timeDelta);

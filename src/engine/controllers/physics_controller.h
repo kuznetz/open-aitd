@@ -189,7 +189,10 @@ namespace openAITD {
 				if (Vector3Equals(gobj.physics.moveVec, {0,0,0})) continue;
 				auto* curRoom = &curStage.rooms[world->curRoomId];
 
-				processColliders(gobj, *curRoom);
+				if (gobj.bitField.coll) {
+					processColliders(gobj, *curRoom);
+				}
+
 				gobj.location.position = Vector3Add(gobj.location.position, gobj.physics.moveVec);
 
 				//Check Zones
