@@ -235,6 +235,10 @@ namespace openAITD {
 		{
 			Vector3 pos = gobj.location.position;
 			Vector3& roomPos = curStage->rooms[gobj.location.roomId].position;
+
+			auto& moveRoot = gobj.physics.moveRoot;
+			Matrix matRoot = MatrixTranslate(-moveRoot.x, -moveRoot.y, -moveRoot.z);
+
 			pos = Vector3Add(roomPos, pos);
 			Matrix matTranslation = MatrixTranslate(pos.x, pos.y, pos.z);
 
@@ -243,7 +247,7 @@ namespace openAITD {
 
 			Matrix matScale = MatrixScale(1, 1, 1);
 
-			Matrix matTransform = MatrixMultiply(MatrixMultiply(matScale, matRotation), matTranslation);
+			Matrix matTransform = MatrixMultiply(matRoot,MatrixMultiply(MatrixMultiply(matScale, matRotation), matTranslation));
 			auto rmodel = resources->models.getModel(gobj.model.id);
 			auto& model = rmodel->model;
 

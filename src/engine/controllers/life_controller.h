@@ -77,7 +77,11 @@ namespace openAITD {
 			}, "SET_LIFE");	
 			lua->CreateFunction([this](int obj, int coll) {
 				this->world->gobjects[obj].bitField.coll = coll;
-			}, "TEST_COL");			
+			}, "TEST_COL");
+			lua->CreateFunction([this](int obj, int coll) {
+				//
+			}, "SET_ANGLE");
+
 			lua->CreateFunction([this](int obj, int animId, int nextAnimId) {
 				this->world->setOnceAnimation(this->world->gobjects[obj], animId, nextAnimId);
 			}, "SET_ANIM_ONCE");
@@ -140,6 +144,14 @@ namespace openAITD {
 				gobj.location.position.y = y / 1000.;
 				gobj.location.position.z = z / 1000.;
 			}, "CHANGE_ROOM");
+
+			//INVENTORY
+			lua->CreateFunction([this](int obj) {
+				//TODO: IN_HAND
+				}, "IN_HAND");
+			lua->CreateFunction([this](int obj) {
+				//TODO: TAKE
+				}, "TAKE");			
 
 			//SFX
 			lua->CreateFunction([this](int water) {

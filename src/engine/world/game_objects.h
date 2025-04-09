@@ -74,6 +74,7 @@ namespace openAITD {
 			rotated = 3
 		};
 		int id = -1;
+		int prevAnimId = -1;
 		int animId = -1;
 		int nextAnimId = -1;
 		int animEnd = 1; //0 = First cycle after changing animaton from script
@@ -102,6 +103,8 @@ namespace openAITD {
 	{
 		bool boundsCached;
 		BoundingBox bounds;
+		Vector3 prevMoveRoot;
+		Vector3 moveRoot;
 		Vector3 moveVec;
 		int collidedBy = -1;
 	};

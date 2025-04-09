@@ -51,10 +51,10 @@ namespace openAITD {
         resources.loadTracks("data/tracks");
 
         world.loadGObjects("data/objects.json");
-        //world.followTarget = &world.gobjects[1];
-        //playerContr.player = &world.gobjects[1];
-        //world.setCurRoom(0, 0);
-        world.setCurRoom(7, 1);
+        world.followTarget = &world.gobjects[1];
+        playerContr.player = &world.gobjects[1];
+        world.setCurRoom(0, 0);
+        //world.setCurRoom(7, 1);
         
         //world.loadVars("data/vars.json");
 
@@ -82,10 +82,10 @@ namespace openAITD {
 
             if (!pause) {
                 playerContr.process(timeDelta);
-                tracksContr.process(timeDelta);
-                physContr.process(timeDelta);
-                animContr.process(timeDelta);
                 lifeContr.process();
+                tracksContr.process(timeDelta);
+                animContr.process(timeDelta);
+                physContr.process(timeDelta);
             }
 
             BeginDrawing();

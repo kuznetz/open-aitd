@@ -29,14 +29,14 @@ namespace openAITD {
 
 		void process(float timeDelta) {
 			if (!player) return;
-			if (!player->moveFlag) return;
+			//if (!player->moveFlag) return;
 
 			bool isAction = false;
 			int nextAnimation = player->model.animId;
 
-			if (player->track.mode == GOTrackMode::manual) {
-				isAction = true;
-			}
+			//if (player->track.mode == GOTrackMode::manual) {
+			//	isAction = true;
+			//}
 
 			//Rotate Player
 			if (!isAction) {
@@ -58,7 +58,7 @@ namespace openAITD {
 				}
 
 				//Get Move Vec
-				player->physics.moveVec = { 0,0,0 };
+				//player->physics.moveVec = { 0,0,0 };
 				float move = 0;
 				if (IsKeyDown(KEY_Z)) {
 					move = 0.25;
@@ -68,6 +68,11 @@ namespace openAITD {
 				else if (IsKeyDown(KEY_X)) {
 					move = 0.25;
 					nextAnimation = 5;
+					isAction = true;
+				}
+				else if (IsKeyDown(KEY_C)) {
+					move = 0.25;
+					nextAnimation = 270;
 					isAction = true;
 				}
 				else if (IsKeyDown(KEY_DOWN)) {
@@ -85,9 +90,9 @@ namespace openAITD {
 					}
 				}
 				if (move != 0) {
-					auto& p = player->location.position;
-					Vector3 v = { 0, 0, -move * timeDelta };
-					player->physics.moveVec = Vector3RotateByQuaternion(v, player->location.rotation);
+					//auto& p = player->location.position;
+					//Vector3 v = { 0, 0, -move * timeDelta };
+					//player->physics.moveVec = Vector3RotateByQuaternion(v, player->location.rotation);
 					isAction = true;
 				}
 			}
@@ -100,30 +105,33 @@ namespace openAITD {
 			}
 
 			bool teleportPlayer = false;
-			if (IsKeyPressed(KEY_D) && (world->curRoomId < world->curStage->rooms.size() - 1)) {
-				if (world->curRoomId++);
+			int newStageId = world->curStageId;
+			int newRoomId = world->curRoomId;
+			if (IsKeyPressed(KEY_D) && (newRoomId < world->curStage->rooms.size() - 1)) {
+				newRoomId++;
 				teleportPlayer = true;
 			}
 			if (IsKeyPressed(KEY_A) && (world->curRoomId > 0)) {
-				if (world->curRoomId--);
+				newRoomId--;
 				teleportPlayer = true;
 			}
 			if (IsKeyPressed(KEY_W)) {
-				world->curStageId++;
-				world->curRoomId = 0;
+				newStageId++;
+				newRoomId = 0;
 				teleportPlayer = true;
 			}
-			if (IsKeyPressed(KEY_S)) {
+			if (IsKeyPressed(KEY_S) && (newStageId > 0)) {
+				newStageId--;
+				newRoomId = 0;
 				teleportPlayer = true;
-				world->curStageId--;
-				world->curRoomId = 0;
 			}
 			if (IsKeyDown(KEY_SPACE)) {
 				teleportPlayer = true;
 			}
 			if (teleportPlayer) {
-				player->location.stageId = world->curStageId;
-				player->location.roomId = world->curRoomId;
+				//world->setCurRoom(newStageId, newRoomId);
+				player->location.stageId = newStageId;
+				player->location.roomId = newRoomId;
 				player->location.position = { 0,0,0 };//resources->stages[world->curStageId].rooms[newRoom].position;
 			}
 

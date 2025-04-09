@@ -204,12 +204,15 @@ namespace openAITD {
 			pos = Vector3Add(roomPos, pos);
 			Matrix matTranslation = MatrixTranslate(pos.x, pos.y, pos.z);
 
+			auto& moveRoot = gobj.physics.moveRoot;
+			Matrix matRoot = MatrixTranslate(-moveRoot.x, -moveRoot.y, -moveRoot.z);
+
 			auto rot = gobj.location.rotation;
 			Matrix matRotation = QuaternionToMatrix(rot);
 
 			Matrix matScale = MatrixScale(1, 1, 1);
 
-			Matrix matTransform = MatrixMultiply(MatrixMultiply(matScale, matRotation), matTranslation);
+			Matrix matTransform = MatrixMultiply(matRoot, MatrixMultiply(MatrixMultiply(matScale, matRotation), matTranslation));
 			auto rmodel = resources->models.getModel(gobj.model.id);
 			auto& model = rmodel->model;
 
@@ -334,7 +337,7 @@ namespace openAITD {
 				renderZones();
 				renderCameraZones();
 				renderOvlBounds();
-				renderTrack();
+				//renderTrack();
 			EndMode3D();
 			/*for (auto it = renderQueue.begin(); it != renderQueue.end(); it++) {
 			}*/
