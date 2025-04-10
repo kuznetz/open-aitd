@@ -204,7 +204,7 @@ namespace openAITD {
 			pos = Vector3Add(roomPos, pos);
 			Matrix matTranslation = MatrixTranslate(pos.x, pos.y, pos.z);
 
-			auto& moveRoot = gobj.physics.moveRoot;
+			auto& moveRoot = gobj.model.moveRoot;
 			Matrix matRoot = MatrixTranslate(-moveRoot.x, -moveRoot.y, -moveRoot.z);
 
 			auto rot = gobj.location.rotation;

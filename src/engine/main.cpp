@@ -11,6 +11,8 @@
 #include "./controllers/life_controller.h"
 #include "./controllers/tracks_controller.h"
 
+#include "../extractor/extractor.h"
+
 using namespace std;
 namespace openAITD {
 
@@ -42,6 +44,8 @@ namespace openAITD {
 
     int main(void)
     {
+        AITDExtractor::extractAllData();
+
         InitWindow(screenW, screenH, "Open-AITD");
 
         resources.stages.resize(8);
@@ -51,10 +55,10 @@ namespace openAITD {
         resources.loadTracks("data/tracks");
 
         world.loadGObjects("data/objects.json");
-        world.followTarget = &world.gobjects[1];
-        playerContr.player = &world.gobjects[1];
-        world.setCurRoom(0, 0);
-        //world.setCurRoom(7, 1);
+        //world.followTarget = &world.gobjects[1];
+        //playerContr.player = &world.gobjects[1];
+        //world.setCurRoom(0, 0);
+        world.setCurRoom(7, 1);
         
         //world.loadVars("data/vars.json");
 

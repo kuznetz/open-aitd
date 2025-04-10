@@ -236,7 +236,7 @@ namespace openAITD {
 			Vector3 pos = gobj.location.position;
 			Vector3& roomPos = curStage->rooms[gobj.location.roomId].position;
 
-			auto& moveRoot = gobj.physics.moveRoot;
+			auto& moveRoot = gobj.model.moveRoot;
 			Matrix matRoot = MatrixTranslate(-moveRoot.x, -moveRoot.y, -moveRoot.z);
 
 			pos = Vector3Add(roomPos, pos);

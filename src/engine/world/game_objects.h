@@ -77,6 +77,8 @@ namespace openAITD {
 		int prevAnimId = -1;
 		int animId = -1;
 		int nextAnimId = -1;
+		Vector3 prevMoveRoot;
+		Vector3 moveRoot;
 		int animEnd = 1; //0 = First cycle after changing animaton from script
 		int scriptAnimId = -1; //scriptAnimId stay after change to next anim
 		int animFrame;
@@ -103,8 +105,6 @@ namespace openAITD {
 	{
 		bool boundsCached;
 		BoundingBox bounds;
-		Vector3 prevMoveRoot;
-		Vector3 moveRoot;
 		Vector3 moveVec;
 		int collidedBy = -1;
 	};
@@ -129,6 +129,8 @@ namespace openAITD {
 		int id = -1;
 		int pos;
 		GOTrackMode mode;
+		bool posStarted = false;
+		Vector3 direction;
 		Vector3 target;
 	};
 

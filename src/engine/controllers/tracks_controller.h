@@ -14,35 +14,43 @@ namespace openAITD {
 		}
 
 		bool gotoPos(GameObject& gobj, TrackItem& trackItm, float timeDelta) {
-			
-			Vector3 targetPos = trackItm.pos;
-			targetPos = { trackItm.pos.x, 0, -trackItm.pos.z };
-			if (trackItm.room != gobj.location.roomId)
-			{
-				targetPos.x -= world->curStage->rooms[gobj.location.roomId].position.x - world->curStage->rooms[trackItm.room].position.x;
-				targetPos.z += world->curStage->rooms[gobj.location.roomId].position.z - world->curStage->rooms[trackItm.room].position.z;
-			}
+			if (!gobj.track.posStarted) {
+				Vector3 targetPos = trackItm.pos;
+				targetPos = { trackItm.pos.x, 0, -trackItm.pos.z };
+				if (trackItm.room != gobj.location.roomId)
+				{
+					targetPos.x -= world->curStage->rooms[gobj.location.roomId].position.x - world->curStage->rooms[trackItm.room].position.x;
+					targetPos.z += world->curStage->rooms[gobj.location.roomId].position.z - world->curStage->rooms[trackItm.room].position.z;
+				}
 
-			gobj.track.target = targetPos;
+				gobj.track.target = targetPos;
+				gobj.track.direction = Vector3Normalize(Vector3Subtract(targetPos, gobj.location.position));
 
-			float distanceToPoint = Vector3DistanceSqr(gobj.location.position, targetPos);
+				auto& m = MatrixLookAt(gobj.location.position, gobj.track.target, { 0,1,0 });
+				gobj.location.rotation = QuaternionInvert(QuaternionFromMatrix(m));
+			}			
+
+			float distanceToPoint = Vector3DistanceSqr(gobj.location.position, gobj.track.target);
+			float nextDistanceToPoint = Vector3DistanceSqr(Vector3Add(gobj.location.position, gobj.track.direction), gobj.track.target);
 			//DISTANCE_TO_POINT_TRESSHOLD = 0.1m
-			if (distanceToPoint >= 0.0001) // not yet at position
+			//TODO: change code 4 distance reach
+			if (distanceToPoint >= 0.01 /*&& distanceToPoint > nextDistanceToPoint*/) // not yet at position
 			{
 				///Vector3 forw = Vector3RotateByQuaternion({ 0, 0, 1 }, gobj.location.rotation);
 				//TODO: CACHE targetV
-				Vector3 targetV = Vector3Normalize(Vector3Subtract(targetPos, gobj.location.position));
+				//Vector3 targetV = Vector3Normalize(Vector3Subtract(targetPos, gobj.location.position));
 				//gobj.location.rotation = QuaternionFromVector3ToVector3({ 0,0,1 }, targetV);
 
 				//TODO: rotate
 
                 //speed = 4;
-				gobj.physics.moveVec = Vector3Scale(targetV, 1.2*timeDelta);
+				//gobj.physics.moveVec = Vector3Scale(targetV, 1.2*timeDelta);
+				gobj.track.posStarted = true;
 				return false;
 			}
 			else // reached position
 			{
-				gobj.location.position = targetPos;
+				gobj.location.position = gobj.track.target;
 				return true;
 			}
 		}
@@ -61,9 +69,6 @@ namespace openAITD {
 				auto& gobj = world->gobjects[i];
 				if (!gobj.moveFlag) continue;
 				if (gobj.track.mode != GOTrackMode::track || gobj.track.id == -1) continue;
-				if (i == 288) {
-					printf("288");
-				}
 
 				while (true) {
 					auto& trackItm = world->resources->tracks[gobj.track.id][gobj.track.pos];
@@ -87,14 +92,17 @@ namespace openAITD {
 						gobj.track.mark = 0;
 						break;
 					case TrackItemType::ROTATE_XYZ:
-						rotateXYZ(gobj, trackItm);
+						//rotateXYZ(gobj, trackItm);
 						nextPos = true;
 						break;
 					default:
 						cout << "unkn TrackItemType " << to_string((int)trackItm.type) << endl;
 						nextPos = true;
 					}
-					if (nextPos) gobj.track.pos++;// else break;
+					if (nextPos) {
+						gobj.track.posStarted = false;
+						gobj.track.pos++;// else break;
+					}
 					break;
 				}
 

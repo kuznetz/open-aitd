@@ -132,14 +132,14 @@ namespace openAITD {
 							gobj.model.animTime -= anim->frameCount * frameT;
 							curFrame -= anim->frameCount;
 						}
-                        gobj.physics.prevMoveRoot = { 0,0,0 };
+                        gobj.model.prevMoveRoot = { 0,0,0 };
                     }
 				}
 				if (gobj.model.animId != -1) {
                     if (gobj.model.prevAnimId != gobj.model.animId) {
-                        gobj.physics.prevMoveRoot = { 0,0,0 };
+                        gobj.model.prevMoveRoot = { 0,0,0 };
                     }
-                    gobj.physics.moveRoot = anim->framePoses[curFrame][0].translation;
+                    gobj.model.moveRoot = anim->framePoses[curFrame][0].translation;
                     UpdateModelAnimationBones(mdl->model, *anim, curFrame);
                     UpdateModelAnimationSkin(mdl->model);
 				}

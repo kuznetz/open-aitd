@@ -187,8 +187,8 @@ namespace openAITD {
 				auto& gobj = world->gobjects[i];
 				if (gobj.location.stageId != world->curStageId) continue;
 
-				gobj.physics.moveVec = Vector3RotateByQuaternion(Vector3Subtract(gobj.physics.moveRoot, gobj.physics.prevMoveRoot), gobj.location.rotation);
-				gobj.physics.prevMoveRoot = gobj.physics.moveRoot;
+				gobj.physics.moveVec = Vector3RotateByQuaternion(Vector3Subtract(gobj.model.moveRoot, gobj.model.prevMoveRoot), gobj.location.rotation);
+				gobj.model.prevMoveRoot = gobj.model.moveRoot;
 
 				if (Vector3Equals(gobj.physics.moveVec, {0,0,0})) continue;
 				auto* curRoom = &curStage.rooms[world->curRoomId];
