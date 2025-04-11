@@ -89,6 +89,16 @@ namespace openAITD {
 		};
 	};
 
+	struct GORotateAnim {
+		Quaternion from;
+		Quaternion to;
+		float curTime;
+		float timeEnd = 0;
+		// for life scripts
+		int lifeAngles[3] = { 0,0,0 };
+		int toLifeAngles[3] = { 0,0,0 };
+	};
+
 	struct GOInvItem
 	{
 		int model = -1;
@@ -143,9 +153,13 @@ namespace openAITD {
 
 		GOLocation location;
 		GOAnimation animation;
+		GORotateAnim rotateAnim;
 		GOInvItem invItem;
 		GOPhysics physics;
 		GOTrack track;
+
+		int staticColliderId = -1;
+		RoomCollider* staticCollider = 0;
 
 		union {
 			short int flags;

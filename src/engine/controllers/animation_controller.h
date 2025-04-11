@@ -102,7 +102,32 @@ namespace openAITD {
             }
         }
 
+        void processRotateAnim(float timeDelta) {
+            for (int i = 0; i < world->gobjects.size(); i++) {
+                auto& gobj = world->gobjects[i];
+                if (gobj.location.stageId != world->curStageId) continue;
+                if (gobj.rotateAnim.timeEnd == 0) continue;
+
+                auto& rot = gobj.rotateAnim;
+                rot.curTime += timeDelta;
+                if (rot.curTime == 0) {
+                    gobj.location.rotation = rot.from;
+                } else if (rot.curTime >= rot.timeEnd) {
+                    gobj.location.rotation = rot.to;
+                    gobj.rotateAnim.lifeAngles[0] = gobj.rotateAnim.toLifeAngles[0];
+                    gobj.rotateAnim.lifeAngles[1] = gobj.rotateAnim.toLifeAngles[1];
+                    gobj.rotateAnim.lifeAngles[2] = gobj.rotateAnim.toLifeAngles[2];
+                    rot.timeEnd = 0;
+                }
+                else {
+                    gobj.location.rotation = QuaternionLerp(rot.from, rot.to, rot.curTime / rot.timeEnd);
+                }
+            }
+        }
+
 		void process(float timeDelta) {
+            processRotateAnim(timeDelta);
+
 			for (int i = 0; i < this->world->gobjects.size(); i++) {
 				auto& gobj = this->world->gobjects[i];
 				if (gobj.location.stageId != this->world->curStageId) continue;

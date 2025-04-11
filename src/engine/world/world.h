@@ -93,6 +93,28 @@ namespace openAITD {
 				gobjects[i].track.pos = objsJson[i]["track"]["position"];
 			}
 
+			if (objsJson[i].contains("static")) {
+				gobjects[i].location.stageId = objsJson[i]["static"]["stageId"];
+				gobjects[i].location.roomId = objsJson[i]["static"]["roomId"];
+				gobjects[i].staticColliderId = objsJson[i]["static"]["staticIdx"];
+				auto& cols = resources->stages[gobjects[i].location.stageId].rooms[gobjects[i].location.roomId].colliders;
+				for (int j = 0; j < cols.size(); j++) {
+					if (cols[j].type != 9) continue;
+					if (cols[j].parameter == gobjects[i].staticColliderId) {
+						gobjects[i].staticCollider = &cols[j];
+						break;
+					}
+				}
+				auto& colB = gobjects[i].staticCollider->bounds;
+				if (gobjects[i].staticCollider) {
+					gobjects[i].location.position = {
+						(colB.max.x - colB.min.x) / 2,
+						(colB.max.y - colB.min.y) / 2,
+						(colB.max.z - colB.min.z) / 2,
+					};
+				}
+			}
+
 			gobjects[i].lifeMode = objsJson[i]["lifeMode"];			
 			gobjects[i].lifeId = objsJson[i]["life"];
 		}

@@ -1,4 +1,5 @@
 ﻿#include "../structs/track.h"
+#include "../utils/room_matrix.h"
 
 inline const vector<ParseTrackNode> TrackTable_v1 =
 {
@@ -66,6 +67,8 @@ inline void extractTrack(Track track, string jsonTo) {
         auto& tr = track[i];
         json objJson = json::object();
         objJson["type"] = tr.type->type;
+
+		Vector3 v;
 		switch (tr.type->type)
 		{
 		case TrackEnum::WARP:
@@ -78,10 +81,11 @@ inline void extractTrack(Track track, string jsonTo) {
 
 		case TrackEnum::GOTO_POS:
 			objJson["room"] = tr.arguments[0];
+			v = Vector3Transform({ tr.arguments[1] / 1000.f , 0, tr.arguments[2] / 1000.f }, roomMatrix);
 			objJson["pos"] = json::array();
-			objJson["pos"][0] = tr.arguments[1] / 1000.;
+			objJson["pos"][0] = v.x;
 			objJson["pos"][1] = 0;
-			objJson["pos"][2] = tr.arguments[2] / 1000.;
+			objJson["pos"][2] = v.z;
 			break;
 
 		case TrackEnum::MARK:

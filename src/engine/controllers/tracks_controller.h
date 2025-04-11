@@ -14,37 +14,36 @@ namespace openAITD {
 		}
 
 		bool gotoPos(GameObject& gobj, TrackItem& trackItm, float timeDelta) {
+			Vector3 targetPos = trackItm.pos;
+			targetPos = { trackItm.pos.x, 0, trackItm.pos.z };
+			if (trackItm.room != gobj.location.roomId)
+			{
+				targetPos.x += world->curStage->rooms[trackItm.room].position.x - world->curStage->rooms[gobj.location.roomId].position.x;
+				targetPos.z += world->curStage->rooms[trackItm.room].position.z - world->curStage->rooms[gobj.location.roomId].position.z;
+			}
+			//targetPos.z = -targetPos.z;
+			gobj.track.target = targetPos;
+
 			if (!gobj.track.posStarted) {
-				Vector3 targetPos = trackItm.pos;
-				targetPos = { trackItm.pos.x, 0, -trackItm.pos.z };
-				if (trackItm.room != gobj.location.roomId)
-				{
-					targetPos.x -= world->curStage->rooms[gobj.location.roomId].position.x - world->curStage->rooms[trackItm.room].position.x;
-					targetPos.z += world->curStage->rooms[gobj.location.roomId].position.z - world->curStage->rooms[trackItm.room].position.z;
-				}
-
-				gobj.track.target = targetPos;
-				gobj.track.direction = Vector3Normalize(Vector3Subtract(targetPos, gobj.location.position));
-
-				auto& m = MatrixLookAt(gobj.location.position, gobj.track.target, { 0,1,0 });
-				gobj.location.rotation = QuaternionInvert(QuaternionFromMatrix(m));
+				gobj.rotateAnim.curTime = 0;
+				gobj.rotateAnim.timeEnd = 0.25;
+				gobj.rotateAnim.from = gobj.location.rotation;
 			}			
+
+			if (gobj.rotateAnim.timeEnd > 0) {
+				auto& m = MatrixTranspose(MatrixLookAt(gobj.location.position, gobj.track.target, { 0,1,0 }));
+				auto rotTo = QuaternionFromMatrix(m);
+				gobj.rotateAnim.to = rotTo;
+				gobj.track.direction = Vector3Normalize(Vector3Subtract(gobj.track.target, gobj.location.position));
+			}
 
 			float distanceToPoint = Vector3DistanceSqr(gobj.location.position, gobj.track.target);
 			float nextDistanceToPoint = Vector3DistanceSqr(Vector3Add(gobj.location.position, gobj.track.direction), gobj.track.target);
 			//DISTANCE_TO_POINT_TRESSHOLD = 0.1m
 			//TODO: change code 4 distance reach
-			if (distanceToPoint >= 0.01 /*&& distanceToPoint > nextDistanceToPoint*/) // not yet at position
+			if (distanceToPoint >= 0.01) // || distanceToPoint >= nextDistanceToPoint
 			{
-				///Vector3 forw = Vector3RotateByQuaternion({ 0, 0, 1 }, gobj.location.rotation);
-				//TODO: CACHE targetV
-				//Vector3 targetV = Vector3Normalize(Vector3Subtract(targetPos, gobj.location.position));
-				//gobj.location.rotation = QuaternionFromVector3ToVector3({ 0,0,1 }, targetV);
-
-				//TODO: rotate
-
-                //speed = 4;
-				//gobj.physics.moveVec = Vector3Scale(targetV, 1.2*timeDelta);
+				// not yet at position
 				gobj.track.posStarted = true;
 				return false;
 			}
@@ -61,7 +60,7 @@ namespace openAITD {
 			Matrix mz = MatrixRotateZ(trackItm.rot.z);
 			Matrix matRotation = MatrixMultiply(MatrixMultiply(my, mx), mz);
 			matRotation = MatrixTranspose(matRotation);
-			gobj.location.rotation = QuaternionFromMatrix(matRotation);
+			gobj.location.rotation = QuaternionInvert(QuaternionFromMatrix(matRotation));
 		}
 
 		void process(float timeDelta) {
@@ -92,7 +91,7 @@ namespace openAITD {
 						gobj.track.mark = 0;
 						break;
 					case TrackItemType::ROTATE_XYZ:
-						//rotateXYZ(gobj, trackItm);
+						rotateXYZ(gobj, trackItm);
 						nextPos = true;
 						break;
 					default:

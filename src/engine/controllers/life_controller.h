@@ -57,7 +57,17 @@ namespace openAITD {
 			}, "MARK");
 			lua->CreateFunction([this](int obj) -> int {
 				return (this->world->gobjects[obj].track.id);
-			}, "NUM_TRACK");
+				}, "NUM_TRACK");
+
+			lua->CreateFunction([this](int obj) -> int {
+				return this->world->gobjects[obj].rotateAnim.lifeAngles[0];
+				}, "ALPHA");
+			lua->CreateFunction([this](int obj) -> int {
+				return this->world->gobjects[obj].rotateAnim.lifeAngles[1];
+				}, "BETA");
+			lua->CreateFunction([this](int obj) -> int {
+				return this->world->gobjects[obj].rotateAnim.lifeAngles[2];
+				}, "GAMMA");
 		}
 
 		void initInstructions() {
@@ -118,9 +128,11 @@ namespace openAITD {
 			lua->CreateFunction([this](int obj, int animId, int nextAnimId) {
 				this->world->setOnceAnimation(this->world->gobjects[obj], animId, nextAnimId);
 				}, "SET_ANIM_ONCE");
+
 			lua->CreateFunction([this](int obj, int animId) {
 				this->world->setRepeatAnimation(this->world->gobjects[obj], animId);
 				}, "SET_ANIM_REPEAT");
+
 			lua->CreateFunction([this](int obj, int trackMode, int trackId, int positionInTrack) {
 				auto& gobj = this->world->gobjects[obj];
 				gobj.track.mode = GOTrackMode(trackMode);
@@ -128,11 +140,25 @@ namespace openAITD {
 				gobj.track.pos = positionInTrack;
 				gobj.track.posStarted = false;
 				}, "SET_TRACKMODE");
-			lua->CreateFunction([this]() {
-				//TODO: DO_CARRE_ZV
+
+			lua->CreateFunction([this](int obj, int toAngle, int time) {
+				auto& gobj = this->world->gobjects[obj];
+				gobj.rotateAnim.curTime = 0;
+				gobj.rotateAnim.timeEnd = time / 60.;
+				gobj.rotateAnim.from = gobj.location.rotation;
+				auto rotTo = QuaternionFromAxisAngle({ 1,0,0 }, toAngle * 2 * PI / 1024.);
+				gobj.rotateAnim.to = rotTo;
+				gobj.rotateAnim.toLifeAngles[0] = toAngle;
 				}, "SET_ALPHA");
-			lua->CreateFunction([this]() {
-				//TODO: DO_CARRE_ZV
+
+			lua->CreateFunction([this](int obj, int toAngle, int time) {
+				auto& gobj = this->world->gobjects[obj];
+				gobj.rotateAnim.curTime = 0;
+				gobj.rotateAnim.timeEnd = time / 60.;
+				gobj.rotateAnim.from = gobj.location.rotation;
+				auto rotTo = QuaternionFromAxisAngle({ 0,1,0 }, toAngle * 2 * PI / 1024.);
+				gobj.rotateAnim.to = rotTo;
+				gobj.rotateAnim.toLifeAngles[1] = toAngle;
 				}, "SET_BETA");
 
 			//Process track

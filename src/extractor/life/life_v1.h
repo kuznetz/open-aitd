@@ -40,7 +40,7 @@ inline const vector<parseLifeInstruction> LifeParams =
 	{ LifeEnum::READ, "READ", { lifeConst, lifeConst }}, //3rd lifeConst in cd version
 	{ LifeEnum::SET_ANIM_SOUND, "SET_ANIM_SOUND", { lifeExpr, lifeConst, lifeConst }, true},
 	{ LifeEnum::SPECIAL, "SPECIAL", { lifeConst }},
-	{ LifeEnum::DO_REAL_ZV, "DO_REAL_ZV", { }},
+	{ LifeEnum::DO_REAL_ZV, "DO_REAL_ZV", { }, true},
 	{ LifeEnum::SOUND, "SOUND", { lifeExpr }},
 	{ LifeEnum::SET_FLAGS, "SET_FLAGS", { lifeConst }, true},
 	{ LifeEnum::GAME_OVER, "GAME_OVER", { }},
@@ -48,7 +48,7 @@ inline const vector<parseLifeInstruction> LifeParams =
 	{ LifeEnum::RND_FREQ, "RND_FREQ", { lifeConst }}, //Randomize sound frequency
 	{ LifeEnum::SET_MUSIC, "SET_MUSIC", { lifeConst }},
 	{ LifeEnum::SET_BETA, "SET_BETA", { lifeConst, lifeConst }, true},
-	{ LifeEnum::DO_ROT_ZV, "DO_ROT_ZV", { }},
+	{ LifeEnum::DO_ROT_ZV, "DO_ROT_ZV", { }, true},
 	{ LifeEnum::CHANGE_ROOM, "CHANGE_ROOM", { lifeConst, lifeConst, lifeConst, lifeConst, lifeConst }, true},
 	{ LifeEnum::SET_INVENTORY_NAME, "SET_INVENTORY_NAME", { lifeConst }, true},
 	{ LifeEnum::SET_INVENTORY_FLAG, "SET_INVENTORY_FLAG", { lifeConst }, true},
@@ -60,11 +60,11 @@ inline const vector<parseLifeInstruction> LifeParams =
 	{ LifeEnum::SET_INVENTORY_MODEL, "SET_INVENTORY_MODEL", { lifeConst }, true},
 	{ LifeEnum::SET_ALPHA, "SET_ALPHA", { lifeConst, lifeConst }, true},
 	{ LifeEnum::STOP_BETA, "STOP_BETA", { }},
-	{ LifeEnum::DO_MAX_ZV, "DO_MAX_ZV", { }},
+	{ LifeEnum::DO_MAX_ZV, "DO_MAX_ZV", { }, true},
 	{ LifeEnum::PUT, "PUT", { lifeConst, lifeConst, lifeConst, lifeConst, lifeConst, lifeConst, lifeConst, lifeConst, lifeConst }},
 	{ LifeEnum::SET_C, "SET_C", { lifeConst, lifeExpr }},
 	{ LifeEnum::DO_NORMAL_ZV, "DO_NORMAL_ZV", { }},
-	{ LifeEnum::DO_CARRE_ZV, "DO_CARRE_ZV", { }},
+	{ LifeEnum::DO_CARRE_ZV, "DO_CARRE_ZV", { }, true},
 	{ LifeEnum::SOUND_THEN, "SOUND_THEN", { lifeExpr, lifeExpr }},
 	{ LifeEnum::SET_LIGHT, "SET_LIGHT", { lifeConst }},
 	{ LifeEnum::SET_SHAKING, "SET_SHAKING", { lifeConst }},
@@ -109,8 +109,8 @@ inline const vector<parseLifeInstruction> LifeParams =
 	{ LifeEnum::DEF_SEQUENCE_SOUND, "DEF_SEQUENCE_SOUND", { lifeConst }},
 	{ LifeEnum::READ_ON_PICTURE, "READ_ON_PICTURE", { lifeConst, lifeConst, lifeConst, lifeConst, lifeConst, lifeConst, lifeConst, lifeConst }},
 	{ LifeEnum::FIRE_UP_DOWN, "FIRE_UP_DOWN", { lifeExpr, lifeConst, lifeConst, lifeConst, lifeConst, lifeConst, lifeConst, lifeExpr }},
-	{ LifeEnum::DO_ROT_CLUT, "DO_ROT_CLUT", { lifeConst, lifeConst, lifeConst }},
-	{ LifeEnum::STOP_CLUT, "STOP_CLUT", { }},
+	{ LifeEnum::DO_ROT_CLUT, "DO_ROT_CLUT", { lifeConst, lifeConst, lifeConst }, true },
+	{ LifeEnum::STOP_CLUT, "STOP_CLUT", { }, true },
 };
 
 // Start by 0

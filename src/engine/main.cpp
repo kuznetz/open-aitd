@@ -83,7 +83,6 @@ namespace openAITD {
                 timeDelta *= 8;
             }
 
-
             if (!pause) {
                 playerContr.process(timeDelta);
                 lifeContr.process();

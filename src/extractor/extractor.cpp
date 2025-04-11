@@ -17,7 +17,10 @@
 #include "extractors/vars_extractor.h"
 #include "life/life_extractor.h"
 
+Matrix roomMatrix;
+
 namespace AITDExtractor {
+
     vector <gameObjectStruct> gameObjs;
     vector <floorStruct> stages;
 
@@ -261,6 +264,9 @@ namespace AITDExtractor {
     }
 
     void extractAllData() {
+        //roomMatrix = MatrixMultiply(MatrixRotateX(PI), MatrixRotateY(PI));
+        roomMatrix = MatrixRotateX(PI);
+
         dumpInstructions("instr.txt");
         gameObjs = loadGameObjects("original/OBJETS.ITD");
         if (!std::filesystem::exists("data/objects.json")) {
