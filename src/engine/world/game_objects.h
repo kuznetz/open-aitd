@@ -58,6 +58,12 @@ namespace openAITD {
         { 0.1f, 2, 0.1f },
     };
 
+	enum class BoundsType {
+		simple = 1,
+		cube = 2,
+		rotated = 3
+	};
+
 	struct GOLocation
 	{
 		int stageId = -1;
@@ -66,24 +72,17 @@ namespace openAITD {
 		Vector4 rotation;
 	};
 
-	struct GOModel
+	struct GOAnimation
 	{
-		enum class BoundsType {
-			simple = 1,
-			cube = 2,
-			rotated = 3
-		};
+		int prevId = -1;
 		int id = -1;
-		int prevAnimId = -1;
-		int animId = -1;
-		int nextAnimId = -1;
+		int nextId = -1;
 		Vector3 prevMoveRoot;
 		Vector3 moveRoot;
 		int animEnd = 1; //0 = First cycle after changing animaton from script
 		int scriptAnimId = -1; //scriptAnimId stay after change to next anim
 		int animFrame;
 		float animTime;
-		BoundsType boundsType = BoundsType::simple;
 		union {
 			unsigned short int flags;
 			AnimationFlags bitField;
@@ -139,8 +138,11 @@ namespace openAITD {
 	public:
 		int id = -1;
 
+		int modelId = -1;
+		BoundsType boundsType = BoundsType::simple;
+
 		GOLocation location;
-		GOModel model;
+		GOAnimation animation;
 		GOInvItem invItem;
 		GOPhysics physics;
 		GOTrack track;

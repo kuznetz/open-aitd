@@ -106,45 +106,45 @@ namespace openAITD {
 			for (int i = 0; i < this->world->gobjects.size(); i++) {
 				auto& gobj = this->world->gobjects[i];
 				if (gobj.location.stageId != this->world->curStageId) continue;
-				if (gobj.model.id == -1) continue;
-				if (gobj.model.animId == -1) continue;
+				if (gobj.modelId == -1) continue;
+				if (gobj.animation.id == -1) continue;
 
-				auto mdl = resources->models.getModel(gobj.model.id);
-				auto anim = mdl->animations[gobj.model.animId];
+				auto mdl = resources->models.getModel(gobj.modelId);
+				auto anim = mdl->animations[gobj.animation.id];
 				if (anim == 0) {
-					printf("Miss animation %d in model %d", gobj.model.animId, gobj.model.id);
-					gobj.model.animId = -1;
+					printf("Miss animation %d in model %d", gobj.animation.id, gobj.modelId);
+					gobj.animation.id = -1;
 					continue;
 				}
-				gobj.model.animTime += timeDelta;
-				gobj.model.animFrame = (gobj.model.animTime / frameT);
-				auto& curFrame = gobj.model.animFrame;
+				gobj.animation.animTime += timeDelta;
+				gobj.animation.animFrame = (gobj.animation.animTime / frameT);
+				auto& curFrame = gobj.animation.animFrame;
 				if (curFrame >= anim->frameCount) {
-					gobj.model.animEnd = 1;
-					if (!gobj.model.bitField.repeat) {
-						gobj.model.animId = gobj.model.nextAnimId;
-						gobj.model.animTime = 0;
+					gobj.animation.animEnd = 1;
+					if (!gobj.animation.bitField.repeat) {
+						gobj.animation.id = gobj.animation.nextId;
+						gobj.animation.animTime = 0;
 						curFrame = 0;
-						gobj.model.flags = 1;
+						gobj.animation.flags = 1;
 					}
 					else {
 						while (curFrame >= anim->frameCount) {
-							gobj.model.animTime -= anim->frameCount * frameT;
+							gobj.animation.animTime -= anim->frameCount * frameT;
 							curFrame -= anim->frameCount;
 						}
-                        gobj.model.prevMoveRoot = { 0,0,0 };
+                        gobj.animation.prevMoveRoot = { 0,0,0 };
                     }
 				}
-				if (gobj.model.animId != -1) {
-                    if (gobj.model.prevAnimId != gobj.model.animId) {
-                        gobj.model.prevMoveRoot = { 0,0,0 };
+				if (gobj.animation.id != -1) {
+                    if (gobj.animation.prevId != gobj.animation.id) {
+                        gobj.animation.prevMoveRoot = { 0,0,0 };
                     }
-                    gobj.model.moveRoot = anim->framePoses[curFrame][0].translation;
+                    gobj.animation.moveRoot = anim->framePoses[curFrame][0].translation;
                     UpdateModelAnimationBones(mdl->model, *anim, curFrame);
                     UpdateModelAnimationSkin(mdl->model);
 				}
 
-                gobj.model.prevAnimId = gobj.model.animId;
+                gobj.animation.prevId = gobj.animation.id;
 			}
 		}
 	};

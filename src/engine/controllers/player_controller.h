@@ -32,7 +32,7 @@ namespace openAITD {
 			//if (!player->moveFlag) return;
 
 			bool isAction = false;
-			int nextAnimation = player->model.animId;
+			int nextAnimation = player->animation.id;
 
 			//if (player->track.mode == GOTrackMode::manual) {
 			//	isAction = true;
@@ -100,7 +100,7 @@ namespace openAITD {
 			if (!isAction) {
 				nextAnimation = anims.idle;
 			}
-			if (nextAnimation != player->model.animId) {
+			if (nextAnimation != player->animation.id) {
 				world->setRepeatAnimation(*player, nextAnimation);
 			}
 

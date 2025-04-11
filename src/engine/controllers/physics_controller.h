@@ -114,12 +114,12 @@ namespace openAITD {
 				return gobj.physics.bounds;
 			}
 			Vector3& p = gobj.location.position;
-			auto& m = *resources->models.getModel(gobj.model.id);
+			auto& m = *resources->models.getModel(gobj.modelId);
 			BoundingBox objB = correctBounds(m.bounds);
-			if (gobj.model.boundsType == GOModel::BoundsType::cube) {
+			if (gobj.boundsType == BoundsType::cube) {
 				objB = getCubeBounds(objB);
 			}
-			if (gobj.model.boundsType == GOModel::BoundsType::rotated) {
+			if (gobj.boundsType == BoundsType::rotated) {
 				objB.min = Vector3RotateByQuaternion(objB.min, gobj.location.rotation);
 				objB.max = Vector3RotateByQuaternion(objB.max, gobj.location.rotation);
 			}
@@ -145,7 +145,7 @@ namespace openAITD {
 			for (int i = 0; i < world->gobjects.size(); i++) {
 				auto& gobj2 = world->gobjects[i];
 				if (&gobj == &gobj2) continue;
-				if (gobj2.model.id == -1) continue;
+				if (gobj2.modelId == -1) continue;
 				if (gobj2.location.stageId != gobj.location.stageId) continue;
 				if (gobj2.location.roomId != gobj.location.roomId) continue;
 				BoundingBox& objB2 = getObjectBounds(gobj2);
@@ -187,8 +187,8 @@ namespace openAITD {
 				auto& gobj = world->gobjects[i];
 				if (gobj.location.stageId != world->curStageId) continue;
 
-				gobj.physics.moveVec = Vector3RotateByQuaternion(Vector3Subtract(gobj.model.moveRoot, gobj.model.prevMoveRoot), gobj.location.rotation);
-				gobj.model.prevMoveRoot = gobj.model.moveRoot;
+				gobj.physics.moveVec = Vector3RotateByQuaternion(Vector3Subtract(gobj.animation.moveRoot, gobj.animation.prevMoveRoot), gobj.location.rotation);
+				gobj.animation.prevMoveRoot = gobj.animation.moveRoot;
 
 				if (Vector3Equals(gobj.physics.moveVec, {0,0,0})) continue;
 				auto* curRoom = &curStage.rooms[world->curRoomId];

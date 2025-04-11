@@ -30,7 +30,7 @@ namespace openAITD {
 
 		void initExpressions() {
 			lua->CreateFunction([this](int obj) -> int {
-				return this->world->gobjects[obj].model.id;
+				return this->world->gobjects[obj].modelId;
 			}, "MODEL");
 			lua->CreateFunction([this](int obj) -> int {
 				return this->world->gobjects[obj].physics.collidedBy;
@@ -39,10 +39,10 @@ namespace openAITD {
 				return -1;
 			}, "HIT_BY");			
 			lua->CreateFunction([this](int obj) -> int {
-				return this->world->gobjects[obj].model.scriptAnimId;
+				return this->world->gobjects[obj].animation.scriptAnimId;
 			}, "ANIM");
 			lua->CreateFunction([this](int obj) -> int {
-				return this->world->gobjects[obj].model.animEnd;
+				return this->world->gobjects[obj].animation.animEnd;
 			}, "END_ANIM");
 			lua->CreateFunction([this](int obj) -> int {
 				//TODO: realize
@@ -68,7 +68,8 @@ namespace openAITD {
 			lua->CreateFunction([this](int obj) {
 				//
 			}, "MESSAGE");
-			
+
+			//Basic
 			lua->CreateFunction([this](int obj, int modelId) {
 				this->world->setModel(this->world->gobjects[obj], modelId);
 			}, "SET_MODEL");
@@ -78,23 +79,10 @@ namespace openAITD {
 			lua->CreateFunction([this](int obj, int coll) {
 				this->world->gobjects[obj].bitField.coll = coll;
 			}, "TEST_COL");
-			lua->CreateFunction([this](int obj, int coll) {
-				//
-			}, "SET_ANGLE");
+			//Set object angle
+			lua->CreateFunction([this](int obj, int x, int y, int z) {
 
-			lua->CreateFunction([this](int obj, int animId, int nextAnimId) {
-				this->world->setOnceAnimation(this->world->gobjects[obj], animId, nextAnimId);
-			}, "SET_ANIM_ONCE");
-			lua->CreateFunction([this](int obj, int animId) {
-				this->world->setRepeatAnimation(this->world->gobjects[obj], animId);
-			}, "SET_ANIM_REPEAT");
-			lua->CreateFunction([this](int obj, int trackMode, int trackId, int positionInTrack) {
-				auto& gobj = this->world->gobjects[obj];
-				gobj.track.mode = GOTrackMode(trackMode);
-				gobj.track.id = trackId;
-				gobj.track.pos = positionInTrack;
-				gobj.track.posStarted = false;
-			}, "SET_TRACKMODE");			
+			}, "SET_ANGLE");
 			lua->CreateFunction([this](int obj) {
 				//
 			}, "SET_FLAGS");
@@ -104,36 +92,6 @@ namespace openAITD {
 				gobj.location.stageId = -1;
 				//ListWorldObjets[lifeTempVar1].flags2 |= 0x4000;
 			}, "DELETE_OBJ");
-
-			lua->CreateFunction([this](int obj, int sampleId, int animId, int animFrame) {
-				//TODO: remember frame, not play in life
-				if (this->world->gobjects[obj].model.animId != animId) return;
-				if (this->world->gobjects[obj].model.animTime != animFrame) return;
-				//cout << "SET_ANIM_SOUND " << sampleId << endl;
-			}, "SET_ANIM_SOUND");
-			lua->CreateFunction([this](int sampleId) {
-				//cout << "SOUND " << sampleId << endl;
-			}, "SOUND");			
-			lua->CreateFunction([this](int freq) {
-				//TODO: Random sound frequency
-			}, "RND_FREQ");
-			lua->CreateFunction([this](int sampleId, int reserve) {
-				//TODO: REP_SOUND
-			}, "REP_SOUND");
-			lua->CreateFunction([this](int sampleId, int nextSampleId) {
-				//TODO: SOUND_THEN
-			}, "SOUND_THEN");
-			lua->CreateFunction([this](int musicId) {
-				//TODO: SOUND_THEN
-			}, "FADE_MUSIC");
-
-			lua->CreateFunction([this](int obj) {
-			}, "FOUND");
-
-			lua->CreateFunction([this](int obj) {
-				this->world->gobjects[obj].moveFlag = true;
-			}, "DO_MOVE");
-
 			lua->CreateFunction([this](int obj) {
 				this->world->followTarget = &this->world->gobjects[obj];
 			}, "SET_CAMERA_TARGET");
@@ -148,11 +106,74 @@ namespace openAITD {
 
 			//INVENTORY
 			lua->CreateFunction([this](int obj) {
+				}, "FOUND");
+			lua->CreateFunction([this](int obj) {
 				//TODO: IN_HAND
 				}, "IN_HAND");
 			lua->CreateFunction([this](int obj) {
 				//TODO: TAKE
-				}, "TAKE");			
+				}, "TAKE");
+
+			//Animations, tracks, rotations
+			lua->CreateFunction([this](int obj, int animId, int nextAnimId) {
+				this->world->setOnceAnimation(this->world->gobjects[obj], animId, nextAnimId);
+				}, "SET_ANIM_ONCE");
+			lua->CreateFunction([this](int obj, int animId) {
+				this->world->setRepeatAnimation(this->world->gobjects[obj], animId);
+				}, "SET_ANIM_REPEAT");
+			lua->CreateFunction([this](int obj, int trackMode, int trackId, int positionInTrack) {
+				auto& gobj = this->world->gobjects[obj];
+				gobj.track.mode = GOTrackMode(trackMode);
+				gobj.track.id = trackId;
+				gobj.track.pos = positionInTrack;
+				gobj.track.posStarted = false;
+				}, "SET_TRACKMODE");
+			lua->CreateFunction([this]() {
+				//TODO: DO_CARRE_ZV
+				}, "SET_ALPHA");
+			lua->CreateFunction([this]() {
+				//TODO: DO_CARRE_ZV
+				}, "SET_BETA");
+
+			//Process track
+			lua->CreateFunction([this](int obj) {
+				this->world->gobjects[obj].moveFlag = true;
+				}, "DO_MOVE");
+			//Process rotation
+			lua->CreateFunction([this](int obj) {
+				this->world->gobjects[obj].moveFlag = true;
+				}, "DO_ROT_ZV");
+			//recalc bounds?
+			lua->CreateFunction([this]() {
+				//TODO: DO_CARRE_ZV
+				}, "DO_CARRE_ZV");
+			lua->CreateFunction([this]() {
+				//TODO: DO_REAL_ZV
+				}, "DO_REAL_ZV");			 
+
+			//Sound & music
+			lua->CreateFunction([this](int obj, int sampleId, int animId, int animFrame) {
+				//TODO: remember frame, not play in life
+				if (this->world->gobjects[obj].animation.id != animId) return;
+				if (this->world->gobjects[obj].animation.animTime != animFrame) return;
+				//cout << "SET_ANIM_SOUND " << sampleId << endl;
+				}, "SET_ANIM_SOUND");
+			lua->CreateFunction([this](int sampleId) {
+				//cout << "SOUND " << sampleId << endl;
+				}, "SOUND");
+			//Set Random sound frequency
+			lua->CreateFunction([this](int freqDiff) {
+				//TODO: RND_FREQ
+				}, "RND_FREQ");
+			lua->CreateFunction([this](int sampleId, int reserve) {
+				//TODO: REP_SOUND
+				}, "REP_SOUND");
+			lua->CreateFunction([this](int sampleId, int nextSampleId) {
+				//TODO: SOUND_THEN
+				}, "SOUND_THEN");
+			lua->CreateFunction([this](int musicId) {
+				//TODO: SOUND_THEN
+				}, "FADE_MUSIC");
 
 			//SFX
 			lua->CreateFunction([this](int water) {
@@ -164,9 +185,6 @@ namespace openAITD {
 			lua->CreateFunction([this](int light) {
 				//TODO: SET_LIGHT
 				}, "SET_LIGHT");
-			lua->CreateFunction([this]() {
-				//TODO: DO_CARRE_ZV???
-				}, "DO_CARRE_ZV");
 		}
 
 		void initLua() {
@@ -203,7 +221,7 @@ namespace openAITD {
 
 				auto& f = funcs.find(gobj.lifeId);
 				if (f == funcs.end()) {
-					cout << "Life " << gobj.lifeId << "(obj: " << i << ") not found, " << endl;
+					//cout << "Life " << gobj.lifeId << "(obj: " << i << ") not found, " << endl;
 					continue;
 				}
 
