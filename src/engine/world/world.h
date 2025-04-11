@@ -108,9 +108,9 @@ namespace openAITD {
 				auto& colB = gobjects[i].staticCollider->bounds;
 				if (gobjects[i].staticCollider) {
 					gobjects[i].location.position = {
-						(colB.max.x - colB.min.x) / 2,
-						(colB.max.y - colB.min.y) / 2,
-						(colB.max.z - colB.min.z) / 2,
+						(colB.max.x + colB.min.x) / 2,
+						(colB.max.y + colB.min.y) / 2,
+						(colB.max.z + colB.min.z) / 2,
 					};
 				}
 			}
