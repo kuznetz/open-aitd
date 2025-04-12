@@ -45,7 +45,7 @@ namespace openAITD {
 			//TODO: change code 4 distance reach
 
 			float distanceToPoint = Vector3DistanceSqr(gobj.location.position, gobj.track.target);
-			if (distanceToPoint >= 0.1) // || distanceToPoint >= nextDistanceToPoint
+			if (distanceToPoint >= 0.01) // || distanceToPoint >= nextDistanceToPoint
 			{
 				// not yet at position
 				gobj.track.posStarted = true;

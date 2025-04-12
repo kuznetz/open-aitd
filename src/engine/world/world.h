@@ -27,6 +27,7 @@ namespace openAITD {
 		vector<short int> vars;
 		vector<short int> cVars;
 		
+		bool gameOver = false;
 		int curStageId  = -1;
 		Stage* curStage = 0;
 		int curRoomId = -1;

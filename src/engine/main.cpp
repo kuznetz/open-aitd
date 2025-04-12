@@ -16,13 +16,14 @@
 using namespace std;
 namespace openAITD {
 
-    enum AppState {
-        AS_Loading,
-        AS_InWorld,
-        AS_MainMenu,
-        AS_Inventory,
-        AS_Book,
-        AS_SelectGame
+    enum class AppState {
+        Loading,
+        Intro,
+        InWorld,
+        MainMenu,
+        Inventory,
+        Book,
+        SelectGame
     };
     AppState state;
 
@@ -42,9 +43,52 @@ namespace openAITD {
     bool freeLook = false;
     bool pause = false;
 
+    void startIntro() {
+        world.gameOver = false;
+        world.loadGObjects("data/objects.json");
+        world.setCurRoom(7, 1);
+        state = AppState::Intro;
+    }
+
+    void startGame() {
+        world.gameOver = false;
+        world.loadGObjects("data/objects.json");
+        world.setCurRoom(0, 0);
+        state = AppState::InWorld;
+    }
+
+    void processWorld(float timeDelta) {
+        if (IsKeyPressed(KEY_O)) {
+            freeLook = !freeLook;
+        }
+        if (IsKeyPressed(KEY_P)) {
+            pause = !pause;
+        }
+        if (IsKeyDown(KEY_I)) {
+            timeDelta *= 8;
+        }
+
+        if (!pause) {
+            playerContr.process(timeDelta);
+            lifeContr.process();
+            animContr.process(timeDelta);
+            tracksContr.process(timeDelta);
+            physContr.process(timeDelta);
+        }
+
+        BeginDrawing();
+        if (freeLook) {
+            flRenderer.process();
+        }
+        else {
+            renderer.process();
+        }
+        EndDrawing();
+    }
+
     int main(void)
     {
-        AITDExtractor::extractAllData();
+        //AITDExtractor::extractAllData();
 
         InitWindow(screenW, screenH, "Open-AITD");
 
@@ -54,51 +98,29 @@ namespace openAITD {
         }
         resources.loadTracks("data/tracks");
 
-        world.loadGObjects("data/objects.json");
-        //world.followTarget = &world.gobjects[1];
-        //playerContr.player = &world.gobjects[1];
-        //world.setCurRoom(0, 0);
-        world.setCurRoom(7, 1);
-        
-        //world.loadVars("data/vars.json");
-
         renderer.screenW = screenW;
         renderer.screenH = screenH;
-        //renderer.loadCamera(world.curStageId, world.curCameraId);
         DisableCursor();
 
-        //startGame(7, 1, 0);
+        startIntro();
 
         float timeDelta = 0;        
         while (!WindowShouldClose()) {
             timeDelta = GetFrameTime();
-
-            if (IsKeyPressed(KEY_O)) {
-                freeLook = !freeLook;
+            if (state == AppState::Intro || state == AppState::InWorld) {
+                processWorld(timeDelta);
+                if (IsKeyPressed(KEY_SPACE)) {
+                    world.gameOver = true;
+                }
             }
-            if (IsKeyPressed(KEY_P)) {
-                pause = !pause;
+            if (world.gameOver) {
+                if (state == AppState::Intro) {
+                    startGame();
+                }
+                else {
+                    break;
+                }
             }
-            if (IsKeyDown(KEY_I)) {
-                timeDelta *= 8;
-            }
-
-            if (!pause) {
-                playerContr.process(timeDelta);
-                lifeContr.process();
-                animContr.process(timeDelta);
-                tracksContr.process(timeDelta);
-                physContr.process(timeDelta);
-            }
-
-            BeginDrawing();
-            if (freeLook) {
-                flRenderer.process();
-            }
-            else {
-                renderer.process();
-            }
-            EndDrawing();
         }
 
         return 0;

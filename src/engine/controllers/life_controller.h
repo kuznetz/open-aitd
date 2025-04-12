@@ -218,6 +218,10 @@ namespace openAITD {
 			lua->CreateFunction([this](int light) {
 				//TODO: SET_LIGHT
 				}, "SET_LIGHT");
+
+			lua->CreateFunction([this](int light) {
+				world->gameOver = true;
+				}, "GAME_OVER");
 		}
 
 		void initLua() {
