@@ -171,32 +171,27 @@ namespace openAITD {
 		}
 
 		Image resizeImg(Image& src, int w, int h) {
-			Texture2D tex = LoadTextureFromImage(src);
-			RenderTexture2D imgTex = LoadRenderTexture(w, h);
-			BeginTextureMode(imgTex);
-			SetTextureFilter(tex, TEXTURE_FILTER_BILINEAR);
-			DrawTexturePro(
-				tex,
-				{ 0, 0, (float)tex.width, (float)tex.height },
-				{ 0, 0, (float)w, (float)h },
-				{ 0, 0 }, 0, WHITE
-			);
-			EndTextureMode();
-			Image imageScaled = LoadImageFromTexture(imgTex.texture);
-			ImageFlipVertical(&imageScaled);
-			return imageScaled;
-		}
+			Image res = { 0, w, h, 1, src.format };
+			stbir_pixel_layout l = STBIR_RGB;
+			if (src.format == PIXELFORMAT_UNCOMPRESSED_R8G8B8A8) l = STBIR_RGBA;
+			if (src.format == RL_PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA) l = STBIR_RA;
+			res.data = stbir_resize_uint8_srgb((unsigned char*)src.data, src.width, src.height, 0, 0, w, h, 0, l);
+			return res;
+		}		
 
 		Texture2D generateMask(Image& fullBg, Image& mask) {
 			Image maskImageScaled = resizeImg(mask, screenW, screenH);
+			Image resImg = { 0, screenW, screenH, 1, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8 };
+			resImg.data = new uint8_t[screenW * screenH * 4];
 			for (int i = 0; i < (screenW * screenH); i++) {
-				((uint8_t*)maskImageScaled.data)[i * 4 + 3] = ((uint8_t*)maskImageScaled.data)[i * 4 + 0];
-				((uint8_t*)maskImageScaled.data)[i * 4 + 0] = ((uint8_t*)fullBg.data)[i * 4 + 0];
-				((uint8_t*)maskImageScaled.data)[i * 4 + 1] = ((uint8_t*)fullBg.data)[i * 4 + 1];
-				((uint8_t*)maskImageScaled.data)[i * 4 + 2] = ((uint8_t*)fullBg.data)[i * 4 + 2];
+				((uint8_t*)resImg.data)[i * 4 + 0] = ((uint8_t*)fullBg.data)[i * 3 + 0];
+				((uint8_t*)resImg.data)[i * 4 + 1] = ((uint8_t*)fullBg.data)[i * 3 + 1];
+				((uint8_t*)resImg.data)[i * 4 + 2] = ((uint8_t*)fullBg.data)[i * 3 + 2];
+				((uint8_t*)resImg.data)[i * 4 + 3] = ((uint8_t*)maskImageScaled.data)[i * 2 + 1];
 			}
-			Texture2D result = LoadTextureFromImage(maskImageScaled);
+			Texture2D result = LoadTextureFromImage(resImg);
 			UnloadImage(maskImageScaled);
+			UnloadImage(resImg);
 			return result;
 		}
 
