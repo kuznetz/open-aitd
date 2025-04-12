@@ -139,6 +139,7 @@ namespace openAITD {
 		int pos;
 		GOTrackMode mode;
 		bool posStarted = false;
+		Vector3 start;
 		Vector3 direction;
 		Vector3 target;
 	};

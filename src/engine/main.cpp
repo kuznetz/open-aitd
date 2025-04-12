@@ -86,8 +86,8 @@ namespace openAITD {
             if (!pause) {
                 playerContr.process(timeDelta);
                 lifeContr.process();
-                tracksContr.process(timeDelta);
                 animContr.process(timeDelta);
+                tracksContr.process(timeDelta);
                 physContr.process(timeDelta);
             }
 
