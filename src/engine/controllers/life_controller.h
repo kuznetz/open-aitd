@@ -17,8 +17,12 @@ namespace openAITD {
 		LuaState* lua = 0;
 		map <int,LuaFunction*> funcs;
 		std::function<bool(uint32_t, const LuaObject&)> execCb;
+		Matrix roomMatrix;
 
 		LifeController(Resources* res, World* world) {
+			//roomMatrix = MatrixTranspose(MatrixMultiply(MatrixRotateZ(PI), MatrixRotateX(PI)));
+			//roomMatrix = MatrixTranspose(MatrixMultiply(MatrixRotateY(PI), MatrixRotateX(PI)));
+			//roomMatrix = MatrixTranspose(MatrixMultiply(MatrixRotateX(PI), MatrixRotateY(PI)));
 			this->resources = res;
 			this->world = world;
 			initLua();
@@ -110,9 +114,10 @@ namespace openAITD {
 				gobj.location.stageId = stage;
 				gobj.location.roomId = room;
 				gobj.location.position.x = x/1000.;
-				gobj.location.position.y = y / 1000.;
-				gobj.location.position.z = z / 1000.;
+				gobj.location.position.y = -y / 1000.;
+				gobj.location.position.z = -z / 1000.;
 			}, "CHANGE_ROOM");
+
 
 			//INVENTORY
 			lua->CreateFunction([this](int obj) {
@@ -153,10 +158,12 @@ namespace openAITD {
 
 			lua->CreateFunction([this](int obj, int toAngle, int time) {
 				auto& gobj = this->world->gobjects[obj];
+				if (gobj.rotateAnim.timeEnd > 0) return;
+				toAngle += 512;
 				gobj.rotateAnim.curTime = 0;
 				gobj.rotateAnim.timeEnd = time / 60.;
 				gobj.rotateAnim.from = gobj.location.rotation;
-				auto rotTo = QuaternionFromAxisAngle({ 0,1,0 }, toAngle * 2 * PI / 1024.);
+				auto rotTo = QuaternionFromAxisAngle({ 0,1,0 }, toAngle * 2. * PI / 1024.);
 				gobj.rotateAnim.to = rotTo;
 				gobj.rotateAnim.toLifeAngles[1] = toAngle;
 				}, "SET_BETA");

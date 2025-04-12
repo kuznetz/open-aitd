@@ -120,7 +120,7 @@ namespace openAITD {
                     rot.timeEnd = 0;
                 }
                 else {
-                    gobj.location.rotation = QuaternionLerp(rot.from, rot.to, rot.curTime / rot.timeEnd);
+                    gobj.location.rotation = QuaternionSlerp(rot.from, rot.to, rot.curTime / rot.timeEnd);
                 }
             }
         }
