@@ -27,6 +27,9 @@ namespace openAITD {
 		vector<short int> vars;
 		vector<short int> cVars;
 		
+		float chrono = 0;
+		//Time, how long the room was active
+		float roomChrono = 0;
 		bool gameOver = false;
 		int curStageId  = -1;
 		Stage* curStage = 0;
@@ -50,6 +53,7 @@ namespace openAITD {
 			if (curRoomId != roomId) {
 				curRoomId = roomId;
 				curRoom = &curStage->rooms[roomId];
+				roomChrono = chrono;
 			}
 		}
 		void loadGObjects(string path);
@@ -118,7 +122,9 @@ namespace openAITD {
 
 			gobjects[i].lifeMode = objsJson[i]["lifeMode"];			
 			gobjects[i].lifeId = objsJson[i]["life"];
+			gobjects[i].chrono = chrono;
 		}
+
 	};
 
 	void World::setRepeatAnimation(GameObject& gobj, int animId) {
@@ -147,7 +153,16 @@ namespace openAITD {
 
 	void World::loadVars(string path)
 	{
-
+		std::ifstream ifs(path);
+		json objsJson = json::parse(ifs);
+		vars.resize(objsJson["vars"].size());
+		for (int i = 0; i < objsJson["vars"].size(); i++) {
+			vars[i] = objsJson["vars"][i];
+		}
+		cVars.resize(objsJson["cVars"].size());
+		for (int i = 0; i < objsJson["cVars"].size(); i++) {
+			cVars[i] = objsJson["cVars"][i];
+		}
 	};
 
 }

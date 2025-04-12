@@ -171,7 +171,9 @@ namespace AITDExtractor {
     }
 
     void processScripts() {
-        extractVars("original", "data/vars.json");
+        if (!std::filesystem::exists("data/vars.json")) {
+            extractVars("original", "data/vars.json");
+        }
 
         PakFile lifePak("original/LISTLIFE.PAK");
         vector<LifeInstructions> allLifes;

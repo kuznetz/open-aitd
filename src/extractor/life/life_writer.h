@@ -21,7 +21,7 @@ inline void writeLifeExpr(ofstream& out, LifeExpr& expr)
 		return;
 	}
 	if (expr.type->type == EvalEnum::GET ) {
-		out << "val_" << expr.arguments[0].constVal;
+		out << "var_" << expr.arguments[0].constVal;
 		return;
 	}
 	out << expr.type->typeStr;
@@ -229,6 +229,11 @@ inline void writeLifeNodes(ofstream& out, int level, vector<LifeNode>& nodes)
 		else if (node.cases.size())
 		{
 			writeSwitch(out, level, node);
+		}
+		else if (node.instr->type->type == LifeEnum::RETURN)
+		{
+			writeSpaces(out, level);
+			out << "do return end\n";
 		}
 		else
 		{

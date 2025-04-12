@@ -45,15 +45,19 @@ namespace openAITD {
 
     void startIntro() {
         world.gameOver = false;
+        world.loadVars("data/vars.json");
         world.loadGObjects("data/objects.json");
         world.setCurRoom(7, 1);
+        lifeContr.reloadVars();
         state = AppState::Intro;
     }
 
     void startGame() {
         world.gameOver = false;
+        world.loadVars("data/vars.json");
         world.loadGObjects("data/objects.json");
         world.setCurRoom(0, 0);
+        lifeContr.reloadVars();
         state = AppState::InWorld;
     }
 
@@ -69,6 +73,7 @@ namespace openAITD {
         }
 
         if (!pause) {
+            world.chrono += timeDelta;
             playerContr.process(timeDelta);
             lifeContr.process();
             animContr.process(timeDelta);
@@ -88,7 +93,7 @@ namespace openAITD {
 
     int main(void)
     {
-        //AITDExtractor::extractAllData();
+        AITDExtractor::extractAllData();
 
         InitWindow(screenW, screenH, "Open-AITD");
 
@@ -109,7 +114,7 @@ namespace openAITD {
             timeDelta = GetFrameTime();
             if (state == AppState::Intro || state == AppState::InWorld) {
                 processWorld(timeDelta);
-                if (IsKeyPressed(KEY_SPACE)) {
+                if (state == AppState::Intro && IsKeyPressed(KEY_SPACE)) {
                     world.gameOver = true;
                 }
             }

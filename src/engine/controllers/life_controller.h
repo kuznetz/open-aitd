@@ -10,12 +10,17 @@ using namespace luacpp;
 
 namespace openAITD {
 
+	struct LifeFunc {
+		bool executed;
+		LuaFunction* func;
+	};
+
 	class LifeController {
 	public:
 		World* world;
 		Resources* resources;
 		LuaState* lua = 0;
-		map <int,LuaFunction*> funcs;
+		map <int, LifeFunc> funcs;
 		std::function<bool(uint32_t, const LuaObject&)> execCb;
 		Matrix roomMatrix;
 
@@ -34,31 +39,44 @@ namespace openAITD {
 
 		void initExpressions() {
 			lua->CreateFunction([this](int obj) -> int {
+				return this->world->gobjects[obj].location.roomId;
+				}, "ROOM");
+			lua->CreateFunction([this](int obj) -> int {
 				return this->world->gobjects[obj].modelId;
-			}, "MODEL");
+				}, "MODEL");
 			lua->CreateFunction([this](int obj) -> int {
 				return this->world->gobjects[obj].physics.collidedBy;
-			}, "COL_BY");
+				}, "COL_BY");
+			lua->CreateFunction([this](int obj) -> int {
+				return this->world->gobjects[obj].physics.staticColl;
+				}, "HARD_COLLIDER");		
+			lua->CreateFunction([this](int obj) -> int {
+				return this->world->gobjects[obj].physics.objectColl;
+				}, "ACTOR_COLLIDER");
+			lua->CreateFunction([this](int obj) -> int {
+				return this->world->gobjects[obj].physics.zoneTriggered;
+				}, "TRIGGER_COLLIDER");			
+
 			lua->CreateFunction([this](int obj) -> int {
 				return -1;
-			}, "HIT_BY");			
+				}, "HIT_BY");			
 			lua->CreateFunction([this](int obj) -> int {
 				return this->world->gobjects[obj].animation.scriptAnimId;
-			}, "ANIM");
+				}, "ANIM");
 			lua->CreateFunction([this](int obj) -> int {
 				return this->world->gobjects[obj].animation.animEnd;
-			}, "END_ANIM");
+				}, "END_ANIM");
 			lua->CreateFunction([this](int obj) -> int {
-				//TODO: realize
+				//TODO: POSREL
 				return 2;
-			}, "POSREL");
+				}, "POSREL");
 			lua->CreateFunction([this](int obj) -> int {
 				int r = (this->world->gobjects[obj].invItem.flags & 0xC000) ? 1 : 0;
 				return r;
-			}, "IS_FOUND");
+				}, "IS_FOUND");
 			lua->CreateFunction([this](int obj) -> int {
 				return (this->world->gobjects[obj].track.mark);
-			}, "MARK");
+				}, "MARK");
 			lua->CreateFunction([this](int obj) -> int {
 				return (this->world->gobjects[obj].track.id);
 				}, "NUM_TRACK");
@@ -72,6 +90,13 @@ namespace openAITD {
 			lua->CreateFunction([this](int obj) -> int {
 				return this->world->gobjects[obj].rotateAnim.lifeAngles[2];
 				}, "GAMMA");
+
+			lua->CreateFunction([this](int obj) -> int {
+				return (int)((this->world->chrono - this->world->gobjects[obj].chrono) / 60.);
+				}, "CHRONO");
+			lua->CreateFunction([this](int obj) -> int {
+				return (int)((this->world->chrono - this->world->roomChrono) / 60.);
+				}, "ROOM_CHRONO");			
 		}
 
 		void initInstructions() {
@@ -89,7 +114,10 @@ namespace openAITD {
 			}, "SET_MODEL");
 			lua->CreateFunction([this](int obj, int lifeId) {
 				this->world->gobjects[obj].lifeId = lifeId;
-			}, "SET_LIFE");	
+			}, "SET_LIFE");
+			lua->CreateFunction([this](int obj) {
+				this->world->gobjects[obj].chrono = this->world->chrono;
+			}, "START_CHRONO");
 			lua->CreateFunction([this](int obj, int coll) {
 				this->world->gobjects[obj].bitField.coll = coll;
 			}, "TEST_COL");
@@ -178,6 +206,9 @@ namespace openAITD {
 				}, "DO_ROT_ZV");
 			//recalc bounds?
 			lua->CreateFunction([this]() {
+				//TODO: DEF_ZV
+				}, "DEF_ZV");
+			lua->CreateFunction([this]() {
 				//TODO: DO_CARRE_ZV
 				}, "DO_CARRE_ZV");
 			lua->CreateFunction([this]() {
@@ -244,31 +275,75 @@ namespace openAITD {
 				auto s = string("life_") + to_string(i);
 				auto f = new LuaFunction(lua->GetFunction(s.c_str()));
 				if (f->GetType() != LUA_TFUNCTION) continue;
-				funcs[i] = f;
+				funcs[i].func = f;
+			}
+		}
+
+		bool isObjectActive(GameObject& gobj) {
+			if (gobj.id == 286) {
+				int z = 0;
+			}
+			if (gobj.lifeId == -1) return false;
+			if (gobj.location.stageId != world->curStageId) return false;
+			if (gobj.lifeMode == GOLifeMode::none) return false;
+			if (gobj.lifeMode == GOLifeMode::room && gobj.location.roomId != world->curRoomId) return false;
+			if (gobj.lifeMode == GOLifeMode::roomInCamera) {
+				bool inCamera = false;
+				auto& cam = world->curStage->cameras[world->curCameraId];
+				for (int i = 0; i < cam.rooms.size(); i++) {
+					if (gobj.location.roomId == cam.rooms[i].roomId) {
+						inCamera = true;
+						break;
+					}
+				}
+				if (!inCamera) return false;
+			}
+			return true;
+		}
+
+		void reloadVars() {
+			for (int i = 0; i < world->vars.size(); i++) {
+				string name = string("var_") + to_string(i);
+				lua->CreateInteger(world->vars[i], name.c_str());
 			}
 		}
 
 		void process() {
+			
+			for (auto it = funcs.begin(); it != funcs.end(); it++)
+			{
+				it->second.executed = false;
+			}
+
 			for (int i = 0; i < world->gobjects.size(); i++) {
+				
 				auto& gobj = world->gobjects[i];
-				if (gobj.lifeId == -1) continue;
-				if (gobj.location.stageId != world->curStageId) continue;
-				//if (gobj.lifeMode == GOLifeMode::none || gobj.lifeMode == GOLifeMode::off) continue;
-				//if ((gobj.lifeMode == GOLifeMode::room || gobj.lifeMode == GOLifeMode::camera) && (gobj.location.roomId != world->curRoomId)) continue;
+				if (!isObjectActive(gobj)) continue;
 
 				auto& f = funcs.find(gobj.lifeId);
 				if (f == funcs.end()) {
-					//cout << "Life " << gobj.lifeId << "(obj: " << i << ") not found, " << endl;
+					cout << "Life " << gobj.lifeId << "(obj: " << i << ") not found, " << endl;
 					continue;
 				}
 
 				string errstr;
-				if (!f->second->Execute(execCb, &errstr, i)) {
+				if (!f->second.func->Execute(execCb, &errstr, i)) {
 					cout << "Execute life_" << i << " error: " << errstr << endl;
 				}
+				f->second.executed = true;
 			}
+
+			/*string s = "";
+			for (auto it = funcs.begin(); it != funcs.end(); it++)
+			{
+				if (it->second.executed) s += " " + to_string(it->first);
+			}*/
+
 		}
 
 	};
 
 }
+
+
+

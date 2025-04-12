@@ -30,10 +30,15 @@ void extractVars(string dir, string josnTo) {
     int dataBytes = 0;
     u8* vars = loadFullFile(dir + "/VARS.ITD", dataBytes);
     int varsCount = dataBytes / 2;
+    /*
     json varsJson = json::object();
     for (int i = 0; i < varsCount; i++) {
         string s = string("v_") + to_string(i);
         varsJson[s] = READ_LE_S16(vars + (i*2));
+    }*/
+    json varsJson = json::array();
+    for (int i = 0; i < varsCount; i++) {
+        varsJson.push_back(READ_LE_S16(vars + (i * 2)));
     }
     delete vars;
     outJson["vars"] = varsJson;
@@ -41,13 +46,19 @@ void extractVars(string dir, string josnTo) {
     //DEFINES.ITD
     vars = loadFullFile(dir + "/DEFINES.ITD", dataBytes);
     varsCount = (dataBytes / 2);
+    /*
     json cvarsJson = json::object();
     for (int i = 0; i < varsCount; i++) {
         string s = string("cv_") + to_string(i);
         cvarsJson[s] = READ_LE_S16(vars + (i * 2));
     }
+    */
+    json cvarsJson = json::array();
+    for (int i = 0; i < varsCount; i++) {
+        cvarsJson.push_back(READ_LE_S16(vars + (i * 2)));
+    }
     delete vars;
-    outJson["cvars"] = cvarsJson;
+    outJson["cVars"] = cvarsJson;
 
     std::ofstream o(josnTo.c_str());
     o << std::setw(2) << outJson << std::endl;

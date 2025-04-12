@@ -136,10 +136,18 @@ namespace openAITD {
 		void processColliders(GameObject& gobj, Room& room) {
 			BoundingBox& objB = getObjectBounds(gobj);
 			Vector3 v = gobj.physics.moveVec;
+
 			for (int i = 0; i < room.colliders.size(); i++) {
-				if (!v.x && !v.y && !v.z) continue;
 				BoundingBox& colB = room.colliders[i].bounds;
-				BoxToBox(objB, v, colB);
+				bool collided = BoxToBox(objB, v, colB);
+				if (collided) {
+					if (room.colliders[i].type == 9) {
+						gobj.physics.staticColl = room.colliders[i].parameter;
+					}
+					else {
+						gobj.physics.staticColl = 255;
+					}
+				}
 			}
 
 			for (int i = 0; i < world->gobjects.size(); i++) {
@@ -151,7 +159,7 @@ namespace openAITD {
 				BoundingBox& objB2 = getObjectBounds(gobj2);
 				bool collided = BoxToBox(objB, v, objB2);
 				if (collided) {
-					gobj.physics.collidedBy = gobj2.id;
+					gobj.physics.objectColl = gobj2.id;
 					gobj2.physics.collidedBy = gobj.id;
 				}
 			}
@@ -179,6 +187,9 @@ namespace openAITD {
 				auto& gobj = world->gobjects[i];
 				if (gobj.location.stageId != world->curStageId) continue;
 				gobj.physics.collidedBy = -1;
+				gobj.physics.staticColl = -1;
+				gobj.physics.objectColl = -1;
+
 				if (Vector3Equals(gobj.physics.moveVec, { 0,0,0 })) continue;
 				gobj.physics.boundsCached = false;
 			}
@@ -202,11 +213,17 @@ namespace openAITD {
 				//Check Zones
 				for (int i = 0; i < curRoom->zones.size(); i++) {
 					if (!objectInZone(gobj, &curRoom->zones[i])) continue;
-					if (curRoom->zones[i].type == RoomZone::RoomZoneType::ChangeRoom) {
+					if (curRoom->zones[i].type == RoomZoneType::ChangeRoom) {
 						Vector3 oldRoomPos = curRoom->position;
 						gobj.location.roomId = curRoom->zones[i].parameter;
 						curRoom = &curStage.rooms[gobj.location.roomId];
 						gobj.location.position = Vector3Subtract(Vector3Add(gobj.location.position, oldRoomPos), curRoom->position);
+					}
+					if (curRoom->zones[i].type == RoomZoneType::Trigger) {
+						gobj.physics.zoneTriggered = curRoom->zones[i].parameter;
+					}
+					if (curRoom->zones[i].type == RoomZoneType::ChangeStage) {
+						gobj.physics.zoneTriggered = curRoom->zones[i].parameter;
 					}
 				}			
 			}

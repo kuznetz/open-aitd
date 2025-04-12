@@ -116,14 +116,16 @@ namespace openAITD {
 		BoundingBox bounds;
 		Vector3 moveVec;
 		int collidedBy = -1;
+		int staticColl = -1;
+		int objectColl = -1;
+		int zoneTriggered = -1;
 	};
 
 	enum class GOLifeMode {
 		none = -1,
-		off = 0,
-		stage = 1,
-		room = 2,
-		camera = 3
+		stage = 0,
+		room = 1,
+		roomInCamera = 2
 	};
 
 	enum class GOTrackMode {
@@ -168,7 +170,8 @@ namespace openAITD {
 		};
 
 		int lifeId;
-		GOLifeMode lifeMode;		
+		GOLifeMode lifeMode;	
+		float chrono;
 
 		bool moveFlag = false;
 	};

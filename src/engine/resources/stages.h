@@ -180,14 +180,14 @@ namespace openAITD {
 		int objectLink = -1;
 	};
 
+	enum class RoomZoneType {
+		ChangeRoom = 0,
+		Trigger = 9,
+		ChangeStage = 10
+	};
+
 	struct RoomZone
 	{
-		enum class RoomZoneType {
-			ChangeRoom = 0,
-			Trigger = 9,
-			ChangeStage = 10
-		};
-
 		BoundingBox bounds;
 		RoomZoneType type;
 		int parameter;
