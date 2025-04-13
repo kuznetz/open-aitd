@@ -246,28 +246,29 @@ inline const vector<LifeEnum::LifeEnum> LifeTable_v1 = {
 	LifeEnum::END_SEQUENCE,
 	LifeEnum::SOUND_THEN_REPEAT,
 	LifeEnum::WAIT_GAME_OVER,
-	LifeEnum::GET_MATRICE,
-	LifeEnum::STAGE_LIFE,
-	LifeEnum::CONTINUE_TRACK,
-	LifeEnum::ANIM_RESET,
-	LifeEnum::RESET_MOVE_MANUAL,
-	LifeEnum::PLUIE,
-	LifeEnum::ANIM_HYBRIDE_ONCE,
-	LifeEnum::ANIM_HYBRIDE_REPEAT,
-	LifeEnum::CALL_INVENTORY,
-	LifeEnum::BODY_RESET,
-	LifeEnum::DEL_INVENTORY,
-	LifeEnum::SET_INVENTORY,
-	LifeEnum::PLAY_SEQUENCE,
-	LifeEnum::_2D_ANIM_SOUND,
-	LifeEnum::SET_GROUND,
-	LifeEnum::PROTECT,
-	LifeEnum::DEF_ABS_ZV,
-	LifeEnum::DEF_SEQUENCE_SOUND,
-	LifeEnum::READ_ON_PICTURE,
-	LifeEnum::FIRE_UP_DOWN,
-	LifeEnum::DO_ROT_CLUT,
-	LifeEnum::STOP_CLUT,
+	//not use in aitd below
+	LifeEnum::GET_MATRICE, //notuse
+	LifeEnum::STAGE_LIFE, //notuse
+	LifeEnum::CONTINUE_TRACK, //notuse
+	LifeEnum::ANIM_RESET, //notuse
+	LifeEnum::RESET_MOVE_MANUAL, //notuse
+	LifeEnum::PLUIE, //notuse
+	LifeEnum::ANIM_HYBRIDE_ONCE, //notuse
+	LifeEnum::ANIM_HYBRIDE_REPEAT, //notuse
+	LifeEnum::CALL_INVENTORY, //notuse
+	LifeEnum::BODY_RESET, //notuse
+	LifeEnum::DEL_INVENTORY, //notuse
+	LifeEnum::SET_INVENTORY, //notuse
+	LifeEnum::PLAY_SEQUENCE, //notuse
+	LifeEnum::_2D_ANIM_SOUND, //notuse
+	LifeEnum::SET_GROUND, //notuse
+	LifeEnum::PROTECT, //notuse
+	LifeEnum::DEF_ABS_ZV, //notuse
+	LifeEnum::DEF_SEQUENCE_SOUND, //notuse
+	LifeEnum::READ_ON_PICTURE, //notuse
+	LifeEnum::FIRE_UP_DOWN, //notuse
+	LifeEnum::DO_ROT_CLUT, //notuse
+	LifeEnum::STOP_CLUT, //notuse
 };
 
 inline const vector<EvalEnum::EvalEnum> ExprTable_v1 = {

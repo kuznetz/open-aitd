@@ -45,6 +45,9 @@ namespace openAITD {
 		Texture2D backgroundTex = {0,0,0};
 		vector<RenderOverlay> curOverlays;
 
+		RenderOrder renderQueue[100];
+		RenderOrder* renderIter;
+		int renderQueueCount = 0;
 
 		Stage* curStage = 0;
 		int curStageId = -1;
@@ -77,7 +80,8 @@ namespace openAITD {
 
 		void fillScreenBounds(RenderOrder& ord, GameObject& gobj)
 		{
-			ord.obj = &gobj;
+			ord.next = 0;
+			ord.gobj = &gobj;
 
 			//Calc matrix
 			Vector3& roomPos = curStage->rooms[gobj.location.roomId].position;
@@ -175,7 +179,7 @@ namespace openAITD {
 			stbir_pixel_layout l = STBIR_RGB;
 			if (src.format == PIXELFORMAT_UNCOMPRESSED_R8G8B8A8) l = STBIR_RGBA;
 			if (src.format == RL_PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA) l = STBIR_RA;
-			res.data = stbir_resize_uint8_srgb((unsigned char*)src.data, src.width, src.height, 0, 0, w, h, 0, l);
+			res.data = stbir_resize_uint8_linear((unsigned char*)src.data, src.width, src.height, 0, 0, w, h, 0, l);
 			return res;
 		}		
 
@@ -300,8 +304,8 @@ namespace openAITD {
 			}
 			*/
 
-			//TODO: Remove memory allocation
-			list<RenderOrder> renderQueue;
+			renderQueueCount = 0;
+
 			for (int i = 0; i < this->world->gobjects.size(); i++) {
 				auto& gobj = this->world->gobjects[i];
 				if (gobj.modelId == -1) continue;
@@ -323,7 +327,7 @@ namespace openAITD {
 				//auto& screenPos = GetWorldToScreenZ(pos);
 				//if (screenPos.z < 0) continue;
 
-				RenderOrder ro;
+				RenderOrder& ro = renderQueue[renderQueueCount++];
 				fillScreenBounds(ro, gobj);
 				if (ro.zPos < 0) continue;
 				if (ro.screenMax.x < 0 || ro.screenMin.x > screenW) continue;
@@ -331,19 +335,26 @@ namespace openAITD {
 
 				renderObject(gobj, WHITE);
 				
-				bool inserted = false;
 				//string s = to_string(i);
-
-				for (auto it = renderQueue.begin(); it != renderQueue.end(); it++) {
-					if ((*it).zPos < ro.zPos) {
-						renderQueue.insert( it, ro);
-						inserted = true;
-						break;
+								
+				if (renderQueueCount > 1) {
+					bool inserted = false;
+					renderIter = renderQueue;
+					while (true) {
+						if (renderIter->zPos < ro.zPos) {
+							ro.next = renderIter->next;
+							renderIter->next = &ro;
+							inserted = true;
+							break;
+						}
+						if (!renderIter->next) break;
+						renderIter = renderIter->next;
+					}
+					if (!inserted) {
+						renderIter->next = &ro;
 					}
 				}
-				if (!inserted) {
-					renderQueue.push_back(ro);
-				}
+
 			}
 
 			for (auto i = 0; i < curOverlays.size(); i++) {
@@ -361,35 +372,40 @@ namespace openAITD {
 			//	}
 			//}
 
-			int num = 1;
-			for (auto it = renderQueue.begin(); it != renderQueue.end(); it++) {
-				BeginMode3D(initCamera);
+			if (renderQueueCount > 0) {
+				int num = 1;
+				renderIter = renderQueue;
+				while (true) {
+					BeginMode3D(initCamera);
 					//rlSetMatrixModelview(curCamera->modelview);
 					rlSetMatrixProjection(curCamera->perspective);
-					renderObject(*it->obj, WHITE);
-				EndMode3D();
+					renderObject(*renderIter->gobj, WHITE);
+					EndMode3D();
 
-				//auto s = to_string(num)+" R" + to_string(it->obj->location.roomId);
-				//auto s = to_string(it->obj->);
+					//auto s = to_string(num)+" R" + to_string(it->obj->location.roomId);
+					//auto s = to_string(it->obj->);
 
-				Rectangle r = {
-					(int)it->screenMin.x,
-					(int)it->screenMin.y,
-					(int)(it->screenMax.x - it->screenMin.x) + 1,
-					(int)(it->screenMax.y - it->screenMin.y) + 1
-				};
+					Rectangle r = {
+						renderIter->screenMin.x,
+						renderIter->screenMin.y,
+						(renderIter->screenMax.x - renderIter->screenMin.x) + 1,
+						(renderIter->screenMax.y - renderIter->screenMin.y) + 1
+					};
 
-				for (auto i = 0; i < curOverlays.size(); i++) {			
-					if (it->obj->location.roomId != curOverlays[i].roomId) continue;
-					if (checkOverlay(*curOverlays[i].res, *it->obj)) {
-						DrawTexturePro(
-							curOverlays[i].texture, r, r, { 0, 0 }, 0, WHITE
-						);
-						//s += string(" ") + to_string(i)+"."+to_string(curOverlays[i].roomId);
+					for (auto i = 0; i < curOverlays.size(); i++) {
+						if (renderIter->gobj->location.roomId != curOverlays[i].roomId) continue;
+						if (checkOverlay(*curOverlays[i].res, *renderIter->gobj)) {
+							DrawTexturePro(
+								curOverlays[i].texture, r, r, { 0, 0 }, 0, WHITE
+							);
+							//s += string(" ") + to_string(i)+"."+to_string(curOverlays[i].roomId);
+						}
 					}
+					//it->marker = s;
+					num++;
+					renderIter = renderIter->next;
+					if (!renderIter) return;
 				}
-				//it->marker = s;
-				num++;
 			}
 
 			//for (auto it = renderQueue.begin(); it != renderQueue.end(); it++) {

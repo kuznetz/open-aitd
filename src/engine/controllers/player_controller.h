@@ -28,8 +28,15 @@ namespace openAITD {
 		}
 
 		void process(float timeDelta) {
-			if (!player) return;
-			//if (!player->moveFlag) return;
+			player = 0;
+			for (int i = 0; i < world->gobjects.size(); i++) {
+				auto& gobj = world->gobjects[i];
+				if (gobj.track.mode == GOTrackMode::manual) {
+					player = &gobj;
+					break;
+				}
+			}
+			if (!player || !player->moveFlag) return;
 
 			bool isAction = false;
 			int nextAnimation = player->animation.id;
@@ -90,9 +97,6 @@ namespace openAITD {
 					}
 				}
 				if (move != 0) {
-					//auto& p = player->location.position;
-					//Vector3 v = { 0, 0, -move * timeDelta };
-					//player->physics.moveVec = Vector3RotateByQuaternion(v, player->location.rotation);
 					isAction = true;
 				}
 			}
@@ -103,6 +107,8 @@ namespace openAITD {
 			if (nextAnimation != player->animation.id) {
 				world->setRepeatAnimation(*player, nextAnimation);
 			}
+
+			world->player.space = IsKeyDown(KEY_SPACE);
 
 			bool teleportPlayer = false;
 			int newStageId = world->curStageId;
@@ -125,7 +131,7 @@ namespace openAITD {
 				newRoomId = 0;
 				teleportPlayer = true;
 			}
-			if (IsKeyDown(KEY_SPACE)) {
+			if (IsKeyDown(KEY_T)) {
 				teleportPlayer = true;
 			}
 			if (teleportPlayer) {

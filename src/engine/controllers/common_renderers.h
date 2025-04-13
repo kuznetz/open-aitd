@@ -9,7 +9,8 @@ using namespace std;
 namespace openAITD {
 
 	struct RenderOrder {
-		GameObject* obj;
+		RenderOrder* next = 0;
+		GameObject* gobj = 0;
 		float zPos;
 		Vector2 screenMin;
 		Vector2 screenMax;

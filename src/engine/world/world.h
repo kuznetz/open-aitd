@@ -16,6 +16,8 @@ namespace openAITD {
 		int objectId;
 		bool hasControl;
 		int animations[6];
+		bool space;
+		bool allowInventory;
 	};
 
 	//Store all dynamic data in game
@@ -26,6 +28,7 @@ namespace openAITD {
 		vector<GameObject> gobjects;
 		vector<short int> vars;
 		vector<short int> cVars;
+		Player player;
 		
 		float chrono = 0;
 		//Time, how long the room was active
