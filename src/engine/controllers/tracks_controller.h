@@ -138,6 +138,14 @@ namespace openAITD {
 						nextPos = true;
 						break;
 
+					case TrackItemType::COLLISION_DISABLE:
+						gobj.physics.collidable = false;
+						break;
+
+					case TrackItemType::COLLISION_ENABLE:
+						gobj.physics.collidable = true;
+						break;
+
 
 					default:
 						cout << "unkn TrackItemType " << to_string((int)trackItm.type) << endl;

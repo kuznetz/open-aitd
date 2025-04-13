@@ -204,28 +204,30 @@ namespace openAITD {
 				if (Vector3Equals(gobj.physics.moveVec, {0,0,0})) continue;
 				auto* curRoom = &curStage.rooms[world->curRoomId];
 
-				if (gobj.bitField.coll) {
+				if (gobj.physics.collidable) { //gobj.bitField.special???
 					processColliders(gobj, *curRoom);
 				}
 
 				gobj.location.position = Vector3Add(gobj.location.position, gobj.physics.moveVec);
 
 				//Check Zones
-				for (int i = 0; i < curRoom->zones.size(); i++) {
-					if (!objectInZone(gobj, &curRoom->zones[i])) continue;
-					if (curRoom->zones[i].type == RoomZoneType::ChangeRoom) {
-						Vector3 oldRoomPos = curRoom->position;
-						gobj.location.roomId = curRoom->zones[i].parameter;
-						curRoom = &curStage.rooms[gobj.location.roomId];
-						gobj.location.position = Vector3Subtract(Vector3Add(gobj.location.position, oldRoomPos), curRoom->position);
+				if (gobj.bitField.trigger) {
+					for (int i = 0; i < curRoom->zones.size(); i++) {
+						if (!objectInZone(gobj, &curRoom->zones[i])) continue;
+						if (curRoom->zones[i].type == RoomZoneType::ChangeRoom) {
+							Vector3 oldRoomPos = curRoom->position;
+							gobj.location.roomId = curRoom->zones[i].parameter;
+							curRoom = &curStage.rooms[gobj.location.roomId];
+							gobj.location.position = Vector3Subtract(Vector3Add(gobj.location.position, oldRoomPos), curRoom->position);
+						}
+						if (curRoom->zones[i].type == RoomZoneType::Trigger) {
+							gobj.physics.zoneTriggered = curRoom->zones[i].parameter;
+						}
+						if (curRoom->zones[i].type == RoomZoneType::ChangeStage) {
+							gobj.physics.zoneTriggered = curRoom->zones[i].parameter;
+						}
 					}
-					if (curRoom->zones[i].type == RoomZoneType::Trigger) {
-						gobj.physics.zoneTriggered = curRoom->zones[i].parameter;
-					}
-					if (curRoom->zones[i].type == RoomZoneType::ChangeStage) {
-						gobj.physics.zoneTriggered = curRoom->zones[i].parameter;
-					}
-				}			
+				}
 			}
 
 			followCameraProcess();

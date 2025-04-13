@@ -140,7 +140,7 @@ namespace openAITD {
 				this->world->gobjects[obj].chrono = this->world->chrono;
 			}, "START_CHRONO");
 			lua->CreateFunction([this](int obj, int coll) {
-				this->world->gobjects[obj].bitField.coll = coll;
+				this->world->gobjects[obj].physics.collidable = coll;
 			}, "TEST_COL");
 			//Set object angle
 			lua->CreateFunction([this](int obj, int x, int y, int z) {

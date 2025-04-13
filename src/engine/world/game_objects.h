@@ -8,49 +8,49 @@ namespace openAITD {
 
 	struct GOFlags
 	{
-		char anim : 1;
-		char flag0x0002 : 1;
-		char flag0x0004 : 1;
-		char back : 1;
-		char push : 1;
-		char coll : 1;
-		char trig : 1;
-		char pick : 1;
-		char grav : 1;
-		char flag0x0200 : 1;
-		char flag0x0400 : 1;
-		char flag0x0800 : 1;
-		char flag0x1000 : 1;
-		char flag0x2000 : 1;
-		char flag0x4000 : 1;
-		char flag0x8000 : 1;
+		unsigned char animated : 1;
+		unsigned char flag0x0002 : 1;
+		unsigned char drawable : 1;
+		unsigned char boxify : 1;
+		unsigned char movable : 1;
+		unsigned char special : 1; //collider?
+		unsigned char trigger : 1;
+		unsigned char foundable : 1;
+		unsigned char fallable : 1;
+		unsigned char flag0x0200 : 1;
+		unsigned char flag0x0400 : 1;
+		unsigned char flag0x0800 : 1;
+		unsigned char flag0x1000 : 1;
+		unsigned char flag0x2000 : 1;
+		unsigned char flag0x4000 : 1;
+		unsigned char flag0x8000 : 1;
 	};
 
 	struct InventoryFlags
 	{
-		char use : 1;
-		char eat_drink : 1;
-		char read : 1;
-		char reload : 1;
-		char fight : 1;
-		char jump : 1;
-		char open_search : 1;
-		char close : 1;
-		char push : 1;
-		char throw_ : 1;
-		char drop_put : 1;
-		char flag0x0800 : 1;
-		char throwing : 1;
-		char flag0x2000 : 1;
-		char dropped : 1;
-		char in_inventory : 1;
+		unsigned char use : 1;
+		unsigned char eat_drink : 1;
+		unsigned char read : 1;
+		unsigned char reload : 1;
+		unsigned char fight : 1;
+		unsigned char jump : 1;
+		unsigned char open_search : 1;
+		unsigned char close : 1;
+		unsigned char push : 1;
+		unsigned char throw_ : 1;
+		unsigned char drop_put : 1;
+		unsigned char flag0x0800 : 1;
+		unsigned char throwing : 1;
+		unsigned char flag0x2000 : 1;
+		unsigned char dropped : 1;
+		unsigned char in_inventory : 1;
 	};
 
 	struct AnimationFlags
 	{
-		char repeat : 1;
-		char uninterruptable : 1;
-		char reset : 1;
+		unsigned char repeat : 1;
+		unsigned char uninterruptable : 1;
+		unsigned char reset : 1;
 	};
 
     inline const BoundingBox defaultObjBounds = {
@@ -113,6 +113,7 @@ namespace openAITD {
 	struct GOPhysics
 	{
 		bool boundsCached;
+		bool collidable = 1;
 		BoundingBox bounds;
 		Vector3 moveVec;
 		int collidedBy = -1;

@@ -123,7 +123,8 @@ namespace openAITD {
 				}
 			}
 
-			gobjects[i].lifeMode = objsJson[i]["lifeMode"];			
+			gobjects[i].flags = objsJson[i]["flags"];
+			gobjects[i].lifeMode = objsJson[i]["lifeMode"];
 			gobjects[i].lifeId = objsJson[i]["life"];
 			gobjects[i].chrono = chrono;
 		}
