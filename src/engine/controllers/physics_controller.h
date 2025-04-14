@@ -167,6 +167,32 @@ namespace openAITD {
 			gobj.physics.moveVec = v;
 		}
 
+		void processZones(GameObject& gobj, Room* curRoom) {
+			//Check Zones
+			gobj.physics.zoneTriggered = -1;
+			if (gobj.bitField.trigger) {
+				for (int i = 0; i < curRoom->zones.size(); i++) {
+					if (!objectInZone(gobj, &curRoom->zones[i])) continue;
+					if (curRoom->zones[i].type == RoomZoneType::ChangeRoom) {
+						Vector3 oldRoomPos = curRoom->position;
+						gobj.location.roomId = curRoom->zones[i].parameter;
+						auto& newRoom = world->curStage->rooms[gobj.location.roomId];
+						gobj.location.position = Vector3Subtract(Vector3Add(gobj.location.position, oldRoomPos), newRoom.position);
+					}
+					if (curRoom->zones[i].type == RoomZoneType::Trigger) {
+						gobj.physics.zoneTriggered = curRoom->zones[i].parameter;
+					}
+					if (curRoom->zones[i].type == RoomZoneType::ChangeStage) {
+						if (gobj.stageLifeId != -1) {
+							gobj.lifeId = gobj.stageLifeId;
+							gobj.physics.zoneTriggered = curRoom->zones[i].parameter;
+							//flagFloorChange = true;
+						}
+					}
+				}
+			}
+		}
+
 		void followCameraProcess() {
 			if (!world->followTarget) return;
 			auto& loc = world->followTarget->location;
@@ -210,24 +236,7 @@ namespace openAITD {
 
 				gobj.location.position = Vector3Add(gobj.location.position, gobj.physics.moveVec);
 
-				//Check Zones
-				if (gobj.bitField.trigger) {
-					for (int i = 0; i < curRoom->zones.size(); i++) {
-						if (!objectInZone(gobj, &curRoom->zones[i])) continue;
-						if (curRoom->zones[i].type == RoomZoneType::ChangeRoom) {
-							Vector3 oldRoomPos = curRoom->position;
-							gobj.location.roomId = curRoom->zones[i].parameter;
-							curRoom = &curStage.rooms[gobj.location.roomId];
-							gobj.location.position = Vector3Subtract(Vector3Add(gobj.location.position, oldRoomPos), curRoom->position);
-						}
-						if (curRoom->zones[i].type == RoomZoneType::Trigger) {
-							gobj.physics.zoneTriggered = curRoom->zones[i].parameter;
-						}
-						if (curRoom->zones[i].type == RoomZoneType::ChangeStage) {
-							gobj.physics.zoneTriggered = curRoom->zones[i].parameter;
-						}
-					}
-				}
+				processZones(gobj, curRoom);
 			}
 
 			followCameraProcess();

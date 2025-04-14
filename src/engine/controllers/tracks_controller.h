@@ -58,21 +58,29 @@ namespace openAITD {
 			}
 		}
 
-		bool gotoStairsX(GameObject& gobj, TrackItem& trackItm, float timeDelta) {
+		bool gotoStairs(GameObject& gobj, TrackItem& trackItm, float timeDelta, bool zCoord) {
 			if (!gobj.track.posStarted) {
 				gobj.track.start = gobj.location.position;
 				float distY = trackItm.pos.y - gobj.location.position.y;
-				float distX = abs(trackItm.pos.x - gobj.location.position.x);
+				float distX = (zCoord)? 
+					abs(trackItm.pos.z - gobj.location.position.z):
+					abs(trackItm.pos.x - gobj.location.position.x);
 				gobj.track.direction.y = distY / distX;
 			}
 
 			Vector3 target = trackItm.pos;
 			target.y = gobj.location.position.y;
 			rotateTo(gobj, target);
-			gobj.location.position.y = gobj.track.direction.y * abs(gobj.track.start.x - gobj.location.position.x);
 
-			if (abs( gobj.location.position.y - trackItm.pos.y ) > 0.1)
-			{
+			float diff = (zCoord) ?
+				(gobj.track.start.z - gobj.location.position.z):
+				(gobj.track.start.x - gobj.location.position.x);
+			gobj.location.position.y = gobj.track.start.y + (gobj.track.direction.y * abs(diff));
+
+			if ( 
+				(gobj.track.direction.y > 0 && gobj.location.position.y < trackItm.pos.y) ||
+				(gobj.track.direction.y < 0 && gobj.location.position.y > trackItm.pos.y)
+			) {
 				// not yet at position
 				gobj.track.posStarted = true;
 				return false;
@@ -82,10 +90,6 @@ namespace openAITD {
 				gobj.location.position = trackItm.pos;
 				return true;
 			}
-		}
-
-		bool gotoStairs(GameObject& gobj, TrackItem& trackItm, float timeDelta) {
-
 		}
 
 		void rotateXYZ(GameObject& gobj, TrackItem& trackItm) {
@@ -105,51 +109,60 @@ namespace openAITD {
 
 				while (true) {
 					auto& trackItm = world->resources->tracks[gobj.track.id][gobj.track.pos];
-					bool nextPos = false;
+					bool nextPos = true;
 					switch (trackItm.type) {
 					case TrackItemType::GOTO_POS:
+						cout << "GOTO_POS" << endl;
 						nextPos = gotoPos(gobj, trackItm, timeDelta);
 						break;
 					case TrackItemType::MARK:
 						gobj.track.mark = trackItm.mark;
-						nextPos = true;
 						break;
 					case TrackItemType::REWIND:
 						gobj.track.pos = -1;
-						nextPos = true;
 						break;
 					case TrackItemType::END:
 						gobj.track.mode = GOTrackMode::none;
 						gobj.track.id = -1;
 						gobj.track.pos = 0;
 						gobj.track.mark = 0;
+						nextPos = false;
+						cout << "track END" << endl;
 						break;
 					case TrackItemType::ROTATE_XYZ:
+						cout << "ROTATE_XYZ" << endl;
 						rotateXYZ(gobj, trackItm);
-						nextPos = true;
 						break;
 
 					case TrackItemType::STAIRS_X:
 						//trackItm.pos						
-						nextPos = gotoStairsX(gobj, trackItm, timeDelta);
+						nextPos = gotoStairs(gobj, trackItm, timeDelta, false);
 						break;
 
 					case TrackItemType::STAIRS_Z:
-						nextPos = true;
+						cout << "STAIRS_Z " << to_string(gobj.physics.collidable) << endl;
+						nextPos = gotoStairs(gobj, trackItm, timeDelta, true);
 						break;
 
 					case TrackItemType::COLLISION_DISABLE:
+						cout << "COLLISION_DISABLE" << endl;
 						gobj.physics.collidable = false;
 						break;
-
 					case TrackItemType::COLLISION_ENABLE:
+						cout << "COLLISION_ENABLE" << endl;
 						gobj.physics.collidable = true;
 						break;
-
+					case TrackItemType::TRIGGERS_DISABLE:
+						cout << "TRIGGERS_DISABLE" << endl;
+						gobj.bitField.trigger = 0;
+						break;
+					case TrackItemType::TRIGGERS_ENABLE:
+						cout << "TRIGGERS_ENABLE" << endl;
+						gobj.bitField.trigger = 1;
+						break;
 
 					default:
 						cout << "unkn TrackItemType " << to_string((int)trackItm.type) << endl;
-						nextPos = true;
 					}
 					if (nextPos) {
 						gobj.track.posStarted = false;

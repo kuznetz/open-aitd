@@ -5,22 +5,11 @@
 using namespace std;
 namespace openAITD {
 
-	struct PlayerAnimations {
-		int idle = 4;
-		int walkForw = 254;
-		int runForw = 255;
-		int idle2 = 4;
-		int walkBackw = 256;
-		int turnCW = 257;
-		int turnCCW = 258;
-	};
-
 	class PlayerController {
 	public:
 		World* world;
 		Resources* resources;
 		GameObject* player = 0;
-		PlayerAnimations anims;
 		
 		PlayerController(Resources* res, World* world) {
 			this->resources = res;
@@ -50,11 +39,12 @@ namespace openAITD {
 				float rotate = 0;
 				if (IsKeyDown(KEY_LEFT)) {
 					rotate = 1;
-					nextAnimation = anims.turnCCW;
+					
+					nextAnimation = world->player.animations.turnCCW;
 				}
 				if (IsKeyDown(KEY_RIGHT)) {
 					rotate = -1;
-					nextAnimation = anims.turnCW;
+					nextAnimation = world->player.animations.turnCW;
 				}
 				if (rotate != 0) {
 					rotate = rotate * PI * timeDelta;
@@ -84,16 +74,16 @@ namespace openAITD {
 				}
 				else if (IsKeyDown(KEY_DOWN)) {
 					move = -0.75;
-					nextAnimation = anims.walkBackw;
+					nextAnimation = world->player.animations.walkBackw;
 				}
 				else if (IsKeyDown(KEY_UP)) {
 					if (IsKeyDown(KEY_LEFT_SHIFT)) {
 						move = 3;
-						nextAnimation = anims.runForw;
+						nextAnimation = world->player.animations.runForw;
 					}
 					else {
 						move = 0.75;
-						nextAnimation = anims.walkForw;
+						nextAnimation = world->player.animations.walkForw;
 					}
 				}
 				if (move != 0) {
@@ -102,7 +92,7 @@ namespace openAITD {
 			}
 
 			if (!isAction) {
-				nextAnimation = anims.idle;
+				nextAnimation = world->player.animations.idle;
 			}
 			if (nextAnimation != player->animation.id) {
 				world->setRepeatAnimation(*player, nextAnimation);

@@ -54,11 +54,11 @@ namespace openAITD {
 		Vector3 GetWorldToScreenZ(Vector3 position) {
 			int width = GetScreenWidth();
 			int height = GetScreenHeight();
-			auto& matProj = curCamera->perspective;
+			//auto& matProj = initCamera.;
 			Matrix matView = MatrixLookAt(initCamera.position, initCamera.target, initCamera.up);
 			Quaternion worldPos = { position.x, position.y, position.z, 1.0f };
 			worldPos = QuaternionTransform(worldPos, matView);
-			worldPos = QuaternionTransform(worldPos, matProj);
+			//worldPos = QuaternionTransform(worldPos, matProj);
 			Vector3 ndcPos = { worldPos.x / worldPos.w, -worldPos.y / worldPos.w, worldPos.z / worldPos.w };
 			Vector3 screenPosition = { (ndcPos.x + 1.0f) / 2.0f * (float)width, (ndcPos.y + 1.0f) / 2.0f * (float)height, ndcPos.z };
 			return screenPosition;
@@ -118,9 +118,11 @@ namespace openAITD {
 			if ((newStageId == curStageId) && (newCameraId == curCameraId)) return;
 			clearCamera();
 			loadStage(newStageId);
-			curCamera = &curStage->cameras[newCameraId];
-			curCameraId = newCameraId;
 
+			curCameraId = newCameraId;
+			if (curCameraId == -1) return;
+
+			curCamera = &curStage->cameras[newCameraId];
 			auto& camPers = curCamera->pers;
 			curCamera->perspective = MatrixPerspective(camPers.yfov, camPers.aspectRatio, camPers.znear, camPers.zfar);
 			//It's ugly, but it didn't get any better.
@@ -167,6 +169,7 @@ namespace openAITD {
 		}
 
 		void renderOvlBounds() {
+			if (!curCamera) return;
 			for (int r = 0; r < curCamera->rooms.size(); r++) {
 				auto& room = curCamera->rooms[r];
 				for (int ovId = 0; ovId < room.overlays.size(); ovId++) {
@@ -179,6 +182,7 @@ namespace openAITD {
 		}
 
 		void renderCameraZones() {
+			if (!curCamera) return;
 			for (int i = 0; i < curCamera->coverZones.size(); i++) {
 				auto& poly = curCamera->coverZones[i];				
 				Vector3 oldP;
@@ -326,10 +330,10 @@ namespace openAITD {
 				Vector3 pos = gobj.location.position;
 				Vector3& roomPos = curStage->rooms[gobj.location.roomId].position;
 
-				auto& screenPos = GetWorldToScreenZ(pos);
+				//auto& screenPos = GetWorldToScreenZ(pos);
 				//if (screenPos.z < 0) continue;
 				BeginMode3D(initCamera);
-				rlSetMatrixProjection(curCamera->perspective);
+				if (curCamera) rlSetMatrixProjection(curCamera->perspective);
 				renderObject(gobj, WHITE);
 				EndMode3D();
 
@@ -355,7 +359,7 @@ namespace openAITD {
 
 			BeginMode3D(initCamera);
 				//rlSetMatrixModelview(curCamera->modelview);
-				rlSetMatrixProjection(curCamera->perspective);
+				if (curCamera) rlSetMatrixProjection(curCamera->perspective);
 				DrawCube({ 0,0,0 }, 0.2, 0.2, 0.2, GREEN);
 				renderBounds();
 				renderZones();

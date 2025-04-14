@@ -41,6 +41,9 @@ namespace openAITD {
 			lua->CreateFunction([this](int rmax) -> int {
 				return rand() % rmax;
 				}, "RAND");
+			lua->CreateFunction([this](int i) -> int {
+				return this->world->cVars[i];
+				}, "GET_C");
 
 			//player
 			lua->CreateFunction([this](int obj) -> int {
@@ -78,6 +81,10 @@ namespace openAITD {
 			lua->CreateFunction([this](int obj) -> int {
 				return this->world->gobjects[obj].animation.animEnd;
 				}, "END_ANIM");
+			lua->CreateFunction([this](int obj, int animId, int param) -> int {
+				return 1;
+				}, "TEST_ZV_END_ANIM");			
+
 			lua->CreateFunction([this](int obj) -> int {
 				return this->world->gobjects[obj].animation.animFrame;
 				}, "FRAME");
@@ -117,17 +124,27 @@ namespace openAITD {
 		void initInstructions() {
 			lua->CreateFunction([this](const char* message) {
 				cout << "LUA: " << message << endl;
-			}, "LOG");
+				}, "LOG");
 			
+			lua->CreateFunction([this](int i, int val) {
+				world->cVars[i] = val;
+				}, "SET_C");
 			lua->CreateFunction([this](int obj) {
 				//
-			}, "MESSAGE");
+				}, "MESSAGE");
 			lua->CreateFunction([this](int allow) {
 				this->world->player.allowInventory = !!allow;
-			}, "ALLOW_INVENTORY");
-			lua->CreateFunction([this](int obj) {
-				//TODO: ...
-			}, "SET_ANIM_MOVE");
+				}, "ALLOW_INVENTORY");
+			lua->CreateFunction([this](int obj, int a1, int a2, int a3, int a4, int a5, int a6, int a7) {
+				auto& a = this->world->player.animations;
+				a.idle = a1;
+				a.walkForw = a2;
+				a.runForw = a3;
+				a.idle2 = a4;
+				a.walkBackw = a5;
+				a.turnCW = a6;
+				a.turnCCW = a7;
+				}, "SET_ANIM_MOVE");
 
 			//Basic
 			lua->CreateFunction([this](int obj, int modelId) {
@@ -167,7 +184,6 @@ namespace openAITD {
 				gobj.location.position.z = -z / 1000.;
 			}, "CHANGE_ROOM");
 
-
 			//INVENTORY
 			lua->CreateFunction([this](int obj) {
 				}, "FOUND");
@@ -185,6 +201,11 @@ namespace openAITD {
 			lua->CreateFunction([this](int obj, int animId) {
 				this->world->setRepeatAnimation(this->world->gobjects[obj], animId);
 				}, "SET_ANIM_REPEAT");
+			lua->CreateFunction([this](int obj, int animId, int nextAnimId) {
+				this->world->setOnceAnimation(this->world->gobjects[obj], animId, nextAnimId);
+				//ANIM_ONCE | ANIM_UNINTERRUPTABLE;
+				}, "SET_ANIM_ALL_ONCE");
+			
 
 			lua->CreateFunction([this](int obj, int trackMode, int trackId, int positionInTrack) {
 				auto& gobj = this->world->gobjects[obj];
@@ -308,6 +329,7 @@ namespace openAITD {
 			if (gobj.lifeMode == GOLifeMode::none) return false;
 			if (gobj.lifeMode == GOLifeMode::room && gobj.location.roomId != world->curRoomId) return false;
 			if (gobj.lifeMode == GOLifeMode::roomInCamera) {
+				if (world->curCameraId == -1) return false;				
 				bool inCamera = false;
 				auto& cam = world->curStage->cameras[world->curCameraId];
 				for (int i = 0; i < cam.rooms.size(); i++) {

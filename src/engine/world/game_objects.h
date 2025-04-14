@@ -170,6 +170,7 @@ namespace openAITD {
 			GOFlags bitField;
 		};
 
+		int stageLifeId;
 		int lifeId;
 		GOLifeMode lifeMode;	
 		float chrono;

@@ -12,10 +12,20 @@ using nlohmann::json;
 using namespace std;
 namespace openAITD {
 
+	struct PlayerAnimations {
+		int idle = 4;
+		int walkForw = 254;
+		int runForw = 255;
+		int idle2 = 4;
+		int walkBackw = 256;
+		int turnCW = 257;
+		int turnCCW = 258;
+	};
+
 	struct Player {
 		int objectId;
 		bool hasControl;
-		int animations[6];
+		PlayerAnimations animations;
 		bool space;
 		bool allowInventory;
 	};
@@ -126,6 +136,7 @@ namespace openAITD {
 			gobjects[i].flags = objsJson[i]["flags"];
 			gobjects[i].lifeMode = objsJson[i]["lifeMode"];
 			gobjects[i].lifeId = objsJson[i]["life"];
+			gobjects[i].stageLifeId = objsJson[i]["stageLife"];
 			gobjects[i].chrono = chrono;
 		}
 
