@@ -43,6 +43,49 @@ namespace openAITD {
 			delete lua;
 		}
 
+		int getPosRel(GameObject* actor1, GameObject* actor2)
+		{
+			Vector3& p1 = world->getObjGlobalPos(*actor1);
+			Vector3& p2 = world->getObjGlobalPos(*actor2);
+			Vector3 v = { p2.x - p1.x, 0, p2.z - p1.z };
+			v = Vector3RotateByQuaternion(v, QuaternionInvert(actor1->location.rotation));
+			v = Vector3Add(v, actor1->location.position);
+			BoundingBox b = actor1->physics.bounds;
+			
+
+			cout << "(" << to_string(v.x) << "," << to_string(v.z) << ") ";
+			
+			int result = 0;
+			if (v.x >= b.min.x && v.x <= b.max.x)
+			{
+				if (v.z <= b.min.z)
+				{
+					result = 1; //back
+				}
+				else
+				{
+					result = 2; //front
+				}
+			}
+			else if (v.z >= b.min.z && v.z <= b.max.z)
+			{
+				if (v.x <= b.min.x)
+				{
+					//left
+					result = 4;
+				}
+				else if (v.x >= b.max.x)
+				{
+					//right
+					result = 8;
+				}
+			}
+
+			cout << "=" << to_string(result);
+			
+			return 2;
+		}
+
 		void initExpressions() {
 			lua->CreateFunction([this](int rmax) -> int {
 				return rand() % rmax;
@@ -94,9 +137,8 @@ namespace openAITD {
 			lua->CreateFunction([this](int obj) -> int {
 				return this->world->gobjects[obj].animation.animFrame;
 				}, "FRAME");
-			lua->CreateFunction([this](int obj) -> int {
-				//TODO: POSREL
-				return 2;
+			lua->CreateFunction([this](int obj, int obj2) -> int {
+				return getPosRel(&this->world->gobjects[obj], &this->world->gobjects[obj2]);
 				}, "POSREL");
 			lua->CreateFunction([this](int obj) -> int {
 				int r = (this->world->gobjects[obj].invItem.flags & 0xC000) ? 1 : 0;
@@ -234,11 +276,11 @@ namespace openAITD {
 			lua->CreateFunction([this](int obj, int toAngle, int time) {
 				auto& gobj = this->world->gobjects[obj];
 				if (gobj.rotateAnim.timeEnd > 0) return;
-				toAngle += 512;
+				//toAngle += 512;
 				gobj.rotateAnim.curTime = 0;
 				gobj.rotateAnim.timeEnd = time / 60.;
 				gobj.rotateAnim.from = gobj.location.rotation;
-				auto rotTo = QuaternionFromAxisAngle({ 0,1,0 }, toAngle * 2. * PI / 1024.);
+				auto rotTo = QuaternionFromAxisAngle({ 0,1,0 }, (toAngle + 512) * 2. * PI / 1024.);
 				gobj.rotateAnim.to = rotTo;
 				gobj.rotateAnim.toLifeAngles[1] = toAngle;
 				}, "SET_BETA");

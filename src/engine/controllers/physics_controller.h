@@ -144,7 +144,7 @@ namespace openAITD {
 					if (room.colliders[i].type == 9) {
 						gobj.physics.staticColl = room.colliders[i].parameter;
 					}
-					else {
+					else if (room.colliders[i].type == 3) {
 						gobj.physics.staticColl = 255;
 					}
 				}

@@ -75,6 +75,7 @@ namespace openAITD {
 		void setRepeatAnimation(GameObject& gobj, int animId);
 		void setOnceAnimation(GameObject& gobj, int animId, int nextAnimId);
 		void setModel(GameObject& gobj, int modelId);
+		Vector3 getObjGlobalPos(GameObject& gobj);
 	};
 
 	void World::loadGObjects(string path)
@@ -141,6 +142,12 @@ namespace openAITD {
 		}
 
 	};
+
+	Vector3 World::getObjGlobalPos(GameObject& gobj) {
+		auto& stage = resources->stages[gobj.location.stageId];
+		auto& room = stage.rooms[gobj.location.roomId];
+		return Vector3Add(room.position, gobj.location.position);
+	}
 
 	void World::setRepeatAnimation(GameObject& gobj, int animId) {
 		gobj.animation.scriptAnimId = animId;

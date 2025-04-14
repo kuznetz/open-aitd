@@ -135,7 +135,7 @@ inline const vector<parseLifeExpr> LifeExprParams =
 	{ EvalEnum::COL_BY, "COL_BY", { }, true },
 	{ EvalEnum::IN_INVENTORY, "IN_INVENTORY", { lifeExpr }},
 	{ EvalEnum::ACTION, "ACTION", { }},
-	{ EvalEnum::POSREL, "POSREL", { lifeConst }},
+	{ EvalEnum::POSREL, "POSREL", { lifeConst }, true },
 	{ EvalEnum::KEYBOARD_INPUT, "KEYBOARD_INPUT", { }},
 	{ EvalEnum::SPACE, "SPACE", { }},
 	{ EvalEnum::CONTACT, "CONTACT", { }},

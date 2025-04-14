@@ -175,7 +175,7 @@ namespace openAITD {
 	struct RoomCollider
 	{
 		BoundingBox bounds;
-		int type; // 1 - simple, 9 - linked
+		int type; // 1 - simple, 3 - climbing,  9 - linked
 		int parameter;
 		int objectLink = -1;
 	};

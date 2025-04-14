@@ -109,7 +109,7 @@ namespace openAITD {
 				bool nextPos = true;
 				switch (trackItm.type) {
 				case TrackItemType::GOTO_POS:
-					cout << "GOTO_POS" << endl;
+					//cout << "GOTO_POS" << endl;
 					nextPos = gotoPos(gobj, trackItm);
 					break;
 				case TrackItemType::MARK:
@@ -124,10 +124,10 @@ namespace openAITD {
 					gobj.track.pos = 0;
 					gobj.track.mark = 0;
 					nextPos = false;
-					cout << "track END" << endl;
+					//cout << "track END" << endl;
 					break;
 				case TrackItemType::ROTATE_XYZ:
-					cout << "ROTATE_XYZ" << endl;
+					//cout << "ROTATE_XYZ" << endl;
 					rotateXYZ(gobj, trackItm);
 					break;
 
@@ -137,24 +137,24 @@ namespace openAITD {
 					break;
 
 				case TrackItemType::STAIRS_Z:
-					cout << "STAIRS_Z " << to_string(gobj.physics.collidable) << endl;
+					//cout << "STAIRS_Z " << to_string(gobj.physics.collidable) << endl;
 					nextPos = gotoStairs(gobj, trackItm, true);
 					break;
 
 				case TrackItemType::COLLISION_DISABLE:
-					cout << "COLLISION_DISABLE" << endl;
+					//cout << "COLLISION_DISABLE" << endl;
 					gobj.physics.collidable = false;
 					break;
 				case TrackItemType::COLLISION_ENABLE:
-					cout << "COLLISION_ENABLE" << endl;
+					//cout << "COLLISION_ENABLE" << endl;
 					gobj.physics.collidable = true;
 					break;
 				case TrackItemType::TRIGGERS_DISABLE:
-					cout << "TRIGGERS_DISABLE" << endl;
+					//cout << "TRIGGERS_DISABLE" << endl;
 					gobj.bitField.trigger = 0;
 					break;
 				case TrackItemType::TRIGGERS_ENABLE:
-					cout << "TRIGGERS_ENABLE" << endl;
+					//cout << "TRIGGERS_ENABLE" << endl;
 					gobj.bitField.trigger = 1;
 					break;
 
