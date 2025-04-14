@@ -1,6 +1,10 @@
 ﻿#pragma once
 #include "../resources/resources.h"
 #include "../world/world.h"
+#include "./tracks_controller.h"
+#include "./player_controller.h"
+
+
 #include <luacpp/luacpp.h>
 #include <iostream>
 #include <string>
@@ -19,17 +23,19 @@ namespace openAITD {
 	public:
 		World* world;
 		Resources* resources;
+		TracksController* trackContr;
+		PlayerController* playerContr;
 		LuaState* lua = 0;
 		map <int, LifeFunc> funcs;
 		std::function<bool(uint32_t, const LuaObject&)> execCb;
 		Matrix roomMatrix;
+		float curTimeDelta = 0;
 
-		LifeController(Resources* res, World* world) {
-			//roomMatrix = MatrixTranspose(MatrixMultiply(MatrixRotateZ(PI), MatrixRotateX(PI)));
-			//roomMatrix = MatrixTranspose(MatrixMultiply(MatrixRotateY(PI), MatrixRotateX(PI)));
-			//roomMatrix = MatrixTranspose(MatrixMultiply(MatrixRotateX(PI), MatrixRotateY(PI)));
-			this->resources = res;
+		LifeController(World* world, TracksController* trackContr, PlayerController* playerContr) {
 			this->world = world;
+			this->trackContr = trackContr;
+			this->playerContr = playerContr;
+			this->resources = world->resources;
 			initLua();
 		}
 
@@ -238,12 +244,22 @@ namespace openAITD {
 				}, "SET_BETA");
 
 			//Process track
-			lua->CreateFunction([this](int obj) {
-				this->world->gobjects[obj].moveFlag = true;
+			lua->CreateFunction([this](int objId) {
+				auto& obj = this->world->gobjects[objId];
+				switch (obj.track.mode) {
+				case GOTrackMode::track:
+					trackContr->processObj(obj);
+					break;
+				case GOTrackMode::manual:
+					playerContr->processObj(obj, curTimeDelta);
+					break;
+				case GOTrackMode::follow:
+					break;
+				};
 				}, "DO_MOVE");
 			//Process rotation
 			lua->CreateFunction([this](int obj) {
-				this->world->gobjects[obj].moveFlag = true;
+				//this->world->gobjects[obj].moveFlag = true;
 				}, "DO_ROT_ZV");
 			//recalc bounds?
 			lua->CreateFunction([this]() {
@@ -350,8 +366,9 @@ namespace openAITD {
 			}
 		}
 
-		void process() {
-			
+		void process(float timeDelta) {
+			curTimeDelta = timeDelta;
+
 			for (auto it = funcs.begin(); it != funcs.end(); it++)
 			{
 				it->second.executed = false;

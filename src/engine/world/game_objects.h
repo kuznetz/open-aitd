@@ -174,8 +174,6 @@ namespace openAITD {
 		int lifeId;
 		GOLifeMode lifeMode;	
 		float chrono;
-
-		bool moveFlag = false;
 	};
 
 }

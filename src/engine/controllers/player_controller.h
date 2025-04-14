@@ -9,28 +9,17 @@ namespace openAITD {
 	public:
 		World* world;
 		Resources* resources;
-		GameObject* player = 0;
 		
-		PlayerController(Resources* res, World* world) {
-			this->resources = res;
+		PlayerController(World* world) {
 			this->world = world;
+			this->resources = world->resources;
 		}
 
-		void process(float timeDelta) {
-			player = 0;
-			for (int i = 0; i < world->gobjects.size(); i++) {
-				auto& gobj = world->gobjects[i];
-				if (gobj.track.mode == GOTrackMode::manual) {
-					player = &gobj;
-					break;
-				}
-			}
-			if (!player || !player->moveFlag) return;
-
+		void processObj(GameObject& gobj, float timeDelta) {
 			bool isAction = false;
-			int nextAnimation = player->animation.id;
+			int nextAnimation = gobj.animation.id;
 
-			//if (player->track.mode == GOTrackMode::manual) {
+			//if (gobj.track.mode == GOTrackMode::manual) {
 			//	isAction = true;
 			//}
 
@@ -49,13 +38,13 @@ namespace openAITD {
 				if (rotate != 0) {
 					rotate = rotate * PI * timeDelta;
 					auto q = QuaternionFromAxisAngle({ 0,1,0 }, rotate);
-					auto r = player->location.rotation;
-					player->location.rotation = QuaternionMultiply(r, q);
+					auto r = gobj.location.rotation;
+					gobj.location.rotation = QuaternionMultiply(r, q);
 					isAction = true;
 				}
 
 				//Get Move Vec
-				//player->physics.moveVec = { 0,0,0 };
+				//gobj.physics.moveVec = { 0,0,0 };
 				float move = 0;
 				if (IsKeyDown(KEY_Z)) {
 					move = 0.25;
@@ -94,11 +83,9 @@ namespace openAITD {
 			if (!isAction) {
 				nextAnimation = world->player.animations.idle;
 			}
-			if (nextAnimation != player->animation.id) {
-				world->setRepeatAnimation(*player, nextAnimation);
+			if (nextAnimation != gobj.animation.id) {
+				world->setRepeatAnimation(gobj, nextAnimation);
 			}
-
-			world->player.space = IsKeyDown(KEY_SPACE);
 
 			bool teleportPlayer = false;
 			int newStageId = world->curStageId;
@@ -126,13 +113,12 @@ namespace openAITD {
 			}
 			if (teleportPlayer) {
 				//world->setCurRoom(newStageId, newRoomId);
-				player->location.stageId = newStageId;
-				player->location.roomId = newRoomId;
-				player->location.position = { 0,0,0 };//resources->stages[world->curStageId].rooms[newRoom].position;
+				gobj.location.stageId = newStageId;
+				gobj.location.roomId = newRoomId;
+				gobj.location.position = { 0,0,0 };//resources->stages[world->curStageId].rooms[newRoom].position;
 			}
 
-			world->setCurRoom(player->location.stageId, player->location.roomId);
-			player->moveFlag;
+			world->setCurRoom(gobj.location.stageId, gobj.location.roomId);
 		}
 	};
 

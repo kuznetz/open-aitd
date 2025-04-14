@@ -34,11 +34,12 @@ namespace openAITD {
     World world(&resources);
     CameraRenderer renderer(&resources, &world);
     FreelookRenderer flRenderer(&resources, &world);
-    PlayerController playerContr(&resources, &world);
     PhysicsController physContr(&resources, &world);
     AnimationController animContr(&resources, &world);
-    LifeController lifeContr(&resources, &world);
+
+    PlayerController playerContr(&world);
     TracksController tracksContr(&world);
+    LifeController lifeContr(&world, &tracksContr, &playerContr);
     
     bool freeLook = false;
     bool pause = false;
@@ -74,10 +75,8 @@ namespace openAITD {
 
         if (!pause) {
             world.chrono += timeDelta;
-            playerContr.process(timeDelta);
-            lifeContr.process();
+            lifeContr.process(timeDelta);
             animContr.process(timeDelta);
-            tracksContr.process(timeDelta);
             physContr.process(timeDelta);
         }
 
@@ -112,19 +111,18 @@ namespace openAITD {
         float timeDelta = 0;        
         while (!WindowShouldClose()) {
             timeDelta = GetFrameTime();
-            if (state == AppState::Intro || state == AppState::InWorld) {
+            if (state == AppState::Intro) {
                 processWorld(timeDelta);
-                if (state == AppState::Intro && IsKeyPressed(KEY_SPACE)) {
+                if (IsKeyPressed(KEY_SPACE)) {
                     world.gameOver = true;
                 }
-            }
-            if (world.gameOver) {
-                if (state == AppState::Intro) {
+                if (world.gameOver) {
                     startGame();
                 }
-                else {
-                    break;
-                }
+            }
+            else if (state == AppState::InWorld) {
+                world.player.space = IsKeyDown(KEY_SPACE);
+                processWorld(timeDelta);
             }
         }
 
