@@ -2,6 +2,7 @@
 //#include <raymath.h>
 #include <algorithm>
 #include <fstream>
+#include <vector>
 
 #define NLOHMANN_JSON_NAMESPACE_NO_VERSION 1
 #include <nlohmann/json.hpp>
@@ -195,8 +196,8 @@ namespace openAITD {
 
 	struct Room {
 		Vector3 position;
-		std::vector<RoomCollider> colliders;
-		std::vector<RoomZone> zones;
+		vector<RoomCollider> colliders;
+		vector<RoomZone> zones;
 	};
 
 	struct GCameraOverlay {
@@ -216,7 +217,7 @@ namespace openAITD {
 		Vector4 rotation;
 		tinygltf::PerspectiveCamera pers;
 
-		std::vector<GCameraRoom> rooms;
+		vector<GCameraRoom> rooms;
 		vector<vector<Vector2>> coverZones;
 		Matrix modelview;
 		Matrix perspective;
@@ -246,8 +247,8 @@ namespace openAITD {
 
 	public:
 		string stageDir;
-		std::vector<Room> rooms;
-		std::vector<WCamera> cameras;
+		vector<Room> rooms;
+		vector<WCamera> cameras;
 
 		void load(string stageDir);
 		bool pointInCamera(const Vector2 p, WCamera& camera);
@@ -257,13 +258,13 @@ namespace openAITD {
 
 	void Stage::load(string stageDir) {
 		this->stageDir = stageDir;
-		std::ifstream ifs(stageDir + "/stage.json");
+		ifstream ifs(stageDir + "/stage.json");
 		json stageJson = json::parse(ifs);
 
 		tinygltf::Model model;
 		tinygltf::TinyGLTF loader;
-		std::string err;
-		std::string warn;
+		string err;
+		string warn;
 		bool ret = loader.LoadASCIIFromFile(&model, &err, &warn, stageDir + "/stage.gltf");
 
 
@@ -303,7 +304,7 @@ namespace openAITD {
 				collId++;
 			}
 
-			//room.cameraIds = stageJson["rooms"][roomId]["cameras"].get<std::vector<int>>();
+			//room.cameraIds = stageJson["rooms"][roomId]["cameras"].get<vector<int>>();
 
 			roomId++;
 		}
@@ -315,7 +316,7 @@ namespace openAITD {
 			tinygltf::Node* cameraN = findNode(model, string("camera_") + to_string(cameraId));
 			if (!cameraN) break;
 			auto& cam = cameras.emplace_back();
-			auto roomIds = stageJson["cameras"][cameraId]["rooms"].get<std::vector<int>>();
+			auto roomIds = stageJson["cameras"][cameraId]["rooms"].get<vector<int>>();
 			auto& camPers = model.cameras[cameraN->camera].perspective;
 
 			cam.pers = camPers;

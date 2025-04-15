@@ -75,12 +75,13 @@ namespace openAITD {
 		void setRepeatAnimation(GameObject& gobj, int animId);
 		void setOnceAnimation(GameObject& gobj, int animId, int nextAnimId);
 		void setModel(GameObject& gobj, int modelId);
-		Vector3 getObjGlobalPos(GameObject& gobj);
+		Vector3 VectorChangeRoom(const Vector3 v, int fromRoomId, int toRoomId);
+		BoundingBox BoundsChangeRoom(const BoundingBox v, int fromRoomId, int toRoomId);
 	};
 
 	void World::loadGObjects(string path)
 	{
-		std::ifstream ifs(path);
+		ifstream ifs(path);
 		json objsJson = json::parse(ifs);
 
 		gobjects.resize(objsJson.size());
@@ -143,10 +144,21 @@ namespace openAITD {
 
 	};
 
-	Vector3 World::getObjGlobalPos(GameObject& gobj) {
-		auto& stage = resources->stages[gobj.location.stageId];
-		auto& room = stage.rooms[gobj.location.roomId];
-		return Vector3Add(room.position, gobj.location.position);
+	Vector3 World::VectorChangeRoom(const Vector3 v, int fromRoomId, int toRoomId) {
+		if (fromRoomId == toRoomId) return v;
+		auto& roomFrom = curStage->rooms[fromRoomId];
+		auto& roomTo   = curStage->rooms[toRoomId];
+		return Vector3Subtract( Vector3Add(v, roomFrom.position), roomTo.position);
+	}
+
+	BoundingBox World::BoundsChangeRoom(const BoundingBox b, int fromRoomId, int toRoomId) {
+		if (fromRoomId == toRoomId) return b;
+		auto& roomFrom = curStage->rooms[fromRoomId].position;
+		auto& roomTo = curStage->rooms[toRoomId].position;
+		return {
+			Vector3Subtract(Vector3Add(b.min, roomFrom), roomTo),
+			Vector3Subtract(Vector3Add(b.max, roomFrom), roomTo)
+		};
 	}
 
 	void World::setRepeatAnimation(GameObject& gobj, int animId) {
@@ -175,7 +187,7 @@ namespace openAITD {
 
 	void World::loadVars(string path)
 	{
-		std::ifstream ifs(path);
+		ifstream ifs(path);
 		json objsJson = json::parse(ifs);
 		vars.resize(objsJson["vars"].size());
 		for (int i = 0; i < objsJson["vars"].size(); i++) {

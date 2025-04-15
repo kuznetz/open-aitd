@@ -29,7 +29,7 @@ namespace openAITD {
 			return ((p.x > b.min.x) && (p.x < b.max.x) && (p.z > b.min.z) && (p.z < b.max.z));
 		}
 
-		bool PointToBox(const Vector3& p, Vector3& v, BoundingBox& b) {
+		bool CollPointToBox(const Vector3& p, Vector3& v, BoundingBox& b) {
 			Vector3& p2 = Vector3Add(p, v);
 			auto inB = (p2.x > b.min.x) && (p2.x < b.max.x) && (p2.z > b.min.z) && (p2.z < b.max.z);
 			if (!inB) return false;
@@ -49,7 +49,7 @@ namespace openAITD {
 			return true;
 		}
 
-		bool BoxToBox(BoundingBox& b1_0, Vector3& v, BoundingBox& b2) {
+		bool CollBoxToBox(BoundingBox& b1_0, Vector3& v, BoundingBox& b2) {
 			BoundingBox b1 = { Vector3Add(b1_0.min, v), Vector3Add(b1_0.max, v) };
 			if (
 				(b1.min.x > b2.max.x || b1.max.x < b2.min.x) &&
@@ -115,7 +115,8 @@ namespace openAITD {
 			}
 			Vector3& p = gobj.location.position;
 			auto& m = *resources->models.getModel(gobj.modelId);
-			BoundingBox objB = correctBounds(m.bounds);
+			BoundingBox& objB = gobj.physics.bounds;
+			objB = correctBounds(m.bounds);
 			if (gobj.boundsType == BoundsType::cube) {
 				objB = getCubeBounds(objB);
 			}
@@ -126,20 +127,17 @@ namespace openAITD {
 			objB.min = Vector3Add(objB.min, p);
 			objB.max = Vector3Add(objB.max, p);
 			objB = correctBounds(objB);
-			if (!gobj.physics.boundsCached) {
-				gobj.physics.bounds = objB;
-				gobj.physics.boundsCached = true;
-			}
+
+			gobj.physics.boundsCached = true;
 			return objB;
 		}
 
-		void processColliders(GameObject& gobj, Room& room) {
+		void processStaticColliders(GameObject& gobj, Room& room) {
 			BoundingBox& objB = getObjectBounds(gobj);
 			Vector3 v = gobj.physics.moveVec;
-
 			for (int i = 0; i < room.colliders.size(); i++) {
 				BoundingBox& colB = room.colliders[i].bounds;
-				bool collided = BoxToBox(objB, v, colB);
+				bool collided = CollBoxToBox(objB, v, colB);
 				if (collided) {
 					if (room.colliders[i].type == 9) {
 						gobj.physics.staticColl = room.colliders[i].parameter;
@@ -149,15 +147,32 @@ namespace openAITD {
 					}
 				}
 			}
+			gobj.physics.moveVec = v;
+		}
+
+		void processDynamicColliders(GameObject& gobj, Room& room) {
+			BoundingBox& objB = getObjectBounds(gobj);
+			Vector3 v = gobj.physics.moveVec;
 
 			for (int i = 0; i < world->gobjects.size(); i++) {
 				auto& gobj2 = world->gobjects[i];
 				if (&gobj == &gobj2) continue;
 				if (gobj2.modelId == -1) continue;
 				if (gobj2.location.stageId != gobj.location.stageId) continue;
-				if (gobj2.location.roomId != gobj.location.roomId) continue;
-				BoundingBox& objB2 = getObjectBounds(gobj2);
-				bool collided = BoxToBox(objB, v, objB2);
+				if (gobj2.location.roomId != gobj.location.roomId) {
+					bool inConnRoom = false;
+					for (int j = 0; j < room.zones.size(); j++) {
+						if (room.zones[j].type != RoomZoneType::ChangeRoom) continue;
+						if (gobj2.location.roomId == room.zones[j].parameter) {
+							inConnRoom = true;
+							break;
+						}
+					}
+					if (!inConnRoom) continue;
+				}
+
+				BoundingBox& objB2 = world->BoundsChangeRoom(getObjectBounds(gobj2), gobj2.location.roomId, gobj.location.roomId);
+				bool collided = CollBoxToBox(objB, v, objB2);
 				if (collided) {
 					gobj.physics.objectColl = gobj2.id;
 					gobj2.physics.collidedBy = gobj.id;
@@ -172,20 +187,22 @@ namespace openAITD {
 			gobj.physics.zoneTriggered = -1;
 			if (gobj.bitField.trigger) {
 				for (int i = 0; i < curRoom->zones.size(); i++) {
-					if (!objectInZone(gobj, &curRoom->zones[i])) continue;
-					if (curRoom->zones[i].type == RoomZoneType::ChangeRoom) {
+					auto& curZone = curRoom->zones[i];
+					if (!objectInZone(gobj, &curZone)) continue;
+					if (curZone.type == RoomZoneType::ChangeRoom) {
 						Vector3 oldRoomPos = curRoom->position;
-						gobj.location.roomId = curRoom->zones[i].parameter;
-						auto& newRoom = world->curStage->rooms[gobj.location.roomId];
+						gobj.location.roomId = curZone.parameter;
+						auto& newRoom = world->curStage->rooms[curZone.parameter];
 						gobj.location.position = Vector3Subtract(Vector3Add(gobj.location.position, oldRoomPos), newRoom.position);
+						gobj.physics.boundsCached = false;
 					}
-					if (curRoom->zones[i].type == RoomZoneType::Trigger) {
-						gobj.physics.zoneTriggered = curRoom->zones[i].parameter;
+					if (curZone.type == RoomZoneType::Trigger) {
+						gobj.physics.zoneTriggered = curZone.parameter;
 					}
-					if (curRoom->zones[i].type == RoomZoneType::ChangeStage) {
+					if (curZone.type == RoomZoneType::ChangeStage) {
 						if (gobj.stageLifeId != -1) {
 							gobj.lifeId = gobj.stageLifeId;
-							gobj.physics.zoneTriggered = curRoom->zones[i].parameter;
+							gobj.physics.zoneTriggered = curZone.parameter;
 							//flagFloorChange = true;
 						}
 					}
@@ -216,7 +233,10 @@ namespace openAITD {
 				gobj.physics.staticColl = -1;
 				gobj.physics.objectColl = -1;
 
-				if (Vector3Equals(gobj.physics.moveVec, { 0,0,0 })) continue;
+				if (
+					Vector3Equals(gobj.physics.moveVec, { 0,0,0 }) &&
+					(gobj.rotateAnim.timeEnd <= 0)
+				) continue;
 				gobj.physics.boundsCached = false;
 			}
 
@@ -231,7 +251,8 @@ namespace openAITD {
 				auto* curRoom = &curStage.rooms[world->curRoomId];
 
 				if (gobj.physics.collidable) { //gobj.bitField.special???
-					processColliders(gobj, *curRoom);
+					processStaticColliders(gobj, *curRoom);
+					processDynamicColliders(gobj, *curRoom);
 				}
 
 				gobj.location.position = Vector3Add(gobj.location.position, gobj.physics.moveVec);

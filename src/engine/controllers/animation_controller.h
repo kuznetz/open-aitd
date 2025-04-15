@@ -2,7 +2,6 @@
 #include "../resources/resources.h"
 #include "../world/world.h"
 
-
 using namespace std;
 
 inline void BuildPoseFromParentJoints(BoneInfo* bones, int boneCount, Transform* transforms)

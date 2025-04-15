@@ -45,45 +45,39 @@ namespace openAITD {
 
 		int getPosRel(GameObject* actor1, GameObject* actor2)
 		{
-			Vector3& p1 = world->getObjGlobalPos(*actor1);
-			Vector3& p2 = world->getObjGlobalPos(*actor2);
-			Vector3 v = { p2.x - p1.x, 0, p2.z - p1.z };
-			v = Vector3RotateByQuaternion(v, QuaternionInvert(actor1->location.rotation));
-			v = Vector3Add(v, actor1->location.position);
-			BoundingBox b = actor1->physics.bounds;
-			
-
-			cout << "(" << to_string(v.x) << "," << to_string(v.z) << ") ";
-			
-			int result = 0;
-			if (v.x >= b.min.x && v.x <= b.max.x)
-			{
-				if (v.z <= b.min.z)
-				{
-					result = 1; //back
-				}
-				else
-				{
-					result = 2; //front
-				}
+			Vector3 p2rot;
+			BoundingBox b;
+			Vector3& p1 = actor1->location.position;
+			Vector3& p2 = world->VectorChangeRoom(actor2->location.position, actor2->location.roomId, actor1->location.roomId);
+			if (actor1->staticCollider == 0) {
+				p2rot = { p2.x - p1.x, 0, p2.z - p1.z };
+				p2rot = Vector3RotateByQuaternion(p2rot, QuaternionInvert(actor1->location.rotation)); //QuaternionInvert(actor1->location.rotation)
+				p2rot = Vector3Add(p2rot, p1);
+				RModel* m = resources->models.getModel(actor1->modelId);
+				b = m->bounds;
+				b.min = Vector3Add(b.min, p1);
+				b.max = Vector3Add(b.min, p1);
 			}
-			else if (v.z >= b.min.z && v.z <= b.max.z)
-			{
-				if (v.x <= b.min.x)
-				{
-					//left
-					result = 4;
-				}
-				else if (v.x >= b.max.x)
-				{
-					//right
-					result = 8;
-				}
+			else {
+				p2rot = p2;
+				b = actor1->staticCollider->bounds;
 			}
-
-			cout << "=" << to_string(result);
 			
-			return 2;
+			int res = 0;
+			if (p2rot.z < b.min.z) {
+				res = 2;
+			}
+			else if (p2rot.z > b.max.z) {
+				res = 1;
+			}
+			else if (p2rot.x < b.min.x) {
+				res = 8;
+			}
+			else if (p2rot.x > b.max.x) {
+				res = 4;
+			}
+			cout << "POSREL=" << to_string(res);
+			return res;
 		}
 
 		void initExpressions() {
