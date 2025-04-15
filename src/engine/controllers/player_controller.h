@@ -94,11 +94,11 @@ namespace openAITD {
 				newRoomId++;
 				teleportPlayer = true;
 			}
-			if (IsKeyPressed(KEY_A) && (world->curRoomId > 0)) {
+			if (IsKeyPressed(KEY_KP_SUBTRACT) && (world->curRoomId > 0)) {
 				newRoomId--;
 				teleportPlayer = true;
 			}
-			if (IsKeyPressed(KEY_W)) {
+			if (IsKeyPressed(KEY_KP_ADD)) {
 				newStageId++;
 				newRoomId = 0;
 				teleportPlayer = true;

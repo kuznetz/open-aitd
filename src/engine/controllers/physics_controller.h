@@ -5,14 +5,6 @@
 using namespace std;
 namespace openAITD {
 
-	inline BoundingBox getCubeBounds(BoundingBox& b)
-	{
-		BoundingBox r = b;
-		r.max.z = r.max.x = (b.max.x + b.max.z) / 2;
-		r.min.z = r.min.x = -r.max.z;
-		return r;
-	}
-
 	class PhysicsController {
 	public:
 		World* world;
@@ -109,6 +101,42 @@ namespace openAITD {
 			return  r;
 		}
 
+		inline BoundingBox getCubeBounds(BoundingBox& b)
+		{
+			BoundingBox r = b;
+			r.max.z = r.max.x = (b.max.x + b.max.z) / 2;
+			r.min.z = r.min.x = -r.max.z;
+			return r;
+		}
+
+		inline BoundingBox getRotatedBounds(const BoundingBox& b, const Quaternion& q)
+		{
+			Vector3 v[4];
+			v[0] = { b.min.x, 0, b.min.z };
+			v[1] = { b.max.x, 0, b.min.z };
+			v[2] = { b.min.x, 0, b.max.z };
+			v[3] = { b.max.x, 0, b.max.z };
+			BoundingBox res;
+			res.min.y = b.min.y;
+			res.max.y = b.max.y;
+			for (int i = 0; i < 4; i++) {
+				v[i] = Vector3RotateByQuaternion(v[i], q);
+				if (i == 0 || v[i].x < res.min.x) {
+					res.min.x = v[i].x;
+				}
+				if (i == 0 || v[i].x > res.max.x) {
+					res.max.x = v[i].x;
+				}
+				if (i == 0 || v[i].z < res.min.z) {
+					res.min.z = v[i].z;
+				}
+				if (i == 0 || v[i].z > res.max.z) {
+					res.max.z = v[i].z;
+				}
+			}
+			return res;
+		}
+
 		BoundingBox getObjectBounds(GameObject& gobj) {
 			if (gobj.physics.boundsCached) {
 				return gobj.physics.bounds;
@@ -121,8 +149,7 @@ namespace openAITD {
 				objB = getCubeBounds(objB);
 			}
 			if (gobj.boundsType == BoundsType::rotated) {
-				objB.min = Vector3RotateByQuaternion(objB.min, gobj.location.rotation);
-				objB.max = Vector3RotateByQuaternion(objB.max, gobj.location.rotation);
+				objB = getRotatedBounds(objB, gobj.location.rotation);
 			}
 			objB.min = Vector3Add(objB.min, p);
 			objB.max = Vector3Add(objB.max, p);
