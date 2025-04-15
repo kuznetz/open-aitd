@@ -56,7 +56,7 @@ namespace openAITD {
 				RModel* m = resources->models.getModel(actor1->modelId);
 				b = m->bounds;
 				b.min = Vector3Add(b.min, p1);
-				b.max = Vector3Add(b.min, p1);
+				b.max = Vector3Add(b.max, p1);
 			}
 			else {
 				p2rot = p2;
@@ -295,7 +295,7 @@ namespace openAITD {
 				}, "DO_MOVE");
 			//Process rotation
 			lua->CreateFunction([this](int obj) {
-				//this->world->gobjects[obj].moveFlag = true;
+				//Not needed
 				}, "DO_ROT_ZV");
 			//recalc bounds?
 			lua->CreateFunction([this]() {

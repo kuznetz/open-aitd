@@ -90,11 +90,11 @@ namespace openAITD {
 			bool teleportPlayer = false;
 			int newStageId = world->curStageId;
 			int newRoomId = world->curRoomId;
-			if (IsKeyPressed(KEY_D) && (newRoomId < world->curStage->rooms.size() - 1)) {
+			if (IsKeyPressed(KEY_KP_MULTIPLY) && (newRoomId < world->curStage->rooms.size() - 1)) {
 				newRoomId++;
 				teleportPlayer = true;
 			}
-			if (IsKeyPressed(KEY_KP_SUBTRACT) && (world->curRoomId > 0)) {
+			if (IsKeyPressed(KEY_KP_DIVIDE) && (world->curRoomId > 0)) {
 				newRoomId--;
 				teleportPlayer = true;
 			}
@@ -103,12 +103,12 @@ namespace openAITD {
 				newRoomId = 0;
 				teleportPlayer = true;
 			}
-			if (IsKeyPressed(KEY_S) && (newStageId > 0)) {
+			if (IsKeyPressed(KEY_KP_SUBTRACT) && (newStageId > 0)) {
 				newStageId--;
 				newRoomId = 0;
 				teleportPlayer = true;
 			}
-			if (IsKeyDown(KEY_T)) {
+			if (IsKeyDown(KEY_KP_ENTER)) {
 				teleportPlayer = true;
 			}
 			if (teleportPlayer) {

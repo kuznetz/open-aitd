@@ -46,7 +46,9 @@ namespace openAITD {
 		vector<RenderOverlay> curOverlays;
 
 		RenderOrder renderQueue[100];
+		RenderOrder* renderStart;
 		RenderOrder* renderIter;
+		RenderOrder* renderIterPrev;
 		int renderQueueCount = 0;
 
 		Stage* curStage = 0;
@@ -305,6 +307,7 @@ namespace openAITD {
 			*/
 
 			renderQueueCount = 0;
+			renderStart = 0;
 
 			for (int i = 0; i < this->world->gobjects.size(); i++) {
 				auto& gobj = this->world->gobjects[i];
@@ -337,22 +340,32 @@ namespace openAITD {
 				
 				//string s = to_string(i);
 								
-				if (renderQueueCount > 1) {
+				if (renderStart) {
 					bool inserted = false;
-					renderIter = renderQueue;
+					renderIterPrev = 0;
+					renderIter = renderStart;
 					while (true) {
 						if (renderIter->zPos < ro.zPos) {
-							ro.next = renderIter->next;
-							renderIter->next = &ro;
+							if (renderIterPrev) {
+								renderIterPrev->next = &ro;
+							}
+							else {
+								renderStart = &ro;
+							}
+							ro.next = renderIter;
 							inserted = true;
 							break;
 						}
 						if (!renderIter->next) break;
+						renderIterPrev = renderIter;
 						renderIter = renderIter->next;
 					}
 					if (!inserted) {
 						renderIter->next = &ro;
 					}
+				}
+				else {
+					renderStart = &ro;
 				}
 
 			}
@@ -372,9 +385,9 @@ namespace openAITD {
 			//	}
 			//}
 
-			if (renderQueueCount > 0) {
+			if (renderStart) {
 				int num = 1;
-				renderIter = renderQueue;
+				renderIter = renderStart;
 				while (true) {
 					BeginMode3D(initCamera);
 					//rlSetMatrixModelview(curCamera->modelview);
