@@ -43,6 +43,7 @@ namespace openAITD {
     
     bool freeLook = false;
     bool pause = false;
+    const float maxDelta = 1. / 30;
 
     void startIntro() {
         world.gameOver = false;
@@ -74,10 +75,15 @@ namespace openAITD {
         }
 
         if (!pause) {
-            world.chrono += timeDelta;
-            lifeContr.process(timeDelta);
-            animContr.process(timeDelta);
-            physContr.process(timeDelta);
+            while (true) {
+                float partDelta = min(timeDelta, maxDelta);
+                world.chrono += partDelta;
+                lifeContr.process(partDelta);
+                animContr.process(partDelta);
+                physContr.process(partDelta);
+                timeDelta -= maxDelta;
+                if (timeDelta < 0) break;
+            }
         }
 
         BeginDrawing();

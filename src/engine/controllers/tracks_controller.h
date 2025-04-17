@@ -20,17 +20,20 @@ namespace openAITD {
 				gobj.rotateAnim.timeEnd = 0.25;
 				gobj.rotateAnim.from = gobj.location.rotation;
 			}
+			auto& m = MatrixTranspose(MatrixLookAt(gobj.location.position, target, { 0,1,0 }));
+			auto rotTo = QuaternionFromMatrix(m);
 			if (gobj.rotateAnim.timeEnd > 0) {
-				auto& m = MatrixTranspose(MatrixLookAt(gobj.location.position, target, { 0,1,0 }));
-				auto rotTo = QuaternionFromMatrix(m);
 				gobj.rotateAnim.to = rotTo;
 				//gobj.track.direction = Vector3Normalize(Vector3Subtract(gobj.track.target, gobj.location.position));
+			}
+			else {
+				gobj.location.rotation = rotTo;
 			}
 		}
 
 		bool gotoPos(GameObject& gobj, TrackItem& trackItm) {
 			Vector3 targetPos = trackItm.pos;
-			targetPos = { trackItm.pos.x, 0, trackItm.pos.z };
+			targetPos = { trackItm.pos.x, gobj.location.position.y, trackItm.pos.z };
 			if (trackItm.room != gobj.location.roomId)
 			{
 				targetPos.x += world->curStage->rooms[trackItm.room].position.x - world->curStage->rooms[gobj.location.roomId].position.x;
@@ -46,7 +49,7 @@ namespace openAITD {
 			//TODO: change code 4 distance reach
 
 			float distanceToPoint = Vector3DistanceSqr(gobj.location.position, gobj.track.target);
-			if (distanceToPoint >= 0.01) // || distanceToPoint >= nextDistanceToPoint
+			if (distanceToPoint >= 0.1 || gobj.rotateAnim.timeEnd > 0) // || distanceToPoint >= nextDistanceToPoint
 			{
 				// not yet at position
 				gobj.track.posStarted = true;

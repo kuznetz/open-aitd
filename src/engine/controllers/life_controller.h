@@ -96,6 +96,12 @@ namespace openAITD {
 				return 0; //TODO: FALLING
 				}, "FALLING");
 
+			
+
+
+			lua->CreateFunction([this](int obj) -> int {
+				return this->world->gobjects[obj].location.stageId;
+				}, "STAGE");
 			lua->CreateFunction([this](int obj) -> int {
 				return this->world->gobjects[obj].location.roomId;
 				}, "ROOM");
@@ -134,6 +140,14 @@ namespace openAITD {
 			lua->CreateFunction([this](int obj, int obj2) -> int {
 				return getPosRel(&this->world->gobjects[obj], &this->world->gobjects[obj2]);
 				}, "POSREL");
+			lua->CreateFunction([this](int obj1, int obj2) -> int {
+				auto& gobj1 = this->world->gobjects[obj1].location.position;
+				auto& gobj2 = this->world->gobjects[obj1].location.position;
+				int x = abs(gobj1.x - gobj2.x) * 1000;
+				int y = abs(gobj1.y - gobj2.y) * 1000;
+				int z = abs(gobj1.z - gobj2.z) * 1000;
+				return x + y + z;
+				}, "DIST");
 			lua->CreateFunction([this](int obj) -> int {
 				int r = (this->world->gobjects[obj].invItem.flags & 0xC000) ? 1 : 0;
 				return r;
@@ -328,6 +342,12 @@ namespace openAITD {
 			lua->CreateFunction([this](int sampleId, int nextSampleId) {
 				//TODO: SOUND_THEN
 				}, "SOUND_THEN");
+			lua->CreateFunction([this](int musicId) {
+				//TODO: SET_MUSIC
+				}, "SET_MUSIC");
+			lua->CreateFunction([this](int musicId) {
+				//TODO: NEXT_MUSIC
+				}, "NEXT_MUSIC");			
 			lua->CreateFunction([this](int musicId) {
 				//TODO: SOUND_THEN
 				}, "FADE_MUSIC");

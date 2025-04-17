@@ -171,7 +171,7 @@ inline void writeCaseExpr(ofstream& out, string varsw, LifeInstruction& instr)
 	else if(instr.type->type == LifeEnum::MULTI_CASE) {
 		for (int i = 0; i < instr.arguments.size(); i++) {
 			if (i > 0) {
-				out << " and ";
+				out << " or ";
 			}
 			out << "(";
 			out << varsw << " == ";
