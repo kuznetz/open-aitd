@@ -417,9 +417,19 @@ namespace openAITD {
 					//it->marker = s;
 					num++;
 					renderIter = renderIter->next;
-					if (!renderIter) return;
+					if (!renderIter) break;
 				}
 			}
+
+
+			if (world->messageTime > 0) {
+				auto& f = resources->mainFont;
+				const char* m = world->messageText.c_str();
+				auto mt = MeasureTextEx(f, m, f.baseSize, 0);
+				Vector2 v = { (int)(screenW - mt.x) / 2, screenH - (f.baseSize * 2) };
+				DrawTextEx(f, m, v, f.baseSize, 0, WHITE);
+			}
+
 
 			//for (auto it = renderQueue.begin(); it != renderQueue.end(); it++) {
 			//	DrawLine(it->screenMin.x, it->screenMin.y, it->screenMax.x, it->screenMin.y, RED);

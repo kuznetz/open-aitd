@@ -81,6 +81,10 @@ namespace openAITD {
                 lifeContr.process(partDelta);
                 animContr.process(partDelta);
                 physContr.process(partDelta);
+                if (world.messageTime > 0) {
+                    world.messageTime -= partDelta;
+                }
+
                 timeDelta -= maxDelta;
                 if (timeDelta < 0) break;
             }
@@ -101,7 +105,9 @@ namespace openAITD {
         AITDExtractor::extractAllData();
 
         InitWindow(screenW, screenH, "Open-AITD");
-
+        
+        resources.loadTexts("data/texts/english.txt");
+        resources.loadFont("newdata/font.ttf", 16 * screenH / 200);
         resources.stages.resize(8);
         for (int i = 0; i < 8; i++) {
             resources.stages[i].load(string("data/stages/")+to_string(i));

@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <vector>
+#include <map>
 #include <string>
 #include <filesystem>
 #include "stages.h"
@@ -13,9 +14,45 @@ namespace openAITD {
 	//Store static data in game
 	class Resources {
 	public:
+		Font mainFont;
+		map<int,string> texts;
+
 		vector<Stage> stages;
 		vector<Track> tracks;
 		RModels models;
+
+		~Resources() {
+			UnloadFont(mainFont);
+		}
+
+		void loadFont(string fontPath, int size) {
+			//Font fontTtf = LoadFontEx
+			//FONT_TTF_DEFAULT_NUMCHARS 95
+			mainFont = LoadFontEx(fontPath.c_str(), size, 0, 95);
+		}
+
+		void loadTexts(string textsPath) {
+			int idx;
+			string str;
+			ifstream inFile;
+			inFile.open(textsPath);
+			while (getline(inFile, str))
+			{
+				if (str[0] != '@') continue;
+				idx = 0;
+				int i = 1;
+				while (str[i] >= '0' && str[i] <= '9') // parse string number
+				{
+					idx = idx * 10 + (str[i] - 48);
+					i++;
+				}
+				if (str[i] == ':') // start of string
+				{
+					texts[idx] = str.substr(i+1);
+				}
+			}
+		}
+
 
 		void loadTracks(string path) {
 			int i = 0;

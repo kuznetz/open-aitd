@@ -170,7 +170,8 @@ namespace openAITD {
 
                 gobj.animation.prevId = gobj.animation.id;
 			}
-		}
+
+        }
 	};
 
 }

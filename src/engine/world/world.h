@@ -52,6 +52,9 @@ namespace openAITD {
 		//Object to follow camera
 		GameObject* followTarget = 0;
 
+		string messageText;
+		float messageTime = 0;
+
 		World(Resources* res) {
 			this->resources = res;
 		}

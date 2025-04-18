@@ -239,6 +239,25 @@ namespace AITDExtractor {
         }
     }
 
+    void processTexts() {
+        string dirname = "data/texts";
+        if (!std::filesystem::exists(dirname)) {
+            std::filesystem::create_directories(dirname);
+            
+            PakFile textsPak("original/ENGLISH.PAK");
+            auto& data = textsPak.readBlock(0);
+            //data.resize(data.size() + 1);
+            data[data.size() - 1] = '\0';
+            for (int i = 0; i < data.size(); i++) {
+                if (data[i] == 13) data[i] = 10;
+            }
+            string filename = dirname + "/english.txt";
+            ofstream out(filename.c_str(), ios::trunc | ios::out);
+            out << (char*)data.data() << endl;
+            out.close();
+        }
+    }
+
     void animTest() {
         //Quaternion.identity
         int modelId = 12;
@@ -269,7 +288,10 @@ namespace AITDExtractor {
         //roomMatrix = MatrixMultiply(MatrixRotateX(PI), MatrixRotateY(PI));
         roomMatrix = MatrixRotateX(PI);
 
-        dumpInstructions("instr.txt");
+        //dumpInstructions("instr.txt");
+
+        processTexts();
+
         gameObjs = loadGameObjects("original/OBJETS.ITD");
         if (!std::filesystem::exists("data/objects.json")) {
             extractGameObjects(gameObjs, "data/objects.json");

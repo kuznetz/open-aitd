@@ -185,8 +185,9 @@ namespace openAITD {
 			lua->CreateFunction([this](int i, int val) {
 				world->cVars[i] = val;
 				}, "SET_C");
-			lua->CreateFunction([this](int obj) {
-				//
+			lua->CreateFunction([this](int messId) {
+				this->world->messageText = resources->texts[messId];
+				this->world->messageTime = 10;
 				}, "MESSAGE");
 			lua->CreateFunction([this](int allow) {
 				this->world->player.allowInventory = !!allow;
@@ -320,7 +321,12 @@ namespace openAITD {
 				}, "DO_CARRE_ZV");
 			lua->CreateFunction([this]() {
 				//TODO: DO_REAL_ZV
-				}, "DO_REAL_ZV");			 
+				}, "DO_REAL_ZV");	
+
+			//Actions
+			lua->CreateFunction([this](int obj) {
+				//TODO: HIT
+				}, "HIT");
 
 			//Sound & music
 			lua->CreateFunction([this](int obj, int sampleId, int animId, int animFrame) {
