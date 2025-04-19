@@ -26,9 +26,6 @@ namespace openAITD {
         SelectGame
     };
     AppState state;
-
-    int screenW = 1280;
-    int screenH = 960;
     
     Resources resources;
     World world(&resources);
@@ -104,18 +101,19 @@ namespace openAITD {
     {
         AITDExtractor::extractAllData();
 
-        InitWindow(screenW, screenH, "Open-AITD");
+        resources.config.screenW = 1280;
+        resources.config.screenH = 960;
+
+        InitWindow(resources.config.screenW, resources.config.screenH, "Open-AITD");
         
         resources.loadTexts("data/texts/english.txt");
-        resources.loadFont("newdata/font.ttf", 16 * screenH / 200);
+        resources.loadFont("newdata/font.ttf", 16 * resources.config.screenH / 200);
         resources.stages.resize(8);
         for (int i = 0; i < 8; i++) {
             resources.stages[i].load(string("data/stages/")+to_string(i));
         }
         resources.loadTracks("data/tracks");
 
-        renderer.screenW = screenW;
-        renderer.screenH = screenH;
         DisableCursor();
 
         startIntro();

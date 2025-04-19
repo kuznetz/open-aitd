@@ -35,8 +35,6 @@ namespace openAITD {
 	public:
 		World* world;
 		Resources* resources;
-		int screenW = 0;
-		int screenH = 0;
 
 		int invX = 0;
 		int invZ = 0;
@@ -56,6 +54,9 @@ namespace openAITD {
 		WCamera* curCamera = 0;
 		int curCameraId = -1;
 
+		const int getScreenW() { return resources->config.screenW; }
+		const int getScreenH() { return resources->config.screenH; }
+
 		CameraRenderer(Resources* res, World* world) {
 			this->resources = res;
 			this->world = world;
@@ -67,8 +68,8 @@ namespace openAITD {
 		}
 
 		Vector3 GetWorldToScreenZ(Vector3 position) {
-			int width = GetScreenWidth();
-			int height = GetScreenHeight();
+			const int& width = getScreenW();
+			const int& height = getScreenH();
 			auto& matProj = curCamera->perspective;
 			Matrix matView = MatrixLookAt(initCamera.position, initCamera.target, initCamera.up);
 			Vector3 depth = Vector3Transform(position, matView);
@@ -186,10 +187,10 @@ namespace openAITD {
 		}		
 
 		Texture2D generateMask(Image& fullBg, Image& mask) {
-			Image maskImageScaled = resizeImg(mask, screenW, screenH);
-			Image resImg = { 0, screenW, screenH, 1, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8 };
-			resImg.data = new uint8_t[screenW * screenH * 4];
-			for (int i = 0; i < (screenW * screenH); i++) {
+			Image maskImageScaled = resizeImg(mask, getScreenW(), getScreenH());
+			Image resImg = { 0, getScreenW(), getScreenH(), 1, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8 };
+			resImg.data = new uint8_t[getScreenW() * getScreenH() * 4];
+			for (int i = 0; i < (getScreenW() * getScreenH()); i++) {
 				((uint8_t*)resImg.data)[i * 4 + 0] = ((uint8_t*)fullBg.data)[i * 3 + 0];
 				((uint8_t*)resImg.data)[i * 4 + 1] = ((uint8_t*)fullBg.data)[i * 3 + 1];
 				((uint8_t*)resImg.data)[i * 4 + 2] = ((uint8_t*)fullBg.data)[i * 3 + 2];
@@ -209,7 +210,7 @@ namespace openAITD {
 			curCamera = &curStage->cameras[newCameraId];
 			curCameraId = newCameraId;
 
-			auto& fullBg = resizeImg(backgrounds[curCameraId].background, screenW, screenH);
+			auto& fullBg = resizeImg(backgrounds[curCameraId].background, getScreenW(), getScreenH());
 			backgroundTex = LoadTextureFromImage(fullBg);
 			auto& masks = backgrounds[curCameraId].masks;			
 			for (int i = 0; i < masks.size(); i++) {
@@ -292,8 +293,8 @@ namespace openAITD {
 
 			DrawTexturePro(
 				backgroundTex,
-				{ 0, 0, (float)screenW, (float)screenH },
-				{ 0, 0, (float)screenW, (float)screenH },
+				{ 0, 0, (float)getScreenW(), (float)getScreenH() },
+				{ 0, 0, (float)getScreenW(), (float)getScreenH() },
 				{ 0, 0 }, 0, WHITE
 			);
 
@@ -333,8 +334,8 @@ namespace openAITD {
 				RenderOrder& ro = renderQueue[renderQueueCount++];
 				fillScreenBounds(ro, gobj);
 				if (ro.zPos < 0) continue;
-				if (ro.screenMax.x < 0 || ro.screenMin.x > screenW) continue;
-				if (ro.screenMax.y < 0 || ro.screenMin.y > screenH) continue;
+				if (ro.screenMax.x < 0 || ro.screenMin.x > getScreenW()) continue;
+				if (ro.screenMax.y < 0 || ro.screenMin.y > getScreenH()) continue;
 
 				renderObject(gobj, WHITE);
 				
@@ -426,7 +427,7 @@ namespace openAITD {
 				auto& f = resources->mainFont;
 				const char* m = world->messageText.c_str();
 				auto mt = MeasureTextEx(f, m, f.baseSize, 0);
-				Vector2 v = { (int)(screenW - mt.x) / 2, screenH - (f.baseSize * 2) };
+				Vector2 v = { (int)(getScreenW() - mt.x) / 2, getScreenH() - (f.baseSize * 2) };
 				DrawTextEx(f, m, v, f.baseSize, 0, WHITE);
 			}
 

@@ -3,6 +3,7 @@
 #include <map>
 #include <string>
 #include <filesystem>
+#include "config.h"
 #include "stages.h"
 #include "tracks.h"
 #include "models.h"
@@ -14,6 +15,7 @@ namespace openAITD {
 	//Store static data in game
 	class Resources {
 	public:
+		Config config;
 		Font mainFont;
 		map<int,string> texts;
 
