@@ -27,6 +27,14 @@ namespace openAITD {
 			UnloadFont(mainFont);
 		}
 
+		void drawCentered(const char* text, raylib::Rectangle r, Color color) {
+			auto& f = this->mainFont;
+			auto mt = MeasureTextEx(f, text, f.baseSize, 0);
+			int x = (int)(r.x + ((r.width - mt.x) / 2));
+			Vector2 v = { x, (int)r.y };
+			raylib::DrawTextEx(f, text, v, f.baseSize, 0, color);
+		}
+
 		void loadFont(string fontPath, int size) {
 			//Font fontTtf = LoadFontEx
 			//FONT_TTF_DEFAULT_NUMCHARS 95

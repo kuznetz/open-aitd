@@ -104,6 +104,7 @@ namespace openAITD {
 		int modelId = -1;
 		int nameId = 0;
 		int lifeId = 0;
+		float foundTimeout = 0;
 		union {
 			unsigned short int flags;
 			InventoryFlags bitField;

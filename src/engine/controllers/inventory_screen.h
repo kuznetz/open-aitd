@@ -27,6 +27,18 @@ namespace openAITD {
 			exit = false;
 		}
 
+		void drawItems() {
+			auto& f = resources->mainFont;
+			raylib::Rectangle r = { 0, resources->config.screenH * 0.05, resources->config.screenW, 0 };
+			for (int i = 0; i < 5; i++) {
+				if (i >= world->inventory.size()) break;
+				auto& gobj = *world->inventory[i];
+				auto& name = resources->texts[gobj.invItem.nameId];
+				resources->drawCentered(name.c_str(), r, GOLD);
+				r.y += f.baseSize;
+			}
+		}
+
 		void process(float timeDelta) {
 			const auto& screenW = this->resources->config.screenW;
 			const auto& screenH = this->resources->config.screenH;
@@ -37,15 +49,8 @@ namespace openAITD {
 			}
 
 			BeginDrawing();
-
 			ClearBackground(BLACK);
-
-			auto& f = resources->mainFont;
-			const char* m = "Inventory";
-			auto mt = MeasureTextEx(f, m, f.baseSize, 0);
-			Vector2 v = { (int)(screenW - mt.x) / 2, screenH - (f.baseSize * 2) };
-			//DrawTextEx(f, m, v, f.baseSize, 0, WHITE);
-
+			drawItems();
 			EndDrawing();
 		}
 

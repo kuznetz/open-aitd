@@ -36,7 +36,10 @@ namespace openAITD {
 	public:
 		Resources* resources;
 		vector<string> dataDirectories = { "./mods", "./oaitd", "./data" };
+		
 		vector<GameObject> gobjects;
+		vector<GameObject*> inventory;
+
 		vector<short int> vars;
 		vector<short int> cVars;
 		Player player;

@@ -23,19 +23,16 @@ namespace openAITD {
 		~FoundScreen() {
 		}
 
-		void drawCentered(const char* text, raylib::Rectangle r, Color color) {
-			auto& f = resources->mainFont;
-			auto mt = MeasureTextEx(f, text, f.baseSize, 0);
-			int x = (int)(r.x + ((r.width - mt.x) / 2));
-			Vector2 v = { x, (int)r.y };						
-			raylib::DrawTextEx(f, text, v, f.baseSize, 0, color);
-		}
-
 		void submit() {
+			auto& gobj = this->world->gobjects[world->foundItem];
 			if (leave) {
+				gobj.invItem.foundTimeout = world->chrono + 5;
 				world->foundItem = -1;
 				return;
 			}
+			gobj.location.stageId = -1;
+			gobj.invItem.bitField.in_inventory = 1;
+			world->inventory.push_back(&gobj);
 
 			world->foundItem = -1;
 		}
@@ -64,14 +61,14 @@ namespace openAITD {
 			auto& f = resources->mainFont;
 			const char* m = "New item:";
 			raylib::Rectangle r = { 0, screenH * 0.10, screenW, 0 };
-			drawCentered("New item:", r, WHITE);
+			resources->drawCentered("New item:", r, WHITE);
 			r.y += f.baseSize;
-			drawCentered(name.c_str(), r, GOLD);
+			resources->drawCentered(name.c_str(), r, GOLD);
 
 			r = { 0, screenH * 0.8f, (screenW/2.f), 0 };
-			drawCentered("Leave", r, leave ? YELLOW : GRAY);
+			resources->drawCentered("Leave", r, leave ? YELLOW : GRAY);
 			r = { r.width, r.y, r.width, 0 };
-			drawCentered("Take", r, leave ? GRAY : YELLOW);
+			resources->drawCentered("Take", r, leave ? GRAY : YELLOW);
 
 			EndDrawing();
 		}

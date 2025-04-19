@@ -187,7 +187,7 @@ namespace openAITD {
 				}, "SET_C");
 			lua->CreateFunction([this](int messId) {
 				this->world->messageText = resources->texts[messId];
-				this->world->messageTime = 10;
+				this->world->messageTime = 5;
 				}, "MESSAGE");
 			lua->CreateFunction([this](int allow) {
 				this->world->player.allowInventory = !!allow;
@@ -243,8 +243,10 @@ namespace openAITD {
 
 			//INVENTORY
 			lua->CreateFunction([this](int obj) {
+				auto& gobj = this->world->gobjects[obj];
+				if (gobj.invItem.foundTimeout > this->world->chrono) return;
+				if (gobj.invItem.bitField.in_inventory) return;
 				this->world->foundItem = obj;
-				//auto& gobj = this->world->gobjects[obj];
 				}, "FOUND");
 			lua->CreateFunction([this](int obj) {
 				//TODO: IN_HAND
