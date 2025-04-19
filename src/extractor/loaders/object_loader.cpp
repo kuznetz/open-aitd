@@ -28,7 +28,7 @@ vector <gameObjectStruct> loadGameObjects(string from) {
     for (int i = 0; i < maxObjects; i++)
     {
         gameObjectStruct obj;
-        obj.ownerIdx = READ_LE_S16(pObjectData);
+        obj.id = READ_LE_S16(pObjectData);
         pObjectData += 2;
 
         obj.body = READ_LE_S16(pObjectData);

@@ -10,6 +10,7 @@
 using nlohmann::json;
 
 using namespace std;
+using namespace raylib;
 namespace openAITD {
 
 	struct PlayerAnimations {
@@ -43,6 +44,7 @@ namespace openAITD {
 		float chrono = 0;
 		//Time, how long the room was active
 		float roomChrono = 0;
+
 		bool gameOver = false;
 		int curStageId  = -1;
 		Stage* curStage = 0;
@@ -51,6 +53,8 @@ namespace openAITD {
 		int curCameraId = -1;
 		//Object to follow camera
 		GameObject* followTarget = 0;
+
+		int foundItem = -1;
 
 		string messageText;
 		float messageTime = 0;
@@ -89,10 +93,11 @@ namespace openAITD {
 
 		gobjects.resize(objsJson.size());
 		for (int i = 0; i < objsJson.size(); i++) {
-			gobjects[i].id = i;
+			auto& gobj = gobjects[i];
+			gobj.id = i;
 
 			if (objsJson[i].contains("location")) {
-				auto& loc = gobjects[i].location;
+				auto& loc = gobj.location;
 				auto& locJson = objsJson[i]["location"];
 				loc.position = { locJson["position"][0], locJson["position"][1], locJson["position"][2] };
 				loc.rotation = { locJson["rotation"][0], locJson["rotation"][1], locJson["rotation"][2], locJson["rotation"][3] };
@@ -101,36 +106,36 @@ namespace openAITD {
 			}
 
 			if (objsJson[i].contains("model")) {
-				auto& mdl = gobjects[i].animation;
+				auto& mdl = gobj.animation;
 				auto& mdlJson = objsJson[i]["model"];
-				gobjects[i].modelId = mdlJson["id"];
-				gobjects[i].boundsType = mdlJson["boundsType"];
+				gobj.modelId = mdlJson["id"];
+				gobj.boundsType = mdlJson["boundsType"];
 				mdl.id = mdlJson["animId"];
 				mdl.flags = mdlJson["animType"];
 				mdl.nextId = mdlJson["animInfo"];
 			}
 
 			if (objsJson[i].contains("track")) {
-				gobjects[i].track.id = objsJson[i]["track"]["id"];
-				gobjects[i].track.mode = objsJson[i]["track"]["mode"];
-				gobjects[i].track.pos = objsJson[i]["track"]["position"];
+				gobj.track.id = objsJson[i]["track"]["id"];
+				gobj.track.mode = objsJson[i]["track"]["mode"];
+				gobj.track.pos = objsJson[i]["track"]["position"];
 			}
 
 			if (objsJson[i].contains("static")) {
-				gobjects[i].location.stageId = objsJson[i]["static"]["stageId"];
-				gobjects[i].location.roomId = objsJson[i]["static"]["roomId"];
-				gobjects[i].staticColliderId = objsJson[i]["static"]["staticIdx"];
-				auto& cols = resources->stages[gobjects[i].location.stageId].rooms[gobjects[i].location.roomId].colliders;
+				gobj.location.stageId = objsJson[i]["static"]["stageId"];
+				gobj.location.roomId = objsJson[i]["static"]["roomId"];
+				gobj.staticColliderId = objsJson[i]["static"]["staticIdx"];
+				auto& cols = resources->stages[gobj.location.stageId].rooms[gobj.location.roomId].colliders;
 				for (int j = 0; j < cols.size(); j++) {
 					if (cols[j].type != 9) continue;
-					if (cols[j].parameter == gobjects[i].staticColliderId) {
-						gobjects[i].staticCollider = &cols[j];
+					if (cols[j].parameter == gobj.staticColliderId) {
+						gobj.staticCollider = &cols[j];
 						break;
 					}
 				}
-				auto& colB = gobjects[i].staticCollider->bounds;
-				if (gobjects[i].staticCollider) {
-					gobjects[i].location.position = {
+				auto& colB = gobj.staticCollider->bounds;
+				if (gobj.staticCollider) {
+					gobj.location.position = {
 						(colB.max.x + colB.min.x) / 2,
 						(colB.max.y + colB.min.y) / 2,
 						(colB.max.z + colB.min.z) / 2,
@@ -138,11 +143,18 @@ namespace openAITD {
 				}
 			}
 
-			gobjects[i].flags = objsJson[i]["flags"];
-			gobjects[i].lifeMode = objsJson[i]["lifeMode"];
-			gobjects[i].lifeId = objsJson[i]["life"];
-			gobjects[i].stageLifeId = objsJson[i]["stageLife"];
-			gobjects[i].chrono = chrono;
+			if (objsJson[i].contains("invItem")) {
+				gobj.invItem.nameId = objsJson[i]["invItem"]["name"];
+				gobj.invItem.modelId = objsJson[i]["invItem"]["model"];
+				gobj.invItem.lifeId = objsJson[i]["invItem"]["life"];
+				gobj.invItem.flags = objsJson[i]["invItem"]["flags"];
+			}
+
+			gobj.flags = objsJson[i]["flags"];
+			gobj.lifeMode = objsJson[i]["lifeMode"];
+			gobj.lifeId = objsJson[i]["life"];
+			gobj.stageLifeId = objsJson[i]["stageLife"];
+			gobj.chrono = chrono;
 		}
 
 	};

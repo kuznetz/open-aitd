@@ -10,6 +10,8 @@
 #include "./controllers/animation_controller.h"
 #include "./controllers/life_controller.h"
 #include "./controllers/tracks_controller.h"
+#include "./controllers/found_screen.h"
+#include "./controllers/inventory_screen.h"
 
 #include "../extractor/extractor.h"
 
@@ -37,6 +39,8 @@ namespace openAITD {
     PlayerController playerContr(&world);
     TracksController tracksContr(&world);
     LifeController lifeContr(&world, &tracksContr, &playerContr);
+    InventoryScreen inventoryScreen(&world);
+    FoundScreen foundScreen(&world);
     
     bool freeLook = false;
     bool pause = false;
@@ -131,8 +135,23 @@ namespace openAITD {
                 }
             }
             else if (state == AppState::InWorld) {
-                world.player.space = IsKeyDown(KEY_SPACE);
-                processWorld(timeDelta);
+                if (world.foundItem != -1) {
+                    foundScreen.process(timeDelta);
+                }
+                else {
+                    world.player.space = IsKeyDown(KEY_SPACE);
+                    processWorld(timeDelta);
+                }
+                if (world.player.allowInventory && IsKeyPressed(KEY_ENTER)) {
+                    inventoryScreen.reload();
+                    state = AppState::Inventory;
+                }
+            }
+            else if (state == AppState::Inventory) {   
+                inventoryScreen.process(timeDelta);
+                if (inventoryScreen.exit) {
+                    state = AppState::InWorld;
+                }
             }
         }
 

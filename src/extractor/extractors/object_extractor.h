@@ -32,7 +32,7 @@ inline void extractGameObjects(vector <gameObjectStruct> objects, string josnTo)
     {
         auto& obj = objects[i];
         json objJson = json::object();
-        objJson["id"] = i;
+        objJson["id"] = i; //obj.id        
 
         if (obj.boundsType == 4) {
             //static object
@@ -88,10 +88,10 @@ inline void extractGameObjects(vector <gameObjectStruct> objects, string josnTo)
         //inventory
         if (obj.inventoryBody != -1) {
             objJson["invItem"] = json::object();
-            objJson["invItem"]["ownerId"] = obj.ownerIdx;
             objJson["invItem"]["model"] = obj.inventoryBody;
             objJson["invItem"]["name"] = obj.inventoryName;
             objJson["invItem"]["life"] = obj.inventoryLife;
+            objJson["invItem"]["flags"] = obj.invFlags;
         }
 
         objJson["track"] = json::object();
@@ -104,7 +104,6 @@ inline void extractGameObjects(vector <gameObjectStruct> objects, string josnTo)
         objJson["stageLife"] = obj.stageLife;
 
         objJson["flags"] = obj.flags;
-        objJson["flags2"] = obj.invFlags;
 
         outJson.push_back(objJson);
     }

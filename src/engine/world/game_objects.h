@@ -101,9 +101,9 @@ namespace openAITD {
 
 	struct GOInvItem
 	{
-		int model = -1;
-		int name = 0;
-		int life = 0;
+		int modelId = -1;
+		int nameId = 0;
+		int lifeId = 0;
 		union {
 			unsigned short int flags;
 			InventoryFlags bitField;

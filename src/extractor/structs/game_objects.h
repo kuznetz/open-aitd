@@ -49,7 +49,7 @@ struct inventoryFlags
 
 struct gameObjectStruct
 {
-	short int ownerIdx;
+	short int id;
 	short int body;
 	union {
 		short int flags;

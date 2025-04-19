@@ -243,6 +243,8 @@ namespace openAITD {
 
 			//INVENTORY
 			lua->CreateFunction([this](int obj) {
+				this->world->foundItem = obj;
+				//auto& gobj = this->world->gobjects[obj];
 				}, "FOUND");
 			lua->CreateFunction([this](int obj) {
 				//TODO: IN_HAND

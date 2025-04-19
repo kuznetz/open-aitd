@@ -14,6 +14,7 @@
 #include "../raylib.h"
 
 using nlohmann::json;
+using namespace raylib;
 using namespace std;
 namespace openAITD {
 
