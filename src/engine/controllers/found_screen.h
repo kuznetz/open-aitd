@@ -30,10 +30,7 @@ namespace openAITD {
 				world->foundItem = -1;
 				return;
 			}
-			gobj.location.stageId = -1;
-			gobj.invItem.bitField.in_inventory = 1;
-			world->inventory.push_back(&gobj);
-
+			world->take(world->foundItem);
 			world->foundItem = -1;
 		}
 
@@ -43,6 +40,11 @@ namespace openAITD {
 			}
 			if (IsKeyPressed(KEY_RIGHT)) {
 				leave = false;
+			}
+			if (IsKeyPressed(KEY_ESCAPE)) {
+				leave = true;
+				submit();
+				return;
 			}
 			if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
 				submit();

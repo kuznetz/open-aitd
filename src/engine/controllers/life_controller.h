@@ -96,9 +96,6 @@ namespace openAITD {
 				return 0; //TODO: FALLING
 				}, "FALLING");
 
-			
-
-
 			lua->CreateFunction([this](int obj) -> int {
 				return this->world->gobjects[obj].location.stageId;
 				}, "STAGE");
@@ -252,7 +249,7 @@ namespace openAITD {
 				//TODO: IN_HAND
 				}, "IN_HAND");
 			lua->CreateFunction([this](int obj) {
-				//TODO: TAKE
+				world->take(obj);
 				}, "TAKE");
 
 			//Animations, tracks, rotations

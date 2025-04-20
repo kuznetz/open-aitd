@@ -85,6 +85,7 @@ namespace openAITD {
 		void setRepeatAnimation(GameObject& gobj, int animId);
 		void setOnceAnimation(GameObject& gobj, int animId, int nextAnimId);
 		void setModel(GameObject& gobj, int modelId);
+		void take(int gObjId);
 		Vector3 VectorChangeRoom(const Vector3 v, int fromRoomId, int toRoomId);
 		BoundingBox BoundsChangeRoom(const BoundingBox v, int fromRoomId, int toRoomId);
 	};
@@ -215,6 +216,14 @@ namespace openAITD {
 		for (int i = 0; i < objsJson["cVars"].size(); i++) {
 			cVars[i] = objsJson["cVars"][i];
 		}
+	};
+
+	void World::take(int gobjId)
+	{
+		auto& gobj = this->gobjects[gobjId];
+		gobj.location.stageId = -1;
+		gobj.invItem.bitField.in_inventory = 1;
+		inventory.push_back(&gobj);
 	};
 
 }

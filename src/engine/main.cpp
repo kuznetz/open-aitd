@@ -109,7 +109,8 @@ namespace openAITD {
         resources.config.screenH = 960;
 
         InitWindow(resources.config.screenW, resources.config.screenH, "Open-AITD");
-        
+        SetExitKey(KEY_F10);
+
         resources.loadTexts("data/texts/english.txt");
         resources.loadFont("newdata/font.ttf", 16 * resources.config.screenH / 200);
         resources.stages.resize(8);
@@ -127,7 +128,7 @@ namespace openAITD {
             timeDelta = GetFrameTime();
             if (state == AppState::Intro) {
                 processWorld(timeDelta);
-                if (IsKeyPressed(KEY_SPACE)) {
+                if (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_ESCAPE)) {
                     world.gameOver = true;
                 }
                 if (world.gameOver) {
@@ -138,14 +139,15 @@ namespace openAITD {
                 if (world.foundItem != -1) {
                     foundScreen.process(timeDelta);
                 }
+                else if (world.player.allowInventory && IsKeyPressed(KEY_ENTER)) {
+                    inventoryScreen.reload();
+                    state = AppState::Inventory;
+                }
                 else {
                     world.player.space = IsKeyDown(KEY_SPACE);
                     processWorld(timeDelta);
                 }
-                if (world.player.allowInventory && IsKeyPressed(KEY_ENTER)) {
-                    inventoryScreen.reload();
-                    state = AppState::Inventory;
-                }
+
             }
             else if (state == AppState::Inventory) {   
                 inventoryScreen.process(timeDelta);
