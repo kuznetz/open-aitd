@@ -115,13 +115,17 @@ namespace openAITD {
 				if (gobj.animation.id == -1) continue;
 
 				auto mdl = resources->models.getModel(gobj.modelId);
-				auto anim = mdl->animations[gobj.animation.id];
-				if (anim == 0) {
-					printf("Miss animation %d in model %d\n", gobj.animation.id, gobj.modelId);
-					gobj.animation.id = -1;
-					continue;
-				}
+				
+                if (std::find(mdl->animsIds.begin(), mdl->animsIds.end(), gobj.animation.id) == mdl->animsIds.end())
+                {
+                    printf("Miss animation %d in model %d\n", gobj.animation.id, gobj.modelId);
+                    gobj.animation.id = -1;
+                    continue;
+                }
 
+                //auto anim = mdl->animations[gobj.animation.id];
+                auto animIdx = mdl->animations[gobj.animation.id];
+                
                 if (gobj.animation.prevId != gobj.animation.id) {
                     gobj.animation.animTime = 0;
                     gobj.animation.animEnd = 0;
