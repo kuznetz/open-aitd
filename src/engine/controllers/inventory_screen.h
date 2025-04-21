@@ -118,6 +118,11 @@ namespace openAITD {
 			reloadActions();
 		}
 
+		void submit() {
+			world->curInvGObject = world->inventory[curItemIdx];
+			world->curInvAction = 1 << (curActions[curActionIdx] - 23);
+		}
+
 		void processKeys() {
 			if (IsKeyPressed(KEY_ESCAPE)) {
 				if (!selAction) {
@@ -133,7 +138,9 @@ namespace openAITD {
 					selAction = true;
 				}
 				else {
-
+					submit();
+					exit = true;
+					return;
 				}
 			}
 			if (IsKeyPressed(KEY_UP)) {

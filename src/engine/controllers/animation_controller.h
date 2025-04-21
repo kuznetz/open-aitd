@@ -136,14 +136,21 @@ namespace openAITD {
 				auto mdl = resources->models.getModel(gobj.modelId);
 				auto anim = mdl->animations[gobj.animation.id];
 				if (anim == 0) {
-					printf("Miss animation %d in model %d", gobj.animation.id, gobj.modelId);
+					printf("Miss animation %d in model %d\n", gobj.animation.id, gobj.modelId);
 					gobj.animation.id = -1;
 					continue;
 				}
+
+                if (gobj.animation.prevId != gobj.animation.id) {
+                    gobj.animation.animTime = 0;
+                    gobj.animation.animEnd = 0;
+                }
+
 				gobj.animation.animTime += timeDelta;
 				gobj.animation.animFrame = (gobj.animation.animTime / frameT);
 				auto& curFrame = gobj.animation.animFrame;
 				if (curFrame >= anim->frameCount) {
+                    printf("animEnd = 1\n");
 					gobj.animation.animEnd = 1;
 					if (!gobj.animation.bitField.repeat) {
 						gobj.animation.id = gobj.animation.nextId;

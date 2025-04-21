@@ -62,6 +62,11 @@ namespace openAITD {
 		string messageText;
 		float messageTime = 0;
 
+		GameObject* takedObj = 0;
+		GameObject* curInvGObject = 0;
+		GameObject* inHandObj = 0;
+		int curInvAction = 0;
+
 		World(Resources* res) {
 			this->resources = res;
 		}
@@ -184,8 +189,6 @@ namespace openAITD {
 		gobj.animation.scriptAnimId = animId;
 		gobj.animation.id = animId;
 		gobj.animation.nextId = -1;
-		gobj.animation.animTime = 0;
-		gobj.animation.animEnd = 0;
 		gobj.animation.flags = 1;
 	}
 
@@ -193,15 +196,13 @@ namespace openAITD {
 		gobj.animation.scriptAnimId = animId;
 		gobj.animation.id = animId;
 		gobj.animation.nextId = nextAnimId;
-		gobj.animation.animTime = 0;
-		gobj.animation.animEnd = 0;
 		gobj.animation.flags = 0;
 	}
 
 	void World::setModel(GameObject& gobj, int modelId) {
 		gobj.modelId = modelId;
-		gobj.animation.id = 0;
-		gobj.animation.animTime = 0;
+		//gobj.animation.id = 0;
+		//gobj.animation.animTime = 0;
 	}
 
 	void World::loadVars(string path)
@@ -224,6 +225,7 @@ namespace openAITD {
 		gobj.location.stageId = -1;
 		gobj.invItem.bitField.in_inventory = 1;
 		inventory.push_back(&gobj);
+		takedObj = &gobj;
 	};
 
 }

@@ -15,6 +15,22 @@ namespace openAITD {
 			this->resources = world->resources;
 		}
 
+		void processRotate(GameObject& gobj, float timeDelta) {
+			float rotate = 0;
+			if (IsKeyDown(KEY_LEFT)) {
+				rotate = 1;
+			}
+			if (IsKeyDown(KEY_RIGHT)) {
+				rotate = -1;
+			}
+			if (rotate != 0) {
+				rotate = rotate * PI * timeDelta;
+				auto q = QuaternionFromAxisAngle({ 0,1,0 }, rotate);
+				auto r = gobj.location.rotation;
+				gobj.location.rotation = QuaternionMultiply(r, q);
+			}
+		}
+
 		void processObj(GameObject& gobj, float timeDelta) {
 			bool isAction = false;
 			int nextAnimation = gobj.animation.id;

@@ -62,14 +62,14 @@ namespace openAITD {
 
 			auto& f = resources->mainFont;
 			const char* m = "New item:";
-			raylib::Rectangle r = { 0, screenH * 0.10, screenW, 0 };
+			raylib::Rectangle r = { 0, screenH * 0.05, screenW, 0 };
 			resources->drawCentered("New item:", r, WHITE);
 			r.y += f.baseSize;
 			resources->drawCentered(name.c_str(), r, GOLD);
 
-			r = { 0, screenH * 0.8f, (screenW/2.f), 0 };
+			r = { (screenW / 4.f), (screenH * 0.95f) - f.baseSize, (screenW / 4.f), 0 };
 			resources->drawCentered("Leave", r, leave ? YELLOW : GRAY);
-			r = { r.width, r.y, r.width, 0 };
+			r = { r.x + r.width, r.y, r.width, 0 };
 			resources->drawCentered("Take", r, leave ? GRAY : YELLOW);
 
 			EndDrawing();

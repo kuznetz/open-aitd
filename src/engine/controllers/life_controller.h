@@ -149,6 +149,16 @@ namespace openAITD {
 				int r = (this->world->gobjects[obj].invItem.flags & 0xC000) ? 1 : 0;
 				return r;
 				}, "IS_FOUND");
+			lua->CreateFunction([this](int obj) {
+				return this->world->gobjects[obj].invItem.bitField.in_inventory;
+				}, "IN_INVENTORY");
+			lua->CreateFunction([this]() -> int {
+				return this->world->curInvAction;
+				}, "ACTION");
+			lua->CreateFunction([this]() {
+				return this->world->inHandObj->id;
+				}, "IN_HAND");
+			
 			lua->CreateFunction([this](int obj) -> int {
 				return (this->world->gobjects[obj].track.mark);
 				}, "MARK");
@@ -186,9 +196,6 @@ namespace openAITD {
 				this->world->messageText = resources->texts[messId];
 				this->world->messageTime = 5;
 				}, "MESSAGE");
-			lua->CreateFunction([this](int allow) {
-				this->world->player.allowInventory = !!allow;
-				}, "ALLOW_INVENTORY");
 			lua->CreateFunction([this](int obj, int a1, int a2, int a3, int a4, int a5, int a6, int a7) {
 				auto& a = this->world->player.animations;
 				a.idle = a1;
@@ -239,6 +246,9 @@ namespace openAITD {
 			}, "CHANGE_ROOM");
 
 			//INVENTORY
+			lua->CreateFunction([this](int allow) {
+				this->world->player.allowInventory = !!allow;
+				}, "ALLOW_INVENTORY");
 			lua->CreateFunction([this](int obj) {
 				auto& gobj = this->world->gobjects[obj];
 				if (gobj.invItem.foundTimeout > this->world->chrono) return;
@@ -246,8 +256,8 @@ namespace openAITD {
 				this->world->foundItem = obj;
 				}, "FOUND");
 			lua->CreateFunction([this](int obj) {
-				//TODO: IN_HAND
-				}, "IN_HAND");
+				return this->world->inHandObj = &this->world->gobjects[obj];
+				}, "SET_IN_HAND");
 			lua->CreateFunction([this](int obj) {
 				world->take(obj);
 				}, "TAKE");
@@ -309,7 +319,10 @@ namespace openAITD {
 					break;
 				};
 				}, "DO_MOVE");
-			//Process rotation
+			lua->CreateFunction([this](int objId) {
+				auto& obj = this->world->gobjects[objId];
+				playerContr->processRotate(obj, curTimeDelta);
+				}, "MANUAL_ROT");			
 			lua->CreateFunction([this](int obj) {
 				//Not needed
 				}, "DO_ROT_ZV");
@@ -429,6 +442,20 @@ namespace openAITD {
 			}
 		}
 
+		void executeLife(int lifeId, int objId) {
+			auto& f = funcs.find(lifeId);
+			if (f == funcs.end()) {
+				cout << "Life " << lifeId << " not found, (objId: " << objId << ")" << endl;
+				return;
+			}
+
+			string errstr;
+			if (!f->second.func->Execute(execCb, &errstr, objId)) {
+				cout << "Execute life_" << lifeId << " error: " << errstr << endl;
+			}
+			f->second.executed = true;
+		}
+
 		void process(float timeDelta) {
 			curTimeDelta = timeDelta;
 
@@ -437,22 +464,30 @@ namespace openAITD {
 				it->second.executed = false;
 			}
 
-			for (int i = 0; i < world->gobjects.size(); i++) {
-				
+			for (int i = 0; i < world->gobjects.size(); i++) {				
 				auto& gobj = world->gobjects[i];
 				if (!isObjectActive(gobj)) continue;
+				executeLife(gobj.lifeId, i);
+			}
 
-				auto& f = funcs.find(gobj.lifeId);
-				if (f == funcs.end()) {
-					cout << "Life " << gobj.lifeId << "(obj: " << i << ") not found, " << endl;
-					continue;
-				}
+			if (world->takedObj) {
+				auto gobj = world->takedObj;
+				world->curInvAction = 2048;
+				executeLife(gobj->invItem.lifeId, gobj->id);
+				world->curInvAction = 0;
+				world->takedObj = 0;
+			}
 
-				string errstr;
-				if (!f->second.func->Execute(execCb, &errstr, i)) {
-					cout << "Execute life_" << i << " error: " << errstr << endl;
-				}
-				f->second.executed = true;
+			if (world->curInvGObject) {
+				executeLife(world->curInvGObject->invItem.lifeId, world->curInvGObject->id);
+				world->curInvGObject = 0;
+				world->curInvAction = 0;
+			}
+
+			if (world->inHandObj) {
+    			world->curInvAction = world->player.space ? 8192 : 0;
+				auto gobj = world->inHandObj;
+				executeLife(gobj->invItem.lifeId, gobj->id);
 			}
 
 			/*string s = "";
