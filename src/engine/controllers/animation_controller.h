@@ -4,25 +4,6 @@
 
 using namespace std;
 
-inline void BuildPoseFromParentJoints(BoneInfo* bones, int boneCount, Transform* transforms)
-{
-    for (int i = 0; i < boneCount; i++)
-    {
-        if (bones[i].parent >= 0)
-        {
-            if (bones[i].parent > i)
-            {
-                TRACELOG(LOG_WARNING, "Assumes bones are toplogically sorted, but bone %d has parent %d. Skipping.", i, bones[i].parent);
-                continue;
-            }
-            transforms[i].rotation = QuaternionMultiply(transforms[bones[i].parent].rotation, transforms[i].rotation);
-            transforms[i].translation = Vector3RotateByQuaternion(transforms[i].translation, transforms[bones[i].parent].rotation);
-            transforms[i].translation = Vector3Add(transforms[i].translation, transforms[bones[i].parent].translation);
-            transforms[i].scale = Vector3Multiply(transforms[i].scale, transforms[bones[i].parent].scale);
-        }
-    }
-}
-
 namespace openAITD {
 
 	const float frameT = 1. / 60;
@@ -149,9 +130,12 @@ namespace openAITD {
 				gobj.animation.animTime += timeDelta;
 				gobj.animation.animFrame = (gobj.animation.animTime / frameT);
 				auto& curFrame = gobj.animation.animFrame;
+
+                if (curFrame+1 >= anim->frameCount) {
+                    gobj.animation.animEnd = 1;
+                }
+
 				if (curFrame >= anim->frameCount) {
-                    printf("animEnd = 1\n");
-					gobj.animation.animEnd = 1;
 					if (!gobj.animation.bitField.repeat) {
 						gobj.animation.id = gobj.animation.nextId;
 						gobj.animation.animTime = 0;
