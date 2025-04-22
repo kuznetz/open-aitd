@@ -1,14 +1,16 @@
 ﻿#pragma once
 #include <vector>
 #include <string>
-//#include <tiny_gltf.h>
+#include <cstring>
 #include "../raylib.h"
+#include <external/cgltf.h>
 
-using namespace raylib;
-using namespace std;
+//using namespace raylib;
 
-namespace GLTFAnimations {
-    #include <external/cgltf.h>
+namespace GLTFModel {
+
+    using namespace ::std;
+    using namespace ::raylib;
 
     struct BoneChannels {
         cgltf_animation_channel* translate;
@@ -17,47 +19,145 @@ namespace GLTFAnimations {
         cgltf_interpolation_type interpolationType;
     };
 
-    class Animations {
+    struct Animation {
+        cgltf_animation* anim;
+        vector<BoneChannels> boneChannels;
+        vector <vector<Transform>> bakedPoses;
+        float transition;
+        float duration;
+    };
+
+    struct Bone {
+        int parent;
+    };
+
+    class Model {
     public:
-        cgltf_data* data;
-        int* parents;
-        BoneChannels** boneChannels;
+        raylib::Model model;
+        cgltf_data* data = 0;
+        cgltf_skin* skin = 0;
+        vector<Bone> bones;
+        vector<Animation> animations;
+        Transform* curPose = 0;
+        BoundingBox bounds;
         
-        ~Animations() {
-            //TODO: destructor
+        ~Model() {
+            if (!data) return;
+            UnloadModel(model);
+            if (curPose) delete[] curPose;
+            cgltf_free(data);
         }
 
         void load(const char* fileName) {
             data = LoadData(fileName);
-            parents = makeBoneParents(data);
-            boneChannels = makeBoneChannels(data);
+            model = raylib::LoadModel(fileName);
+            bounds = GetModelBoundingBox(model);
+            if (data->skins_count > 1)
+            {
+                TRACELOG(LOG_WARNING, "MODEL: [%s] expected exactly one skin to load animation data from, but found %i", fileName, data->skins_count);
+            }
+            if (!data->skins_count) return;
+            skin = &data->skins[0];
+            makeBones();
+            makeAnimations();
         }
 
-        void applyPose(Model& model, int animationId, float time) {
-            Transform* pose = GetTimePose(data, boneChannels[animationId], parents, time);
-            UpdateModelAnimationBones(model, pose);
-            delete[] pose;
+        void CalcPoseByTime(Transform* pose, int animationId, float time) const {
+            auto boneChannels = animations[animationId].boneChannels.data();
+            for (int k = 0; k < skin->joints_count; k++)
+            {
+                Vector3 translation = { skin->joints[k]->translation[0], skin->joints[k]->translation[1], skin->joints[k]->translation[2] };
+                Quaternion rotation = { skin->joints[k]->rotation[0], skin->joints[k]->rotation[1], skin->joints[k]->rotation[2], skin->joints[k]->rotation[3] };
+                Vector3 scale = { skin->joints[k]->scale[0], skin->joints[k]->scale[1], skin->joints[k]->scale[2] };
+
+                if (boneChannels[k].translate)
+                {
+                    if (!GetPoseAtTimeGLTF(boneChannels[k].interpolationType, boneChannels[k].translate->sampler->input, boneChannels[k].translate->sampler->output, time, &translation))
+                    {
+                        TRACELOG(LOG_INFO, "MODEL: [%s] Failed to load translate pose data for bone %s", fileName, animations[i].bones[k].name);
+                    }
+                }
+
+                if (boneChannels[k].rotate)
+                {
+                    if (!GetPoseAtTimeGLTF(boneChannels[k].interpolationType, boneChannels[k].rotate->sampler->input, boneChannels[k].rotate->sampler->output, time, &rotation))
+                    {
+                        TRACELOG(LOG_INFO, "MODEL: [%s] Failed to load rotate pose data for bone %s", fileName, animations[i].bones[k].name);
+                    }
+                }
+
+                if (boneChannels[k].scale)
+                {
+                    if (!GetPoseAtTimeGLTF(boneChannels[k].interpolationType, boneChannels[k].scale->sampler->input, boneChannels[k].scale->sampler->output, time, &scale))
+                    {
+                        TRACELOG(LOG_INFO, "MODEL: [%s] Failed to load scale pose data for bone %s", fileName, animations[i].bones[k].name);
+                    }
+                }
+
+                pose[k] = {
+                    translation,
+                    rotation,
+                    scale
+                };
+            }
+        }
+
+        void bakePoses(int fps) {
+            for (int i = 0; i < animations.size(); i++) {
+                auto& anim = animations[i];
+                float t = 0;
+                int frameCount = ceil(anim.duration * fps) + 1;
+                anim.bakedPoses.resize(frameCount);
+                for (int j = 0; j < frameCount; j++) {
+                    anim.bakedPoses[j].resize(bones.size());
+                    CalcPoseByTime(anim.bakedPoses[j].data(), i, t);
+                    t = (float)j / fps;
+                }
+            }
+        }
+
+        void PoseLerp(Transform* result, const Transform* poseFrom, const Transform* poseTo, const float n) const {
+            for (int i = 0; i < skin->joints_count; i++) {
+                result[i].translation = Vector3Lerp(poseFrom[i].translation, poseTo[i].translation, n);
+                result[i].rotation = QuaternionSlerp(poseFrom[i].rotation, poseTo[i].rotation, n);
+                result[i].scale = Vector3Lerp(poseFrom[i].scale, poseTo[i].scale, n);
+            }
+        }
+
+        void ApplyPose(Transform* pose) {
+            memcpy(curPose, pose, sizeof Transform * bones.size());
+            ApplyParentJoints(curPose);
+            UpdateBones(model, curPose);
+            UpdateSkin(model);
+            bounds = GetModelBoundingBox(model);
+        }
+
+        void Render() const {
+            for (int i = 0; i < model.meshCount; i++)
+            {
+                DrawMesh(model.meshes[i], model.materials[model.meshMaterial[i]], model.transform);
+            }
         }
 
     private:
 
-        static cgltf_result LoadFileGLTFCallback(const struct cgltf_memory_options* memoryOptions, const struct cgltf_file_options* fileOptions, const char* path, cgltf_size* size, void** data)
+        void ApplyParentJoints(Transform* transforms)
         {
-            int filesize;
-            unsigned char* filedata = LoadFileData(path, &filesize);
-
-            if (filedata == NULL) return cgltf_result_io_error;
-
-            *size = filesize;
-            *data = filedata;
-
-            return cgltf_result_success;
-        }
-
-        // Release file data callback for cgltf
-        static void ReleaseFileGLTFCallback(const struct cgltf_memory_options* memoryOptions, const struct cgltf_file_options* fileOptions, void* data)
-        {
-            UnloadFileData((unsigned char*)data);
+            for (int i = 0; i < skin->joints_count; i++)
+            {
+                if (bones[i].parent >= 0)
+                {
+                    if (bones[i].parent > i)
+                    {
+                        TRACELOG(LOG_WARNING, "Assumes bones are toplogically sorted, but bone %d has parent %d. Skipping.", i, bones[i].parent);
+                        continue;
+                    }
+                    transforms[i].rotation = QuaternionMultiply(transforms[bones[i].parent].rotation, transforms[i].rotation);
+                    transforms[i].translation = Vector3RotateByQuaternion(transforms[i].translation, transforms[bones[i].parent].rotation);
+                    transforms[i].translation = Vector3Add(transforms[i].translation, transforms[bones[i].parent].translation);
+                    transforms[i].scale = Vector3Multiply(transforms[i].scale, transforms[bones[i].parent].scale);
+                }
+            }
         }
 
         static cgltf_data* LoadData(const char* fileName) {
@@ -90,57 +190,50 @@ namespace GLTFAnimations {
             return data;
         }
 
-        static int* makeBoneParents(cgltf_data* data)
+        void makeBones()
         {
-            const cgltf_skin& skin = data->skins[0];
-            int* bones = new int[(int)skin.joints_count];
-            for (unsigned int i = 0; i < skin.joints_count; i++)
+            bones.resize(skin->joints_count);
+            curPose = new Transform[skin->joints_count];
+            for (unsigned int i = 0; i < skin->joints_count; i++)
             {
-                cgltf_node& node = *skin.joints[i];
+                cgltf_node& node = *skin->joints[i];
                 // Find parent bone index
                 int parentIndex = -1;
-                for (unsigned int j = 0; j < skin.joints_count; j++)
+                for (unsigned int j = 0; j < skin->joints_count; j++)
                 {
-                    if (skin.joints[j] == node.parent)
+                    if (skin->joints[j] == node.parent)
                     {
                         parentIndex = (int)j;
                         break;
                     }
                 }
-                bones[i] = parentIndex;
+                bones[i].parent = parentIndex;
             }
-            return bones;
         }
 
-        static BoneChannels** makeBoneChannels(cgltf_data* data)
+        void makeAnimations()
         {
-            if (data->skins_count == 0) {
-                TRACELOG(LOG_WARNING, "MODEL: [%s] No skins", fileName);
-                return 0;
-            }
-
-            if (data->skins_count > 1)
-            {
-                TRACELOG(LOG_WARNING, "MODEL: [%s] expected exactly one skin to load animation data from, but found %i", fileName, data->skins_count);
-            }
-
-            const cgltf_skin& skin = data->skins[0];
-            BoneChannels** result = new BoneChannels * [data->animations_count];
+            animations.resize(data->animations_count);
             for (unsigned int i = 0; i < data->animations_count; i++)
             {
                 cgltf_animation& animData = data->animations[i];
+                animations[i].anim = &animData;
+                animations[i].boneChannels.resize((int)skin->joints_count);
+                animations[i].duration = 0;
+                BoneChannels* boneChannels = animations[i].boneChannels.data();
 
-                BoneChannels* boneChannels = new BoneChannels[(int)skin.joints_count];
-                result[i] = boneChannels;
+                //transition - second keyframe
+                auto inp = animData.channels[0].sampler->input;
+                cgltf_accessor_read_float(inp, 1, &animations[i].transition, 1);
 
                 for (unsigned int j = 0; j < animData.channels_count; j++)
                 {
                     cgltf_animation_channel channel = animData.channels[j];
                     int boneIndex = -1;
 
-                    for (unsigned int k = 0; k < skin.joints_count; k++)
+                    for (unsigned int k = 0; k < skin->joints_count; k++)
                     {
-                        if (animData.channels[j].target_node == skin.joints[k])
+                        if (animData.channels[j].target_node == skin->joints[k])
                         {
                             boneIndex = k;
                             break;
@@ -187,14 +280,33 @@ namespace GLTFAnimations {
                         continue;
                     }
 
+                    if (t > animations[i].duration) {
+                        animations[i].duration = t;
+                    }
                 }
 
                 //TRACELOG(LOG_INFO, "MODEL: [%s] Loaded animation: %s (%d frames, %fs)", fileName, (animData.name != NULL) ? animData.name : "NULL", animations[i].frameCount, animDuration);
                 //RL_FREE(boneChannels);
             }
+        }
 
-            //cgltf_free(data);
-            return result;
+        static cgltf_result LoadFileGLTFCallback(const struct cgltf_memory_options* memoryOptions, const struct cgltf_file_options* fileOptions, const char* path, cgltf_size* size, void** data)
+        {
+            int filesize;
+            unsigned char* filedata = LoadFileData(path, &filesize);
+
+            if (filedata == NULL) return cgltf_result_io_error;
+
+            *size = filesize;
+            *data = filedata;
+
+            return cgltf_result_success;
+        }
+
+        // Release file data callback for cgltf
+        static void ReleaseFileGLTFCallback(const struct cgltf_memory_options* memoryOptions, const struct cgltf_file_options* fileOptions, void* data)
+        {
+            UnloadFileData((unsigned char*)data);
         }
 
         static bool GetPoseAtTimeGLTF(cgltf_interpolation_type interpolationType, cgltf_accessor* input, cgltf_accessor* output, float time, void* data)
@@ -331,72 +443,7 @@ namespace GLTFAnimations {
             return true;
         }
 
-        static void BuildPoseFromParentJoints(Transform* transforms, cgltf_data* data, int* boneParent)
-        {
-            const cgltf_skin& skin = data->skins[0];
-            for (int i = 0; i < skin.joints_count; i++)
-            {
-                if (boneParent[i] >= 0)
-                {
-                    if (boneParent[i] > i)
-                    {
-                        TRACELOG(LOG_WARNING, "Assumes bones are toplogically sorted, but bone %d has parent %d. Skipping.", i, boneParent[i]);
-                        continue;
-                    }
-                    transforms[i].rotation = QuaternionMultiply(transforms[boneParent[i]].rotation, transforms[i].rotation);
-                    transforms[i].translation = Vector3RotateByQuaternion(transforms[i].translation, transforms[boneParent[i]].rotation);
-                    transforms[i].translation = Vector3Add(transforms[i].translation, transforms[boneParent[i]].translation);
-                    transforms[i].scale = Vector3Multiply(transforms[i].scale, transforms[boneParent[i]].scale);
-                }
-            }
-        }
-
-        static Transform* GetTimePose(cgltf_data* data, BoneChannels* boneChannels, int* parents, float time) {
-            const cgltf_skin& skin = data->skins[0];
-
-            Transform* framePoses = new Transform[skin.joints_count];
-            for (int k = 0; k < skin.joints_count; k++)
-            {
-                Vector3 translation = { skin.joints[k]->translation[0], skin.joints[k]->translation[1], skin.joints[k]->translation[2] };
-                Quaternion rotation = { skin.joints[k]->rotation[0], skin.joints[k]->rotation[1], skin.joints[k]->rotation[2], skin.joints[k]->rotation[3] };
-                Vector3 scale = { skin.joints[k]->scale[0], skin.joints[k]->scale[1], skin.joints[k]->scale[2] };
-
-                if (boneChannels[k].translate)
-                {
-                    if (!GetPoseAtTimeGLTF(boneChannels[k].interpolationType, boneChannels[k].translate->sampler->input, boneChannels[k].translate->sampler->output, time, &translation))
-                    {
-                        TRACELOG(LOG_INFO, "MODEL: [%s] Failed to load translate pose data for bone %s", fileName, animations[i].bones[k].name);
-                    }
-                }
-
-                if (boneChannels[k].rotate)
-                {
-                    if (!GetPoseAtTimeGLTF(boneChannels[k].interpolationType, boneChannels[k].rotate->sampler->input, boneChannels[k].rotate->sampler->output, time, &rotation))
-                    {
-                        TRACELOG(LOG_INFO, "MODEL: [%s] Failed to load rotate pose data for bone %s", fileName, animations[i].bones[k].name);
-                    }
-                }
-
-                if (boneChannels[k].scale)
-                {
-                    if (!GetPoseAtTimeGLTF(boneChannels[k].interpolationType, boneChannels[k].scale->sampler->input, boneChannels[k].scale->sampler->output, time, &scale))
-                    {
-                        TRACELOG(LOG_INFO, "MODEL: [%s] Failed to load scale pose data for bone %s", fileName, animations[i].bones[k].name);
-                    }
-                }
-
-                framePoses[k] = {
-                    translation,
-                    rotation,
-                    scale
-                };
-            }
-
-            return framePoses;
-            BuildPoseFromParentJoints(framePoses, data, parents);
-        }
-
-        static void UpdateModelAnimationBones(Model& model, Transform* pose)
+        static void UpdateBones(raylib::Model& model, Transform* pose)
         {
             // Get first mesh which have bones
             int firstMeshWithBones = -1;
@@ -449,13 +496,76 @@ namespace GLTFAnimations {
                 {
                     if (model.meshes[i].boneMatrices)
                     {
-                        memcpy(model.meshes[i].boneMatrices,
+                       memcpy(model.meshes[i].boneMatrices,
                             model.meshes[firstMeshWithBones].boneMatrices,
                             model.meshes[i].boneCount * sizeof(model.meshes[i].boneMatrices[0]));
                     }
                 }
             }
-            
+        }
+
+        static void UpdateSkin(raylib::Model& model)
+        {
+            for (int m = 0; m < model.meshCount; m++)
+            {
+                Mesh mesh = model.meshes[m];
+                Vector3 animVertex = { 0 };
+                Vector3 animNormal = { 0 };
+                int boneId = 0;
+                int boneCounter = 0;
+                float boneWeight = 0.0;
+                bool updated = false; // Flag to check when anim vertex information is updated
+                const int vValues = mesh.vertexCount * 3;
+
+                // Skip if missing bone data, causes segfault without on some models
+                if ((mesh.boneWeights == NULL) || (mesh.boneIds == NULL)) continue;
+
+                for (int vCounter = 0; vCounter < vValues; vCounter += 3)
+                {
+                    mesh.animVertices[vCounter] = 0;
+                    mesh.animVertices[vCounter + 1] = 0;
+                    mesh.animVertices[vCounter + 2] = 0;
+                    if (mesh.animNormals != NULL)
+                    {
+                        mesh.animNormals[vCounter] = 0;
+                        mesh.animNormals[vCounter + 1] = 0;
+                        mesh.animNormals[vCounter + 2] = 0;
+                    }
+
+                    // Iterates over 4 bones per vertex
+                    for (int j = 0; j < 4; j++, boneCounter++)
+                    {
+                        boneWeight = mesh.boneWeights[boneCounter];
+                        boneId = mesh.boneIds[boneCounter];
+
+                        // Early stop when no transformation will be applied
+                        if (boneWeight == 0.0f) continue;
+                        animVertex = { mesh.vertices[vCounter], mesh.vertices[vCounter + 1], mesh.vertices[vCounter + 2] };
+                        animVertex = Vector3Transform(animVertex, model.meshes[m].boneMatrices[boneId]);
+                        mesh.animVertices[vCounter] += animVertex.x * boneWeight;
+                        mesh.animVertices[vCounter + 1] += animVertex.y * boneWeight;
+                        mesh.animVertices[vCounter + 2] += animVertex.z * boneWeight;
+                        updated = true;
+
+                        // Normals processing
+                        // NOTE: We use meshes.baseNormals (default normal) to calculate meshes.normals (animated normals)
+                        if ((mesh.normals != NULL) && (mesh.animNormals != NULL))
+                        {
+                            animNormal = { mesh.normals[vCounter], mesh.normals[vCounter + 1], mesh.normals[vCounter + 2] };
+                            animNormal = Vector3Transform(animNormal, MatrixTranspose(MatrixInvert(model.meshes[m].boneMatrices[boneId])));
+                            mesh.animNormals[vCounter] += animNormal.x * boneWeight;
+                            mesh.animNormals[vCounter + 1] += animNormal.y * boneWeight;
+                            mesh.animNormals[vCounter + 2] += animNormal.z * boneWeight;
+                        }
+                    }
+                }
+
+                if (updated)
+                {
+                    rlUpdateVertexBuffer(mesh.vboId[0], mesh.animVertices, mesh.vertexCount * 3 * sizeof(float), 0); // Update vertex position
+                    if (mesh.normals != NULL) rlUpdateVertexBuffer(mesh.vboId[2], mesh.animNormals, mesh.vertexCount * 3 * sizeof(float), 0); // Update vertex normals
+                }
+            }
         }
 
     };
