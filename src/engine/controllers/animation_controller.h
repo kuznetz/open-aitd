@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "../resources/missed_anims.h"
 #include "../resources/resources.h"
 #include "../world/world.h"
 
@@ -9,6 +10,7 @@ namespace openAITD {
 
 	class AnimationController {
 	public:
+        MissedAnims missedAnims;
 		World* world;
 		Resources* resources;
 
@@ -51,14 +53,14 @@ namespace openAITD {
 				if (objAni.id == -1) continue;
                 auto mdl = resources->models.getModel(gobj.modelId);
 
-                if (gobj.modelId != gobj.prevModelId)  {
-                    objAni.oldPose.resize(mdl->model.bones.size());
+                if (gobj.modelId != gobj.prevModelId) {
+                    gobj.animation.oldPose.resize(0);
                 }
-				
+
                 auto p = mdl->animsIds.find(objAni.id);
                 if (p == mdl->animsIds.end())
                 {
-                    printf("Miss animation %d in model %d\n", objAni.id, gobj.modelId);
+                    missedAnims.addMissed(gobj.modelId, objAni.id);
                     objAni.id = -1;
                     continue;
                 }
@@ -73,8 +75,8 @@ namespace openAITD {
 				objAni.animFrame = (objAni.animTime * resources->config.fps);
 				auto& curFrame = objAni.animFrame;
 
-                auto& anim = mdl->model.animations[objAni.animIdx];
-                auto frameCount = anim.bakedPoses.size();
+                auto& mdlAnim = mdl->model.animations[objAni.animIdx];
+                auto frameCount = mdlAnim.bakedPoses.size();
                 if (curFrame+1 >= frameCount) {
                     objAni.animEnd = 1;
                 }
@@ -88,8 +90,10 @@ namespace openAITD {
 					}
 					else {
 						while (curFrame >= frameCount) {
-							objAni.animTime -= (float)frameCount / resources->config.fps;
-							curFrame -= frameCount;
+                            objAni.animTime -= mdlAnim.duration;
+                            objAni.animFrame = (objAni.animTime * resources->config.fps);
+                            //objAni.animTime -= (float)frameCount / resources->config.fps;
+							//curFrame -= frameCount;
 						}
                         objAni.prevMoveRoot = { 0,0,0 };
                     }
@@ -98,7 +102,7 @@ namespace openAITD {
                     if (objAni.prevId != objAni.id) {
                         objAni.prevMoveRoot = { 0,0,0 };
                     }
-                    objAni.moveRoot = anim.bakedPoses[curFrame][0].translation;
+                    objAni.moveRoot = mdlAnim.rootMotion[curFrame].translation;
 				}
 
                 gobj.prevModelId = gobj.modelId;

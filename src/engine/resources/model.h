@@ -22,6 +22,7 @@ namespace openAITD {
     struct Animation {
         cgltf_animation* anim;
         vector<BoneChannels> boneChannels;
+        vector <Transform> rootMotion;
         vector <vector<Transform>> bakedPoses;
         float transition;
         float duration;
@@ -49,8 +50,11 @@ namespace openAITD {
         }
 
         void load(const char* fileName) {
-            data = LoadData(fileName);
             model = raylib::LoadModel(fileName);
+            data = LoadData(fileName);
+            if (!data) {
+                return;
+            }
             bounds = GetModelBoundingBox(model);
             if (data->skins_count > 1)
             {
@@ -108,9 +112,12 @@ namespace openAITD {
                 float t = 0;
                 int frameCount = ceil(anim.duration * fps) + 1;
                 anim.bakedPoses.resize(frameCount);
+                anim.rootMotion.resize(frameCount);
                 for (int j = 0; j < frameCount; j++) {
                     anim.bakedPoses[j].resize(bones.size());
                     CalcPoseByTime(anim.bakedPoses[j].data(), i, t);
+                    anim.rootMotion[j] = anim.bakedPoses[j][0];
+                    anim.bakedPoses[j][0].translation = { 0,0,0 };
                     t = (float)j / fps;
                 }
             }
@@ -133,6 +140,7 @@ namespace openAITD {
         }
 
         void Render() const {
+            if (!data) return;
             for (int i = 0; i < model.meshCount; i++)
             {
                 DrawMesh(model.meshes[i], model.materials[model.meshMaterial[i]], model.transform);

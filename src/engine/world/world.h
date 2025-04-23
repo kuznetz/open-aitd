@@ -27,8 +27,10 @@ namespace openAITD {
 		int objectId;
 		bool hasControl;
 		PlayerAnimations animations;
-		bool space;
 		bool allowInventory;
+
+		bool space;
+		int keyboard;
 	};
 
 	//Store all dynamic data in game

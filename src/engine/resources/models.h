@@ -47,10 +47,12 @@ namespace openAITD {
 		newMod.model.load(str.c_str());
 		newMod.model.bakePoses(config->fps);
 
-		for (int i = 0; i < newMod.model.data->animations_count; i++) {
-			char* s = newMod.model.data->animations[i].name + 2;
-			int aNum = std::stoi(s);
-			newMod.animsIds[aNum] = i;
+		if (newMod.model.data) {
+			for (int i = 0; i < newMod.model.data->animations_count; i++) {
+				char* s = newMod.model.data->animations[i].name + 2;
+				int aNum = std::stoi(s);
+				newMod.animsIds[aNum] = i;
+			}
 		}
 
 		str = modelsPath + "/" + to_string(id) + (alt ? "_alt" : "") + "/data.json";
