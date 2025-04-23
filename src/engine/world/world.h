@@ -93,6 +93,7 @@ namespace openAITD {
 		void setOnceAnimation(GameObject& gobj, int animId, int nextAnimId);
 		void setModel(GameObject& gobj, int modelId);
 		void take(int gObjId);
+		void drop(int itemObjId, int actorObjId);
 		Vector3 VectorChangeRoom(const Vector3 v, int fromRoomId, int toRoomId);
 		BoundingBox BoundsChangeRoom(const BoundingBox v, int fromRoomId, int toRoomId);
 	};
@@ -228,6 +229,32 @@ namespace openAITD {
 		gobj.invItem.bitField.in_inventory = 1;
 		inventory.push_back(&gobj);
 		takedObj = &gobj;
+	};
+
+	void World::drop(int itemObjId, int actorObjId)
+	{
+		auto& item = this->gobjects[itemObjId];
+		auto& actor = this->gobjects[actorObjId];
+
+		for (int i = 0; i < inventory.size(); i++) {
+			if (inventory[i]->id == itemObjId) {
+				inventory.erase(inventory.begin() + i);
+				break;
+			}
+		}
+		item.invItem.bitField.in_inventory = 0;
+		item.invItem.bitField.dropped = 1;
+		item.bitField.foundable = 1;
+		item.invItem.foundTimeout = chrono + 10;
+		
+		item.boundsType = BoundsType::rotated;
+		item.physics.boundsCached = false;
+		item.location.stageId = actor.location.stageId;
+		item.location.roomId = actor.location.roomId;
+		item.location.position = actor.location.position;
+		item.location.rotation = actor.location.rotation;
+
+		//action?
 	};
 
 }

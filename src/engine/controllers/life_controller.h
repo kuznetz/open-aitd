@@ -264,6 +264,9 @@ namespace openAITD {
 			lua->CreateFunction([this](int obj) {
 				world->take(obj);
 				}, "TAKE");
+			lua->CreateFunction([this](int itemObjId, int actorObjId) {
+				this->world->drop(itemObjId, actorObjId);
+				}, "DROP");
 
 			//Animations, tracks, rotations
 			lua->CreateFunction([this](int obj, int animId, int nextAnimId) {
@@ -281,6 +284,9 @@ namespace openAITD {
 			lua->CreateFunction([this](int obj, int anim1, int x1, int x2, int x3, int x4, int anim2) {
 				this->world->setOnceAnimation(this->world->gobjects[obj], anim1, anim2);
 				}, "HIT");
+			lua->CreateFunction([this](int obj, int fireAnim, int shootFrame, int emitPoint, int zvSize, int hitForce, int nextAnim) {
+				this->world->setOnceAnimation(this->world->gobjects[obj], fireAnim, nextAnim);
+				}, "FIRE");
 
 			lua->CreateFunction([this](int obj, int trackMode, int trackId, int positionInTrack) {
 				auto& gobj = this->world->gobjects[obj];
