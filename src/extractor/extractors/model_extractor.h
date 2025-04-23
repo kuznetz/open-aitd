@@ -187,9 +187,9 @@ void addAnimation(tinygltf::Model& m, Animation &anim, vector<Vector3>& bonePos,
                 break;
             case 1:
                 //eb.translates[i] = { b.delta[0] / 1000.0f, b.delta[1] / 1000.0f, b.delta[2] / 1000.0f };
-                eb.translates[i+1] = Vector3Transform(
+                eb.translates[i+1] = Vector3Add(bonePos[j], Vector3Transform(
                     { b.delta[0] / 1000.0f, b.delta[1] / 1000.0f, b.delta[2] / 1000.0f },
-                    roomMatMdl);
+                    roomMatMdl));
                 break;
             case 2:
                 eb.scales[i+1] = { b.delta[0] / 256.0f + 1.0f, b.delta[1] / 256.0f + 1.0f, b.delta[2] / 256.0f + 1.0f };
