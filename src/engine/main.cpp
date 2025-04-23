@@ -105,10 +105,8 @@ namespace openAITD {
     {
         AITDExtractor::extractAllData();
 
-        resources.config.screenW = 1280;
-        resources.config.screenH = 960;
-
         InitWindow(resources.config.screenW, resources.config.screenH, "Open-AITD");
+        SetTargetFPS(resources.config.fps);
         SetExitKey(KEY_F10);
 
         resources.loadTexts("data/texts/english.txt");

@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include "../raylib.h"
+#include "../resources/resources.h"
 
 using namespace std;
 namespace openAITD {
@@ -81,8 +82,10 @@ namespace openAITD {
 		Vector3 moveRoot;
 		int animEnd = 1; //0 = First cycle after changing animaton from script
 		int scriptAnimId = -1; //scriptAnimId stay after change to next anim
+		int animIdx;
 		int animFrame;
 		float animTime;
+		vector<Transform> oldPose;
 		union {
 			unsigned short int flags;
 			AnimationFlags bitField;
@@ -153,7 +156,10 @@ namespace openAITD {
 	public:
 		int id = -1;
 
+		//openAITD::Model* model;
+		int prevModelId = -1;
 		int modelId = -1;
+
 		BoundsType boundsType = BoundsType::simple;
 
 		GOLocation location;

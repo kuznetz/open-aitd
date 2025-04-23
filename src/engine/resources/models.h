@@ -4,7 +4,8 @@
 #include <string>
 
 #include "../raylib.h"
-#include "animation.h"
+#include "config.h"
+#include "model.h"
 
 using namespace std;
 namespace openAITD {
@@ -12,14 +13,7 @@ namespace openAITD {
 	struct RModel
 	{
 		Model model;
-
-		//ModelAnimation* animationsPtr;
-		//map<int,ModelAnimation*> animations;
-		//int animCount;
-
-		GLTFAnimations::Animations animations;
 		map<int, int> animsIds;
-
 		BoundingBox bounds;
 	};
 
@@ -27,31 +21,18 @@ namespace openAITD {
 	{
 	private:
 		map<int, RModel> models;
-		//For AITD1 - female character
+		//For AITD1 - Emily character
 		map<int, RModel> altModels;
 	public:
+		Config* config;
 		string modelsPath = "data/models";
+		RModels();
 		~RModels();
 		RModel* getModel(int idx, bool alt = false);
 		void clear();
 	};
 
-	//void loadAnimations() {
-	//	newMod.animationsPtr = LoadModelAnimations(str.c_str(), &newMod.animCount);
-	//	for (int i = 0; i < newMod.animCount; i++) {
-	//		char* s = newMod.animationsPtr[i].name + 2;
-	//		int aNum = std::stoi(s);
-	//		newMod.animations[aNum] = &newMod.animationsPtr[i];
-	//	}
-	//}
-
-	void loadAnimations2(RModel& model, const char* s) {
-		model.animations.load(s);
-		for (int i = 0; i < model.animations.data->animations_count; i++) {
-			char* s = model.animations.data->animations[i].name + 2;
-			int aNum = std::stoi(s);
-			model.animsIds[aNum] = i;
-		}
+	RModels::RModels() {
 	}
 
 	RModel* RModels::getModel(int id, bool alt)
@@ -63,10 +44,14 @@ namespace openAITD {
 		}
 		string str = modelsPath + "/" + to_string(id) + (alt ? "_alt" : "") + "/model.gltf";
 		auto& newMod = modMap[id];
-		newMod.model = LoadModel(str.c_str());
+		newMod.model.load(str.c_str());
+		newMod.model.bakePoses(config->fps);
 
-		//loadAnimations();
-		loadAnimations2(newMod, str.c_str());
+		for (int i = 0; i < newMod.model.data->animations_count; i++) {
+			char* s = newMod.model.data->animations[i].name + 2;
+			int aNum = std::stoi(s);
+			newMod.animsIds[aNum] = i;
+		}
 
 		str = modelsPath + "/" + to_string(id) + (alt ? "_alt" : "") + "/data.json";
 		std::ifstream ifs(str);
@@ -79,19 +64,7 @@ namespace openAITD {
 	}
 
 	void RModels::clear() {
-		for (const auto& kv : models) {
-			UnloadModel(kv.second.model);
-			//if (kv.second.animCount) {
-			//	UnloadModelAnimations(kv.second.animationsPtr, kv.second.animCount);
-			//}
-		}
 		models.clear();
-		for (const auto& kv : altModels) {
-			UnloadModel(kv.second.model);
-			//if (kv.second.animCount) {
-			//	UnloadModelAnimations(kv.second.animationsPtr, kv.second.animCount);
-			//}
-		}
 		altModels.clear();
 	}
 
