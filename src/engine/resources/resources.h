@@ -23,6 +23,10 @@ namespace openAITD {
 		vector<Track> tracks;
 		RModels models;
 
+		Resources() {
+			models.config = &config;
+		}
+
 		~Resources() {
 			UnloadFont(mainFont);
 		}

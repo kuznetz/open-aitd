@@ -105,10 +105,9 @@ namespace openAITD {
     {
         AITDExtractor::extractAllData();
 
-        resources.config.screenW = 1280;
-        resources.config.screenH = 960;
-
         InitWindow(resources.config.screenW, resources.config.screenH, "Open-AITD");
+        SetWindowState(FLAG_VSYNC_HINT);
+        SetTargetFPS(resources.config.fps);
         SetExitKey(KEY_F10);
 
         resources.loadTexts("data/texts/english.txt");
@@ -144,6 +143,22 @@ namespace openAITD {
                     state = AppState::Inventory;
                 }
                 else {
+                    world.player.space = IsKeyDown(KEY_SPACE);
+                    if (IsKeyDown(KEY_UP)) {
+                        world.player.keyboard = 1;
+                    }
+                    else if (IsKeyDown(KEY_DOWN)) {
+                        world.player.keyboard = 2;
+                    }
+                    else if (IsKeyDown(KEY_LEFT)) {
+                        world.player.keyboard = 4;
+                    }
+                    else if (IsKeyDown(KEY_RIGHT)) {
+                        world.player.keyboard = 8;
+                    }
+                    else {
+                        world.player.keyboard = 0;
+                    }
                     world.player.space = IsKeyDown(KEY_SPACE);
                     processWorld(timeDelta);
                 }

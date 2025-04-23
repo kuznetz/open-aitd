@@ -93,6 +93,9 @@ namespace openAITD {
 				return this->world->player.space? 1: 0;
 				}, "SPACE");
 			lua->CreateFunction([this](int obj) -> int {
+				return this->world->player.keyboard;
+				}, "KEYBOARD_INPUT");
+			lua->CreateFunction([this](int obj) -> int {
 				return 0; //TODO: FALLING
 				}, "FALLING");
 
@@ -274,6 +277,10 @@ namespace openAITD {
 				//ANIM_ONCE | ANIM_UNINTERRUPTABLE;
 				}, "SET_ANIM_ALL_ONCE");
 			
+			//Actions
+			lua->CreateFunction([this](int obj, int anim1, int x1, int x2, int x3, int x4, int anim2) {
+				this->world->setOnceAnimation(this->world->gobjects[obj], anim1, anim2);
+				}, "HIT");
 
 			lua->CreateFunction([this](int obj, int trackMode, int trackId, int positionInTrack) {
 				auto& gobj = this->world->gobjects[obj];
@@ -336,11 +343,6 @@ namespace openAITD {
 			lua->CreateFunction([this]() {
 				//TODO: DO_REAL_ZV
 				}, "DO_REAL_ZV");	
-
-			//Actions
-			lua->CreateFunction([this](int obj) {
-				//TODO: HIT
-				}, "HIT");
 
 			//Sound & music
 			lua->CreateFunction([this](int obj, int sampleId, int animId, int animFrame) {

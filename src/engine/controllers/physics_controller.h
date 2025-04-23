@@ -211,6 +211,11 @@ namespace openAITD {
 				if (collided) {
 					gobj.physics.objectColl = gobj2.id;
 					gobj2.physics.collidedBy = gobj.id;
+
+					//takable
+					if (gobj.track.mode == GOTrackMode::manual && gobj2.bitField.foundable) {
+						world->foundItem = gobj2.id;
+					}
 				}
 			}
 
