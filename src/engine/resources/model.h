@@ -7,7 +7,7 @@
 
 //using namespace raylib;
 
-namespace GLTFModel {
+namespace openAITD {
 
     using namespace ::std;
     using namespace ::raylib;

@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "../engine/resources/animation.h"
+#include "../engine/resources/model.h"
 #include "../engine/raylib.h"
 
 //using namespace std;
@@ -7,7 +7,7 @@
 namespace AnimationTest {
     using namespace raylib;
 
-    const char* modelPath = "data/models/15_alt/model.gltf";
+    const char* modelPath = "data/models/12_alt/model.gltf";
     const int fps = 144;
 
     inline void runTest()
@@ -29,7 +29,7 @@ namespace AnimationTest {
         int animsCount = 0;
         unsigned int animIndex = 39;//0;
 
-        GLTFModel::Model anim2;
+        openAITD::Model anim2;
         anim2.load(modelPath);
         anim2.bakePoses(fps);
 
