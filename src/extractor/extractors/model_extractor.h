@@ -161,23 +161,35 @@ void addAnimation(tinygltf::Model& m, Animation &anim, vector<Vector3>& bonePos,
     }
 
     vector<boneAnimExp> expBones;
-    expBones.resize(maxBones);
-    for (int j = 0; j < maxBones; j++) {
+    expBones.resize(maxBones+1);
+    for (int j = 0; j < maxBones+1; j++) {
         expBones[j].rotates.resize(timeline.size());
         expBones[j].translates.resize(timeline.size());
         expBones[j].scales.resize(timeline.size());
+    }
+
+    //Root bone
+    auto& t = expBones[0].translates;
+    Vector3 pos = { 0,0,0 };
+    t[0] = pos;
+    for (int i = 0; i < anim.frames.size(); i++) {
+        auto& f = anim.frames[i];
+        pos = Vector3Add(pos, Vector3Transform(
+            { f.offset[0] / 1000.0f, f.offset[1] / 1000.0f, f.offset[2] / 1000.0f },
+            roomMatMdl
+        ));
+        t[i + 1] = pos;
     }
 
     for (int i = 0; i < anim.frames.size(); i++) {
         auto& f = anim.frames[i];
         for (int j = 0; j < maxBones; j++) {
             auto& b = f.bones[j];
-            auto& eb = expBones[j];
+            auto& eb = expBones[j+1];
             
             //auto& v = m.nodes[j + bonesOffset].translation;
             eb.rotates[i+1] = QuaternionIdentity();
             eb.translates[i+1] = bonePos[j];
-            //eb.translates[i] = { 0,0,0 };
             eb.scales[i+1] = { 1,1,1 };
 
             Vector3 v;
@@ -198,26 +210,14 @@ void addAnimation(tinygltf::Model& m, Animation &anim, vector<Vector3>& bonePos,
         }
     }
 
-    for (int j = 0; j < expBones.size(); j++) {
+    //Fill first frame as 1 (except root)
+    for (int j = 1; j < expBones.size(); j++) {
         auto& eb = expBones[j];
         //int lastI = timeline.size() - 1;
         eb.rotates[0] = eb.rotates[1];
         eb.translates[0] = eb.translates[1];
         eb.scales[0] = eb.scales[1];
     }
-
-    auto& t = expBones[0].translates;
-    Vector3 pos = { 0,0,0 };
-    for (int i = 0; i < anim.frames.size(); i++) {
-        auto& f = anim.frames[i];
-        pos = Vector3Add(pos,Vector3Transform(
-            { f.offset[0] / 1000.0f, f.offset[1] / 1000.0f, f.offset[2] / 1000.0f },
-            roomMatMdl
-        ));
-        t[i + 1] = pos;
-    }
-
-    //First to last
 
     int vwTime = createBufferAndView(m, timeline.data(), timeline.size() * sizeof(float), 0);
     tinygltf::Accessor accTime;
@@ -232,9 +232,11 @@ void addAnimation(tinygltf::Model& m, Animation &anim, vector<Vector3>& bonePos,
     outAni.name = string("a_" + to_string(anim.id));
 
     for (int i = 0; i < expBones.size(); i++) {
-        addAniRotation(m, outAni, expBones[i].rotates, accTimeIdx, i + bonesOffset);
         addAniTranslation(m, outAni, expBones[i].translates, accTimeIdx, i + bonesOffset);
-        addAniScale(m, outAni, expBones[i].scales, accTimeIdx, i + bonesOffset);
+        if (i > 0) {
+            addAniRotation(m, outAni, expBones[i].rotates, accTimeIdx, i + bonesOffset);
+            addAniScale(m, outAni, expBones[i].scales, accTimeIdx, i + bonesOffset);
+        }
     }
 
     m.animations.push_back(outAni);
@@ -401,9 +403,17 @@ void saveModelGLTF(const PakModel& model, vector<Animation*> animations, const s
     vector<Vector3> bonePos(model.bones.size());
     vector<u8> vecBoneAffect(modelVerts.size(), 0);
     if (model.bones.size()) {
+        
+        tinygltf::Node rootN;
+        rootN.name = "root";
+        rootN.translation = { 0,0,0 };
+        rootN.children.push_back(1);
+        m.nodes.push_back(rootN);
+        skin.joints.push_back(0);
 
         for (int bIdx = 0; bIdx < model.bones.size(); bIdx++) {
-            skin.joints.push_back(bIdx);
+            int newIdx = bIdx + 1;
+            skin.joints.push_back(newIdx);
             auto& bone = model.bones[bIdx];
 
             tinygltf::Node boneN;
@@ -416,27 +426,28 @@ void saveModelGLTF(const PakModel& model, vector<Animation*> animations, const s
             for (int j = 0; j < model.bones.size(); j++) {
                 if (bIdx == j) continue;
                 if (model.bones[j].parentBoneIdx == model.bones[bIdx].boneIdx) {
-                    boneN.children.push_back(j);
+                    boneN.children.push_back(j+1);
                 }
             }
 
             m.nodes.push_back(boneN);
             int vfrom = (bone.fromVertexIdx / 6);
             for (int j = vfrom; j < vfrom+bone.vertexCount; j++) {
-                vecBoneAffect[j] = bIdx;
+                vecBoneAffect[j] = newIdx;
             }
         }
 
-        vector<Vector3> boneWorldPosition(model.bones.size());
+        vector<Vector3> boneWorldPosition(model.bones.size() + 1);
+        boneWorldPosition[0] = { 0,0,0 };
         for (int bIdx = 0; bIdx < model.bones.size(); bIdx++) {
-            int curBoneIdx = bIdx;
-            Vector3 curVector = bonePos[curBoneIdx];
+            int curBoneIdx = bIdx + 1;
+            Vector3 curVector = bonePos[curBoneIdx-1];
             while (true) {
                 curBoneIdx = getParent(m, curBoneIdx);
-                if (curBoneIdx == -1) break;
-                curVector = Vector3Add(curVector, bonePos[curBoneIdx]);
+                if (curBoneIdx == 0) break;
+                curVector = Vector3Add(curVector, bonePos[curBoneIdx-1]);
             }
-            boneWorldPosition[bIdx] = curVector;
+            boneWorldPosition[bIdx+1] = curVector;
         }
 
         for (int i = 0; i < vecBoneAffect.size(); i++ ) {
@@ -444,7 +455,7 @@ void saveModelGLTF(const PakModel& model, vector<Animation*> animations, const s
             modelVerts[i] = Vector3Add(modelVerts[i], v);
         }
 
-        skin.inverseBindMatrices = addBoneMatrices(m, boneWorldPosition, model.bones.size());
+        skin.inverseBindMatrices = addBoneMatrices(m, boneWorldPosition, model.bones.size()+1);
     }
 
     int vertAccIdx = createVertexes(m, modelVerts);
