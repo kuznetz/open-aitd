@@ -17,6 +17,7 @@ extern const int cubeVertSize;
 int addDataToBuffer(tinygltf::Model& m, void* data, int dataSize);
 int createBufferAndView(tinygltf::Model& m, void* data, int size, int vwTarget);
 int createCubeMesh(tinygltf::Model& m);
+int createSphereMesh(tinygltf::Model& m, float radius, int vertCount);
 int createLineMesh(tinygltf::Model& m, const vector<float>& line);
 int createPolyMesh(tinygltf::Model& m, const vector<Vector3>& vertexes, const vector<unsigned int>& indices);
 int createVertexes(tinygltf::Model& m, const vector<Vector3>& vertexes);
