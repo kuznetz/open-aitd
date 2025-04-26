@@ -24,7 +24,7 @@ namespace openAITD {
 		//For AITD1 - Emily character
 		map<int, RModel> altModels;
 	public:
-		Config* config;
+		Config* config = 0;
 		string modelsPath = "data/models";
 		RModels();
 		~RModels();

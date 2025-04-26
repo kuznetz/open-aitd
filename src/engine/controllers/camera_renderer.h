@@ -98,7 +98,7 @@ namespace openAITD {
 			Matrix matTransform = MatrixMultiply(MatrixMultiply(matScale, matRotation), matTranslation);
 
 			auto rmodel = resources->models.getModel(gobj.modelId);
-			auto& bb = rmodel->bounds;
+			auto& bb = rmodel->model.bounds;
 			Vector3 vecs[8];
 			vecs[0] = { bb.min.x, bb.max.y, bb.max.z }; // Top left
 			vecs[1] = { bb.max.x, bb.max.y, bb.max.z }; // Top right

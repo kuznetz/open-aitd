@@ -19,6 +19,10 @@ namespace openAITD {
 			this->world = world;
 		}
 
+        float QuaterionDotProduct(Quaternion q1, Quaternion q2) {
+            return q1.x * q2.x + q1.y * q2.y + q1.z * q2.z + q1.w * q2.w;
+        }
+
         void processRotateAnim(float timeDelta) {
             for (int i = 0; i < world->gobjects.size(); i++) {
                 auto& gobj = world->gobjects[i];
@@ -29,6 +33,11 @@ namespace openAITD {
                 rot.curTime += timeDelta;
                 if (rot.curTime == 0) {
                     gobj.location.rotation = rot.from;
+                    /*auto dot_product = QuaterionDotProduct(rot.from, rot.to);
+                    if (dot_product < 0) {
+                        rot.to = raylib::QuaternionInvert(rot.to);
+                    }*/
+
                 } else if (rot.curTime >= rot.timeEnd) {
                     gobj.location.rotation = rot.to;
                     gobj.rotateAnim.lifeAngles[0] = gobj.rotateAnim.toLifeAngles[0];
@@ -65,45 +74,40 @@ namespace openAITD {
                     continue;
                 }
                 objAni.animIdx = p->second;
+                auto& mdlAnim = mdl->model.animations[objAni.animIdx];
+
+                if (objAni.animEnd) {
+                    objAni.animEnd = 0;
+                    objAni.prevMoveRoot = { 0,0,0 };
+                    if (!objAni.bitField.repeat) {
+                        objAni.id = objAni.nextId;
+                        objAni.flags = 1;
+                    }
+                    else {
+                        while (objAni.animTime > mdlAnim.duration) {
+                            objAni.animTime -= mdlAnim.duration;
+                        }
+                    }
+                }
 
                 if (objAni.prevId != objAni.id) {
+                    objAni.prevMoveRoot = { 0,0,0 };
                     objAni.animTime = 0;
-                    objAni.animEnd = 0;
                 }
 
 				objAni.animTime += timeDelta;
 				objAni.animFrame = (objAni.animTime * resources->config.fps);
 				auto& curFrame = objAni.animFrame;
 
-                auto& mdlAnim = mdl->model.animations[objAni.animIdx];
                 auto frameCount = mdlAnim.bakedPoses.size();
+
                 if (curFrame+1 >= frameCount) {
+                    curFrame = frameCount - 1;
                     objAni.animEnd = 1;
                 }
-
-				if (curFrame >= frameCount) {
-					if (!objAni.bitField.repeat) {
-						objAni.id = objAni.nextId;
-						objAni.animTime = 0;
-						curFrame = 0;
-						objAni.flags = 1;
-					}
-					else {
-						while (curFrame >= frameCount) {
-                            objAni.animTime -= mdlAnim.duration;
-                            objAni.animFrame = (objAni.animTime * resources->config.fps);
-                            //objAni.animTime -= (float)frameCount / resources->config.fps;
-							//curFrame -= frameCount;
-						}
-                        objAni.prevMoveRoot = { 0,0,0 };
-                    }
-				}
-				if (objAni.id != -1) {
-                    if (objAni.prevId != objAni.id) {
-                        objAni.prevMoveRoot = { 0,0,0 };
-                    }
+                if (objAni.id != -1) {
                     objAni.moveRoot = mdlAnim.rootMotion[curFrame].translation;
-				}
+                }
 
                 gobj.prevModelId = gobj.modelId;
                 objAni.prevId = objAni.id;

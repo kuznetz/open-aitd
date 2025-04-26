@@ -105,72 +105,89 @@ namespace openAITD {
 			gobj.location.rotation = QuaternionInvert(QuaternionFromMatrix(matRotation));
 		}
 
-		void processObj( GameObject& gobj ) {
-			if (gobj.track.mode != GOTrackMode::track || gobj.track.id == -1) return;
-			while (true) {
-				auto& trackItm = world->resources->tracks[gobj.track.id][gobj.track.pos];
-				bool nextPos = true;
-				switch (trackItm.type) {
-				case TrackItemType::GOTO_POS:
-					//cout << "GOTO_POS" << endl;
-					nextPos = gotoPos(gobj, trackItm);
-					break;
-				case TrackItemType::MARK:
-					gobj.track.mark = trackItm.mark;
-					break;
-				case TrackItemType::REWIND:
-					gobj.track.pos = -1;
-					break;
-				case TrackItemType::END:
-					gobj.track.mode = GOTrackMode::none;
-					gobj.track.id = -1;
-					gobj.track.pos = 0;
-					gobj.track.mark = 0;
-					nextPos = false;
-					//cout << "track END" << endl;
-					break;
-				case TrackItemType::ROTATE_XYZ:
-					//cout << "ROTATE_XYZ" << endl;
-					rotateXYZ(gobj, trackItm);
-					break;
-
-				case TrackItemType::STAIRS_X:
-					//trackItm.pos						
-					nextPos = gotoStairs(gobj, trackItm, false);
-					break;
-
-				case TrackItemType::STAIRS_Z:
-					//cout << "STAIRS_Z " << to_string(gobj.physics.collidable) << endl;
-					nextPos = gotoStairs(gobj, trackItm, true);
-					break;
-
-				case TrackItemType::COLLISION_DISABLE:
-					//cout << "COLLISION_DISABLE" << endl;
-					gobj.physics.collidable = false;
-					break;
-				case TrackItemType::COLLISION_ENABLE:
-					//cout << "COLLISION_ENABLE" << endl;
-					gobj.physics.collidable = true;
-					break;
-				case TrackItemType::TRIGGERS_DISABLE:
-					//cout << "TRIGGERS_DISABLE" << endl;
-					gobj.bitField.trigger = 0;
-					break;
-				case TrackItemType::TRIGGERS_ENABLE:
-					//cout << "TRIGGERS_ENABLE" << endl;
-					gobj.bitField.trigger = 1;
-					break;
-
-				default:
-					cout << "unkn TrackItemType " << to_string((int)trackItm.type) << endl;
-				}
-				if (nextPos) {
-					gobj.track.posStarted = false;
-					gobj.track.pos++;// else break;
-				}
+		void processObjTrack( GameObject& gobj ) {
+			if (gobj.track.id == -1) return;
+			auto& trackItm = world->resources->tracks[gobj.track.id][gobj.track.pos];
+			bool nextPos = true;
+			switch (trackItm.type) {
+			case TrackItemType::GOTO_POS:
+				//cout << "GOTO_POS" << endl;
+				nextPos = gotoPos(gobj, trackItm);
 				break;
+			case TrackItemType::MARK:
+				gobj.track.mark = trackItm.mark;
+				break;
+			case TrackItemType::REWIND:
+				gobj.track.pos = -1;
+				break;
+			case TrackItemType::END:
+				gobj.track.mode = GOTrackMode::none;
+				gobj.track.id = -1;
+				gobj.track.pos = 0;
+				gobj.track.mark = 0;
+				nextPos = false;
+				//cout << "track END" << endl;
+				break;
+			case TrackItemType::ROTATE_XYZ:
+				//cout << "ROTATE_XYZ" << endl;
+				rotateXYZ(gobj, trackItm);
+				break;
+
+			case TrackItemType::STAIRS_X:
+				//trackItm.pos						
+				nextPos = gotoStairs(gobj, trackItm, false);
+				break;
+
+			case TrackItemType::STAIRS_Z:
+				//cout << "STAIRS_Z " << to_string(gobj.physics.collidable) << endl;
+				nextPos = gotoStairs(gobj, trackItm, true);
+				break;
+
+			case TrackItemType::COLLISION_DISABLE:
+				//cout << "COLLISION_DISABLE" << endl;
+				gobj.physics.collidable = false;
+				break;
+			case TrackItemType::COLLISION_ENABLE:
+				//cout << "COLLISION_ENABLE" << endl;
+				gobj.physics.collidable = true;
+				break;
+			case TrackItemType::TRIGGERS_DISABLE:
+				//cout << "TRIGGERS_DISABLE" << endl;
+				gobj.bitField.trigger = 0;
+				break;
+			case TrackItemType::TRIGGERS_ENABLE:
+				//cout << "TRIGGERS_ENABLE" << endl;
+				gobj.bitField.trigger = 1;
+				break;
+			case TrackItemType::WARP:
+				gobj.location.roomId = trackItm.room;
+				gobj.location.position = trackItm.pos;
+				break;
+			default:
+				cout << "unkn TrackItemType " << to_string((int)trackItm.type) << endl;
+			}
+			if (nextPos) {
+				gobj.track.posStarted = false;
+				gobj.track.pos++;// else break;
 			}
 		}
+
+		void processObjFollow(GameObject& gobj) {
+			if (gobj.track.id == -1) return;
+			auto& gobj2 = world->gobjects[gobj.track.id];
+			if (gobj.location.stageId != gobj2.location.stageId) return;
+			auto pos2 = world->VectorChangeRoom(gobj2.location.position, gobj2.location.roomId, gobj.location.roomId);
+			//Vector3 v1 = Vector3RotateByQuaternion({0,0,1}, gobj.location.rotation);
+			Vector3 v2 = Vector3Subtract(pos2, gobj.location.position);
+			//auto qDiff = QuaternionFromVector3ToVector3(v1, v2);
+			//gobj.location.rotation = QuaternionMultiply(gobj.location.rotation, qDiff);
+			//auto qDiff = QuaternionFromVector3ToVector3({0,0,1}, v2);
+			//gobj.location.rotation = qDiff;
+
+			rotateTo(gobj, pos2);
+		}
+
+
 	};
 
 }

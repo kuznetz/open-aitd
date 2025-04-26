@@ -240,6 +240,7 @@ namespace openAITD {
 						break;
 					}
 					if (curZone.type == RoomZoneType::Trigger) {
+						printf("Triggered obj %d zone %d\n", gobj.id, curZone.parameter);
 						gobj.physics.zoneTriggered = curZone.parameter;
 					}
 					if (curZone.type == RoomZoneType::ChangeStage) {

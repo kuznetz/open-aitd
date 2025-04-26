@@ -116,7 +116,7 @@ namespace openAITD {
         for (int i = 0; i < 8; i++) {
             resources.stages[i].load(string("data/stages/")+to_string(i));
         }
-        resources.loadTracks("data/tracks");
+        resources.loadTracks("data/tracks", "newdata/tracks");
 
         DisableCursor();
 

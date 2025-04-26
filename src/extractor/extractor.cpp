@@ -216,25 +216,28 @@ namespace AITDExtractor {
 
     void processTracks() {
         PakFile trackPak("original/LISTTRAK.PAK");
+        auto dir = string("data/tracks");
+        std::filesystem::create_directories(dir);
         for (int i = 0; i < trackPak.headers.size(); i++)
         {
             auto& data = trackPak.readBlock(i);
             auto& track = loadTrack(data.data(), trackPak.headers[i].uncompressedSize);
-            auto s = string("data/tracks");
-            std::filesystem::create_directories(s);
-            extractTrack(track, s + "/" + to_string(i) + ".json");
+            auto s = dir + "/" + to_string(i) + ".json";
+            if (std::filesystem::exists(s)) continue;
+            extractTrack(track, s);
             //allTracks.push_back(track);
         }
     }
 
     void processSounds() {
         PakFile soundsPak("original/LISTSAMP.PAK");
+        auto dir = string("data/sounds");
+        std::filesystem::create_directories(dir);
         for (int i2 = 0; i2 < soundsPak.headers.size(); i2++) {
             auto& data = soundsPak.readBlock(i2);
             auto& voc = loadVoc((char*)data.data(), soundsPak.headers[i2].uncompressedSize);
-            auto s = string("data/sounds");
-            std::filesystem::create_directories(s);
-            s += "/" + to_string(i2) + ".wav";
+            auto s = dir + "/" + to_string(i2) + ".wav";
+            if (std::filesystem::exists(s)) continue;
             writeWav(&voc, s);
         }
     }

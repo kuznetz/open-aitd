@@ -68,11 +68,14 @@ namespace openAITD {
 		}
 
 
-		void loadTracks(string path) {
+		void loadTracks(string dataPath, string newDataPath) {
 			int i = 0;
 			while (true) {
-				string s = path + "/" + to_string(i) + ".json";
-				if (!std::filesystem::exists(s)) break;
+				string s = newDataPath + "/" + to_string(i) + ".json";
+				if (!std::filesystem::exists(s)) {
+					s = dataPath + "/" + to_string(i) + ".json";
+					if (!std::filesystem::exists(s)) break;
+				}
 				std::ifstream ifs(s);
 				json objsJson = json::parse(ifs);
 

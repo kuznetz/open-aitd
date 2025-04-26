@@ -80,6 +80,18 @@ namespace openAITD {
 			return res;
 		}
 
+		Vector4 convertAngle(int alpha, int beta, int gamma) {
+			auto roomMatObj = MatrixRotateX(PI);
+			Matrix mx = MatrixRotateX(alpha * 2.f * PI / 1024);
+			Matrix my = MatrixRotateY((beta + 512) * 2.f * PI / 1024);
+			Matrix mz = MatrixRotateZ(gamma * 2.f * PI / 1024);
+			Matrix matRotation = MatrixMultiply(MatrixMultiply(my, mx), mz);
+			matRotation = MatrixTranspose(matRotation);
+			auto q = QuaternionFromMatrix(matRotation);
+			return QuaternionTransform(q, roomMatObj);
+			//auto rotTo = QuaternionFromAxisAngle({ 0,1,0 }, (toAngle + 512) * 2. * PI / 1024.);
+		}
+
 		void initExpressions() {
 			lua->CreateFunction([this](int rmax) -> int {
 				return rand() % rmax;
@@ -125,7 +137,8 @@ namespace openAITD {
 				return -1;
 				}, "HIT_BY");			
 			lua->CreateFunction([this](int obj) -> int {
-				return this->world->gobjects[obj].animation.scriptAnimId;
+				//return this->world->gobjects[obj].animation.scriptAnimId;
+				return this->world->gobjects[obj].animation.id;
 				}, "ANIM");
 			lua->CreateFunction([this](int obj) -> int {
 				return this->world->gobjects[obj].animation.animEnd;
@@ -142,10 +155,10 @@ namespace openAITD {
 				}, "POSREL");
 			lua->CreateFunction([this](int obj1, int obj2) -> int {
 				auto& gobj1 = this->world->gobjects[obj1].location.position;
-				auto& gobj2 = this->world->gobjects[obj1].location.position;
-				int x = abs(gobj1.x - gobj2.x) * 1000;
-				int y = abs(gobj1.y - gobj2.y) * 1000;
-				int z = abs(gobj1.z - gobj2.z) * 1000;
+				auto& gobj2 = this->world->gobjects[obj2].location.position;
+				int x = abs(gobj1.x - gobj2.x) * 1000.;
+				int y = abs(gobj1.y - gobj2.y) * 1000.;
+				int z = abs(gobj1.z - gobj2.z) * 1000.;
 				return x + y + z;
 				}, "DIST");
 			lua->CreateFunction([this](int obj) -> int {
@@ -180,10 +193,10 @@ namespace openAITD {
 				}, "GAMMA");
 
 			lua->CreateFunction([this](int obj) -> int {
-				return (int)((this->world->chrono - this->world->gobjects[obj].chrono) / 60.);
+				return (int)((this->world->chrono - this->world->gobjects[obj].chrono) * 60.);
 				}, "CHRONO");
 			lua->CreateFunction([this](int obj) -> int {
-				return (int)((this->world->chrono - this->world->roomChrono) / 60.);
+				return (int)((this->world->chrono - this->world->roomChrono) * 60.);
 				}, "ROOM_CHRONO");
 		}
 
@@ -217,6 +230,9 @@ namespace openAITD {
 			lua->CreateFunction([this](int obj, int lifeId) {
 				this->world->gobjects[obj].lifeId = lifeId;
 			}, "SET_LIFE");
+			lua->CreateFunction([this](int obj, int lifeMode) {
+				this->world->gobjects[obj].lifeMode = GOLifeMode(lifeMode);
+			}, "SET_LIFE_MODE");
 			lua->CreateFunction([this](int obj) {
 				this->world->gobjects[obj].chrono = this->world->chrono;
 			}, "START_CHRONO");
@@ -225,10 +241,11 @@ namespace openAITD {
 			}, "TEST_COL");
 			//Set object angle
 			lua->CreateFunction([this](int obj, int x, int y, int z) {
-
+				this->world->gobjects[obj].location.rotation = convertAngle(x, y, z);
 			}, "SET_ANGLE");
-			lua->CreateFunction([this](int obj) {
-				//
+			lua->CreateFunction([this](int obj, int flags) {
+				auto& gobj = this->world->gobjects[obj];
+				gobj.flags = flags;
 			}, "SET_FLAGS");
 			lua->CreateFunction([this](int obj) {
 				auto& gobj = this->world->gobjects[obj];
@@ -267,6 +284,10 @@ namespace openAITD {
 			lua->CreateFunction([this](int itemObjId, int actorObjId) {
 				this->world->drop(itemObjId, actorObjId);
 				}, "DROP");
+			lua->CreateFunction([this](int itemObjId, int x, int y, int z, int room, int stage, int alpha, int beta, int gamma) {
+				//TODO: rotation
+				this->world->put(itemObjId, stage, room, { x / 1000.f, -y / 1000.f, -z / 1000.f }, convertAngle(alpha, beta, gamma));
+				}, "PUT");
 
 			//Animations, tracks, rotations
 			lua->CreateFunction([this](int obj, int animId, int nextAnimId) {
@@ -287,6 +308,13 @@ namespace openAITD {
 			lua->CreateFunction([this](int obj, int fireAnim, int shootFrame, int emitPoint, int zvSize, int hitForce, int nextAnim) {
 				this->world->setOnceAnimation(this->world->gobjects[obj], fireAnim, nextAnim);
 				}, "FIRE");
+			lua->CreateFunction([this](int obj, int flags, int damage) {
+				//TODO:
+				}, "HIT_OBJECT");
+			lua->CreateFunction([this](int obj) {
+				//TODO:
+				}, "STOP_HIT_OBJECT");
+			
 
 			lua->CreateFunction([this](int obj, int trackMode, int trackId, int positionInTrack) {
 				auto& gobj = this->world->gobjects[obj];
@@ -301,7 +329,7 @@ namespace openAITD {
 				gobj.rotateAnim.curTime = 0;
 				gobj.rotateAnim.timeEnd = time / 60.;
 				gobj.rotateAnim.from = gobj.location.rotation;
-				auto rotTo = QuaternionFromAxisAngle({ 1,0,0 }, toAngle * 2 * PI / 1024.);
+				auto rotTo = convertAngle(toAngle, 0, 0);
 				gobj.rotateAnim.to = rotTo;
 				gobj.rotateAnim.toLifeAngles[0] = toAngle;
 				}, "SET_ALPHA");
@@ -309,11 +337,10 @@ namespace openAITD {
 			lua->CreateFunction([this](int obj, int toAngle, int time) {
 				auto& gobj = this->world->gobjects[obj];
 				if (gobj.rotateAnim.timeEnd > 0) return;
-				//toAngle += 512;
 				gobj.rotateAnim.curTime = 0;
 				gobj.rotateAnim.timeEnd = time / 60.;
 				gobj.rotateAnim.from = gobj.location.rotation;
-				auto rotTo = QuaternionFromAxisAngle({ 0,1,0 }, (toAngle + 512) * 2. * PI / 1024.);
+				auto rotTo = convertAngle(0, toAngle, 0);
 				gobj.rotateAnim.to = rotTo;
 				gobj.rotateAnim.toLifeAngles[1] = toAngle;
 				}, "SET_BETA");
@@ -323,12 +350,13 @@ namespace openAITD {
 				auto& obj = this->world->gobjects[objId];
 				switch (obj.track.mode) {
 				case GOTrackMode::track:
-					trackContr->processObj(obj);
+					trackContr->processObjTrack(obj);
 					break;
 				case GOTrackMode::manual:
 					playerContr->processObj(obj, curTimeDelta);
 					break;
 				case GOTrackMode::follow:
+					trackContr->processObjFollow(obj);
 					break;
 				};
 				}, "DO_MOVE");
@@ -421,9 +449,6 @@ namespace openAITD {
 		}
 
 		bool isObjectActive(GameObject& gobj) {
-			if (gobj.id == 286) {
-				int z = 0;
-			}
 			if (gobj.lifeId == -1) return false;
 			if (gobj.location.stageId != world->curStageId) return false;
 			if (gobj.lifeMode == GOLifeMode::none) return false;

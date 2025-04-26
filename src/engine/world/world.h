@@ -94,6 +94,7 @@ namespace openAITD {
 		void setModel(GameObject& gobj, int modelId);
 		void take(int gObjId);
 		void drop(int itemObjId, int actorObjId);
+		void put(int objId, int room, int stage, Vector3 pos, Quaternion rot);
 		Vector3 VectorChangeRoom(const Vector3 v, int fromRoomId, int toRoomId);
 		BoundingBox BoundsChangeRoom(const BoundingBox v, int fromRoomId, int toRoomId);
 	};
@@ -255,6 +256,24 @@ namespace openAITD {
 		item.location.rotation = actor.location.rotation;
 
 		//action?
+	};
+
+	void World::put(int itemObjId, int stage, int room, Vector3 pos, Quaternion rot)
+	{
+		auto& item = this->gobjects[itemObjId];
+		item.location.stageId = stage;
+		item.location.roomId = room;
+		item.location.position = pos;
+		item.location.rotation = rot;
+
+		for (int i = 0; i < inventory.size(); i++) {
+			if (inventory[i]->id == itemObjId) {
+				inventory.erase(inventory.begin() + i);
+				break;
+			}
+		}
+		item.invItem.bitField.in_inventory = 0;
+		item.bitField.foundable = 0;
 	};
 
 }
