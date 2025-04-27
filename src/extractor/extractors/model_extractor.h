@@ -499,7 +499,7 @@ void saveModelGLTF(const PakModel& model, vector<Animation*> animations, const s
             if (model.bones.size()) {
                 int VertCountFull = vertCount * vertCount * 6;
                 vector<u8> vecBoneAffect2(VertCountFull, vecBoneAffect[prim.vertexIdxs[0] / 6]);
-                auto vSkin2 = addVertexSkin(m, vecBoneAffect);
+                auto vSkin2 = addVertexSkin(m, vecBoneAffect2);
                 prim2.attributes["JOINTS_0"] = vSkin2.jointsAccIdx;
                 prim2.attributes["WEIGHTS_0"] = vSkin2.weightsAccIdx;
             }
