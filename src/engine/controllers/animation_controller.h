@@ -7,7 +7,6 @@ using namespace std;
 
 namespace openAITD {
 
-
 	class AnimationController {
 	public:
         MissedAnims missedAnims;

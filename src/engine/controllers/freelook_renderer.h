@@ -232,7 +232,8 @@ namespace openAITD {
 				auto& curAnim = model.animations[gobj.animation.animIdx];
 				auto& newPose = curAnim.bakedPoses[gobj.animation.animFrame];
 				Transform* curPose;
-				if (gobj.animation.oldPose.size() && (curAnim.duration > 0) && gobj.animation.animTime <= curAnim.transition) {
+				bool isTransition = gobj.animation.oldPose.size() && (curAnim.duration > 0) && (gobj.animation.animTime <= curAnim.transition);
+				if (isTransition) {
 					//newPose[0].translation = { 0,0,0 };
 					model.PoseLerp(tempPose, gobj.animation.oldPose.data(), newPose.data(), gobj.animation.animTime / curAnim.transition);
 					//anim2.CalcPoseByTime(newPose, animIndex, 0);
@@ -247,10 +248,12 @@ namespace openAITD {
 				if (!gobj.animation.oldPose.size()) {
 					gobj.animation.oldPose.resize(newPose.size());
 				}
-				memcpy_s(
-					gobj.animation.oldPose.data(), gobj.animation.oldPose.size() * sizeof(Transform),
-					curPose, newPose.size() * sizeof(Transform)
-				);
+				if (!isTransition) {
+					memcpy_s(
+						gobj.animation.oldPose.data(), gobj.animation.oldPose.size() * sizeof(Transform),
+						curPose, newPose.size() * sizeof(Transform)
+					);
+				}
 			}
 
 			Vector3 pos = gobj.location.position;

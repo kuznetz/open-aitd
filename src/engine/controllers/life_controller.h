@@ -376,7 +376,10 @@ namespace openAITD {
 				}, "DO_CARRE_ZV");
 			lua->CreateFunction([this]() {
 				//TODO: DO_REAL_ZV
-				}, "DO_REAL_ZV");	
+				}, "DO_REAL_ZV");
+			lua->CreateFunction([this]() {
+				//Do nothing?
+				}, "GET_HARD_CLIP");
 
 			//Sound & music
 			lua->CreateFunction([this](int obj, int sampleId, int animId, int animFrame) {
