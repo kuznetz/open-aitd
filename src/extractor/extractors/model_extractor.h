@@ -283,49 +283,46 @@ vector triangulate2(int numPoints) {
 */
 
 
-void addPrimitive(tinygltf::Model& m, tinygltf::Mesh& mesh, const PakModelPrimitive& prim, vector<Vector3>& modelVerts, int vertAccIdx) {
-    if (prim.type == 1) {
-        auto matIdx = getMaterialIdx(m, prim.colorIndex, prim.subType);
+tinygltf::Primitive createPrimitivePoly(tinygltf::Model& m, const PakModelPrimitive& prim, vector<Vector3>& modelVerts, int vertAccIdx) {
+    auto matIdx = getMaterialIdx(m, prim.colorIndex, prim.subType);
 
-        /*
-        UV:
-            ComputeUV(polyVertices, out forward, out left);
-            foreach (int pointIndex in polyVertices)
-            {
-                Vector3 poly = allVertices[pointIndex];
-                uv.Add(new Vector2(
-                    Vector3.Dot(poly, left) * noisesize,
-                    Vector3.Dot(poly, forward) * noisesize
-                ));
-            }
-        */
-
-        std::vector<int> idxMap(prim.vertexIdxs.size());
-        for (int i = 0; i < prim.vertexIdxs.size(); i++) {
-            int vIdx = prim.vertexIdxs[i] / 6;
-            if (vIdx >= modelVerts.size()) {
-                throw new exception("vIdx >= modelVerts.size()");
-            }
-            idxMap[i] = vIdx;
+    /*
+    UV:
+        ComputeUV(polyVertices, out forward, out left);
+        foreach (int pointIndex in polyVertices)
+        {
+            Vector3 poly = allVertices[pointIndex];
+            uv.Add(new Vector2(
+                Vector3.Dot(poly, left) * noisesize,
+                Vector3.Dot(poly, forward) * noisesize
+            ));
         }
+    */
 
-        const auto& triangles = triangulate1(prim.vertexIdxs.size());
-
-        vector<unsigned int> modelIdxs;
-        for (int i = 0; i < triangles.size(); i++) {
-            //Strange order to wrap normals
-            modelIdxs.emplace_back(idxMap[triangles[i].p0]);
-            modelIdxs.emplace_back(idxMap[triangles[i].p2]);
-            modelIdxs.emplace_back(idxMap[triangles[i].p1]);
+    std::vector<int> idxMap(prim.vertexIdxs.size());
+    for (int i = 0; i < prim.vertexIdxs.size(); i++) {
+        int vIdx = prim.vertexIdxs[i] / 6;
+        if (vIdx >= modelVerts.size()) {
+            throw new exception("vIdx >= modelVerts.size()");
         }
-
-        if (modelIdxs.size() < 3) {
-            throw new exception("modelIdxs.size() < 3");
-        }
-
-        tinygltf::Primitive prim2 = createPolyPrimitive(m, modelIdxs, vertAccIdx, matIdx);
-        mesh.primitives.push_back(prim2);
+        idxMap[i] = vIdx;
     }
+
+    const auto& triangles = triangulate1(prim.vertexIdxs.size());
+
+    vector<unsigned int> modelIdxs;
+    for (int i = 0; i < triangles.size(); i++) {
+        //Strange order to wrap normals
+        modelIdxs.emplace_back(idxMap[triangles[i].p0]);
+        modelIdxs.emplace_back(idxMap[triangles[i].p2]);
+        modelIdxs.emplace_back(idxMap[triangles[i].p1]);
+    }
+
+    if (modelIdxs.size() < 3) {
+        throw new exception("modelIdxs.size() < 3");
+    }
+
+    return createPolyPrimitive(m, modelIdxs, vertAccIdx, matIdx);
 }
 
 int getParent(tinygltf::Model& m, int childIdx) {
@@ -454,30 +451,61 @@ void saveModelGLTF(const PakModel& model, vector<Animation*> animations, const s
         //=== multi mesh (for test) ===
         for (int pIdx = 0; pIdx < model.primitives.size(); pIdx++)
         {
-            tinygltf::Mesh mesh;
-            auto& prim = model.primitives[pIdx];
-            //auto& prim = model.primitives[model.primitives.size()-1];
-            addPrimitive(m, mesh, prim, modelVerts, vertAccIdx);
+            //!!! Not worked
+            //tinygltf::Mesh mesh;
+            //auto& prim = model.primitives[pIdx];
+            //auto& prim = createPrimitivePoly(m, prim, modelVerts, vertAccIdx);
 
-            if (!mesh.primitives.size()) continue;
-            m.meshes.push_back(mesh);
-            auto meshIdx = m.meshes.size() - 1;
+            //if (!mesh.primitives.size()) continue;
+            //m.meshes.push_back(mesh);
+            //auto meshIdx = m.meshes.size() - 1;
 
-            tinygltf::Node zoneN;
-            zoneN.name = string("model_" + to_string(pIdx));
-            zoneN.mesh = meshIdx;
-            m.nodes.push_back(zoneN);
+            //tinygltf::Node zoneN;
+            //zoneN.name = string("model_" + to_string(pIdx));
+            //zoneN.mesh = meshIdx;
+            //m.nodes.push_back(zoneN);
         }
     }
     else 
     {
         //=== single mesh ===
         tinygltf::Mesh mesh;
+        VertexSkin vSkin = { -1,-1 };
+        if (model.bones.size()) {
+            vSkin = addVertexSkin(m, vecBoneAffect);
+        }
+
         for (int pIdx = 0; pIdx < model.primitives.size(); pIdx++)
         {
             auto& prim = model.primitives[pIdx];
-            addPrimitive(m, mesh, prim, modelVerts, vertAccIdx);
+            if (prim.type != 1) continue;
+            auto& prim2 = createPrimitivePoly(m, prim, modelVerts, vertAccIdx);
+            if (model.bones.size()) {
+                prim2.attributes["JOINTS_0"] = vSkin.jointsAccIdx;
+                prim2.attributes["WEIGHTS_0"] = vSkin.weightsAccIdx;
+            }
+            mesh.primitives.push_back(prim2);
         }
+
+        for (int pIdx = 0; pIdx < model.primitives.size(); pIdx++)
+        {
+            auto& prim = model.primitives[pIdx];
+            if (prim.type != 3) continue;
+            const int vertCount = 5;
+            auto matIdx = getMaterialIdx(m, prim.colorIndex, prim.subType);
+            auto& pos = modelVerts[prim.vertexIdxs[0] / 6];
+            float size = prim.size / 1000.0f;
+            auto& prim2 = createSpherePrim(m, size, vertCount, pos, matIdx);
+            if (model.bones.size()) {
+                int VertCountFull = vertCount * vertCount * 6;
+                vector<u8> vecBoneAffect2(VertCountFull, vecBoneAffect[prim.vertexIdxs[0] / 6]);
+                auto vSkin2 = addVertexSkin(m, vecBoneAffect);
+                prim2.attributes["JOINTS_0"] = vSkin2.jointsAccIdx;
+                prim2.attributes["WEIGHTS_0"] = vSkin2.weightsAccIdx;
+            }
+            mesh.primitives.push_back(prim2);
+        }
+
         m.meshes.push_back(mesh);
         auto meshIdx = m.meshes.size()-1;
 
@@ -488,7 +516,6 @@ void saveModelGLTF(const PakModel& model, vector<Animation*> animations, const s
         int nodeSkinIdx = m.nodes.size() - 1;
 
         if (model.bones.size()) {
-            addVertexSkin(m, vecBoneAffect);
             m.nodes[nodeSkinIdx].skin = 0;
             skin.skeleton = 0;
             m.skins.push_back(skin);

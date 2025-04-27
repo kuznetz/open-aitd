@@ -41,7 +41,7 @@ void setSphereMeshFace(vector<unsigned int>& faceIdxs, int vertCount, int offs, 
 	}
 }
 
-int createSphereMesh(tinygltf::Model& m, float radius, int vertCount) {
+tinygltf::Primitive createSpherePrim(tinygltf::Model& m, float radius, int vertCount, Vector3 pos, int material) {
 	int sideVCount = vertCount * vertCount;
 	int sideFaceICount = (vertCount-1) * (vertCount-1) * 2 * 3;
 	vector<Vector3> vertexes(sideVCount * 6);
@@ -50,5 +50,10 @@ int createSphereMesh(tinygltf::Model& m, float radius, int vertCount) {
 		setSphereMeshSide(vertexes, cubeVecs[i][0], cubeVecs[i][1], cubeVecs[i][2], radius, vertCount, sideVCount * i);
 		setSphereMeshFace(faces, vertCount, sideFaceICount * i, sideVCount * i);
 	}
-	return createPolyMesh(m, vertexes, faces);
+	for (int i = 0; i < vertexes.size(); i++) {
+		vertexes[i] = Vector3Add(vertexes[i], pos);
+	}
+	
+	int vertAccIdx = createVertexes(m, vertexes);
+	return createPolyPrimitive(m, faces, vertAccIdx, material);
 }
