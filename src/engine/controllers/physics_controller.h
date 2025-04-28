@@ -41,46 +41,39 @@ namespace openAITD {
 			return true;
 		}
 
-		bool CollBoxToBox(BoundingBox& b1_0, Vector3& v, BoundingBox& b2) {
-			BoundingBox b1 = { Vector3Add(b1_0.min, v), Vector3Add(b1_0.max, v) };
-			if (
-				(b1.min.x > b2.max.x || b1.max.x < b2.min.x) &&
-				(b2.min.x > b1.max.x || b2.max.x < b1.min.x)
-			)  return false;
-			if (
-				(b1.min.y > b2.max.y || b1.max.y < b2.min.y) &&
-				(b2.min.y > b1.max.y || b2.max.y < b1.min.y)
-			)  return false;
-			if (
-				(b1.min.z > b2.max.z || b1.max.z < b2.min.z) &&
-				(b2.min.z > b1.max.z || b2.max.z < b1.min.z)
-			)  return false;
+		Vector3 CalculateMTV(const BoundingBox& b1, const BoundingBox& b2)
+		{
+			float overlapX = min(b1.max.x, b2.max.x) - max(b1.min.x, b2.min.x);
+			float overlapZ = min(b1.max.z, b2.max.z) - max(b1.min.z, b2.min.z);
 
-			float revX = (v.x < 0) ? (b2.max.x - b1.min.x) : (b2.min.x - b1.max.x);
-			float revZ = (v.z < 0) ? (b2.max.z - b1.min.z) : (b2.min.z - b1.max.z);
-			if (abs(revX) < abs(revZ)) {
-				v.x += revX;
+			if (overlapX <= 0 || overlapZ <= 0) {
+				return { 0,0,0 };
+			}
+
+			bool pushAlongX = abs(overlapX) < abs(overlapZ);
+
+			Vector3 mtv = { 0,0,0 };
+			if (pushAlongX) {
+				mtv.x = overlapX * ((b1.min.x + b1.max.x) / 2 >= (b2.min.x + b2.max.x) / 2 ? -1 : 1);
 			}
 			else {
-				v.z += revZ;
+				mtv.z = overlapZ * ((b1.min.z + b1.max.z) / 2 >= (b2.min.z + b2.max.z) / 2 ? -1 : 1);
 			}
 
-			//bool c = false;
-			//c = PointToBox({ b1_0.min.x, 0, b1_0.min.z }, v, b2) || c;
-			//c = PointToBox({ b1_0.max.x, 0, b1_0.min.z }, v, b2) || c;
-			//c = PointToBox({ b1_0.min.x, 0, b1_0.max.z }, v, b2) || c;
-			//c = PointToBox({ b1_0.max.x, 0, b1_0.max.z }, v, b2) || c;
+			return mtv;
+		}
 
-			//auto v2 = Vector3Negate(v);
-			//bool c2 = false;
-			//c2 = PointToBox({ b2.min.x, 0, b2.min.z }, v2, b1_0) || c2;
-			//c2 = PointToBox({ b2.max.x, 0, b2.min.z }, v2, b1_0) || c2;
-			//c2 = PointToBox({ b2.min.x, 0, b2.max.z }, v2, b1_0) || c2;
-			//c2 = PointToBox({ b2.max.x, 0, b2.max.z }, v2, b1_0) || c2;
-			/*v = Vector3Negate(v2);*/
+		bool CollBoxToBox(BoundingBox& b1_0, Vector3& v, BoundingBox& b2) {
+			if (v.x == 0 && v.z == 0) return false;
+			BoundingBox b1 = { Vector3Add(b1_0.min, v), Vector3Add(b1_0.max, v) };
 
-			//if (c) printf("c");
-			//if (c2) printf("c2");
+			if (b1.max.x < b2.min.x || b1.min.x > b2.max.x)  return false;
+			if (b1.max.y < b2.min.y || b1.min.y > b2.max.y)  return false;
+			if (b1.max.z < b2.min.z || b1.min.z > b2.max.z)  return false;
+
+			auto& mtv = CalculateMTV(b1, b2);
+			v.x -= mtv.x;
+			v.z -= mtv.z;
 			return true;
 		}
 
@@ -215,10 +208,8 @@ namespace openAITD {
 					auto& curZone = curRoom->zones[i];
 					if (!objectInZone(gobj, &curZone)) continue;
 					if (curZone.type == RoomZoneType::ChangeRoom) {
-						Vector3 oldRoomPos = curRoom->position;
+						gobj.location.position = world->VectorChangeRoom(gobj.location.position, gobj.location.roomId, curZone.parameter);
 						gobj.location.roomId = curZone.parameter;
-						auto& newRoom = world->curStage->rooms[curZone.parameter];
-						gobj.location.position = Vector3Subtract(Vector3Add(gobj.location.position, oldRoomPos), newRoom.position);
 						gobj.physics.boundsCached = false;
 						break;
 					}

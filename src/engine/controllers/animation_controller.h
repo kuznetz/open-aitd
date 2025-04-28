@@ -63,6 +63,8 @@ namespace openAITD {
 
                 if (gobj.modelId != gobj.prevModelId) {
                     gobj.animation.oldPose.resize(0);
+                    objAni.animTime = 0;
+                    objAni.animEnd = 0;
                 }
 
                 auto p = mdl->animsIds.find(objAni.id);
@@ -76,9 +78,14 @@ namespace openAITD {
                 auto& mdlAnim = mdl->model.animations[objAni.animIdx];
 
                 if (objAni.animEnd) {
+                    if (gobj.id == 1) {
+                        printf("!");
+                    }
                     objAni.animEnd = 0;
                     objAni.prevMoveRoot = { 0,0,0 };
-                    if (!objAni.bitField.repeat) {
+                    if (objAni.prevId != objAni.id) {
+                    } 
+                    else if (!objAni.bitField.repeat) {
                         objAni.id = objAni.nextId;
                         objAni.flags = 1;
                     }
@@ -95,12 +102,14 @@ namespace openAITD {
                 }
 
 				objAni.animTime += timeDelta;
+                int oldFrame = objAni.animFrame;
 				objAni.animFrame = (objAni.animTime * resources->config.fps);
+                objAni.newFrame = objAni.animFrame != oldFrame;
 				auto& curFrame = objAni.animFrame;
 
                 auto frameCount = mdlAnim.bakedPoses.size();
 
-                if (curFrame+1 >= frameCount) {
+                if (curFrame >= frameCount) {
                     curFrame = frameCount - 1;
                     objAni.animEnd = 1;
                 }
