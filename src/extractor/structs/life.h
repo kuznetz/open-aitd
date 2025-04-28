@@ -13,7 +13,7 @@ namespace EvalEnum {
 		ACTOR_COLLIDER,
 		TRIGGER_COLLIDER,
 		HARD_COLLIDER,
-		HIT,
+		HIT_TO,
 		HIT_BY,
 		ANIM,
 		END_ANIM,

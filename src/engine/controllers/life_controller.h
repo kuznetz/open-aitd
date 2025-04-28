@@ -135,7 +135,11 @@ namespace openAITD {
 
 			lua->CreateFunction([this](int obj) -> int {
 				return -1;
-				}, "HIT_BY");			
+				}, "HIT_BY");
+			lua->CreateFunction([this](int obj) -> int {
+				return -1;
+				}, "HIT_TO");
+
 			lua->CreateFunction([this](int obj) -> int {
 				//return this->world->gobjects[obj].animation.scriptAnimId;
 				return this->world->gobjects[obj].animation.id;
@@ -260,7 +264,7 @@ namespace openAITD {
 				auto& gobj = this->world->gobjects[obj];
 				gobj.location.stageId = stage;
 				gobj.location.roomId = room;
-				gobj.location.position.x = x/1000.;
+				gobj.location.position.x = x / 1000.;
 				gobj.location.position.y = -y / 1000.;
 				gobj.location.position.z = -z / 1000.;
 			}, "CHANGE_ROOM");
@@ -494,6 +498,11 @@ namespace openAITD {
 
 		void process(float timeDelta) {
 			curTimeDelta = timeDelta;
+
+			auto foll = world->followTarget;
+			if (foll && (foll->location.stageId != world->curStageId || foll->location.roomId != world->curRoomId)) {
+				world->setCurRoom(foll->location.stageId, foll->location.roomId);
+			}
 
 			for (auto it = funcs.begin(); it != funcs.end(); it++)
 			{

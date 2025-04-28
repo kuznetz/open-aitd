@@ -119,13 +119,13 @@ namespace openAITD {
 			}
 
 			if (objsJson[i].contains("model")) {
-				auto& mdl = gobj.animation;
+				auto& anim = gobj.animation;
 				auto& mdlJson = objsJson[i]["model"];
 				gobj.modelId = mdlJson["id"];
 				gobj.boundsType = mdlJson["boundsType"];
-				mdl.id = mdlJson["animId"];
-				mdl.flags = mdlJson["animType"];
-				mdl.nextId = mdlJson["animInfo"];
+				anim.id = mdlJson["animId"];
+				anim.flags = mdlJson["animType"];
+				anim.nextId = mdlJson["animInfo"];
 			}
 
 			if (objsJson[i].contains("track")) {

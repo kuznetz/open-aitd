@@ -208,14 +208,17 @@ namespace openAITD {
 					auto& curZone = curRoom->zones[i];
 					if (!objectInZone(gobj, &curZone)) continue;
 					if (curZone.type == RoomZoneType::ChangeRoom) {
+						printf("Change room obj %d: %d -> %d\n", gobj.id, gobj.location.roomId, curZone.parameter);
 						gobj.location.position = world->VectorChangeRoom(gobj.location.position, gobj.location.roomId, curZone.parameter);
 						gobj.location.roomId = curZone.parameter;
 						gobj.physics.boundsCached = false;
 						break;
 					}
 					if (curZone.type == RoomZoneType::Trigger) {
-						printf("Triggered obj %d zone %d\n", gobj.id, curZone.parameter);
+						//printf("Triggered obj %d zone %d\n", gobj.id, curZone.parameter);
 						gobj.physics.zoneTriggered = curZone.parameter;
+						// AITD1 stops at the first zone
+						break;
 					}
 					if (curZone.type == RoomZoneType::ChangeStage) {
 						if (gobj.stageLifeId != -1) {
@@ -266,7 +269,7 @@ namespace openAITD {
 				gobj.animation.prevMoveRoot = gobj.animation.moveRoot;
 
 				if (Vector3Equals(gobj.physics.moveVec, {0,0,0})) continue;
-				auto* curRoom = &curStage.rooms[world->curRoomId];
+				auto* curRoom = &curStage.rooms[gobj.location.roomId];
 
 				if (gobj.physics.collidable) { //gobj.bitField.special???
 					processStaticColliders(gobj, *curRoom);
