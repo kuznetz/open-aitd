@@ -1,13 +1,7 @@
-﻿#define NLOHMANN_JSON_NAMESPACE_NO_VERSION 1
-#include <nlohmann/json.hpp>
-#define TINYGLTF_NO_INCLUDE_JSON
-#define TINYGLTF_NO_STB_IMAGE
-#define TINYGLTF_NO_STB_IMAGE_WRITE
-#define TINYGLTF_IMPLEMENTATION
-#include <tiny_gltf.h>
-#include <vector>
+﻿#include <vector>
 #include <raymath.h>
 #include <cstring>
+#include "my_gltf.h"
 
 using namespace std;
 
@@ -243,8 +237,61 @@ int createPolyMesh(tinygltf::Model& m, const vector<Vector3>& vertexes, const ve
     return m.meshes.size() - 1;
 }
 
-void addVertexSkin(tinygltf::Model& m, vector<unsigned char> vecBoneAffect) {
-    
+const VertexSkin addVertexSkin(tinygltf::Model& m, vector<unsigned char> vecBoneAffect) {
+    int jointsBytes = vecBoneAffect.size() * 4;
+    vector<unsigned char> buffer(jointsBytes);
+    memset(buffer.data(), 0, jointsBytes);
+    unsigned char* b = buffer.data();
+    for (int i = 0; i < vecBoneAffect.size(); i++) {
+        b[i * 4 + 1] = vecBoneAffect[i];
+    }
+    int jointsOffs = addDataToBuffer(m, buffer.data(), jointsBytes);
+
+    int weightsBytes = vecBoneAffect.size() * 4;
+    vector<unsigned char> buffer2(vecBoneAffect.size() * 4);
+    memset(buffer2.data(), 0, weightsBytes);
+    unsigned char* b2 = buffer2.data();
+    for (int i = 0; i < vecBoneAffect.size(); i++) {
+        b2[i * 4 + 1] = 255;
+    }
+    int weightsOffs = addDataToBuffer(m, buffer2.data(), weightsBytes);
+
+    tinygltf::BufferView jointsVw;
+    jointsVw.buffer = 0;
+    jointsVw.byteOffset = jointsOffs;
+    jointsVw.byteLength = jointsBytes;
+    //jointsVw.target = TINYGLTF_TARGET_ARRAY_BUFFER;
+    m.bufferViews.push_back(jointsVw);
+
+    tinygltf::Accessor jointsAcc;
+    jointsAcc.bufferView = m.bufferViews.size() - 1;
+    jointsAcc.byteOffset = 0;
+    jointsAcc.componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE;
+    jointsAcc.count = vecBoneAffect.size();
+    jointsAcc.type = TINYGLTF_TYPE_VEC4;
+    m.accessors.push_back(jointsAcc);
+    auto jointsAccIdx = m.accessors.size() - 1;
+
+    tinygltf::BufferView weightsVw;
+    weightsVw.buffer = 0;
+    weightsVw.byteOffset = weightsOffs;
+    weightsVw.byteLength = weightsBytes;
+    //weightsVw.target = TINYGLTF_TARGET_ELEMENT_ARRAY_BUFFER;
+    m.bufferViews.push_back(weightsVw);
+
+    tinygltf::Accessor weightsAcc;
+    weightsAcc.bufferView = m.bufferViews.size() - 1;
+    weightsAcc.byteOffset = 0;
+    weightsAcc.componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE;
+    weightsAcc.count = vecBoneAffect.size();
+    weightsAcc.type = TINYGLTF_TYPE_VEC4;
+    m.accessors.push_back(weightsAcc);
+    auto weightsAccIdx = m.accessors.size() - 1;
+
+    return { jointsAccIdx , weightsAccIdx };
+}
+
+void addVertexSkinFull(tinygltf::Model& m, tinygltf::Mesh& mesh, vector<unsigned char> vecBoneAffect) {    
     int jointsBytes = vecBoneAffect.size() * 4;
     vector<unsigned char> buffer(jointsBytes);
     memset(buffer.data(), 0, jointsBytes);
@@ -295,8 +342,8 @@ void addVertexSkin(tinygltf::Model& m, vector<unsigned char> vecBoneAffect) {
     m.accessors.push_back(weightsAcc);
     auto weightsAccIdx = m.accessors.size() - 1;
 
-    for (int i = 0; i < m.meshes[0].primitives.size(); i++) {
-        auto& prim = m.meshes[0].primitives[i];
+    for (int i = 0; i < mesh.primitives.size(); i++) {
+        auto& prim = mesh.primitives[i];
         prim.attributes["JOINTS_0"] = jointsAccIdx;
         prim.attributes["WEIGHTS_0"] = weightsAccIdx;
     }
