@@ -2,7 +2,8 @@
 //#include "../extractor/extractor.h"
 //#include "../extractor/anim_linker.h"
 //#include "posrel_test.h"
-#include "animation_test.h"
+//#include "animation_test.h"
+#include "physics_test.h"
 
 namespace PerspectiveTest {
     void runTest();
@@ -19,6 +20,7 @@ int main(void)
     //ModelTest::runTest();    
     //PerspectiveTest::runTest();
     //PosRelTest::runTest();
-    AnimationTest::runTest();
+    //AnimationTest::runTest();
+    PhysicsTest::runTest();
     return 0;
 }

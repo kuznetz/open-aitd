@@ -156,8 +156,8 @@ namespace openAITD {
 		BoundingBox b = {
 			{ (float)t[0], (float)t[1], (float)t[2] },
 			{ (float)(t[0] + s[0]), (float)(t[1] + s[1]), (float)(t[2] + s[2])}
-		};
-		return b;
+		};		
+		return correctBounds(b);
 	}
 
 	inline vector<Vector2> loadLineAcc2d(tinygltf::Model& m, int accIdx)
