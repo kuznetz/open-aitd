@@ -199,7 +199,7 @@ namespace openAITD {
 					if (gobj2.bitField.movable) {
 						pushObject(gobj2, room, v);
 					}
-					else {
+					else if(!gobj2.bitField.foundable) {
 						v = v2;
 					}
 
