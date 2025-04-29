@@ -76,13 +76,13 @@ namespace openAITD {
 		void setCurRoom(int stageId, int roomId) {
 			if (curStageId != stageId) {
 				curStageId = stageId;
-				curStage = &resources->stages[stageId];
+				curStage = (stageId != -1)? &resources->stages[stageId]: 0;
 				curRoomId = -1;
 				curCameraId = -1;
 			}
 			if (curRoomId != roomId) {
 				curRoomId = roomId;
-				curRoom = &curStage->rooms[roomId];
+				curRoom = (roomId != -1) ? &curStage->rooms[roomId]: 0;
 				roomChrono = chrono;
 			}
 		}

@@ -158,7 +158,9 @@ namespace openAITD {
 					}
 				}
 			}
-			gobj.physics.moveVec = v;
+			if (gobj.physics.collidable) {
+				gobj.physics.moveVec = v;
+			}
 		}
 
 		void processDynamicColliders(GameObject& gobj, Room& room) {
@@ -183,7 +185,8 @@ namespace openAITD {
 				}
 
 				BoundingBox& objB2 = world->BoundsChangeRoom(getObjectBounds(gobj2), gobj2.location.roomId, gobj.location.roomId);
-				bool collided = CollBoxToBox(objB, v, objB2);
+				Vector3 v2 = v;
+				bool collided = CollBoxToBox(objB, v2, objB2);
 				if (collided) {
 					gobj.physics.objectColl = gobj2.id;
 					gobj2.physics.collidedBy = gobj.id;
@@ -193,11 +196,27 @@ namespace openAITD {
 						world->foundItem = gobj2.id;
 					}
 
-					//TODO: pushable
+					if (gobj2.bitField.movable) {
+						pushObject(gobj2, room, v);
+					}
+					else {
+						v = v2;
+					}
+
 				}
 			}
+			if (gobj.physics.collidable) {
+				gobj.physics.moveVec = v;
+			}			
+		}
 
+		void pushObject(GameObject& gobj, Room& room, Vector3& v) {
 			gobj.physics.moveVec = v;
+			gobj.physics.boundsCached = false;
+			processStaticColliders(gobj, room);
+			processDynamicColliders(gobj, room);
+			v = gobj.physics.moveVec;
+			gobj.location.position = Vector3Add(gobj.location.position, gobj.physics.moveVec);
 		}
 
 		void processZones(GameObject& gobj, Room* curRoom) {
@@ -271,10 +290,8 @@ namespace openAITD {
 				if (Vector3Equals(gobj.physics.moveVec, {0,0,0})) continue;
 				auto* curRoom = &curStage.rooms[gobj.location.roomId];
 
-				if (gobj.physics.collidable) { //gobj.bitField.special???
-					processStaticColliders(gobj, *curRoom);
-					processDynamicColliders(gobj, *curRoom);
-				}
+				processStaticColliders(gobj, *curRoom);
+				processDynamicColliders(gobj, *curRoom);
 
 				gobj.location.position = Vector3Add(gobj.location.position, gobj.physics.moveVec);
 

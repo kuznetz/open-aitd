@@ -197,10 +197,10 @@ namespace openAITD {
 				}, "GAMMA");
 
 			lua->CreateFunction([this](int obj) -> int {
-				return (int)((this->world->chrono - this->world->gobjects[obj].chrono) * 60.);
+				return (int)((this->world->chrono - this->world->gobjects[obj].chrono));
 				}, "CHRONO");
 			lua->CreateFunction([this](int obj) -> int {
-				return (int)((this->world->chrono - this->world->roomChrono) * 60.);
+				return (int)((this->world->chrono - this->world->roomChrono));
 				}, "ROOM_CHRONO");
 		}
 

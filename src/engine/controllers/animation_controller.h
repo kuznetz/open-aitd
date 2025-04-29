@@ -89,7 +89,7 @@ namespace openAITD {
                         objAni.id = objAni.nextId;
                         objAni.flags = 1;
                     }
-                    else {
+                    else if (mdlAnim.duration > 0) {
                         while (objAni.animTime > mdlAnim.duration) {
                             objAni.animTime -= mdlAnim.duration;
                         }
