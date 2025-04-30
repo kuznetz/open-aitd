@@ -4,7 +4,6 @@
 #include "./tracks_controller.h"
 #include "./player_controller.h"
 
-
 #include <luacpp/luacpp.h>
 #include <iostream>
 #include <string>
@@ -45,23 +44,22 @@ namespace openAITD {
 
 		int getPosRel(GameObject* actor1, GameObject* actor2)
 		{
+			if (actor1->staticCollider != 0) {
+				return getPosRelStatic(actor1, actor2);
+			}
+
 			Vector3 p2rot;
 			BoundingBox b;
 			Vector3& p1 = actor1->location.position;
 			Vector3& p2 = world->VectorChangeRoom(actor2->location.position, actor2->location.roomId, actor1->location.roomId);
-			if (actor1->staticCollider == 0) {
-				p2rot = { p2.x - p1.x, 0, p2.z - p1.z };
-				p2rot = Vector3RotateByQuaternion(p2rot, QuaternionInvert(actor1->location.rotation)); //QuaternionInvert(actor1->location.rotation)
-				p2rot = Vector3Add(p2rot, p1);
-				RModel* m = resources->models.getModel(actor1->modelId);
-				b = m->bounds;
-				b.min = Vector3Add(b.min, p1);
-				b.max = Vector3Add(b.max, p1);
-			}
-			else {
-				p2rot = p2;
-				b = actor1->staticCollider->bounds;
-			}
+
+			p2rot = { p2.x - p1.x, 0, p2.z - p1.z };
+			p2rot = Vector3RotateByQuaternion(p2rot, QuaternionInvert(actor1->location.rotation)); //QuaternionInvert(actor1->location.rotation)
+			p2rot = Vector3Add(p2rot, p1);
+			RModel* m = resources->models.getModel(actor1->modelId);
+			b = m->bounds;
+			b.min = Vector3Add(b.min, p1);
+			b.max = Vector3Add(b.max, p1);
 			
 			int res = 0;
 			if (p2rot.z < b.min.z) {
@@ -77,6 +75,28 @@ namespace openAITD {
 				res = 4;
 			}
 			cout << "POSREL=" << to_string(res);
+			return res;
+		}
+
+		int getPosRelStatic(GameObject* actor1, GameObject* actor2)
+		{
+			BoundingBox& b = actor1->staticCollider->bounds;
+			Vector3& p2 = world->VectorChangeRoom(actor2->location.position, actor2->location.roomId, actor1->location.roomId);
+
+			int res = 0;
+			if (p2.z < b.min.z) {
+				res = 1;
+			}
+			else if (p2.z > b.max.z) {
+				res = 2;
+			}
+			else if (p2.x < b.min.x) {
+				res = 8;
+			}
+			else if (p2.x > b.max.x) {
+				res = 4;
+			}
+			cout << "POSREL_S=" << to_string(res);
 			return res;
 		}
 
@@ -279,6 +299,14 @@ namespace openAITD {
 				if (gobj.invItem.bitField.in_inventory) return;
 				this->world->foundItem = obj;
 				}, "FOUND");
+			lua->CreateFunction([this](int obj, int nameId) {
+				auto& gobj = this->world->gobjects[obj];
+				gobj.invItem.nameId = nameId;
+				}, "SET_INVENTORY_NAME");
+			lua->CreateFunction([this](int obj, int newFlag) {
+				auto& gobj = this->world->gobjects[obj];
+				gobj.invItem.flags = newFlag;
+				}, "SET_INVENTORY_FLAG");
 			lua->CreateFunction([this](int obj) {
 				return this->world->inHandObj = &this->world->gobjects[obj];
 				}, "SET_IN_HAND");
