@@ -263,9 +263,10 @@ namespace openAITD {
 			lua->CreateFunction([this](int obj, int coll) {
 				this->world->gobjects[obj].physics.collidable = coll;
 			}, "TEST_COL");
-			//Set object angle
+			//Set object rotation(angle)
 			lua->CreateFunction([this](int obj, int x, int y, int z) {
 				this->world->gobjects[obj].location.rotation = convertAngle(x, y, z);
+				this->world->gobjects[obj].physics.boundsCached = false;
 			}, "SET_ANGLE");
 			lua->CreateFunction([this](int obj, int flags) {
 				auto& gobj = this->world->gobjects[obj];

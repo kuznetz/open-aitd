@@ -17,20 +17,6 @@ namespace openAITD {
 		CAMERA_PERSPECTIVE
 	};
 
-	struct RenderBackground {
-		Image background;
-		vector<vector<Image>> masks;
-	};
-
-	struct RenderOverlay {
-		//int x,y,w,h;
-		Texture2D texture;
-		int roomId;
-		GCameraOverlay* res;
-		//Render overlay after this object
-		GameObject* renderAfterObj = 0;
-	};
-
 	class CameraRenderer {
 	public:
 		World* world;
@@ -39,9 +25,6 @@ namespace openAITD {
 		int invX = 0;
 		int invZ = 0;
 
-		vector<RenderBackground> backgrounds;
-		Texture2D backgroundTex = {0,0,0};
-		vector<RenderOverlay> curOverlays;
 
 		RenderOrder renderQueue[100];
 		RenderOrder* renderStart;
@@ -55,6 +38,7 @@ namespace openAITD {
 		int curStageId = -1;
 		WCamera* curCamera = 0;
 		int curCameraId = -1;
+		Background* curBackground = 0;
 
 		const int getScreenW() { return resources->config.screenW; }
 		const int getScreenH() { return resources->config.screenH; }
@@ -132,16 +116,6 @@ namespace openAITD {
 
 		void clearStage()
 		{
-			for (int i = 0; i < backgrounds.size(); i++) {
-				auto& bg = backgrounds[i];
-				if (bg.background.data) UnloadImage(bg.background);
-				for (int i = 0; i < bg.masks.size(); i++) {
-					for (int j = 0; j < bg.masks[i].size(); j++) {
-						UnloadImage(bg.masks[i][j]);
-					}
-				}
-			}
-			backgrounds.clear();
 		}
 
 		void loadStage(int newStageId)
@@ -149,82 +123,35 @@ namespace openAITD {
 			if (newStageId == curStageId) return;
 			clearStage();
 			curStage = &this->resources->stages[newStageId];
-
-			for (int camId = 0; camId < curStage->cameras.size(); camId++ ) {
-				auto dir = curStage->stageDir + "/camera_" + to_string(camId);
-				auto& bg = backgrounds.emplace_back();
-				bg.background = LoadImage((dir + "/background.png").c_str());
-				auto& camRooms = curStage->cameras[camId].rooms;
-				for (int cr = 0; cr < camRooms.size(); cr++) {
-					auto& msk = bg.masks.emplace_back();
-					for (int i = 0; i < camRooms[cr].overlays.size(); i++) {
-						auto& msk2 = msk.emplace_back();
-						msk2 = LoadImage((dir + "/mask_" + to_string(cr) + "_" + to_string(i) + ".png").c_str());
-						//auto& o = camRooms[cr].overlays[camId];
-					}
-				}
-			}
 			curStageId = newStageId;
 			curCameraId = -1;
+			
+			//Preload Cameras
+			resources->backgrounds.loadStage(newStageId);
+			//Preload Objects
+			for (int i = 0; i < this->world->gobjects.size(); i++) {
+				auto& gobj = this->world->gobjects[i];
+				if (gobj.modelId == -1) continue;
+				if (gobj.location.stageId != newStageId) continue;
+				resources->models.getModel(gobj.modelId);
+			}
+
 		}
 
 		void clearCamera()
 		{
 			if (curCameraId == -1) return;
-			UnloadTexture(backgroundTex);
-			for (int i = 0; i < curOverlays.size(); i++) {
-				UnloadTexture(curOverlays[i].texture);
-			}
-			curOverlays.clear();
 			curCameraId = -1;
-		}
-
-		Image resizeImg(Image& src, int w, int h) {
-			Image res = { 0, w, h, 1, src.format };
-			stbir_pixel_layout l = STBIR_RGB;
-			if (src.format == PIXELFORMAT_UNCOMPRESSED_R8G8B8A8) l = STBIR_RGBA;
-			if (src.format == RL_PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA) l = STBIR_RA;
-			res.data = stbir_resize_uint8_linear((unsigned char*)src.data, src.width, src.height, 0, 0, w, h, 0, l);
-			return res;
-		}		
-
-		Texture2D generateMask(Image& fullBg, Image& mask) {
-			Image maskImageScaled = resizeImg(mask, getScreenW(), getScreenH());
-			Image resImg = { 0, getScreenW(), getScreenH(), 1, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8 };
-			resImg.data = new uint8_t[getScreenW() * getScreenH() * 4];
-			for (int i = 0; i < (getScreenW() * getScreenH()); i++) {
-				((uint8_t*)resImg.data)[i * 4 + 0] = ((uint8_t*)fullBg.data)[i * 3 + 0];
-				((uint8_t*)resImg.data)[i * 4 + 1] = ((uint8_t*)fullBg.data)[i * 3 + 1];
-				((uint8_t*)resImg.data)[i * 4 + 2] = ((uint8_t*)fullBg.data)[i * 3 + 2];
-				((uint8_t*)resImg.data)[i * 4 + 3] = ((uint8_t*)maskImageScaled.data)[i * 2 + 1];
-			}
-			Texture2D result = LoadTextureFromImage(resImg);
-			UnloadImage(maskImageScaled);
-			UnloadImage(resImg);
-			return result;
+			curCamera = 0;
 		}
 
 		void loadCamera(int newStageId, int newCameraId)
 		{
-			if ((newStageId == curStageId) && (newCameraId == curCameraId)) return;
-			clearCamera();
 			loadStage(newStageId);
-			curCamera = &curStage->cameras[newCameraId];
+			curStageId = newStageId;
 			curCameraId = newCameraId;
-
-			auto& fullBg = resizeImg(backgrounds[curCameraId].background, getScreenW(), getScreenH());
-			backgroundTex = LoadTextureFromImage(fullBg);
-			auto& masks = backgrounds[curCameraId].masks;			
-			for (int i = 0; i < masks.size(); i++) {
-				auto& m2 = masks[i];
-				for (int j = 0; j < m2.size(); j++) {
-					auto& ovl = curOverlays.emplace_back();
-					ovl.roomId = curCamera->rooms[i].roomId;
-					ovl.res = &curCamera->rooms[i].overlays[j];
-					ovl.texture = generateMask(fullBg, m2[j]);
-				}
-			}
-			UnloadImage(fullBg);
+			curCamera = &resources->stages[newStageId].cameras[newCameraId];
+			curBackground = resources->backgrounds.get(newStageId, newCameraId);
 
 			auto& camPers = curCamera->pers;
 			curCamera->perspective = MatrixPerspective(camPers.yfov, camPers.aspectRatio, camPers.znear, camPers.zfar);
@@ -304,7 +231,7 @@ namespace openAITD {
 			ClearBackground(BLACK);
 
 			DrawTexturePro(
-				backgroundTex,
+				curBackground->texture,
 				{ 0, 0, (float)getScreenW(), (float)getScreenH() },
 				{ 0, 0, (float)getScreenW(), (float)getScreenH() },
 				{ 0, 0 }, 0, WHITE
@@ -383,21 +310,6 @@ namespace openAITD {
 
 			}
 
-			for (auto i = 0; i < curOverlays.size(); i++) {
-				curOverlays[i].renderAfterObj = 0;
-			}
-
-			//TODO: Revese for can be faster (no overwrite result)
-			//for (auto it = renderQueue.begin(); it != renderQueue.end(); it++) {
-			//	auto& obj = *it->obj;
-			//	for (auto i = 0; i < curOverlays.size(); i++) {
-			//		auto& ovl = curOverlays[i];					
-			//		if ((ovl.roomId == it->obj->location.roomId) && checkOverlay(*ovl.res, obj)) {
-			//			ovl.renderAfterObj = &obj;
-			//		}
-			//	}
-			//}
-
 			if (renderStart) {
 				int num = 1;
 				renderIter = renderStart;
@@ -411,19 +323,22 @@ namespace openAITD {
 					//auto s = to_string(num)+" R" + to_string(it->obj->location.roomId);
 					//auto s = to_string(it->obj->);
 
-					Rectangle r = {
+					raylib::Rectangle r = {
 						renderIter->screenMin.x,
 						renderIter->screenMin.y,
 						(renderIter->screenMax.x - renderIter->screenMin.x) + 1,
 						(renderIter->screenMax.y - renderIter->screenMin.y) + 1
 					};
 
-					for (auto i = 0; i < curOverlays.size(); i++) {
-						if (renderIter->gobj->location.roomId != curOverlays[i].roomId) continue;
-						if (checkOverlay(*curOverlays[i].res, *renderIter->gobj)) {
-							DrawTexturePro(
-								curOverlays[i].texture, r, r, { 0, 0 }, 0, WHITE
-							);
+					for (int camRoomIdx = 0; camRoomIdx < curCamera->rooms.size(); camRoomIdx++) {
+						if (renderIter->gobj->location.roomId != curCamera->rooms[camRoomIdx].roomId) continue;
+						for (int ovlIdx = 0; ovlIdx < curCamera->rooms[camRoomIdx].overlays.size(); ovlIdx++) {
+							auto& ovl = curCamera->rooms[camRoomIdx].overlays[ovlIdx];
+							if (checkOverlay(ovl, *renderIter->gobj)) {
+								DrawTexturePro(
+									curBackground->overlays[camRoomIdx][ovlIdx].texture, r, r, { 0, 0 }, 0, WHITE
+								);
+							}
 						}
 					}
 					//it->marker = s;

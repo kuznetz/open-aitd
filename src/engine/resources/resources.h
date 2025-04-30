@@ -7,6 +7,7 @@
 #include "stages.h"
 #include "tracks.h"
 #include "models.h"
+#include "backgrounds.h"
 #include "../raylib.h"
 
 using namespace std;
@@ -16,15 +17,18 @@ namespace openAITD {
 	class Resources {
 	public:
 		Config config;
-		Font mainFont;
+		Font mainFont = { 0 };
 		map<int,string> texts;
 
 		vector<Stage> stages;
 		vector<Track> tracks;
 		RModels models;
+		Backgrounds backgrounds;
 
 		Resources() {
 			models.config = &config;
+			backgrounds.config = &config;
+			backgrounds.stages = &stages;
 		}
 
 		~Resources() {
