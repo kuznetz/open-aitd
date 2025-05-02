@@ -64,23 +64,46 @@ namespace openAITD {
             this->resources = world->resources;
         }
 
+        void calcHitBounds(GameObject& gobj) {
+            auto mdl = resources->models.getModel(gobj.modelId);
+            if (!mdl) throw new exception("Invalid model");
+            auto& curAnim = mdl->model.animations[gobj.animation.animIdx];
+            auto& curPose = curAnim.bakedPoses[gobj.animation.animFrame];
+            
+            mdl->model.ApplyPose(curPose.data());
+            //Vector3 v = Vector3Negate(mdl->model.curPose[gobj.hit.boneIdx].translation);
+            Vector3 v = mdl->model.curPose[gobj.hit.boneIdx].translation;
+            v = Vector3RotateByQuaternion(v, gobj.location.rotation);
+            v = Vector3Add(v, gobj.location.position);
+            //v.y = -v.y;
+            //v = Vector3Add(v, roomPos);
+            auto& r = gobj.hit.range;
+
+            gobj.hit.bounds = { { v.x - r, v.y - r, v.z - r }, { v.x + r, v.y + r, v.z + r } };
+        }
+
         void process(float timeDelta) {
             for (int i = 0; i < AnimActionsCount; i++) {
                 AnimAction* act = &actions[i];
                 if (act->gobj == 0) continue;
                 if (act->gobj->animation.id != act->animId) {
+                    act->gobj->hit.active = false;
                     act->gobj = 0;
                     continue;
                 }
                 if (!act->triggered) {
                     if (act->gobj->animation.keyFrameIdx >= act->keyFrameIdx) {
-                        printf("TRIGGER");
+                        act->gobj->hit.active = true;
                         act->triggered = true;
                     }
                 } else {
                     if (act->gobj->animation.keyFrameIdx < act->keyFrameIdx) {
+                        act->gobj->hit.active = false;
                         act->triggered = false;
                     }
+                }
+                if (act->gobj->hit.active) {
+                    calcHitBounds(*act->gobj);
                 }
             }
         }

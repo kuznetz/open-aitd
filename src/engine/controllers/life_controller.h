@@ -339,10 +339,12 @@ namespace openAITD {
 			
 			//Actions
 			lua->CreateFunction([this](int obj, int anim1, int startIdx, int activeBone, int range, int damage, int anim2) {
-				//range/1000.
 				auto gobj = &this->world->gobjects[obj];
 				this->world->setOnceAnimation(this->world->gobjects[obj], anim1, anim2);
 				this->animActContr->addAction(gobj, AnimActionType::hit, anim1, startIdx);
+				gobj->hit.boneIdx = activeBone;
+				gobj->hit.range = range / 1000.f;
+				gobj->hit.damage = damage;
 				}, "HIT");
 			lua->CreateFunction([this](int obj, int fireAnim, int shootFrame, int emitPoint, int zvSize, int hitForce, int nextAnim) {
 				this->world->setOnceAnimation(this->world->gobjects[obj], fireAnim, nextAnim);

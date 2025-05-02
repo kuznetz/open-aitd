@@ -96,6 +96,7 @@ namespace openAITD {
 
         BeginDrawing();
         if (freeLook) {
+            flRenderer.freeLook = pause;
             flRenderer.process();
         }
         else {

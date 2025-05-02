@@ -18,6 +18,7 @@ namespace openAITD {
 
 	class FreelookRenderer {
 	public:
+		bool freeLook = true;
 		Debug3DStruct debug3d[100];
 		Debug3DStruct* endDebug3d;
 		World* world;
@@ -284,6 +285,9 @@ namespace openAITD {
 			if (gobj.physics.boundsCached) {
 				DrawBounds(gobj.physics.bounds, RED);
 			}
+			if (gobj.hit.active) {
+				DrawBounds(gobj.hit.bounds, RED);
+			}
 
 			//rlMultMatrixf(MatrixToFloat(MatrixTranslate(pos.x, pos.y, pos.z)));
 			//auto m = rmodel;
@@ -321,7 +325,9 @@ namespace openAITD {
 			endDebug3d = debug3d;
 
 			ClearBackground(BLACK);
-    		UpdateCamera(&initCamera, CAMERA_FREE);
+			if (freeLook) {
+				UpdateCamera(&initCamera, CAMERA_FREE);
+			}
 
 			/*
 			for (int i = 0; i < this->world->gobjects.size(); i++) {
