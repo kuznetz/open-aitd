@@ -77,74 +77,8 @@ namespace openAITD {
 			return true;
 		}
 
-		inline BoundingBox getCubeBounds(BoundingBox& b)
-		{
-			BoundingBox r = b;
-			r.max.z = r.max.x = (b.max.x + b.max.z) / 2;
-			r.min.z = r.min.x = -r.max.z;
-			return r;
-		}
-
-		inline BoundingBox getRotatedBounds(const BoundingBox& b, const Quaternion& q)
-		{
-			Vector3 v[8];
-			v[0] = { b.min.x, b.min.y, b.min.z };
-			v[1] = { b.max.x, b.min.y, b.min.z };
-			v[2] = { b.min.x, b.min.y, b.max.z };
-			v[3] = { b.max.x, b.min.y, b.max.z };
-			v[4] = { b.min.x, b.max.y, b.min.z };
-			v[5] = { b.max.x, b.max.y, b.min.z };
-			v[6] = { b.min.x, b.max.y, b.max.z };
-			v[7] = { b.max.x, b.max.y, b.max.z };
-			BoundingBox res;
-			for (int i = 0; i < 8; i++) {
-				v[i] = Vector3RotateByQuaternion(v[i], q);
-				if (i == 0 || v[i].x < res.min.x) {
-					res.min.x = v[i].x;
-				}
-				if (i == 0 || v[i].x > res.max.x) {
-					res.max.x = v[i].x;
-				}
-				if (i == 0 || v[i].y < res.min.y) {
-					res.min.y = v[i].y;
-				}
-				if (i == 0 || v[i].y > res.max.y) {
-					res.max.y = v[i].y;
-				}
-				if (i == 0 || v[i].z < res.min.z) {
-					res.min.z = v[i].z;
-				}
-				if (i == 0 || v[i].z > res.max.z) {
-					res.max.z = v[i].z;
-				}
-			}
-			return res;
-		}
-
-		BoundingBox getObjectBounds(GameObject& gobj) {
-			if (gobj.physics.boundsCached) {
-				return gobj.physics.bounds;
-			}
-			auto& m = *resources->models.getModel(gobj.modelId);
-			BoundingBox& objB = gobj.physics.bounds;
-			objB = correctBounds(m.bounds);
-			if (gobj.boundsType == BoundsType::cube) {
-				objB = getCubeBounds(objB);
-			}
-			if (gobj.boundsType == BoundsType::rotated) {
-				objB = getRotatedBounds(objB, gobj.location.rotation);
-			}
-			Vector3& p = gobj.location.position;
-			objB.min = Vector3Add(objB.min, p);
-			objB.max = Vector3Add(objB.max, p);
-			objB = correctBounds(objB);
-
-			gobj.physics.boundsCached = true;
-			return objB;
-		}
-
 		void processStaticColliders(GameObject& gobj, Room& room) {
-			BoundingBox& objB = getObjectBounds(gobj);
+			BoundingBox& objB = world->getObjectBounds(gobj);
 			Vector3 v = gobj.physics.moveVec;
 			for (int i = 0; i < room.colliders.size(); i++) {
 				BoundingBox& colB = room.colliders[i].bounds;
@@ -164,7 +98,7 @@ namespace openAITD {
 		}
 
 		void processDynamicColliders(GameObject& gobj, Room& room) {
-			BoundingBox& objB = getObjectBounds(gobj);
+			BoundingBox& objB = world->getObjectBounds(gobj);
 			Vector3 v = gobj.physics.moveVec;
 
 			for (int i = 0; i < world->gobjects.size(); i++) {
@@ -184,7 +118,7 @@ namespace openAITD {
 					if (!inConnRoom) continue;
 				}
 
-				BoundingBox& objB2 = world->BoundsChangeRoom(getObjectBounds(gobj2), gobj2.location.roomId, gobj.location.roomId);
+				BoundingBox& objB2 = world->BoundsChangeRoom(world->getObjectBounds(gobj2), gobj2.location.roomId, gobj.location.roomId);
 				Vector3 v2 = v;
 				bool collided = CollBoxToBox(objB, v2, objB2);
 				if (collided) {

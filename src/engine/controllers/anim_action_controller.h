@@ -82,10 +82,25 @@ namespace openAITD {
             gobj.hit.bounds = { { v.x - r, v.y - r, v.z - r }, { v.x + r, v.y + r, v.z + r } };
         }
 
+        bool CollBoxToBox(BoundingBox& b1, BoundingBox& b2) {
+            if (b1.max.x < b2.min.x || b1.min.x > b2.max.x)  return false;
+            if (b1.max.y < b2.min.y || b1.min.y > b2.max.y)  return false;
+            if (b1.max.z < b2.min.z || b1.min.z > b2.max.z)  return false;
+            return true;
+        }
+
         void process(float timeDelta) {
+            for (int j = 0; j < world->gobjects.size(); j++) {
+                auto& gobj = world->gobjects[j];
+                gobj.hit.hitTo = 0;
+                gobj.hit.hitBy = 0;
+                gobj.hit.damage = 0;
+            }
+
             for (int i = 0; i < AnimActionsCount; i++) {
                 AnimAction* act = &actions[i];
                 if (act->gobj == 0) continue;
+
                 if (act->gobj->animation.id != act->animId) {
                     act->gobj->hit.active = false;
                     act->gobj = 0;
@@ -102,9 +117,25 @@ namespace openAITD {
                         act->triggered = false;
                     }
                 }
-                if (act->gobj->hit.active) {
-                    calcHitBounds(*act->gobj);
+                if (!act->gobj->hit.active) continue;
+                calcHitBounds(*act->gobj);
+
+                for (int j = 0; j < world->gobjects.size(); j++) {
+                    //if (j == 6) printf("6");
+                    auto& gobj = world->gobjects[j];
+                    if (gobj.location.stageId != world->curStageId) continue;
+                    if (gobj.modelId == -1) continue;
+                    if (gobj.id == act->gobj->id) continue;
+
+                    BoundingBox& objB = world->BoundsChangeRoom(world->getObjectBounds(gobj), gobj.location.roomId, act->gobj->location.roomId);
+                    if (!CollBoxToBox(act->gobj->hit.bounds, objB)) continue;
+                    printf("HIT %d->%d\n", act->gobj->id, gobj.id);
+                    gobj.hit.hitBy = act->gobj;
+                    gobj.hit.damage = act->gobj->hit.hitDamage;
+                    act->gobj->hit.hitTo = &gobj;
+                    act->gobj->hit.active = false;
                 }
+                
             }
         }
     };

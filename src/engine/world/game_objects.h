@@ -7,6 +7,8 @@
 using namespace std;
 namespace openAITD {
 
+	class GameObject;
+
 	struct GOFlags
 	{
 		unsigned char animated : 1;
@@ -158,8 +160,11 @@ namespace openAITD {
 		bool active = false;
 		float range;
 		int boneIdx;
+		int hitDamage;
 		int damage;
 		BoundingBox bounds;
+		GameObject* hitBy;
+		GameObject* hitTo;
 	};
 
 	class GameObject

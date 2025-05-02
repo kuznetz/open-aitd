@@ -36,7 +36,7 @@ namespace EvalEnum {
 		BETA,
 		GAMMA,
 		IN_HAND,
-		HITFORCE,
+		HIT_DAMAGE,
 		CAMERA,
 		RAND,
 		FALLING,

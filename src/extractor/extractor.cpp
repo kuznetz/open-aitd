@@ -209,6 +209,7 @@ namespace AITDExtractor {
                 writeLifeNodes(out, 1, lifesNodes[j]);
                 out << "end\n\n";
             }
+            out.flush();
             out.close();
         }
 

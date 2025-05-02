@@ -157,11 +157,16 @@ namespace openAITD {
 				}, "TRIGGER_COLLIDER");			
 
 			lua->CreateFunction([this](int obj) -> int {
-				return -1;
+				auto hb = this->world->gobjects[obj].hit.hitBy;
+				return hb ? hb->id : -1;
 				}, "HIT_BY");
 			lua->CreateFunction([this](int obj) -> int {
-				return -1;
+				auto ht = this->world->gobjects[obj].hit.hitTo;
+				return ht ? ht->id : -1;
 				}, "HIT_TO");
+			lua->CreateFunction([this](int obj) -> int {
+				return this->world->gobjects[obj].hit.damage;
+				}, "HIT_DAMAGE");			
 
 			lua->CreateFunction([this](int obj) -> int {
 				//return this->world->gobjects[obj].animation.scriptAnimId;
@@ -338,15 +343,15 @@ namespace openAITD {
 				}, "SET_ANIM_ALL_ONCE");
 			
 			//Actions
-			lua->CreateFunction([this](int obj, int anim1, int startIdx, int activeBone, int range, int damage, int anim2) {
+			lua->CreateFunction([this](int obj, int anim1, int keyFrameIdx, int activeBone, int range, int damage, int anim2) {
 				auto gobj = &this->world->gobjects[obj];
 				this->world->setOnceAnimation(this->world->gobjects[obj], anim1, anim2);
-				this->animActContr->addAction(gobj, AnimActionType::hit, anim1, startIdx);
+				this->animActContr->addAction(gobj, AnimActionType::hit, anim1, keyFrameIdx);
 				gobj->hit.boneIdx = activeBone;
 				gobj->hit.range = range / 1000.f;
-				gobj->hit.damage = damage;
+				gobj->hit.hitDamage = damage;
 				}, "HIT");
-			lua->CreateFunction([this](int obj, int fireAnim, int shootFrame, int emitPoint, int zvSize, int hitForce, int nextAnim) {
+			lua->CreateFunction([this](int obj, int fireAnim, int shootFrame, int emitPoint, int zvSize, int damage, int nextAnim) {
 				this->world->setOnceAnimation(this->world->gobjects[obj], fireAnim, nextAnim);
 				}, "FIRE");
 			lua->CreateFunction([this](int obj, int flags, int damage) {
@@ -462,6 +467,9 @@ namespace openAITD {
 			lua->CreateFunction([this](int light) {
 				//TODO: SET_LIGHT
 				}, "SET_LIGHT");
+			lua->CreateFunction([this](int obj, int spType) {
+				//TODO: SPECIAL
+				}, "SPECIAL");
 
 			lua->CreateFunction([this](int light) {
 				world->gameOver = true;
