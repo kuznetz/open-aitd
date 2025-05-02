@@ -84,7 +84,8 @@ namespace openAITD {
 		int scriptAnimId = -1; //scriptAnimId stay after change to next anim
 		int animIdx;
 		int animFrame;
-		bool newFrame;
+		int keyFrameIdx;
+		bool isNewFrame;
 		float animTime;
 		vector<Transform> oldPose;
 		union {

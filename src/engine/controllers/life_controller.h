@@ -3,6 +3,7 @@
 #include "../world/world.h"
 #include "./tracks_controller.h"
 #include "./player_controller.h"
+#include "./anim_action_controller.h"
 
 #include <luacpp/luacpp.h>
 #include <iostream>
@@ -24,16 +25,18 @@ namespace openAITD {
 		Resources* resources;
 		TracksController* trackContr;
 		PlayerController* playerContr;
+		AnimActionController* animActContr;
 		LuaState* lua = 0;
 		map <int, LifeFunc> funcs;
 		std::function<bool(uint32_t, const LuaObject&)> execCb;
 		Matrix roomMatrix;
 		float curTimeDelta = 0;
 
-		LifeController(World* world, TracksController* trackContr, PlayerController* playerContr) {
+		LifeController(World* world, TracksController* trackContr, PlayerController* playerContr, AnimActionController* animActContr) {
 			this->world = world;
 			this->trackContr = trackContr;
 			this->playerContr = playerContr;
+			this->animActContr = animActContr;
 			this->resources = world->resources;
 			initLua();
 		}
@@ -335,8 +338,11 @@ namespace openAITD {
 				}, "SET_ANIM_ALL_ONCE");
 			
 			//Actions
-			lua->CreateFunction([this](int obj, int anim1, int x1, int x2, int x3, int x4, int anim2) {
+			lua->CreateFunction([this](int obj, int anim1, int startIdx, int activeBone, int range, int damage, int anim2) {
+				//range/1000.
+				auto gobj = &this->world->gobjects[obj];
 				this->world->setOnceAnimation(this->world->gobjects[obj], anim1, anim2);
+				this->animActContr->addAction(gobj, AnimActionType::hit, anim1, startIdx);
 				}, "HIT");
 			lua->CreateFunction([this](int obj, int fireAnim, int shootFrame, int emitPoint, int zvSize, int hitForce, int nextAnim) {
 				this->world->setOnceAnimation(this->world->gobjects[obj], fireAnim, nextAnim);

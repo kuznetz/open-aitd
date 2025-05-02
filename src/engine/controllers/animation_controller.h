@@ -78,9 +78,6 @@ namespace openAITD {
                 auto& mdlAnim = mdl->model.animations[objAni.animIdx];
 
                 if (objAni.animEnd) {
-                    if (gobj.id == 1) {
-                        printf("!");
-                    }
                     objAni.animEnd = 0;
                     objAni.prevMoveRoot = { 0,0,0 };
                     if (objAni.prevId != objAni.id) {
@@ -104,8 +101,10 @@ namespace openAITD {
 				objAni.animTime += timeDelta;
                 int oldFrame = objAni.animFrame;
 				objAni.animFrame = (objAni.animTime * resources->config.fps);
-                objAni.newFrame = objAni.animFrame != oldFrame;
+                objAni.isNewFrame = objAni.animFrame != oldFrame;
 				auto& curFrame = objAni.animFrame;
+
+                objAni.keyFrameIdx = mdl->model.getKeyFrame(mdlAnim, objAni.animTime);
 
                 auto frameCount = mdlAnim.bakedPoses.size();
 

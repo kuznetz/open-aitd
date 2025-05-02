@@ -22,6 +22,7 @@ namespace openAITD {
     struct Animation {
         cgltf_animation* anim;
         vector<BoneChannels> boneChannels;
+        vector <float> keyFrames;
         vector <Transform> rootMotion;
         vector <vector<Transform>> bakedPoses;
         float transition;
@@ -139,6 +140,16 @@ namespace openAITD {
             bounds = GetModelBoundingBox(model);
         }
 
+        int getKeyFrame(const Animation& anim, float animTime) {
+            int i = 1;
+            for (i = 1; i < anim.keyFrames.size(); i++) {
+                if (animTime < anim.keyFrames[i]) {
+                    return i - 1;
+                }
+            }
+            return i - 1;
+        }
+
         void Render() const {
             if (!data) return;
             for (int i = 0; i < model.meshCount; i++)
@@ -232,7 +243,14 @@ namespace openAITD {
 
                 //transition - second keyframe
                 auto inp = animData.channels[0].sampler->input;
-                cgltf_accessor_read_float(inp, 1, &animations[i].transition, 1);
+                animations[i].keyFrames.resize(inp->count);
+                //cgltf_accessor_read_float(inp, 0, animations[i].keyFrames.data(), inp->count);
+                for (int j = 0; j < inp->count; j++) {
+                    cgltf_accessor_read_float(inp, j, &animations[i].keyFrames[j], 1);
+                }
+
+                //transition time - second keyframe
+                animations[i].transition = (inp->count > 1) ? animations[i].keyFrames[1] : 0;
 
                 for (unsigned int j = 0; j < animData.channels_count; j++)
                 {
