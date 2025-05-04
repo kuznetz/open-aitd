@@ -160,7 +160,7 @@ namespace openAITD {
 				}, "TRIGGER_COLLIDER");			
 
 			lua->CreateFunction([this](int obj) -> int {
-				auto hb = this->world->gobjects[obj].hit.hitBy;
+				auto hb = this->world->gobjects[obj].damage.hitBy;
 				return hb ? hb->id : -1;
 				}, "HIT_BY");
 			lua->CreateFunction([this](int obj) -> int {
@@ -168,7 +168,7 @@ namespace openAITD {
 				return ht ? ht->id : -1;
 				}, "HIT_TO");
 			lua->CreateFunction([this](int obj) -> int {
-				return this->world->gobjects[obj].hit.damage;
+				return this->world->gobjects[obj].damage.damage;
 				}, "HIT_DAMAGE");			
 
 			lua->CreateFunction([this](int obj) -> int {

@@ -41,8 +41,13 @@ namespace openAITD {
 			return true;
 		}
 
+		void throwDamage(GameObject& gobj, GameObject& throwed) {
+			gobj.damage.hitBy = &throwed;
+			gobj.damage.damage = throwed.throwing.hitDamage;
+		}
+
 		void throwStop(GameObject& gobj) {
-			gobj.invItem.bitField.throwing = false;
+			gobj.throwing.active = false;
 			gobj.bitField.foundable = true;
 			gobj.location.position.y = 0;
 		}
@@ -65,7 +70,7 @@ namespace openAITD {
 				}
 			}
 			if (collided) {
-				if (gobj.invItem.bitField.throwing) throwStop(gobj);
+				if (gobj.throwing.active) throwStop(gobj);
 			}
 			if (gobj.physics.collidable) {
 				gobj.physics.moveVec = v;
@@ -82,6 +87,8 @@ namespace openAITD {
 				if (&gobj == &gobj2) continue;
 				if (gobj2.modelId == -1) continue;
 				if (gobj2.location.stageId != gobj.location.stageId) continue;
+				if (gobj.throwing.active && gobj.throwing.throwedBy == &gobj2) continue;
+
 				if (gobj2.location.roomId != gobj.location.roomId) {
 					bool inConnRoom = false;
 					for (int j = 0; j < room.zones.size(); j++) {
@@ -107,17 +114,20 @@ namespace openAITD {
 						world->foundItem = gobj2.id;
 					}
 
+					if (gobj.throwing.active) {
+						throwDamage(gobj2, gobj);
+					}
+
 					if (gobj2.bitField.movable) {
 						pushObject(gobj2, room, v);
 					}
 					else if(!gobj2.bitField.foundable) {
 						v = v2;
 					}
-
 				}
 			}
 			if (collided) {
-				if (gobj.invItem.bitField.throwing) throwStop(gobj);
+				if (gobj.throwing.active) throwStop(gobj);
 			}
 			if (gobj.physics.collidable) {
 				gobj.physics.moveVec = v;

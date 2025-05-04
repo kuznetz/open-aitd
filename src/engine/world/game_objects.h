@@ -155,16 +155,28 @@ namespace openAITD {
 		Vector3 target;
 	};
 
+	struct GODamage
+	{
+		int damage;
+		GameObject* hitBy;
+	};
+
 	struct GOHit
 	{
 		bool active = false;
 		float range;
 		int boneIdx;
 		int hitDamage;
-		int damage;
 		Bounds bounds;
-		GameObject* hitBy;
 		GameObject* hitTo;
+	};
+
+	struct GOThrowing
+	{
+		bool active = false;
+		Vector3 direction;
+		GameObject* throwedBy;
+		int hitDamage;
 	};
 
 	class GameObject
@@ -184,7 +196,9 @@ namespace openAITD {
 		GOInvItem invItem;
 		GOPhysics physics;
 		GOTrack track;
+		GODamage damage;
 		GOHit hit;
+		GOThrowing throwing;
 
 		int staticColliderId = -1;
 		RoomCollider* staticCollider = 0;

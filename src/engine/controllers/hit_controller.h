@@ -74,8 +74,8 @@ namespace openAITD {
             for (int j = 0; j < world->gobjects.size(); j++) {
                 auto& gobj = world->gobjects[j];
                 gobj.hit.hitTo = 0;
-                gobj.hit.hitBy = 0;
-                gobj.hit.damage = 0;
+                gobj.damage.hitBy = 0;
+                gobj.damage.damage = 0;
             }
 
             for (int i = 0; i < AnimActionsCount; i++) {
@@ -111,8 +111,8 @@ namespace openAITD {
                     auto& objB = world->BoundsChangeRoom(world->getObjectBounds(gobj), gobj.location.roomId, act->gobj->location.roomId);
                     if (!act->gobj->hit.bounds.CollToBox(objB)) continue;
                     printf("HIT %d->%d\n", act->gobj->id, gobj.id);
-                    gobj.hit.hitBy = act->gobj;
-                    gobj.hit.damage = act->gobj->hit.hitDamage;
+                    gobj.damage.hitBy = act->gobj;
+                    gobj.damage.damage = act->gobj->hit.hitDamage;
                     act->gobj->hit.hitTo = &gobj;
                     act->gobj->hit.active = false;
                 }

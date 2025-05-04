@@ -13,7 +13,6 @@ namespace openAITD {
         int keyFrameIdx;
         int activeBoneId;
         int hitDamage;
-        bool throwing;
         bool throwRotated;
     };
 
@@ -31,7 +30,6 @@ namespace openAITD {
             action.activeBoneId = activeBone;
             action.throwRotated = throwRotated;
             action.hitDamage = hitDamage;
-            action.throwing = false;
         }
 
         ThrowController(World* world) {
@@ -69,24 +67,27 @@ namespace openAITD {
             item.location.roomId = gobj.location.roomId;
             item.location.rotation = gobj.location.rotation;
             item.location.position = getBonePos();
-            item.invItem.bitField.throwing = 1;
-            world->delFromInventory(item.id);
-            action.throwing = true;
 
+            item.physics.boundsCached = false;
+            item.boundsType = BoundsType::rotated;
+            
+            item.throwing.throwedBy = &gobj;
+            item.throwing.hitDamage = action.hitDamage;
+            item.throwing.active = true;
+            //item.throwing.direction = Vector3RotateByQuaternion({ -1, 0, 0}, item.location.rotation);
+
+            world->delFromInventory(item.id);
             action.gobj = 0;
         }
 
         void processItem(float timeDelta) {
-            if (!action.throwing) return;
+            if (!action.throwedItem) return;
             auto& item = *action.throwedItem;
-            if (!item.invItem.bitField.throwing) {
-                action.throwing = false;
-                return;
-            }
-            Vector3 v = { 0, 0, 3 * -timeDelta };
-            v = Vector3RotateByQuaternion(v, item.location.rotation);
+            if (!item.throwing.active) return;
+
+            //auto v = Vector3Scale(item.throwing.direction, 3 * timeDelta);
             item.animation.prevMoveRoot = { 0,0,0 };
-            item.animation.moveRoot = v;
+            item.animation.moveRoot = { 0, 0, -3 * timeDelta };
             //item.location.position += v;
         }
 
