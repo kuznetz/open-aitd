@@ -262,7 +262,9 @@ namespace openAITD {
 		takedObj = &gobj;
 	};
 
-	void World::delFromInventory(int itemObjId) {
+	void World::delFromInventory(int itemObjId)
+	{
+		this->gobjects[itemObjId].invItem.bitField.in_inventory = 0;
 		for (int i = 0; i < inventory.size(); i++) {
 			if (inventory[i]->id == itemObjId) {
 				inventory.erase(inventory.begin() + i);
@@ -277,7 +279,6 @@ namespace openAITD {
 		auto& actor = this->gobjects[actorObjId];
 
 		delFromInventory(itemObjId);
-		item.invItem.bitField.in_inventory = 0;
 		item.invItem.bitField.dropped = 1;
 		item.bitField.foundable = 1;
 		item.invItem.foundTimeout = chrono + 10;
@@ -301,7 +302,6 @@ namespace openAITD {
 		item.location.rotation = rot;
 
 		delFromInventory(itemObjId);
-		item.invItem.bitField.in_inventory = 0;
 		item.bitField.foundable = 0;
 	};
 

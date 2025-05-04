@@ -325,12 +325,18 @@ namespace openAITD {
 			lua->CreateFunction([this](int obj) {
 				world->take(obj);
 				}, "TAKE");
-			lua->CreateFunction([this](int itemObjId, int actorObjId) {
-				this->world->drop(itemObjId, actorObjId);
-				}, "DROP");
 			lua->CreateFunction([this](int itemObjId, int x, int y, int z, int room, int stage, int alpha, int beta, int gamma) {
 				this->world->put(itemObjId, stage, room, { x / 1000.f, -y / 1000.f, -z / 1000.f }, convertAngle(alpha, beta, gamma));
 				}, "PUT");
+			lua->CreateFunction([this](int itemObjId, int targetObjId) {
+				auto& gobj = this->world->gobjects[itemObjId];
+				auto& tobj = this->world->gobjects[targetObjId];
+				this->world->put(itemObjId, tobj.location.stageId, tobj.location.roomId, tobj.location.position, tobj.location.rotation);
+				gobj.bitField.foundable = 1;
+				}, "PUT_AT");
+			lua->CreateFunction([this](int itemObjId, int actorObjId) {
+				this->world->drop(itemObjId, actorObjId);
+				}, "DROP");
 			lua->CreateFunction([this](int obj, int animThrow, int frameThrow, int activeBone, int itemObjId, int throwRotated, int hitDamage, int animNext) {
 				auto gobj = &this->world->gobjects[obj];
 				auto gobj2 = &this->world->gobjects[itemObjId];
@@ -346,7 +352,7 @@ namespace openAITD {
 				this->world->setRepeatAnimation(this->world->gobjects[obj], animId);
 				}, "SET_ANIM_REPEAT");
 			lua->CreateFunction([this](int obj, int animId, int nextAnimId) {
-				this->world->setOnceAnimation(this->world->gobjects[obj], animId, nextAnimId);
+				this->world->setOnceAnimation(this->world->gobjects[obj], animId, nextAnimId, true);
 				//ANIM_ONCE | ANIM_UNINTERRUPTABLE;
 				}, "SET_ANIM_ALL_ONCE");
 			
