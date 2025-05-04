@@ -4,6 +4,7 @@
 #include "./tracks_controller.h"
 #include "./player_controller.h"
 #include "./hit_controller.h"
+#include "./throw_controller.h"
 
 #include <luacpp/luacpp.h>
 #include <iostream>
@@ -26,17 +27,19 @@ namespace openAITD {
 		TracksController* trackContr;
 		PlayerController* playerContr;
 		HitController* hitContr;
+		ThrowController* throwContr;
 		LuaState* lua = 0;
 		map <int, LifeFunc> funcs;
 		std::function<bool(uint32_t, const LuaObject&)> execCb;
 		Matrix roomMatrix;
 		float curTimeDelta = 0;
 
-		LifeController(World* world, TracksController* trackContr, PlayerController* playerContr, HitController* hitContr) {
+		LifeController(World* world, TracksController* trackContr, PlayerController* playerContr, HitController* hitContr, ThrowController* throwContr) {
 			this->world = world;
 			this->trackContr = trackContr;
 			this->playerContr = playerContr;
 			this->hitContr = hitContr;
+			this->throwContr = throwContr;
 			this->resources = world->resources;
 			initLua();
 		}
@@ -326,9 +329,14 @@ namespace openAITD {
 				this->world->drop(itemObjId, actorObjId);
 				}, "DROP");
 			lua->CreateFunction([this](int itemObjId, int x, int y, int z, int room, int stage, int alpha, int beta, int gamma) {
-				//TODO: rotation
 				this->world->put(itemObjId, stage, room, { x / 1000.f, -y / 1000.f, -z / 1000.f }, convertAngle(alpha, beta, gamma));
 				}, "PUT");
+			lua->CreateFunction([this](int obj, int animThrow, int frameThrow, int activeBone, int itemObjId, int throwRotated, int hitDamage, int animNext) {
+				auto gobj = &this->world->gobjects[obj];
+				auto gobj2 = &this->world->gobjects[itemObjId];
+				this->world->setOnceAnimation(*gobj, frameThrow, animNext);
+				this->throwContr->throw_(gobj, gobj2, animThrow, frameThrow, frameThrow, activeBone, hitDamage);
+				}, "THROW");
 
 			//Animations, tracks, rotations
 			lua->CreateFunction([this](int obj, int animId, int nextAnimId) {

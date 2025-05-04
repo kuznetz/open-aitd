@@ -1,5 +1,4 @@
 ﻿#pragma once
-#include "../resources/missed_anims.h"
 #include "../resources/resources.h"
 #include "../world/world.h"
 
@@ -17,7 +16,6 @@ namespace openAITD {
     class HitController {
     public:
         static const int AnimActionsCount = 50;
-        MissedAnims missedAnims;
         World* world;
         Resources* resources;
         HitAction actions[AnimActionsCount];

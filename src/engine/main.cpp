@@ -9,6 +9,7 @@
 #include "./controllers/physics_controller.h"
 #include "./controllers/animation_controller.h"
 #include "./controllers/hit_controller.h"
+#include "./controllers/throw_controller.h"
 #include "./controllers/life_controller.h"
 #include "./controllers/tracks_controller.h"
 #include "./controllers/found_screen.h"
@@ -37,9 +38,10 @@ namespace openAITD {
     PhysicsController physContr(&resources, &world);
     AnimationController animContr(&resources, &world);
     HitController hitContr(&world);
+    ThrowController throwContr(&world);
     PlayerController playerContr(&world);
     TracksController tracksContr(&world);
-    LifeController lifeContr(&world, &tracksContr, &playerContr, &hitContr);
+    LifeController lifeContr(&world, &tracksContr, &playerContr, &hitContr, &throwContr);
     InventoryScreen inventoryScreen(&world);
     FoundScreen foundScreen(&world);
     
