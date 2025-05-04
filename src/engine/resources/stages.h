@@ -12,6 +12,7 @@
 #include <tiny_gltf.h>
 
 #include "../raylib.h"
+#include "bounds.h"
 
 using nlohmann::json;
 using namespace raylib;
@@ -146,18 +147,19 @@ namespace openAITD {
 		return 0;
 	}
 
-	inline BoundingBox NodeToBounds(tinygltf::Node& n)
+	inline Bounds NodeToBounds(tinygltf::Node& n)
 	{
 		auto t = n.translation;
 		auto s = n.scale;
 		if (s[0] < 0) {	s[0] = -s[0]; t[0] -= s[0];	}
 		if (s[1] < 0) {	s[1] = -s[1]; t[1] -= s[1]; }
 		if (s[2] < 0) {	s[2] = -s[2]; t[2] -= s[2];	}
-		BoundingBox b = {
+		Bounds b(
 			{ (float)t[0], (float)t[1], (float)t[2] },
 			{ (float)(t[0] + s[0]), (float)(t[1] + s[1]), (float)(t[2] + s[2])}
-		};		
-		return correctBounds(b);
+		);
+		b.correctBounds();
+		return b;
 	}
 
 	inline vector<Vector2> loadLineAcc2d(tinygltf::Model& m, int accIdx)
@@ -176,7 +178,7 @@ namespace openAITD {
 
 	struct RoomCollider
 	{
-		BoundingBox bounds;
+		Bounds bounds;
 		int type; // 1 - simple, 3 - climbing,  9 - linked
 		int parameter;
 		int objectLink = -1;
@@ -190,7 +192,7 @@ namespace openAITD {
 
 	struct RoomZone
 	{
-		BoundingBox bounds;
+		Bounds bounds;
 		RoomZoneType type;
 		int parameter;
 	};
@@ -202,7 +204,7 @@ namespace openAITD {
 	};
 
 	struct GCameraOverlay {
-		vector<BoundingBox> bounds;
+		vector<Bounds> bounds;
 	};
 
 	struct GCameraRoom {

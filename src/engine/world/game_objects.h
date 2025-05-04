@@ -122,7 +122,7 @@ namespace openAITD {
 	{
 		bool boundsCached;
 		bool collidable = 1;
-		BoundingBox bounds;
+		Bounds bounds;
 		Vector3 moveVec;
 		int collidedBy = -1;
 		int staticColl = -1;
@@ -162,7 +162,7 @@ namespace openAITD {
 		int boneIdx;
 		int hitDamage;
 		int damage;
-		BoundingBox bounds;
+		Bounds bounds;
 		GameObject* hitBy;
 		GameObject* hitTo;
 	};

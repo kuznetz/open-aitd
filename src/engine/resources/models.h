@@ -4,6 +4,7 @@
 #include <string>
 
 #include "../raylib.h"
+#include "bounds.h"
 #include "config.h"
 #include "model.h"
 
@@ -14,7 +15,7 @@ namespace openAITD {
 	{
 		Model model;
 		map<int, int> animsIds;
-		BoundingBox bounds;
+		Bounds bounds;
 	};
 
 	class RModels

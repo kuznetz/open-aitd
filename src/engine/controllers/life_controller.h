@@ -55,7 +55,7 @@ namespace openAITD {
 			}
 
 			Vector3 p2rot;
-			BoundingBox b;
+			Bounds b;
 			Vector3& p1 = actor1->location.position;
 			Vector3& p2 = world->VectorChangeRoom(actor2->location.position, actor2->location.roomId, actor1->location.roomId);
 
@@ -86,7 +86,7 @@ namespace openAITD {
 
 		int getPosRelStatic(GameObject* actor1, GameObject* actor2)
 		{
-			BoundingBox& b = actor1->staticCollider->bounds;
+			auto& b = actor1->staticCollider->bounds;
 			Vector3& p2 = world->VectorChangeRoom(actor2->location.position, actor2->location.roomId, actor1->location.roomId);
 
 			int res = 0;

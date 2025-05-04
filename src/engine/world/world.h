@@ -87,68 +87,26 @@ namespace openAITD {
 			}
 		}
 
-		inline BoundingBox getCubeBounds(BoundingBox& b)
-		{
-			BoundingBox r = b;
-			r.max.z = r.max.x = (b.max.x + b.max.z) / 2;
-			r.min.z = r.min.x = -r.max.z;
-			return r;
-		}
-
-		inline BoundingBox getRotatedBounds(const BoundingBox& b, const Quaternion& q)
-		{
-			Vector3 v[8];
-			v[0] = { b.min.x, b.min.y, b.min.z };
-			v[1] = { b.max.x, b.min.y, b.min.z };
-			v[2] = { b.min.x, b.min.y, b.max.z };
-			v[3] = { b.max.x, b.min.y, b.max.z };
-			v[4] = { b.min.x, b.max.y, b.min.z };
-			v[5] = { b.max.x, b.max.y, b.min.z };
-			v[6] = { b.min.x, b.max.y, b.max.z };
-			v[7] = { b.max.x, b.max.y, b.max.z };
-			BoundingBox res;
-			for (int i = 0; i < 8; i++) {
-				v[i] = Vector3RotateByQuaternion(v[i], q);
-				if (i == 0 || v[i].x < res.min.x) {
-					res.min.x = v[i].x;
-				}
-				if (i == 0 || v[i].x > res.max.x) {
-					res.max.x = v[i].x;
-				}
-				if (i == 0 || v[i].y < res.min.y) {
-					res.min.y = v[i].y;
-				}
-				if (i == 0 || v[i].y > res.max.y) {
-					res.max.y = v[i].y;
-				}
-				if (i == 0 || v[i].z < res.min.z) {
-					res.min.z = v[i].z;
-				}
-				if (i == 0 || v[i].z > res.max.z) {
-					res.max.z = v[i].z;
-				}
-			}
-			return res;
-		}
-
-		BoundingBox getObjectBounds(GameObject& gobj) {
+		Bounds getObjectBounds(GameObject& gobj) {
 			if (gobj.physics.boundsCached) {
 				return gobj.physics.bounds;
 			}
 			auto& m = *resources->models.getModel(gobj.modelId);
-			BoundingBox& objB = gobj.physics.bounds;
-			objB = correctBounds(m.bounds);
+			Bounds objB = m.bounds;
+			objB.correctBounds();
+
 			if (gobj.boundsType == BoundsType::cube) {
-				objB = getCubeBounds(objB);
+				objB = objB.getCubeBounds();
 			}
 			if (gobj.boundsType == BoundsType::rotated) {
-				objB = getRotatedBounds(objB, gobj.location.rotation);
+				objB = objB.getRotatedBounds(gobj.location.rotation);
 			}
 			Vector3& p = gobj.location.position;
 			objB.min = Vector3Add(objB.min, p);
 			objB.max = Vector3Add(objB.max, p);
-			objB = correctBounds(objB);
+			objB.correctBounds();
 
+			gobj.physics.bounds = objB;
 			gobj.physics.boundsCached = true;
 			return objB;
 		}
@@ -159,11 +117,12 @@ namespace openAITD {
 		void setRepeatAnimation(GameObject& gobj, int animId);
 		void setOnceAnimation(GameObject& gobj, int animId, int nextAnimId, bool uninterrupable = false);
 		void setModel(GameObject& gobj, int modelId);
+		void delFromInventory(int itemObjId);
 		void take(int gObjId);
 		void drop(int itemObjId, int actorObjId);
 		void put(int objId, int room, int stage, Vector3 pos, Quaternion rot);
 		Vector3 VectorChangeRoom(const Vector3 v, int fromRoomId, int toRoomId);
-		BoundingBox BoundsChangeRoom(const BoundingBox v, int fromRoomId, int toRoomId);
+		Bounds BoundsChangeRoom(const Bounds v, int fromRoomId, int toRoomId);
 	};
 
 	void World::loadGObjects(string path)
@@ -246,7 +205,7 @@ namespace openAITD {
 		return Vector3Subtract( Vector3Add(v, roomFrom.position), roomTo.position);
 	}
 
-	BoundingBox World::BoundsChangeRoom(const BoundingBox b, int fromRoomId, int toRoomId) {
+	Bounds World::BoundsChangeRoom(const Bounds b, int fromRoomId, int toRoomId) {
 		if (fromRoomId == toRoomId) return b;
 		auto& roomFrom = curStage->rooms[fromRoomId].position;
 		auto& roomTo = curStage->rooms[toRoomId].position;
@@ -303,17 +262,21 @@ namespace openAITD {
 		takedObj = &gobj;
 	};
 
-	void World::drop(int itemObjId, int actorObjId)
-	{
-		auto& item = this->gobjects[itemObjId];
-		auto& actor = this->gobjects[actorObjId];
-
+	void World::delFromInventory(int itemObjId) {
 		for (int i = 0; i < inventory.size(); i++) {
 			if (inventory[i]->id == itemObjId) {
 				inventory.erase(inventory.begin() + i);
 				break;
 			}
 		}
+	}
+
+	void World::drop(int itemObjId, int actorObjId)
+	{
+		auto& item = this->gobjects[itemObjId];
+		auto& actor = this->gobjects[actorObjId];
+
+		delFromInventory(itemObjId);
 		item.invItem.bitField.in_inventory = 0;
 		item.invItem.bitField.dropped = 1;
 		item.bitField.foundable = 1;
@@ -337,12 +300,7 @@ namespace openAITD {
 		item.location.position = pos;
 		item.location.rotation = rot;
 
-		for (int i = 0; i < inventory.size(); i++) {
-			if (inventory[i]->id == itemObjId) {
-				inventory.erase(inventory.begin() + i);
-				break;
-			}
-		}
+		delFromInventory(itemObjId);
 		item.invItem.bitField.in_inventory = 0;
 		item.bitField.foundable = 0;
 	};

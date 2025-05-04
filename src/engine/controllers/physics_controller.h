@@ -21,7 +21,7 @@ namespace openAITD {
 			return ((p.x > b.min.x) && (p.x < b.max.x) && (p.z > b.min.z) && (p.z < b.max.z));
 		}
 
-		bool CollPointToBox(const Vector3& p, Vector3& v, BoundingBox& b) {
+		bool CollPointToBox(const Vector3& p, Vector3& v, Bounds& b) {
 			Vector3& p2 = Vector3Add(p, v);
 			auto inB = (p2.x > b.min.x) && (p2.x < b.max.x) && (p2.z > b.min.z) && (p2.z < b.max.z);
 			if (!inB) return false;
@@ -41,49 +41,21 @@ namespace openAITD {
 			return true;
 		}
 
-		Vector3 CalculateMTV(const BoundingBox& b1, const BoundingBox& b2)
-		{
-			float overlapX = min(b1.max.x, b2.max.x) - max(b1.min.x, b2.min.x);
-			float overlapZ = min(b1.max.z, b2.max.z) - max(b1.min.z, b2.min.z);
-
-			if (overlapX <= 0 || overlapZ <= 0) {
-				return { 0,0,0 };
-			}
-
-			bool pushAlongX = abs(overlapX) < abs(overlapZ);
-
-			Vector3 mtv = { 0,0,0 };
-			if (pushAlongX) {
-				mtv.x = overlapX * ((b1.min.x + b1.max.x) / 2 >= (b2.min.x + b2.max.x) / 2 ? -1 : 1);
-			}
-			else {
-				mtv.z = overlapZ * ((b1.min.z + b1.max.z) / 2 >= (b2.min.z + b2.max.z) / 2 ? -1 : 1);
-			}
-
-			return mtv;
-		}
-
-		bool CollBoxToBox(BoundingBox& b1_0, Vector3& v, BoundingBox& b2) {
-			if (v.x == 0 && v.z == 0) return false;
-			BoundingBox b1 = { Vector3Add(b1_0.min, v), Vector3Add(b1_0.max, v) };
-
-			if (b1.max.x < b2.min.x || b1.min.x > b2.max.x)  return false;
-			if (b1.max.y < b2.min.y || b1.min.y > b2.max.y)  return false;
-			if (b1.max.z < b2.min.z || b1.min.z > b2.max.z)  return false;
-
-			auto& mtv = CalculateMTV(b1, b2);
-			v.x -= mtv.x;
-			v.z -= mtv.z;
-			return true;
+		void throwStop(GameObject& gobj) {
+			gobj.invItem.bitField.throwing = false;
+			gobj.bitField.foundable = true;
+			gobj.location.position.y = 0;
 		}
 
 		void processStaticColliders(GameObject& gobj, Room& room) {
-			BoundingBox& objB = world->getObjectBounds(gobj);
+			Bounds& objB = world->getObjectBounds(gobj);
 			Vector3 v = gobj.physics.moveVec;
+			bool collided = false;
 			for (int i = 0; i < room.colliders.size(); i++) {
-				BoundingBox& colB = room.colliders[i].bounds;
-				bool collided = CollBoxToBox(objB, v, colB);
-				if (collided) {
+				Bounds& colB = room.colliders[i].bounds;
+				bool c = objB.CollToBoxV(v, colB);
+				collided = collided || c;
+				if (c) {
 					if (room.colliders[i].type == 9) {
 						gobj.physics.staticColl = room.colliders[i].parameter;
 					}
@@ -92,14 +64,18 @@ namespace openAITD {
 					}
 				}
 			}
+			if (collided) {
+				if (gobj.invItem.bitField.throwing) throwStop(gobj);
+			}
 			if (gobj.physics.collidable) {
 				gobj.physics.moveVec = v;
 			}
 		}
 
 		void processDynamicColliders(GameObject& gobj, Room& room) {
-			BoundingBox& objB = world->getObjectBounds(gobj);
+			Bounds& objB = world->getObjectBounds(gobj);
 			Vector3 v = gobj.physics.moveVec;
+			bool collided = false;
 
 			for (int i = 0; i < world->gobjects.size(); i++) {
 				auto& gobj2 = world->gobjects[i];
@@ -118,10 +94,11 @@ namespace openAITD {
 					if (!inConnRoom) continue;
 				}
 
-				BoundingBox& objB2 = world->BoundsChangeRoom(world->getObjectBounds(gobj2), gobj2.location.roomId, gobj.location.roomId);
+				Bounds& objB2 = world->BoundsChangeRoom(world->getObjectBounds(gobj2), gobj2.location.roomId, gobj.location.roomId);
 				Vector3 v2 = v;
-				bool collided = CollBoxToBox(objB, v2, objB2);
-				if (collided) {
+				bool c = objB.CollToBoxV(v2, objB2);
+				collided = collided || c;
+				if (c) {
 					gobj.physics.objectColl = gobj2.id;
 					gobj2.physics.collidedBy = gobj.id;
 
@@ -138,6 +115,9 @@ namespace openAITD {
 					}
 
 				}
+			}
+			if (collided) {
+				if (gobj.invItem.bitField.throwing) throwStop(gobj);
 			}
 			if (gobj.physics.collidable) {
 				gobj.physics.moveVec = v;
@@ -238,7 +218,7 @@ namespace openAITD {
 
 }
 
-//BoundingBox handleCollision(BoundingBox& startZv, BoundingBox& nextZv, BoundingBox& collZv)
+//Bounds handleCollision(Bounds& startZv, Bounds& nextZv, Bounds& collZv)
 //{
 //	int flag = 0;
 //	int var_8;

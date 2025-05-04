@@ -85,7 +85,7 @@ namespace openAITD {
 			curCameraId = -1;
 		}
 
-		void DrawBounds(BoundingBox bb, Color color)
+		void DrawBounds(Bounds bb, Color color)
 		{
 			Vector3 vecs[8];
 			// Front face        

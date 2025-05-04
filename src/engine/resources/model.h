@@ -4,6 +4,7 @@
 #include <cstring>
 #include "../raylib.h"
 #include <external/cgltf.h>
+#include "bounds.h"
 
 //using namespace raylib;
 
@@ -41,7 +42,7 @@ namespace openAITD {
         vector<Bone> bones;
         vector<Animation> animations;
         Transform* curPose = 0;
-        BoundingBox bounds;
+        Bounds bounds;
         
         ~Model() {
             if (!data) return;
@@ -56,7 +57,10 @@ namespace openAITD {
             if (!data) {
                 return;
             }
-            bounds = GetModelBoundingBox(model);
+            auto b = GetModelBoundingBox(model);
+            bounds.min = b.min;
+            bounds.max = b.max;
+
             if (data->skins_count > 1)
             {
                 TRACELOG(LOG_WARNING, "MODEL: [%s] expected exactly one skin to load animation data from, but found %i", fileName, data->skins_count);
@@ -137,7 +141,9 @@ namespace openAITD {
             ApplyParentJoints(curPose);
             UpdateBones(model, curPose);
             UpdateSkin(model);
-            bounds = GetModelBoundingBox(model);
+            auto b = GetModelBoundingBox(model);
+            bounds.min = b.min;
+            bounds.max = b.max;
         }
 
         int getKeyFrame(const Animation& anim, float animTime) {

@@ -70,13 +70,6 @@ namespace openAITD {
             gobj.hit.bounds = { { v.x - r, v.y - r, v.z - r }, { v.x + r, v.y + r, v.z + r } };
         }
 
-        bool CollBoxToBox(BoundingBox& b1, BoundingBox& b2) {
-            if (b1.max.x < b2.min.x || b1.min.x > b2.max.x)  return false;
-            if (b1.max.y < b2.min.y || b1.min.y > b2.max.y)  return false;
-            if (b1.max.z < b2.min.z || b1.min.z > b2.max.z)  return false;
-            return true;
-        }
-
         void process(float timeDelta) {
             for (int j = 0; j < world->gobjects.size(); j++) {
                 auto& gobj = world->gobjects[j];
@@ -115,8 +108,8 @@ namespace openAITD {
                     if (gobj.modelId == -1) continue;
                     if (gobj.id == act->gobj->id) continue;
 
-                    BoundingBox& objB = world->BoundsChangeRoom(world->getObjectBounds(gobj), gobj.location.roomId, act->gobj->location.roomId);
-                    if (!CollBoxToBox(act->gobj->hit.bounds, objB)) continue;
+                    auto& objB = world->BoundsChangeRoom(world->getObjectBounds(gobj), gobj.location.roomId, act->gobj->location.roomId);
+                    if (!act->gobj->hit.bounds.CollToBox(objB)) continue;
                     printf("HIT %d->%d\n", act->gobj->id, gobj.id);
                     gobj.hit.hitBy = act->gobj;
                     gobj.hit.damage = act->gobj->hit.hitDamage;
