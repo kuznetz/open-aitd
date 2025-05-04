@@ -3,7 +3,7 @@
 #include "../world/world.h"
 #include "./tracks_controller.h"
 #include "./player_controller.h"
-#include "./anim_action_controller.h"
+#include "./hit_controller.h"
 
 #include <luacpp/luacpp.h>
 #include <iostream>
@@ -25,18 +25,18 @@ namespace openAITD {
 		Resources* resources;
 		TracksController* trackContr;
 		PlayerController* playerContr;
-		AnimActionController* animActContr;
+		HitController* hitContr;
 		LuaState* lua = 0;
 		map <int, LifeFunc> funcs;
 		std::function<bool(uint32_t, const LuaObject&)> execCb;
 		Matrix roomMatrix;
 		float curTimeDelta = 0;
 
-		LifeController(World* world, TracksController* trackContr, PlayerController* playerContr, AnimActionController* animActContr) {
+		LifeController(World* world, TracksController* trackContr, PlayerController* playerContr, HitController* hitContr) {
 			this->world = world;
 			this->trackContr = trackContr;
 			this->playerContr = playerContr;
-			this->animActContr = animActContr;
+			this->hitContr = hitContr;
 			this->resources = world->resources;
 			initLua();
 		}
@@ -346,7 +346,7 @@ namespace openAITD {
 			lua->CreateFunction([this](int obj, int anim1, int keyFrameIdx, int activeBone, int range, int damage, int anim2) {
 				auto gobj = &this->world->gobjects[obj];
 				this->world->setOnceAnimation(this->world->gobjects[obj], anim1, anim2);
-				this->animActContr->addAction(gobj, AnimActionType::hit, anim1, keyFrameIdx);
+				this->hitContr->addAction(gobj, anim1, keyFrameIdx);
 				gobj->hit.boneIdx = activeBone;
 				gobj->hit.range = range / 1000.f;
 				gobj->hit.hitDamage = damage;

@@ -8,7 +8,7 @@
 #include "./controllers/player_controller.h"
 #include "./controllers/physics_controller.h"
 #include "./controllers/animation_controller.h"
-#include "./controllers/anim_action_controller.h"
+#include "./controllers/hit_controller.h"
 #include "./controllers/life_controller.h"
 #include "./controllers/tracks_controller.h"
 #include "./controllers/found_screen.h"
@@ -36,10 +36,10 @@ namespace openAITD {
     FreelookRenderer flRenderer(&resources, &world);
     PhysicsController physContr(&resources, &world);
     AnimationController animContr(&resources, &world);
-    AnimActionController animActContr(&world);
+    HitController hitContr(&world);
     PlayerController playerContr(&world);
     TracksController tracksContr(&world);
-    LifeController lifeContr(&world, &tracksContr, &playerContr, &animActContr);
+    LifeController lifeContr(&world, &tracksContr, &playerContr, &hitContr);
     InventoryScreen inventoryScreen(&world);
     FoundScreen foundScreen(&world);
     
@@ -83,7 +83,7 @@ namespace openAITD {
                 world.chrono += partDelta;
                 lifeContr.process(partDelta);
                 animContr.process(partDelta);
-                animActContr.process(partDelta);
+                hitContr.process(partDelta);
                 physContr.process(partDelta);
                 if (world.messageTime > 0) {
                     world.messageTime -= partDelta;
