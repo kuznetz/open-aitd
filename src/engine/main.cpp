@@ -12,8 +12,10 @@
 #include "./controllers/throw_controller.h"
 #include "./controllers/life_controller.h"
 #include "./controllers/tracks_controller.h"
-#include "./controllers/found_screen.h"
-#include "./controllers/inventory_screen.h"
+
+#include "./screens/found_screen.h"
+#include "./screens/inventory_screen.h"
+#include "./screens/menu_screen.h"
 
 #include "../extractor/extractor.h"
 
@@ -29,7 +31,9 @@ namespace openAITD {
         Book,
         SelectGame
     };
-    AppState state;
+    AppState state = AppState::MainMenu;
+    bool gameStarted = false;
+    bool fastStart = true;
     
     Resources resources;
     World world(&resources);
@@ -44,6 +48,7 @@ namespace openAITD {
     LifeController lifeContr(&world, &tracksContr, &playerContr, &hitContr, &throwContr);
     InventoryScreen inventoryScreen(&world);
     FoundScreen foundScreen(&world);
+    MenuScreen mainMenu(&world);
     
     bool freeLook = false;
     bool pause = false;
@@ -108,6 +113,30 @@ namespace openAITD {
         EndDrawing();
     }
 
+    void startMenu() {
+        mainMenu.reload();
+        state = AppState::MainMenu;
+    }
+
+    bool processMenu(const float timeDelta) {
+        mainMenu.process(timeDelta);
+        switch (mainMenu.result)
+        {
+        case MenuScreenResult::exit:
+            return false;
+            break;
+        case MenuScreenResult::newGame:
+            startIntro();
+            break;
+        case MenuScreenResult::resume:
+            if (!world.gameOver) {
+              state = AppState::InWorld;
+            }
+            break;
+        }
+        return true;
+    }
+
     int main(void)
     {
         AITDExtractor::extractAllData();
@@ -127,12 +156,20 @@ namespace openAITD {
 
         DisableCursor();
 
-        startIntro();
+        if (fastStart) {
+          startGame();
+        }
+        else {
+          startMenu();
+        }
 
         float timeDelta = 0;        
         while (!WindowShouldClose()) {
             timeDelta = GetFrameTime();
-            if (state == AppState::Intro) {
+            if (state == AppState::MainMenu) {
+                if (!processMenu(timeDelta)) break;
+            }
+            else if (state == AppState::Intro) {
                 processWorld(timeDelta);
                 if (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_ESCAPE)) {
                     world.gameOver = true;
@@ -148,6 +185,9 @@ namespace openAITD {
                 else if (world.player.allowInventory && IsKeyPressed(KEY_ENTER)) {
                     inventoryScreen.reload();
                     state = AppState::Inventory;
+                }
+                else if (world.player.allowInventory && IsKeyPressed(KEY_ESCAPE)) {
+                    startMenu();
                 }
                 else {
                     world.player.space = IsKeyDown(KEY_SPACE);

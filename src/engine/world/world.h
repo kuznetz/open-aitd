@@ -50,7 +50,7 @@ namespace openAITD {
 		//Time, how long the room was active
 		float roomChrono = 0;
 
-		bool gameOver = false;
+		bool gameOver = true;
 		int curStageId  = -1;
 		Stage* curStage = 0;
 		int curRoomId = -1;
