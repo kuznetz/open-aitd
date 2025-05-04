@@ -197,7 +197,8 @@ namespace openAITD {
 				return x + y + z;
 				}, "DIST");
 			lua->CreateFunction([this](int obj) -> int {
-				int r = (this->world->gobjects[obj].invItem.flags & 0xC000) ? 1 : 0;
+				//int r = (this->world->gobjects[obj].invItem.flags & 0xC000) ? 1 : 0;
+				int r = (this->world->gobjects[obj].bitField.foundable) ? 1 : 0;
 				return r;
 				}, "IS_FOUND");
 			lua->CreateFunction([this](int obj) {
@@ -315,6 +316,10 @@ namespace openAITD {
 				auto& gobj = this->world->gobjects[obj];
 				gobj.invItem.nameId = nameId;
 				}, "SET_INVENTORY_NAME");
+			lua->CreateFunction([this](int obj, int newModelId) {
+				auto& gobj = this->world->gobjects[obj];
+				gobj.invItem.modelId = newModelId;
+				}, "SET_INVENTORY_MODEL");			
 			lua->CreateFunction([this](int obj, int newFlag) {
 				auto& gobj = this->world->gobjects[obj];
 				gobj.invItem.flags = newFlag;
