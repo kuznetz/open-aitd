@@ -157,7 +157,7 @@ namespace openAITD {
 		void loadVars(string path);
 		void setCharacter(bool alt) {}
 		void setRepeatAnimation(GameObject& gobj, int animId);
-		void setOnceAnimation(GameObject& gobj, int animId, int nextAnimId);
+		void setOnceAnimation(GameObject& gobj, int animId, int nextAnimId, bool uninterrupable = false);
 		void setModel(GameObject& gobj, int modelId);
 		void take(int gObjId);
 		void drop(int itemObjId, int actorObjId);
@@ -257,17 +257,21 @@ namespace openAITD {
 	}
 
 	void World::setRepeatAnimation(GameObject& gobj, int animId) {
+		if (gobj.animation.bitField.uninterruptable) return;
 		gobj.animation.scriptAnimId = animId;
 		gobj.animation.id = animId;
 		gobj.animation.nextId = -1;
-		gobj.animation.flags = 1;
+		gobj.animation.flags = 0;
+		gobj.animation.bitField.repeat = 1;
 	}
 
-	void World::setOnceAnimation(GameObject& gobj, int animId, int nextAnimId) {
+	void World::setOnceAnimation(GameObject& gobj, int animId, int nextAnimId, bool uninterrupable) {
+		if (gobj.animation.bitField.uninterruptable) return;
 		gobj.animation.scriptAnimId = animId;
 		gobj.animation.id = animId;
 		gobj.animation.nextId = nextAnimId;
 		gobj.animation.flags = 0;
+		gobj.animation.bitField.uninterruptable = uninterrupable;
 	}
 
 	void World::setModel(GameObject& gobj, int modelId) {

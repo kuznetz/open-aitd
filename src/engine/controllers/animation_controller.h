@@ -84,7 +84,8 @@ namespace openAITD {
                     } 
                     else if (!objAni.bitField.repeat) {
                         objAni.id = objAni.nextId;
-                        objAni.flags = 1;
+                        objAni.flags = 0;
+                        objAni.bitField.repeat = 1;
                     }
                     else if (mdlAnim.duration > 0) {
                         while (objAni.animTime > mdlAnim.duration) {

@@ -86,6 +86,7 @@ namespace openAITD {
                 lifeContr.process(partDelta);
                 animContr.process(partDelta);
                 hitContr.process(partDelta);
+                throwContr.process(partDelta);
                 physContr.process(partDelta);
                 if (world.messageTime > 0) {
                     world.messageTime -= partDelta;

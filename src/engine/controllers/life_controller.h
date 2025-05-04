@@ -334,7 +334,7 @@ namespace openAITD {
 			lua->CreateFunction([this](int obj, int animThrow, int frameThrow, int activeBone, int itemObjId, int throwRotated, int hitDamage, int animNext) {
 				auto gobj = &this->world->gobjects[obj];
 				auto gobj2 = &this->world->gobjects[itemObjId];
-				this->world->setOnceAnimation(*gobj, frameThrow, animNext);
+				this->world->setOnceAnimation(*gobj, animThrow, animNext, true);
 				this->throwContr->throw_(gobj, gobj2, animThrow, frameThrow, frameThrow, activeBone, hitDamage);
 				}, "THROW");
 

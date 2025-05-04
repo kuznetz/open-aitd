@@ -13,7 +13,6 @@ namespace openAITD {
         int keyFrameIdx;
         int activeBoneId;
         int hitDamage;
-        bool started;
         bool throwing;
         bool throwRotated;
     };
@@ -25,7 +24,6 @@ namespace openAITD {
         ThrowAction action;
 
         void throw_(GameObject* gobj, GameObject* throwedItem, int animId, int keyFrameIdx, int activeBone, bool throwRotated, int hitDamage) {
-            printf("THROW\n");
             action.gobj = gobj;
             action.throwedItem = throwedItem;
             action.animId = animId;
@@ -33,7 +31,7 @@ namespace openAITD {
             action.activeBoneId = activeBone;
             action.throwRotated = throwRotated;
             action.hitDamage = hitDamage;
-            action.started = false;
+            action.throwing = false;
         }
 
         ThrowController(World* world) {
@@ -41,8 +39,28 @@ namespace openAITD {
             this->resources = world->resources;
         }
 
-        void process(float timeDelta) {
+        void processAnim(float timeDelta) {
+            if (action.gobj == 0) return;
+            if (action.gobj->animation.id != action.animId) {
+                action.gobj = 0;
+                return;
+            }
+            if (action.gobj->animation.keyFrameIdx < action.keyFrameIdx) {
+                return;
+            }
+            printf("THROW\n");
+            action.gobj = 0;
 
+            //calcHitBounds(*action.gobj);
+        }
+
+        void processItem(float timeDelta) {
+            if (!action.throwing) return;
+        }
+
+        void process(float timeDelta) {
+            processAnim(timeDelta);
+            processItem(timeDelta);
         }
     };
 
