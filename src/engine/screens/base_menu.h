@@ -37,14 +37,14 @@ namespace openAITD {
 
 		void reset() {
 			curItemIdx = 0;
-			curItemId = -1;
+			curItemId = items[curItemIdx].id;
 			itemsOffs = 0;
 		}
 
 		void nextItem() {
 			if (curItemIdx >= items.size() - 1) return;
 			curItemIdx++;
-			if (curItemIdx >= (itemsOffs + 4)) itemsOffs++;
+			if (curItemIdx >= (itemsOffs + maxRenderItems - 1)) itemsOffs++;
 			curItemId = items[curItemIdx].id;
 		}
 

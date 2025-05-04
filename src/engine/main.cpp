@@ -33,7 +33,7 @@ namespace openAITD {
     };
     AppState state = AppState::MainMenu;
     bool gameStarted = false;
-    bool fastStart = true;
+    bool fastStart = false;
     
     Resources resources;
     World world(&resources);
@@ -129,9 +129,12 @@ namespace openAITD {
             startIntro();
             break;
         case MenuScreenResult::resume:
-            if (!world.gameOver) {
-              state = AppState::InWorld;
-            }
+            state = AppState::InWorld;
+            break;
+        case MenuScreenResult::saveGame:
+            world.messageText = "Game saved...";
+            world.messageTime = 2;
+            state = AppState::InWorld;
             break;
         }
         return true;
