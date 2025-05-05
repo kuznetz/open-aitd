@@ -12,6 +12,7 @@
 #include "./controllers/throw_controller.h"
 #include "./controllers/life_controller.h"
 #include "./controllers/tracks_controller.h"
+#include "./controllers/save_controller.h"
 
 #include "./screens/found_screen.h"
 #include "./screens/inventory_screen.h"
@@ -46,6 +47,7 @@ namespace openAITD {
     PlayerController playerContr(&world);
     TracksController tracksContr(&world);
     LifeController lifeContr(&world, &tracksContr, &playerContr, &hitContr, &throwContr);
+    SaveController saveContr(&world, &lifeContr);
     InventoryScreen inventoryScreen(&world);
     FoundScreen foundScreen(&world);
     MenuScreen mainMenu(&world);
@@ -70,6 +72,13 @@ namespace openAITD {
         world.setCurRoom(0, 0);
         world.followTarget = 0;
         lifeContr.reloadVars();
+        state = AppState::InWorld;
+    }
+
+    void loadGame(int slot) {
+        world.gameOver = false;
+        world.loadGObjects("data/objects.json");
+        saveContr.load(mainMenu.saveSlot);
         state = AppState::InWorld;
     }
 
@@ -132,9 +141,13 @@ namespace openAITD {
             state = AppState::InWorld;
             break;
         case MenuScreenResult::saveGame:
+            saveContr.save(mainMenu.saveSlot);
             world.messageText = "Game saved...";
             world.messageTime = 2;
             state = AppState::InWorld;
+            break;
+        case MenuScreenResult::loadGame:
+            loadGame(mainMenu.saveSlot);
             break;
         }
         return true;

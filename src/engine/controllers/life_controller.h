@@ -546,6 +546,15 @@ namespace openAITD {
 			}
 		}
 
+		vector<short> dumpVars() {
+			vector<short> result;
+			for (int i = 0; i < world->vars.size(); i++) {
+				string name = string("var_") + to_string(i);
+				result.push_back(lua->GetNumber(name.c_str()));
+			}
+			return result;
+		}
+
 		void executeLife(int lifeId, int objId) {
 			auto& f = funcs.find(lifeId);
 			if (f == funcs.end()) {
