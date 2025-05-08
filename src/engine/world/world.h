@@ -33,6 +33,13 @@ namespace openAITD {
 		int keyboard;
 	};
 
+	struct Picture {
+		int id = -1;
+		float curTime;
+		float delay;
+		int sampleId;
+	};
+
 	//Store all dynamic data in game
 	class World {
 	public:
@@ -45,6 +52,7 @@ namespace openAITD {
 		vector<short int> vars;
 		vector<short int> cVars;
 		Player player;
+		Picture picture;
 		
 		float chrono = 0;
 		//Time, how long the room was active

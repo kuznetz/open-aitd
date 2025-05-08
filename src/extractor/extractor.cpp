@@ -262,6 +262,38 @@ namespace AITDExtractor {
         }
     }
 
+    void processPicture(PakFile& picsPak, int id, string outPath) {
+        if (!std::filesystem::exists(outPath)) {
+            auto& data = picsPak.readBlock(id);
+            extractBackground(data.data(), outPath.c_str());
+        }
+    }
+
+    void processPictures() {
+        PakFile picsPak("original/ITD_RESS.PAK");
+
+        string dir = "data/pictures";
+        std::filesystem::create_directories(dir);
+        processPicture(picsPak, 6, dir + "/6.png");
+        processPicture(picsPak, 7, dir + "/7.png");
+        processPicture(picsPak, 8, dir + "/8.png");
+        processPicture(picsPak, 11, dir + "/11.png");
+        processPicture(picsPak, 12, dir + "/12.png");
+
+        dir = "data/characters";
+        std::filesystem::create_directories(dir);
+        processPicture(picsPak, 10, dir + "/0.png");
+        processPicture(picsPak, 14, dir + "/1.png");
+
+        dir = "data/add_bg";
+        std::filesystem::create_directories(dir);
+        processPicture(picsPak, 15, dir + "/15.png");
+        processPicture(picsPak, 16, dir + "/16.png");
+        processPicture(picsPak, 17, dir + "/17.png");
+        processPicture(picsPak, 18, dir + "/18.png");
+        processPicture(picsPak, 19, dir + "/19.png");
+    }
+
     void animTest() {
         //Quaternion.identity
         int modelId = 12;
@@ -312,6 +344,7 @@ namespace AITDExtractor {
         processScripts();
         processTracks();
         processSounds();
+        processPictures();
 
 
         //PakFile animPak("original/LISTANIM.PAK");

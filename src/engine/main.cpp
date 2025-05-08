@@ -17,6 +17,7 @@
 #include "./screens/found_screen.h"
 #include "./screens/inventory_screen.h"
 #include "./screens/menu_screen.h"
+#include "./screens/picture_screen.h"
 
 #include "../extractor/extractor.h"
 
@@ -51,6 +52,7 @@ namespace openAITD {
     InventoryScreen inventoryScreen(&world);
     FoundScreen foundScreen(&world);
     MenuScreen mainMenu(&world);
+    PictureScreen pictureScr(&world);
     
     bool freeLook = false;
     bool pause = false;
@@ -186,7 +188,13 @@ namespace openAITD {
                 if (!processMenu(timeDelta)) break;
             }
             else if (state == AppState::Intro) {
-                processWorld(timeDelta);
+                if (world.picture.id != -1) {
+                    pictureScr.process(timeDelta);
+                }
+                else {
+                    processWorld(timeDelta);
+                }
+
                 if (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_ESCAPE)) {
                     world.gameOver = true;
                 }
@@ -204,6 +212,13 @@ namespace openAITD {
                 }
                 else if (world.player.allowInventory && IsKeyPressed(KEY_ESCAPE)) {
                     startMenu();
+                }
+                else if (world.picture.id != -1) {
+                    pictureScr.process(timeDelta);
+                }
+                else if (world.gameOver) {
+                    mainMenu.reload();
+                    state = AppState::MainMenu;
                 }
                 else {
                     world.player.space = IsKeyDown(KEY_SPACE);

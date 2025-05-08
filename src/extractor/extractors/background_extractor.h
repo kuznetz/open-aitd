@@ -8,7 +8,7 @@
 #include "../loaders/loaders.h"
 #include "../pak/pak.h"
 
-void extractBackground(u8* img, char* outPng) {
+void extractBackground(u8* img, const char* outPng) {
     //unsigned char* img = new unsigned char[320 * 200];
     unsigned char* data = new unsigned char[320 * 200 * 3];
     for (int i = 0; i < (320 * 200); i++) {

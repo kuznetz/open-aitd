@@ -31,11 +31,16 @@ namespace openAITD {
 		string stageDir = "data/backgrounds";
 		vector<Background> items;
 
+		int curPictureId = -1;
+		string picturesDir = "data/pictures";
+		raylib::Texture2D picture = { 0 };
+
 		Backgrounds() {
 		}
 
 		~Backgrounds() {
 			clear();
+			UnloadTexture(picture);
 		}
 
 		void clear() {
@@ -48,6 +53,18 @@ namespace openAITD {
 				}
 			}
 			items.clear();
+		}
+
+		Texture2D loadPicture(int pictureId) {
+			if (curPictureId == pictureId) return picture;
+			UnloadTexture(picture);
+			auto imgS = picturesDir + "/" + to_string(pictureId) + ".png";
+			auto bgImg = raylib::LoadImage(imgS.c_str());
+			auto& fullBgImg = resizeImg(bgImg, config->screenW, config->screenH);
+			UnloadImage(bgImg);
+			picture = LoadTextureFromImage(fullBgImg);
+			curPictureId = pictureId;
+			return picture;
 		}
 
 		void loadStage(int newStageId)

@@ -477,6 +477,12 @@ namespace openAITD {
 				}, "FADE_MUSIC");
 
 			//SFX
+			lua->CreateFunction([this](int picId, int delay, int sampleId) {
+				this->world->picture.id = picId;
+				this->world->picture.curTime = 0;
+				this->world->picture.delay = delay / 30.;
+				this->world->picture.sampleId = sampleId;
+				}, "PICTURE");			
 			lua->CreateFunction([this](int water) {
 				//TODO: SOUND_THEN
 				}, "WATER");
