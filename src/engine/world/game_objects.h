@@ -128,6 +128,7 @@ namespace openAITD {
 		int staticColl = -1;
 		int objectColl = -1;
 		int zoneTriggered = -1;
+		int hitObjectDamage = 0;
 	};
 
 	enum class GOLifeMode {

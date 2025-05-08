@@ -164,6 +164,7 @@ namespace openAITD {
 
             auto foll = world->followTarget;
             world->setCurRoom(foll->location.stageId, foll->location.roomId);
+            //followCameraProcess
         }
 
     };

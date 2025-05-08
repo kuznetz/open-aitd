@@ -82,6 +82,7 @@ namespace openAITD {
 		}
 
 		void setCurRoom(int stageId, int roomId) {
+			if (stageId == -1) throw new exception("Stage = -1");
 			if (curStageId != stageId) {
 				curStageId = stageId;
 				curStage = (stageId != -1)? &resources->stages[stageId]: 0;

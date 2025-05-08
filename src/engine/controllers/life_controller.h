@@ -227,6 +227,9 @@ namespace openAITD {
 			lua->CreateFunction([this](int obj) -> int {
 				return this->world->gobjects[obj].rotateAnim.lifeAngles[2];
 				}, "GAMMA");
+			lua->CreateFunction([this](int obj) -> int {
+				return floor(this->world->gobjects[obj].location.position.y * 1000);
+				}, "ROOMY");			
 
 			lua->CreateFunction([this](int obj) -> int {
 				return (int)((this->world->chrono - this->world->gobjects[obj].chrono));
@@ -348,6 +351,9 @@ namespace openAITD {
 				this->world->setOnceAnimation(*gobj, animThrow, animNext, true);
 				this->throwContr->throw_(gobj, gobj2, animThrow, frameThrow, frameThrow, activeBone, hitDamage);
 				}, "THROW");
+			lua->CreateFunction([this](int objId, int weight) {
+				//Weight not realising
+				}, "SET_OBJ_WEIGHT");			
 
 			//Animations, tracks, rotations
 			lua->CreateFunction([this](int obj, int animId, int nextAnimId) {
@@ -374,10 +380,12 @@ namespace openAITD {
 				this->world->setOnceAnimation(this->world->gobjects[obj], fireAnim, nextAnim);
 				}, "FIRE");
 			lua->CreateFunction([this](int obj, int flags, int damage) {
-				//TODO:
+				auto gobj = &this->world->gobjects[obj];
+				gobj->physics.hitObjectDamage = damage;
 				}, "HIT_OBJECT");
 			lua->CreateFunction([this](int obj) {
-				//TODO:
+				auto gobj = &this->world->gobjects[obj];
+				gobj->physics.hitObjectDamage = 0;
 				}, "STOP_HIT_OBJECT");
 			
 
@@ -579,7 +587,7 @@ namespace openAITD {
 			curTimeDelta = timeDelta;
 
 			auto foll = world->followTarget;
-			if (foll && (foll->location.stageId != world->curStageId || foll->location.roomId != world->curRoomId)) {
+			if (foll && (foll->location.stageId != -1) && (foll->location.stageId != world->curStageId || foll->location.roomId != world->curRoomId)) {
 				world->setCurRoom(foll->location.stageId, foll->location.roomId);
 			}
 

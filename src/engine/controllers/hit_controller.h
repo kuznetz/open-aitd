@@ -75,7 +75,7 @@ namespace openAITD {
                 auto& gobj = world->gobjects[j];
                 gobj.hit.hitTo = 0;
                 gobj.damage.hitBy = 0;
-                gobj.damage.damage = 0;
+                //gobj.damage.damage = 0; //don't clear
             }
 
             for (int i = 0; i < AnimActionsCount; i++) {
@@ -107,6 +107,10 @@ namespace openAITD {
                     if (gobj.location.stageId != world->curStageId) continue;
                     if (gobj.modelId == -1) continue;
                     if (gobj.id == act->gobj->id) continue;
+                    if (act->gobj->location.stageId != world->curStageId) {
+                        act->gobj->hit.active = false;
+                        break;
+                    }
 
                     auto& objB = world->BoundsChangeRoom(world->getObjectBounds(gobj), gobj.location.roomId, act->gobj->location.roomId);
                     if (!act->gobj->hit.bounds.CollToBox(objB)) continue;
@@ -115,6 +119,7 @@ namespace openAITD {
                     gobj.damage.damage = act->gobj->hit.hitDamage;
                     act->gobj->hit.hitTo = &gobj;
                     act->gobj->hit.active = false;
+                    break;
                 }
                 
             }

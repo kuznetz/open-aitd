@@ -41,6 +41,12 @@ namespace openAITD {
 			return true;
 		}
 
+		void hitObjDamage(GameObject& gobj, GameObject& damager) {
+			damager.hit.hitTo = &gobj;
+			gobj.damage.hitBy = &damager;
+			gobj.damage.damage = damager.physics.hitObjectDamage;
+		}
+
 		void throwDamage(GameObject& gobj, GameObject& throwed) {
 			gobj.damage.hitBy = &throwed;
 			gobj.damage.damage = throwed.throwing.hitDamage;
@@ -113,11 +119,12 @@ namespace openAITD {
 					if (gobj.track.mode == GOTrackMode::manual && gobj2.bitField.foundable && gobj2.invItem.foundTimeout < this->world->chrono) {
 						world->foundItem = gobj2.id;
 					}
-
 					if (gobj.throwing.active) {
 						throwDamage(gobj2, gobj);
 					}
-
+					if (gobj.physics.hitObjectDamage) {
+						hitObjDamage(gobj2, gobj);
+					}					
 					if (gobj2.bitField.movable) {
 						pushObject(gobj2, room, v);
 					}
