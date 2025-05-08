@@ -59,6 +59,7 @@ namespace openAITD {
 		float roomChrono = 0;
 
 		bool gameOver = true;
+		bool inDark = false;
 		int curStageId  = -1;
 		Stage* curStage = 0;
 		int curRoomId = -1;

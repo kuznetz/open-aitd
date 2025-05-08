@@ -217,7 +217,23 @@ namespace openAITD {
 			return false;
 		}
 
+		void renderMessage() {
+			if (world->messageTime > 0) {
+				auto& f = resources->mainFont;
+				const char* m = world->messageText.c_str();
+				auto mt = MeasureTextEx(f, m, f.baseSize, 0);
+				Vector2 v = { (int)(getScreenW() - mt.x) / 2, getScreenH() - (f.baseSize * 2) };
+				DrawTextEx(f, m, v, f.baseSize, 0, WHITE);
+			}
+		}
+
 		void process() {
+			if (world->inDark) {
+				ClearBackground(BLACK);
+				renderMessage();
+				return;
+			}
+
 			if (world->curStageId == -1 || world->curCameraId == -1) return;
 			if (world->curStageId != curStageId || world->curCameraId != curCameraId) {
 				loadCamera(world->curStageId, world->curCameraId);
@@ -343,15 +359,7 @@ namespace openAITD {
 				}
 			}
 
-
-			if (world->messageTime > 0) {
-				auto& f = resources->mainFont;
-				const char* m = world->messageText.c_str();
-				auto mt = MeasureTextEx(f, m, f.baseSize, 0);
-				Vector2 v = { (int)(getScreenW() - mt.x) / 2, getScreenH() - (f.baseSize * 2) };
-				DrawTextEx(f, m, v, f.baseSize, 0, WHITE);
-			}
-
+			renderMessage();
 
 			//for (auto it = renderQueue.begin(); it != renderQueue.end(); it++) {
 			//	DrawLine(it->screenMin.x, it->screenMin.y, it->screenMax.x, it->screenMin.y, RED);

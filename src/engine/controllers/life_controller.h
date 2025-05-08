@@ -491,15 +491,15 @@ namespace openAITD {
 				this->world->picture.delay = delay / 30.;
 				this->world->picture.sampleId = sampleId;
 				}, "PICTURE");			
+			lua->CreateFunction([this](int light) {
+				this->world->inDark = !light;
+				}, "SET_LIGHT");
 			lua->CreateFunction([this](int water) {
 				//TODO: SOUND_THEN
 				}, "WATER");
 			lua->CreateFunction([this](int shaking) {
 				//TODO: SET_SHAKING
 				}, "SET_SHAKING");
-			lua->CreateFunction([this](int light) {
-				//TODO: SET_LIGHT
-				}, "SET_LIGHT");
 			lua->CreateFunction([this](int obj, int spType) {
 				//TODO: SPECIAL
 				}, "SPECIAL");
