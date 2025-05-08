@@ -14,18 +14,13 @@ using namespace std;
 inline Matrix roomMat;
 
 void addCamera(tinygltf::Model& m, int camIdx, cameraStruct& cam) {
-    //auto tx = (float)cam.alpha * 360 / 1024;
-    //auto ty = (float)cam.beta * 360 / 1024;
-    //auto tz = (float)cam.gamma * 360 / 1024;
     /* 20 335.4 0 */
     //Matrix my = MatrixInvert(MatrixRotateY(((float)cam.beta * 2 * PI / 1024)));
     Matrix my = MatrixRotateY((float)cam.beta * 2 * PI / 1024);
     Matrix mx = MatrixRotateX((float)cam.alpha * 2 * PI / 1024);
-    Matrix mz = MatrixRotateZ((float)cam.gamma * 2 * PI / 1024);
+    Matrix mz = MatrixRotateZ(-(float)cam.gamma * 2 * PI / 1024);
     auto myxz = MatrixTranspose(MatrixMultiply(MatrixMultiply(my, mx), mz));
     auto q = QuaternionFromMatrix(myxz);
-
-    //MatrixLookAt
 
     float legcFocalX = cam.focalX / 320.;
     float legcFocalY = cam.focalY / 200.;

@@ -9,22 +9,18 @@
 using namespace std;
 namespace openAITD {
 
-	Camera initCamera = {
-		{ 0.0f, 0, -5 },
-		{ 0.0f, 0.0f, 0.0f },
-		{ 0.0f, 1.0f, 0.0f },   // mainCamera up vector (rotation towards target)
-		60.,
-		CAMERA_PERSPECTIVE
-	};
-
 	class CameraRenderer {
 	public:
 		World* world;
 		Resources* resources;
 
-		int invX = 0;
-		int invZ = 0;
-
+		Camera mainCamera = {
+			{ 0.0f, 0, -5 },
+			{ 0.0f, 0.0f, 0.0f },
+			{ 0.0f, 1.0f, 0.0f },   // mainCamera up vector (rotation towards target)
+			60.,
+			CAMERA_PERSPECTIVE
+		};
 
 		RenderOrder renderQueue[100];
 		RenderOrder* renderStart;
@@ -57,7 +53,7 @@ namespace openAITD {
 			const int& width = getScreenW();
 			const int& height = getScreenH();
 			auto& matProj = curCamera->perspective;
-			Matrix matView = MatrixLookAt(initCamera.position, initCamera.target, initCamera.up);
+			Matrix matView = MatrixLookAt(mainCamera.position, mainCamera.target, mainCamera.up);
 			Vector3 depth = Vector3Transform(position, matView);
 			Quaternion worldPos = { position.x, position.y, position.z, 1.0f };
 			worldPos = QuaternionTransform(worldPos, matView);
@@ -155,11 +151,10 @@ namespace openAITD {
 
 			auto& camPers = curCamera->pers;
 			curCamera->perspective = MatrixPerspective(camPers.yfov, camPers.aspectRatio, camPers.znear, camPers.zfar);
-			//It's ugly, but it didn't get any better.
-			initCamera.position = curCamera->position;
-			Matrix vw = QuaternionToMatrix(curCamera->rotation);
-			initCamera.target = Vector3Add(curCamera->position, Vector3Negate({ vw.m8, vw.m9, vw.m10 }));
-			//initCamera.target = { 0, 0, 0 };
+			
+			mainCamera.position = curCamera->position;
+			mainCamera.target = Vector3Add(curCamera->position, Vector3Negate(Vector3RotateByQuaternion({ 0,0,1 }, curCamera->rotation)));
+			mainCamera.up = Vector3RotateByQuaternion({ 0,1,0 }, curCamera->rotation);
 		}
 
 		void renderObject(GameObject& gobj, Color tint)
@@ -314,7 +309,7 @@ namespace openAITD {
 				int num = 1;
 				renderIter = renderStart;
 				while (true) {
-					BeginMode3D(initCamera);
+					BeginMode3D(mainCamera);
 					//rlSetMatrixModelview(curCamera->modelview);
 					rlSetMatrixProjection(curCamera->perspective);
 					renderObject(*renderIter->gobj, WHITE);
