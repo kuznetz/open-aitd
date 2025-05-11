@@ -163,7 +163,7 @@ namespace openAITD {
             world->followTarget = &world->gobjects[inJson["follow"]];
 
             auto foll = world->followTarget;
-            world->setCurRoom(foll->location.stageId, foll->location.roomId);
+            world->setCurStage(foll->location.stageId, foll->location.roomId);
             //followCameraProcess
         }
 

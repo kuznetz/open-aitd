@@ -110,30 +110,6 @@ namespace openAITD {
 			}
 		}
 
-		void clearStage()
-		{
-		}
-
-		void loadStage(int newStageId)
-		{
-			if (newStageId == curStageId) return;
-			clearStage();
-			curStage = &this->resources->stages[newStageId];
-			curStageId = newStageId;
-			curCameraId = -1;
-			
-			//Preload Cameras
-			resources->backgrounds.loadStage(newStageId);
-			//Preload Objects
-			for (int i = 0; i < this->world->gobjects.size(); i++) {
-				auto& gobj = this->world->gobjects[i];
-				if (gobj.modelId == -1) continue;
-				if (gobj.location.stageId != newStageId) continue;
-				resources->models.getModel(gobj.modelId);
-			}
-
-		}
-
 		void clearCamera()
 		{
 			if (curCameraId == -1) return;
@@ -141,13 +117,11 @@ namespace openAITD {
 			curCamera = 0;
 		}
 
-		void loadCamera(int newStageId, int newCameraId)
+		void loadCamera(int newCameraId)
 		{
-			loadStage(newStageId);
-			curStageId = newStageId;
 			curCameraId = newCameraId;
-			curCamera = &resources->stages[newStageId].cameras[newCameraId];
-			curBackground = resources->backgrounds.get(newStageId, newCameraId);
+			curCamera = &resources->stages[world->curStageId].cameras[newCameraId];
+			curBackground = resources->backgrounds.get(world->curStageId, newCameraId);
 
 			auto& camPers = curCamera->pers;
 			curCamera->perspective = MatrixPerspective(camPers.yfov, camPers.aspectRatio, camPers.znear, camPers.zfar);
@@ -234,13 +208,13 @@ namespace openAITD {
 				return;
 			}
 
+			ClearBackground(BLACK);
 			if (world->curStageId == -1 || world->curCameraId == -1) return;
 			if (world->curStageId != curStageId || world->curCameraId != curCameraId) {
 				loadCamera(world->curStageId, world->curCameraId);
 			}
 
-			ClearBackground(BLACK);
-
+			//ClearBackground(BLACK);
 			DrawTexturePro(
 				curBackground->texture,
 				{ 0, 0, (float)getScreenW(), (float)getScreenH() },

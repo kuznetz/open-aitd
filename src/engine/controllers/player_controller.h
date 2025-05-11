@@ -134,7 +134,7 @@ namespace openAITD {
 				gobj.location.position = { 0,0,0 };//resources->stages[world->curStageId].rooms[newRoom].position;
 			}
 
-			world->setCurRoom(gobj.location.stageId, gobj.location.roomId);
+			//world->setCurStage(gobj.location.stageId, gobj.location.roomId);
 		}
 	};
 

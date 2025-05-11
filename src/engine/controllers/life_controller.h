@@ -413,7 +413,11 @@ namespace openAITD {
 				gobj.rotateAnim.curTime = 0;
 				gobj.rotateAnim.timeEnd = time / 60.;
 				gobj.rotateAnim.from = gobj.location.rotation;
-				auto rotTo = convertAngle(0, toAngle, 0);
+
+				int toAngle2 = toAngle;
+				if (toAngle == 512) toAngle2 = 511;
+				auto rotTo = convertAngle(0, toAngle2, 0);
+				
 				gobj.rotateAnim.to = rotTo;
 				gobj.rotateAnim.toLifeAngles[1] = toAngle;
 				}, "SET_BETA");
@@ -586,10 +590,10 @@ namespace openAITD {
 		void process(float timeDelta) {
 			curTimeDelta = timeDelta;
 
-			auto foll = world->followTarget;
+			/*auto foll = world->followTarget;
 			if (foll && (foll->location.stageId != -1) && (foll->location.stageId != world->curStageId || foll->location.roomId != world->curRoomId)) {
 				world->setCurRoom(foll->location.stageId, foll->location.roomId);
-			}
+			}*/
 
 			for (auto it = funcs.begin(); it != funcs.end(); it++)
 			{

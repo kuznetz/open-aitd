@@ -60,10 +60,15 @@ namespace openAITD {
 
 		bool gameOver = true;
 		bool inDark = false;
+		
 		int curStageId  = -1;
+		int nextStageId = -1;
 		Stage* curStage = 0;
+
 		int curRoomId = -1;
+		int nextRoomId = -1;
 		Room* curRoom = 0;
+		
 		int curCameraId = -1;
 		//Object to follow camera
 		GameObject* followTarget = 0;
@@ -82,14 +87,22 @@ namespace openAITD {
 			this->resources = res;
 		}
 
-		void setCurRoom(int stageId, int roomId) {
-			if (stageId == -1) throw new exception("Stage = -1");
-			if (curStageId != stageId) {
-				curStageId = stageId;
-				curStage = (stageId != -1)? &resources->stages[stageId]: 0;
-				curRoomId = -1;
-				curCameraId = -1;
-			}
+		void setCurStage(int stageId, int roomId) {
+			nextStageId = stageId;
+			nextRoomId = roomId;
+
+			//if (stageId == -1) throw new exception("Stage = -1");
+			//if (curStageId != stageId) {
+			//	curStageId = stageId;
+			//	curStage = (stageId != -1) ? &resources->stages[stageId] : 0;
+			//	curRoomId = -1;
+			//	curCameraId = -1;
+			//}
+			//setCurRoom(roomId);
+		}
+
+
+		void setCurRoom(int roomId) {
 			if (curRoomId != roomId) {
 				curRoomId = roomId;
 				curRoom = (roomId != -1) ? &curStage->rooms[roomId]: 0;

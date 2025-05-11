@@ -62,7 +62,7 @@ namespace openAITD {
         world.gameOver = false;
         world.loadVars("data/vars.json");
         world.loadGObjects("data/objects.json");
-        world.setCurRoom(7, 1);
+        world.setCurStage(7, 1);
         lifeContr.reloadVars();
         state = AppState::Intro;
     }
@@ -71,7 +71,7 @@ namespace openAITD {
         world.gameOver = false;
         world.loadVars("data/vars.json");
         world.loadGObjects("data/objects.json");
-        world.setCurRoom(0, 0);
+        world.setCurStage(0, 0);
         world.followTarget = 0;
         lifeContr.reloadVars();
         state = AppState::InWorld;
@@ -84,7 +84,42 @@ namespace openAITD {
         state = AppState::InWorld;
     }
 
+    bool loadStage() {
+        if (world.curStageId == world.nextStageId) return false;
+        BeginDrawing();
+        auto& f = resources.mainFont;
+        const char* m = "Loading...";
+        auto mt = MeasureTextEx(f, m, f.baseSize, 0);
+        Vector2 v = { (int)(resources.config.screenW - mt.x) / 2, resources.config.screenH - (f.baseSize * 2) };
+        DrawTextEx(f, m, v, f.baseSize, 0, WHITE);
+        EndDrawing();
+
+        world.curStage = &resources.stages[world.nextStageId];
+        world.curStageId = world.nextStageId;
+        world.curCameraId = -1;
+
+        //Preload Cameras
+        resources.backgrounds.loadStage(world.curStageId);
+                
+        //Preload Objects
+        for (int i = 0; i < world.gobjects.size(); i++) {
+            auto& gobj = world.gobjects[i];
+            if (gobj.modelId == -1) continue;
+            if (gobj.location.stageId != world.curStageId) continue;
+            resources.models.getModel(gobj.modelId);
+        }
+
+        //reset frame time
+        BeginDrawing();
+        EndDrawing();
+
+        return true;
+    }
+
     void processWorld(float timeDelta) {
+        loadStage();
+        world.setCurRoom(world.nextRoomId);
+        
         if (IsKeyPressed(KEY_O)) {
             freeLook = !freeLook;
         }
@@ -94,9 +129,9 @@ namespace openAITD {
         if (IsKeyDown(KEY_I)) {
             timeDelta *= 8;
         }
-
         if (!pause) {
             while (true) {
+
                 float partDelta = min(timeDelta, maxDelta);
                 world.chrono += partDelta;
                 lifeContr.process(partDelta);

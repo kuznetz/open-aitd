@@ -185,8 +185,9 @@ namespace openAITD {
 			if (!world->followTarget) return;
 			auto& loc = world->followTarget->location;
 			if (loc.stageId == -1) return;
-			world->setCurRoom(loc.stageId, loc.roomId);
+			world->setCurStage(loc.stageId, loc.roomId);
 			//Select Camera
+			if (world->curStageId != loc.stageId) return;
 			Vector3 pos = Vector3Add(loc.position, world->curRoom->position);
 			auto camId = world->curStage->closestCamera(pos);
 			if (camId != -1) {
