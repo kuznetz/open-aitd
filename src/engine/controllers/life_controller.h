@@ -80,7 +80,7 @@ namespace openAITD {
 			else if (p2rot.x > b.max.x) {
 				res = 4;
 			}
-			cout << "POSREL=" << to_string(res);
+			cout << "POSREL=" << to_string(res) << endl;
 			return res;
 		}
 
@@ -116,6 +116,20 @@ namespace openAITD {
 			auto q = QuaternionFromMatrix(matRotation);
 			return QuaternionTransform(q, roomMatObj);
 			//auto rotTo = QuaternionFromAxisAngle({ 0,1,0 }, (toAngle + 512) * 2. * PI / 1024.);
+		}
+
+		int convertAngle2(int oldAngle, int newAngle) {
+			auto angleDif = (newAngle - oldAngle);
+			//printf("SET_BETA DIFF %d\n", angleDif);			
+			if (angleDif == 512)
+			{
+				angleDif -= 1;
+			}
+			else if (angleDif == -512)
+			{
+				angleDif += 1;
+			}
+			return oldAngle + angleDif;
 		}
 
 		void initExpressions() {
@@ -398,13 +412,23 @@ namespace openAITD {
 				}, "SET_TRACKMODE");
 
 			lua->CreateFunction([this](int obj, int toAngle, int time) {
-				//auto& gobj = this->world->gobjects[obj];
-				//gobj.rotateAnim.curTime = 0;
-				//gobj.rotateAnim.timeEnd = time / 60.;
-				//gobj.rotateAnim.from = gobj.location.rotation;
-				//auto rotTo = convertAngle(toAngle, 0, 0);
-				//gobj.rotateAnim.to = rotTo;
-				//gobj.rotateAnim.toLifeAngles[0] = toAngle;
+				auto& gobj = this->world->gobjects[obj];
+				if (gobj.rotateAnim.timeEnd > 0) return;
+				gobj.rotateAnim.curTime = 0;
+				gobj.rotateAnim.timeEnd = time / 60.;
+				gobj.rotateAnim.from = gobj.location.rotation;
+
+				auto& ro = gobj.location.rotOrig;
+				auto& ro2 = gobj.rotateAnim.toOrig;
+				ro2 = ro;
+				ro2.x = toAngle;
+
+				gobj.rotateAnim.to = convertAngle(
+					convertAngle2(ro.x, -toAngle),
+					ro2.y,
+					ro2.z
+				);
+
 				}, "SET_ALPHA");
 
 			lua->CreateFunction([this](int obj, int toAngle, int time) {
@@ -413,12 +437,17 @@ namespace openAITD {
 				gobj.rotateAnim.curTime = 0;
 				gobj.rotateAnim.timeEnd = time / 60.;
 				gobj.rotateAnim.from = gobj.location.rotation;
-				
+
 				auto& ro = gobj.location.rotOrig;
 				auto& ro2 = gobj.rotateAnim.toOrig;
 				ro2 = ro;
 				ro2.y = toAngle;
-				gobj.rotateAnim.to = convertAngle(ro2.x, ro2.y, ro2.z);
+
+				gobj.rotateAnim.to = convertAngle(
+					ro2.x, 
+					convertAngle2(ro.y, toAngle),
+					ro2.z
+				);
 
 				}, "SET_BETA");
 
