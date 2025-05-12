@@ -30,10 +30,9 @@ namespace openAITD {
 
 		Transform tempPose[100];
 
-		Stage* curStage = 0;
 		int curStageId = -1;
-		WCamera* curCamera = 0;
 		int curCameraId = -1;
+		WCamera* curCamera = 0;
 		Background* curBackground = 0;
 
 		const int getScreenW() { return resources->config.screenW; }
@@ -46,7 +45,6 @@ namespace openAITD {
 
 		~CameraRenderer() {
 			clearCamera();
-			clearStage();
 		}
 
 		Vector3 GetWorldToScreenZ(Vector3 position) {
@@ -69,7 +67,7 @@ namespace openAITD {
 			ord.gobj = &gobj;
 
 			//Calc matrix
-			Vector3& roomPos = curStage->rooms[gobj.location.roomId].position;
+			Vector3& roomPos = world->curStage->rooms[gobj.location.roomId].position;
 			auto pos = Vector3Add(roomPos, gobj.location.position);
 			Matrix matTranslation = MatrixTranslate(pos.x, pos.y, pos.z);
 			auto& rot = gobj.location.rotation;
@@ -119,6 +117,7 @@ namespace openAITD {
 
 		void loadCamera(int newCameraId)
 		{
+			printf("Load Camera %d\n", newCameraId);
 			curCameraId = newCameraId;
 			curCamera = &resources->stages[world->curStageId].cameras[newCameraId];
 			curBackground = resources->backgrounds.get(world->curStageId, newCameraId);
@@ -165,7 +164,7 @@ namespace openAITD {
 			}
 
 			Vector3 pos = gobj.location.position;
-			Vector3& roomPos = curStage->rooms[gobj.location.roomId].position;
+			Vector3& roomPos = world->curStage->rooms[gobj.location.roomId].position;
 			pos = Vector3Add(roomPos, pos);
 			Matrix matTranslation = MatrixTranslate(pos.x, pos.y, pos.z);
 			auto& rot = gobj.location.rotation;
@@ -211,7 +210,8 @@ namespace openAITD {
 			ClearBackground(BLACK);
 			if (world->curStageId == -1 || world->curCameraId == -1) return;
 			if (world->curStageId != curStageId || world->curCameraId != curCameraId) {
-				loadCamera(world->curStageId, world->curCameraId);
+				curStageId = world->curStageId;
+				loadCamera(world->curCameraId);
 			}
 
 			//ClearBackground(BLACK);
@@ -249,7 +249,7 @@ namespace openAITD {
 				if (curCamRoom == -1) continue;
 
 				Vector3 pos = gobj.location.position;
-				Vector3& roomPos = curStage->rooms[gobj.location.roomId].position;
+				Vector3& roomPos = world->curStage->rooms[gobj.location.roomId].position;
 				pos = Vector3Add(roomPos, pos);
 
 				//auto& screenPos = GetWorldToScreenZ(pos);

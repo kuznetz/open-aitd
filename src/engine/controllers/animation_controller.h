@@ -39,9 +39,7 @@ namespace openAITD {
 
                 } else if (rot.curTime >= rot.timeEnd) {
                     gobj.location.rotation = rot.to;
-                    gobj.rotateAnim.lifeAngles[0] = gobj.rotateAnim.toLifeAngles[0];
-                    gobj.rotateAnim.lifeAngles[1] = gobj.rotateAnim.toLifeAngles[1];
-                    gobj.rotateAnim.lifeAngles[2] = gobj.rotateAnim.toLifeAngles[2];
+                    gobj.location.rotOrig = rot.toOrig;
                     rot.timeEnd = 0;
                 }
                 else {

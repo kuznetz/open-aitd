@@ -67,12 +67,17 @@ namespace openAITD {
 		rotated = 3
 	};
 
+	struct Vector3i {
+		int x, y, z;
+	};
+
 	struct GOLocation
 	{
 		int stageId = -1;
 		int roomId = -1;
 		Vector3 position;
 		Vector4 rotation;
+		Vector3i rotOrig;
 	};
 
 	struct GOAnimation
@@ -99,11 +104,10 @@ namespace openAITD {
 	struct GORotateAnim {
 		Quaternion from;
 		Quaternion to;
-		float curTime;
+		Vector3i toOrig;
+	    float curTime;
 		float timeEnd = 0;
 		// for life scripts
-		int lifeAngles[3] = { 0,0,0 };
-		int toLifeAngles[3] = { 0,0,0 };
 	};
 
 	struct GOInvItem

@@ -219,13 +219,13 @@ namespace openAITD {
 				}, "NUM_TRACK");
 
 			lua->CreateFunction([this](int obj) -> int {
-				return this->world->gobjects[obj].rotateAnim.lifeAngles[0];
+				return this->world->gobjects[obj].location.rotOrig.x;
 				}, "ALPHA");
 			lua->CreateFunction([this](int obj) -> int {
-				return this->world->gobjects[obj].rotateAnim.lifeAngles[1];
+				return this->world->gobjects[obj].location.rotOrig.y;
 				}, "BETA");
 			lua->CreateFunction([this](int obj) -> int {
-				return this->world->gobjects[obj].rotateAnim.lifeAngles[2];
+				return this->world->gobjects[obj].location.rotOrig.z;
 				}, "GAMMA");
 			lua->CreateFunction([this](int obj) -> int {
 				return floor(this->world->gobjects[obj].location.position.y * 1000);
@@ -398,13 +398,13 @@ namespace openAITD {
 				}, "SET_TRACKMODE");
 
 			lua->CreateFunction([this](int obj, int toAngle, int time) {
-				auto& gobj = this->world->gobjects[obj];
-				gobj.rotateAnim.curTime = 0;
-				gobj.rotateAnim.timeEnd = time / 60.;
-				gobj.rotateAnim.from = gobj.location.rotation;
-				auto rotTo = convertAngle(toAngle, 0, 0);
-				gobj.rotateAnim.to = rotTo;
-				gobj.rotateAnim.toLifeAngles[0] = toAngle;
+				//auto& gobj = this->world->gobjects[obj];
+				//gobj.rotateAnim.curTime = 0;
+				//gobj.rotateAnim.timeEnd = time / 60.;
+				//gobj.rotateAnim.from = gobj.location.rotation;
+				//auto rotTo = convertAngle(toAngle, 0, 0);
+				//gobj.rotateAnim.to = rotTo;
+				//gobj.rotateAnim.toLifeAngles[0] = toAngle;
 				}, "SET_ALPHA");
 
 			lua->CreateFunction([this](int obj, int toAngle, int time) {
@@ -413,13 +413,13 @@ namespace openAITD {
 				gobj.rotateAnim.curTime = 0;
 				gobj.rotateAnim.timeEnd = time / 60.;
 				gobj.rotateAnim.from = gobj.location.rotation;
-
-				int toAngle2 = toAngle;
-				if (toAngle == 512) toAngle2 = 511;
-				auto rotTo = convertAngle(0, toAngle2, 0);
 				
-				gobj.rotateAnim.to = rotTo;
-				gobj.rotateAnim.toLifeAngles[1] = toAngle;
+				auto& ro = gobj.location.rotOrig;
+				auto& ro2 = gobj.rotateAnim.toOrig;
+				ro2 = ro;
+				ro2.y = toAngle;
+				gobj.rotateAnim.to = convertAngle(ro2.x, ro2.y, ro2.z);
+
 				}, "SET_BETA");
 
 			//Process track

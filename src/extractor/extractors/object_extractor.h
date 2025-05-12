@@ -71,6 +71,12 @@ inline void extractGameObjects(vector <gameObjectStruct> objects, string josnTo)
             rotation.push_back(q.w);
             loc["rotation"] = rotation;
 
+            json rotationOrig = json::array();
+            rotationOrig.push_back(obj.alpha);
+            rotationOrig.push_back(obj.beta);
+            rotationOrig.push_back(obj.gamma);
+            loc["rotOrig"] = rotationOrig;
+
             loc["stageId"] = obj.stageId;
             loc["roomId"] = obj.roomId;
         }

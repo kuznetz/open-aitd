@@ -39,6 +39,7 @@ namespace openAITD {
 
             outJson["follow"] = world->followTarget->id;
             outJson["inHand"] = world->inHandObj->id;
+            outJson["inDark"] = world->inDark;
 
             outJson["vars"] = json::array();
             auto& vars = life->dumpVars();
@@ -71,6 +72,11 @@ namespace openAITD {
                 outObj["location"]["rotation"].push_back(r.y);
                 outObj["location"]["rotation"].push_back(r.z);
                 outObj["location"]["rotation"].push_back(r.w);
+                auto& r2 = gobj.location.rotOrig;
+                outObj["location"]["rotOrig"] = json::array();
+                outObj["location"]["rotOrig"].push_back(r2.x);
+                outObj["location"]["rotOrig"].push_back(r2.y);
+                outObj["location"]["rotOrig"].push_back(r2.z);
 
                 outObj["animation"] = json::object();
                 outObj["animation"]["id"] = gobj.animation.id;
@@ -87,7 +93,7 @@ namespace openAITD {
                 outObj["invItem"]["modelId"] = gobj.invItem.modelId;
                 outObj["invItem"]["lifeId"] = gobj.invItem.lifeId;
                 outObj["invItem"]["flags"] = gobj.invItem.flags;
-                
+
                 outObj["modelId"] = gobj.modelId;
                 outObj["boundsType"] = gobj.boundsType;
                 outObj["flags"] = gobj.flags;
@@ -95,6 +101,7 @@ namespace openAITD {
                 outObj["lifeId"] = gobj.lifeId;
                 outObj["lifeMode"] = gobj.lifeMode;
                 outObj["chrono"] = world->chrono - gobj.chrono;
+                outObj["hitObjectDamage"] = gobj.physics.hitObjectDamage;
 
                 outJson["objects"].push_back(outObj);
             }
@@ -131,6 +138,8 @@ namespace openAITD {
                 gobj.location.position = json2vector(inObj["location"]["position"]);
                 auto& r = inObj["location"]["rotation"];
                 gobj.location.rotation = { r[0], r[1], r[2], r[3] };
+                auto& r2 = inObj["location"]["rotOrig"];
+                gobj.location.rotOrig = { r2[0], r2[1], r2[2] };
 
                 gobj.animation.id = inObj["animation"]["id"];
                 gobj.animation.nextId = inObj["animation"]["nextId"];
@@ -152,6 +161,9 @@ namespace openAITD {
                 gobj.lifeId = inObj["lifeId"];
                 gobj.lifeMode = inObj["lifeMode"];
                 gobj.chrono = world->chrono + inObj["chrono"];
+                gobj.physics.hitObjectDamage = inObj["hitObjectDamage"];
+
+                gobj.physics.boundsCached = false;
             }
 
             world->inventory.resize(inJson["inventory"].size());
@@ -161,6 +173,7 @@ namespace openAITD {
 
             world->inHandObj = &world->gobjects[inJson["inHand"]];
             world->followTarget = &world->gobjects[inJson["follow"]];
+            world->inDark = inJson["inDark"];
 
             auto foll = world->followTarget;
             world->setCurStage(foll->location.stageId, foll->location.roomId);
