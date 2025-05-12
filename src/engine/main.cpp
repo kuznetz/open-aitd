@@ -298,7 +298,7 @@ namespace openAITD {
         auto& c = resources.config;
         DrawTextureRec(screenTex.texture, {0, 0, (float)c.screenW, (float)-c.screenH }, { (float)c.screenX, (float)c.screenY }, WHITE);
         if (resources.config.showFps) {
-            DrawFPS(10, 10);
+            DrawFPS(c.screenX + 10, 10);
         }
         EndDrawing();
     }

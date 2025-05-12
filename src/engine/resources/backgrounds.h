@@ -28,11 +28,13 @@ namespace openAITD {
 	public:
 		Config* config = 0;
 		vector<Stage>* stages = 0;
-		string stageDir = "data/backgrounds";
+		string stageDir = "data/stages";
+		string newStageDir = "newdata/stages";
 		vector<Background> items;
 
 		int curPictureId = -1;
 		string picturesDir = "data/pictures";
+		string newPicturesDir = "newdata/pictures";
 		raylib::Texture2D picture = { 0 };
 
 		Backgrounds() {
@@ -58,7 +60,15 @@ namespace openAITD {
 		Texture2D loadPicture(int pictureId) {
 			if (curPictureId == pictureId) return picture;
 			UnloadTexture(picture);
-			auto imgS = picturesDir + "/" + to_string(pictureId) + ".png";
+			
+			auto imgS = newPicturesDir + "/" + to_string(pictureId) + ".png";
+			if (!filesystem::exists(imgS)) {
+				imgS = picturesDir + "/" + to_string(pictureId) + ".png";
+			}
+			if (!filesystem::exists(imgS)) {
+				throw new exception((imgS+" not exists").c_str());
+			}			
+			
 			auto bgImg = raylib::LoadImage(imgS.c_str());
 			auto& fullBgImg = resizeImg(bgImg, config->screenW, config->screenH);
 			UnloadImage(bgImg);
@@ -67,17 +77,29 @@ namespace openAITD {
 			return picture;
 		}
 
+		string getImgStagePath(string tail) {
+			string path = newStageDir + "/" + tail;
+			if (filesystem::exists(path)) {
+				return path;
+			}
+			path = stageDir + "/" + tail;
+			if (filesystem::exists(path)) {
+				return path;
+			}
+			throw new exception((path + " not exists").c_str());
+		}
+
 		void loadStage(int newStageId)
 		{
 			if (newStageId == curStageId) return;
 			clear();
 			auto curStage = &(*this->stages)[newStageId];
 			for (int camId = 0; camId < curStage->cameras.size(); camId++) {
-				auto dir = curStage->stageDir + "/camera_" + to_string(camId);
+				auto cameraDir = to_string(newStageId) + "/camera_" + to_string(camId);
+				auto path = getImgStagePath(cameraDir + "/background.png");
 
 				auto& bg = items.emplace_back();
-
-				auto bgImg = raylib::LoadImage((dir + "/background.png").c_str());
+				auto bgImg = raylib::LoadImage(path.c_str());
 				auto& fullBgImg = resizeImg(bgImg, config->screenW, config->screenH);
 				UnloadImage(bgImg);
 
@@ -88,7 +110,8 @@ namespace openAITD {
 				for (int cr = 0; cr < camRooms.size(); cr++) {
 					bg.overlays[cr].resize(camRooms[cr].overlays.size());
 					for (int ovlId = 0; ovlId < camRooms[cr].overlays.size(); ovlId++) {
-						auto mskImg = raylib::LoadImage((dir + "/mask_" + to_string(cr) + "_" + to_string(ovlId) + ".png").c_str());
+						path = getImgStagePath(cameraDir + "/mask_" + to_string(cr) + "_" + to_string(ovlId) + ".png");
+						auto mskImg = raylib::LoadImage(path.c_str());
 						bg.overlays[cr][ovlId] = generateOverlay(fullBgImg, mskImg);
 						UnloadImage(mskImg);
 					}
