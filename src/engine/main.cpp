@@ -7,6 +7,7 @@
 #include "./controllers/freelook_renderer.h"
 #include "./controllers/player_controller.h"
 #include "./controllers/physics_controller.h"
+#include "./controllers/objrotate_controller.h"
 #include "./controllers/animation_controller.h"
 #include "./controllers/hit_controller.h"
 #include "./controllers/throw_controller.h"
@@ -42,6 +43,7 @@ namespace openAITD {
     CameraRenderer renderer(&resources, &world);
     FreelookRenderer flRenderer(&resources, &world);
     PhysicsController physContr(&resources, &world);
+    ObjRotateController objrotContr(&world);
     AnimationController animContr(&resources, &world);
     HitController hitContr(&world);
     ThrowController throwContr(&world);
@@ -139,6 +141,7 @@ namespace openAITD {
                 hitContr.process(partDelta);
                 throwContr.process(partDelta);
                 physContr.process(partDelta);
+                objrotContr.process(partDelta);
                 if (world.messageTime > 0) {
                     world.messageTime -= partDelta;
                 }

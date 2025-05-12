@@ -164,6 +164,14 @@ namespace openAITD {
 				return this->world->gobjects[obj].physics.collidedBy;
 				}, "COL_BY");
 			lua->CreateFunction([this](int obj) -> int {
+				auto& gobj = this->world->gobjects[obj];
+				int temp1 = gobj.physics.objectColl;
+				if (temp1 == -1) {
+					temp1 = gobj.physics.collidedBy;
+				}
+				return temp1;
+				}, "CONTACT");
+			lua->CreateFunction([this](int obj) -> int {
 				return this->world->gobjects[obj].physics.staticColl;
 				}, "HARD_COLLIDER");		
 			lua->CreateFunction([this](int obj) -> int {
@@ -413,7 +421,7 @@ namespace openAITD {
 
 			lua->CreateFunction([this](int obj, int toAngle, int time) {
 				auto& gobj = this->world->gobjects[obj];
-				if (gobj.rotateAnim.timeEnd > 0) return;
+				if (gobj.rotateAnim.timeEnd > 0 && gobj.rotateAnim.toOrig.x == toAngle) return;
 				gobj.rotateAnim.curTime = 0;
 				gobj.rotateAnim.timeEnd = time / 60.;
 				gobj.rotateAnim.from = gobj.location.rotation;
@@ -433,7 +441,7 @@ namespace openAITD {
 
 			lua->CreateFunction([this](int obj, int toAngle, int time) {
 				auto& gobj = this->world->gobjects[obj];
-				if (gobj.rotateAnim.timeEnd > 0) return;
+				if (gobj.rotateAnim.timeEnd > 0 && gobj.rotateAnim.toOrig.y == toAngle) return;
 				gobj.rotateAnim.curTime = 0;
 				gobj.rotateAnim.timeEnd = time / 60.;
 				gobj.rotateAnim.from = gobj.location.rotation;
@@ -477,6 +485,9 @@ namespace openAITD {
 			lua->CreateFunction([this]() {
 				//TODO: DEF_ZV
 				}, "DEF_ZV");
+			lua->CreateFunction([this]() {
+				//TODO: DO_MAX_ZV
+				}, "DO_MAX_ZV");
 			lua->CreateFunction([this]() {
 				//TODO: DO_CARRE_ZV
 				}, "DO_CARRE_ZV");

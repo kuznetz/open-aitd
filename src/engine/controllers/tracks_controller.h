@@ -40,15 +40,15 @@ namespace openAITD {
 				targetPos.z += world->curStage->rooms[trackItm.room].position.z - world->curStage->rooms[gobj.location.roomId].position.z;
 			}
 			//targetPos.z = -targetPos.z;
-			gobj.track.target = targetPos;			
-			rotateTo(gobj, gobj.track.target);
+			gobj.track.targetPos = targetPos;			
+			rotateTo(gobj, gobj.track.targetPos);
 
 			//gobj.track.direction = Vector3Normalize(Vector3Subtract(gobj.track.target, gobj.location.position));
 		    //float nextDistanceToPoint = Vector3DistanceSqr(Vector3Add(gobj.location.position, gobj.track.direction), gobj.track.target);
 			//DISTANCE_TO_POINT_TRESSHOLD = 0.1m
 			//TODO: change code 4 distance reach
 
-			float distanceToPoint = Vector3DistanceSqr(gobj.location.position, gobj.track.target);
+			float distanceToPoint = Vector3DistanceSqr(gobj.location.position, gobj.track.targetPos);
 			if (distanceToPoint >= 0.1 || gobj.rotateAnim.timeEnd > 0) // || distanceToPoint >= nextDistanceToPoint
 			{
 				// not yet at position
@@ -62,9 +62,27 @@ namespace openAITD {
 			}
 		}
 
+		bool gotoPos3D(GameObject& gobj, TrackItem& trackItm) {
+			Vector3 targetPos = trackItm.pos;
+			gobj.track.startPos = gobj.location.position;
+			gobj.track.targetPos = targetPos;
+			//trackItm.time -= deltaTime;
+			//rotateTo(gobj, gobj.track.target);
+			if (Vector3DistanceSqr(gobj.location.position, gobj.track.targetPos) > (0.05*0.05) )
+			{				
+				gobj.track.posStarted = true;
+				return false;
+			}
+			else // reached position
+			{
+				gobj.location.position = gobj.track.targetPos;
+				return true;
+			}
+		}
+
 		bool gotoStairs(GameObject& gobj, TrackItem& trackItm, bool zCoord) {
 			if (!gobj.track.posStarted) {
-				gobj.track.start = gobj.location.position;
+				gobj.track.startPos = gobj.location.position;
 				float distY = trackItm.pos.y - gobj.location.position.y;
 				float distX = (zCoord)? 
 					abs(trackItm.pos.z - gobj.location.position.z):
@@ -77,9 +95,9 @@ namespace openAITD {
 			rotateTo(gobj, target);
 
 			float diff = (zCoord) ?
-				(gobj.track.start.z - gobj.location.position.z):
-				(gobj.track.start.x - gobj.location.position.x);
-			gobj.location.position.y = gobj.track.start.y + (gobj.track.direction.y * abs(diff));
+				(gobj.track.startPos.z - gobj.location.position.z):
+				(gobj.track.startPos.x - gobj.location.position.x);
+			gobj.location.position.y = gobj.track.startPos.y + (gobj.track.direction.y * abs(diff));
 
 			if ( 
 				(gobj.track.direction.y > 0 && gobj.location.position.y < trackItm.pos.y) ||
@@ -132,7 +150,9 @@ namespace openAITD {
 				//cout << "ROTATE_XYZ" << endl;
 				rotateXYZ(gobj, trackItm);
 				break;
-
+			case TrackItemType::GOTO_3D:
+				nextPos = gotoPos3D(gobj, trackItm);
+				break;
 			case TrackItemType::STAIRS_X:
 				//trackItm.pos						
 				nextPos = gotoStairs(gobj, trackItm, false);

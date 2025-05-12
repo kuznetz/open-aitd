@@ -95,19 +95,16 @@ namespace openAITD {
 				if (gobj2.location.stageId != gobj.location.stageId) continue;
 				if (gobj.throwing.active && gobj.throwing.throwedBy == &gobj2) continue;
 
+				Bounds objB2 = world->getObjectBounds(gobj2);
 				if (gobj2.location.roomId != gobj.location.roomId) {
-					bool inConnRoom = false;
-					for (int j = 0; j < room.zones.size(); j++) {
-						if (room.zones[j].type != RoomZoneType::ChangeRoom) continue;
-						if (gobj2.location.roomId == room.zones[j].parameter) {
-							inConnRoom = true;
-							break;
-						}
+					if (resources->isRoomsConnected(*world->curStage, gobj.location.roomId, gobj2.location.roomId)) {
+						objB2 = world->BoundsChangeRoom(objB2, gobj2.location.roomId, gobj.location.roomId);
 					}
-					if (!inConnRoom) continue;
+					else {
+						continue;
+					}
 				}
 
-				Bounds& objB2 = world->BoundsChangeRoom(world->getObjectBounds(gobj2), gobj2.location.roomId, gobj.location.roomId);
 				Vector3 v2 = v;
 				bool c = objB.CollToBoxV(v2, objB2);
 				collided = collided || c;
@@ -204,12 +201,6 @@ namespace openAITD {
 				gobj.physics.collidedBy = -1;
 				gobj.physics.staticColl = -1;
 				gobj.physics.objectColl = -1;
-
-				if (
-					Vector3Equals(gobj.physics.moveVec, { 0,0,0 }) &&
-					(gobj.rotateAnim.timeEnd <= 0)
-				) continue;
-				gobj.physics.boundsCached = false;
 			}
 
 			for (int i = 0; i < world->gobjects.size(); i++) {
@@ -220,6 +211,7 @@ namespace openAITD {
 				gobj.animation.prevMoveRoot = gobj.animation.moveRoot;
 
 				if (Vector3Equals(gobj.physics.moveVec, {0,0,0})) continue;
+				gobj.physics.boundsCached = false;
 				auto* curRoom = &curStage.rooms[gobj.location.roomId];
 
 				processStaticColliders(gobj, *curRoom);

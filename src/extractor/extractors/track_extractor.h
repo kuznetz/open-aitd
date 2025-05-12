@@ -103,9 +103,11 @@ inline void extractTrack(Track track, string jsonTo) {
 		case TrackEnum::GOTO_3D:
 			objJson["room"] = tr.arguments[0];
 			objJson["pos"] = json::array();
-			objJson["pos"][0] = tr.arguments[1];
-			objJson["pos"][1] = tr.arguments[2];
-			objJson["pos"][2] = tr.arguments[3];
+			v = Vector3Transform({ tr.arguments[1] / 1000.f , tr.arguments[2] / 1000.f, tr.arguments[3] / 1000.f }, roomMatrix);
+			objJson["pos"] = json::array();
+			objJson["pos"][0] = v.x;
+			objJson["pos"][1] = v.y;
+			objJson["pos"][2] = v.z;
 			objJson["time"] = tr.arguments[4] / 60.;
 			break;
 

@@ -297,7 +297,7 @@ namespace openAITD {
 			//DrawCube(mMax, 0.1, 0.1, 0.1, MAGENTA);
 
 			if (gobj.track.mode == GOTrackMode::track) {
-				DrawLine3D(gobj.location.position, gobj.track.target, ORANGE);
+				DrawLine3D(gobj.location.position, gobj.track.targetPos, ORANGE);
 			}
 
 			rlPopMatrix();

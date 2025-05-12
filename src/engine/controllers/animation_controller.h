@@ -22,39 +22,13 @@ namespace openAITD {
             return q1.x * q2.x + q1.y * q2.y + q1.z * q2.z + q1.w * q2.w;
         }
 
-        void processRotateAnim(float timeDelta) {
-            for (int i = 0; i < world->gobjects.size(); i++) {
-                auto& gobj = world->gobjects[i];
-                if (gobj.location.stageId != world->curStageId) continue;
-                if (gobj.rotateAnim.timeEnd == 0) continue;
-
-                auto& rot = gobj.rotateAnim;
-                rot.curTime += timeDelta;
-                if (rot.curTime == 0) {
-                    gobj.location.rotation = rot.from;
-                    /*auto dot_product = QuaterionDotProduct(rot.from, rot.to);
-                    if (dot_product < 0) {
-                        rot.to = raylib::QuaternionInvert(rot.to);
-                    }*/
-
-                } else if (rot.curTime >= rot.timeEnd) {
-                    gobj.location.rotation = rot.to;
-                    gobj.location.rotOrig = rot.toOrig;
-                    rot.timeEnd = 0;
-                }
-                else {
-                    gobj.location.rotation = QuaternionSlerp(rot.from, rot.to, rot.curTime / rot.timeEnd);
-                }
-            }
-        }
-
 		void process(float timeDelta) {
-            processRotateAnim(timeDelta);
-
 			for (int i = 0; i < this->world->gobjects.size(); i++) {
 				auto& gobj = this->world->gobjects[i];
 				if (gobj.location.stageId != this->world->curStageId) continue;
-				if (gobj.modelId == -1) continue;
+                //don't process without flag. Need for sitting enemies (lady, zombies)
+				//TODO: if (gobj.modelId == -1 || !gobj.bitField.animated) continue; 
+                if (gobj.modelId == -1) continue;
                 auto& objAni = gobj.animation;
 				if (objAni.id == -1) continue;
                 auto mdl = resources->models.getModel(gobj.modelId);

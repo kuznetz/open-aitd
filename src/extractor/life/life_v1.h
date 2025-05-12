@@ -138,7 +138,7 @@ inline const vector<parseLifeExpr> LifeExprParams =
 	{ EvalEnum::POSREL, "POSREL", { lifeConst }, true },
 	{ EvalEnum::KEYBOARD_INPUT, "KEYBOARD_INPUT", { }},
 	{ EvalEnum::SPACE, "SPACE", { }},
-	{ EvalEnum::CONTACT, "CONTACT", { }},
+	{ EvalEnum::CONTACT, "CONTACT", { }, true },
 	{ EvalEnum::ALPHA, "ALPHA", { }, true },
 	{ EvalEnum::BETA, "BETA", { }, true },
 	{ EvalEnum::GAMMA, "GAMMA", { }, true },
