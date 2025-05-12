@@ -162,20 +162,16 @@ namespace openAITD {
 		}
 
 		void process(float timeDelta) {
-			const auto& screenW = this->resources->config.screenW;
-			const auto& screenH = this->resources->config.screenH;
-			
 			if (!firstFrame) {
 				processKeys();
 			}
+			firstFrame = false;
+		}
 
-			BeginDrawing();
-			ClearBackground(BLACK);
+		void render() {
 			drawLines();
 			drawItems();
 			drawActions();
-			EndDrawing();
-			firstFrame = false;
 		}
 
 	};

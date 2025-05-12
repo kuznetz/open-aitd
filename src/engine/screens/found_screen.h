@@ -50,12 +50,11 @@ namespace openAITD {
 				submit();
 				return;
 			}
+		}
 
-			BeginDrawing();
-
+		void render() {
 			const auto& screenW = this->resources->config.screenW;
 			const auto& screenH = this->resources->config.screenH;
-			ClearBackground(BLACK);
 
 			auto& gobj = this->world->gobjects[world->foundItem];
 			auto& name = resources->texts[gobj.invItem.nameId];
@@ -71,8 +70,6 @@ namespace openAITD {
 			resources->drawCentered("Leave", r, leave ? YELLOW : GRAY);
 			r = { r.x + r.width, r.y, r.width, 0 };
 			resources->drawCentered("Take", r, leave ? GRAY : YELLOW);
-
-			EndDrawing();
 		}
 
 	};

@@ -46,7 +46,7 @@ namespace openAITD {
 		string str = modelsPath + "/" + to_string(id) + (alt ? "_alt" : "") + "/model.gltf";
 		auto& newMod = modMap[id];
 		newMod.model.load(str.c_str());
-		newMod.model.bakePoses(config->fps);
+		newMod.model.bakePoses(config->targetFps);
 
 		if (newMod.model.data) {
 			for (int i = 0; i < newMod.model.data->animations_count; i++) {

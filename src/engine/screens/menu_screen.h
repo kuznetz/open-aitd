@@ -5,6 +5,7 @@
 #include "../world/world.h"
 #include "../resources/resources.h"
 #include "./base_menu.h"
+#include "./options_screen.h"
 
 using namespace std;
 using namespace raylib;
@@ -32,13 +33,14 @@ namespace openAITD {
 		Resources* resources;
 		BaseMenu menu;
 		BaseMenu savesMenu;
+		OptionsScreen options;
 		bool firstFrame = true;
 
 		MenuScreenState state = MenuScreenState::main;
 		MenuScreenResult result = MenuScreenResult::none;
 		int saveSlot = -1;
 
-		MenuScreen(World* world) {
+		MenuScreen(World* world) : options(world) {
 			this->world = world;
 			this->resources = world->resources;
 			menu.resources = this->resources;
@@ -94,6 +96,10 @@ namespace openAITD {
 			case 3:
 				state = MenuScreenState::load;
 				break;
+			case 4:
+				state = MenuScreenState::options;
+				options.reload();
+				break;
 			case 5:
 				result = MenuScreenResult::exit;
 				break;
@@ -124,7 +130,6 @@ namespace openAITD {
 					result = MenuScreenResult::loadGame;
 					break;
 				}
-				
 			}
 
 			switch (state) {
@@ -137,6 +142,9 @@ namespace openAITD {
 			case MenuScreenState::load:
 				savesMenu.processKeys();
 				break;
+			case MenuScreenState::options:
+				options.processKeys();
+				break;
 			}
 		}
 
@@ -144,10 +152,10 @@ namespace openAITD {
 			if (!firstFrame) {
 				processKeys();
 			}
+			firstFrame = false;
+		}
 
-			BeginDrawing();
-			ClearBackground(BLACK);
-			
+		void render() {
 			switch (state) {
 			case MenuScreenState::main:
 				menu.render();
@@ -156,21 +164,20 @@ namespace openAITD {
 				resources->drawCentered("Save Game", {
 					0, resources->config.screenH * 0.05f,
 					(float)resources->config.screenW, 0
-				}, WHITE);
+					}, WHITE);
 				savesMenu.render();
 				break;
 			case MenuScreenState::load:
 				resources->drawCentered("Load Game", {
 					0, resources->config.screenH * 0.05f,
 					(float)resources->config.screenW, 0
-				}, WHITE);
+					}, WHITE);
 				savesMenu.render();
 				break;
+			case MenuScreenState::options:
+				options.render();
+				break;
 			}
-
-			EndDrawing();
-
-			firstFrame = false;
 		}
 
 	};

@@ -73,7 +73,7 @@ namespace openAITD {
 
 				objAni.animTime += timeDelta;
                 int oldFrame = objAni.animFrame;
-				objAni.animFrame = (objAni.animTime * resources->config.fps);
+				objAni.animFrame = (objAni.animTime * resources->config.targetFps);
                 objAni.isNewFrame = objAni.animFrame != oldFrame;
 				auto& curFrame = objAni.animFrame;
 

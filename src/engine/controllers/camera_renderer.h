@@ -200,21 +200,18 @@ namespace openAITD {
 			}
 		}
 
-		void process() {
+		void render() {
 			if (world->inDark) {
-				ClearBackground(BLACK);
 				renderMessage();
 				return;
 			}
 
-			ClearBackground(BLACK);
 			if (world->curStageId == -1 || world->curCameraId == -1) return;
 			if (world->curStageId != curStageId || world->curCameraId != curCameraId) {
 				curStageId = world->curStageId;
 				loadCamera(world->curCameraId);
 			}
 
-			//ClearBackground(BLACK);
 			DrawTexturePro(
 				curBackground->texture,
 				{ 0, 0, (float)getScreenW(), (float)getScreenH() },

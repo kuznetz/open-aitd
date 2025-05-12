@@ -318,16 +318,17 @@ namespace openAITD {
 		}
 
 		void process() {
+			if (freeLook) {
+				UpdateCamera(&initCamera, CAMERA_FREE);
+			}
+		}
+
+		void render() {
 			if (world->curStageId != curStageId || world->curCameraId != curCameraId) {
 				loadCamera(world->curStageId, world->curCameraId);
 			}
 
 			endDebug3d = debug3d;
-
-			ClearBackground(BLACK);
-			if (freeLook) {
-				UpdateCamera(&initCamera, CAMERA_FREE);
-			}
 
 			/*
 			for (int i = 0; i < this->world->gobjects.size(); i++) {

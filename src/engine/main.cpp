@@ -38,6 +38,8 @@ namespace openAITD {
     bool gameStarted = false;
     bool fastStart = false;
     
+    RenderTexture screenTex;
+
     Resources resources;
     World world(&resources);
     CameraRenderer renderer(&resources, &world);
@@ -119,6 +121,11 @@ namespace openAITD {
     }
 
     void processWorld(float timeDelta) {
+        if (world.picture.id != -1) {
+            pictureScr.process(timeDelta);
+            return;
+        }
+
         loadStage();
         world.setCurRoom(world.nextRoomId);
         
@@ -150,16 +157,30 @@ namespace openAITD {
                 if (timeDelta < 0) break;
             }
         }
-
-        BeginDrawing();
         if (freeLook) {
             flRenderer.freeLook = pause;
             flRenderer.process();
         }
         else {
-            renderer.process();
+            //renderer.process();
         }
-        EndDrawing();
+    }
+
+    void renderWorld() {
+        if (world.picture.id != -1) {
+            pictureScr.render();
+            return;
+        }
+        if (world.foundItem != -1) {
+            foundScreen.render();
+            return;
+        }
+        if (freeLook) {
+            flRenderer.render();
+        }
+        else {
+            renderer.render();
+        }
     }
 
     void startMenu() {
@@ -193,15 +214,128 @@ namespace openAITD {
         return true;
     }
 
+    bool process(float timeDelta) {
+        if (state == AppState::MainMenu) {
+            if (!processMenu(timeDelta)) return false;
+        }
+        else if (state == AppState::Intro) {
+            processWorld(timeDelta);
+            if (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_ESCAPE)) {
+                world.gameOver = true;
+            }
+            if (world.gameOver) {
+                startGame();
+            }
+        }
+        else if (state == AppState::InWorld) {
+            if (world.foundItem != -1) {
+                foundScreen.process(timeDelta);
+            }
+            else if (world.player.allowInventory && IsKeyPressed(KEY_ENTER)) {
+                inventoryScreen.reload();
+                state = AppState::Inventory;
+            }
+            else if (world.player.allowInventory && IsKeyPressed(KEY_ESCAPE)) {
+                startMenu();
+            }
+            else if (world.picture.id != -1) {
+                pictureScr.process(timeDelta);
+            }
+            else if (world.gameOver) {
+                mainMenu.reload();
+                state = AppState::MainMenu;
+            }
+            else {
+                world.player.space = IsKeyDown(KEY_SPACE);
+                if (IsKeyDown(KEY_UP)) {
+                    world.player.keyboard = 1;
+                }
+                else if (IsKeyDown(KEY_DOWN)) {
+                    world.player.keyboard = 2;
+                }
+                else if (IsKeyDown(KEY_LEFT)) {
+                    world.player.keyboard = 4;
+                }
+                else if (IsKeyDown(KEY_RIGHT)) {
+                    world.player.keyboard = 8;
+                }
+                else {
+                    world.player.keyboard = 0;
+                }
+                world.player.space = IsKeyDown(KEY_SPACE);
+                processWorld(timeDelta);
+            }
+
+        }
+        else if (state == AppState::Inventory) {
+            inventoryScreen.process(timeDelta);
+            if (inventoryScreen.exit) {
+                state = AppState::InWorld;
+            }
+        }
+        return true;
+    }
+
+    void render() {
+        BeginTextureMode(screenTex);
+        ClearBackground(BLACK);
+
+        if (state == AppState::MainMenu) {
+            mainMenu.render();
+        }
+        else if (state == AppState::Intro) {
+            renderWorld();
+        }
+        else if (state == AppState::InWorld) {
+            renderWorld();
+        }
+        else if (state == AppState::Inventory) {
+            inventoryScreen.render();
+        }
+        EndTextureMode();
+        
+        BeginDrawing();
+        auto& c = resources.config;
+        DrawTextureRec(screenTex.texture, {0, 0, (float)c.screenW, (float)-c.screenH }, { (float)c.screenX, (float)c.screenY }, WHITE);
+        if (resources.config.showFps) {
+            DrawFPS(10, 10);
+        }
+        EndDrawing();
+    }
+
     int main(void)
     {
+        resources.config = loadConfig();
         AITDExtractor::extractAllData();
 
-        InitWindow(resources.config.screenW, resources.config.screenH, "Open-AITD");
+        int m;
+        if (resources.config.fulllscreen) {
+            //SetConfigFlags(FLAG_BORDERLESS_WINDOWED_MODE);
+            InitWindow(0, 0, "Open-AITD");
+            m = GetCurrentMonitor();
+            int w = GetMonitorWidth(m);
+            int h = GetMonitorHeight(m);
+            resources.config.screenW = h * 4 / 3;
+            resources.config.screenH = h;
+            resources.config.screenX = (w - resources.config.screenW) / 2;
+            resources.config.screenY = 0;
+            ToggleBorderlessWindowed();
+            SetWindowSize(w, h);
+            //SetWindowPosition(0, 0);
+        }
+        else {
+            InitWindow(resources.config.screenW, resources.config.screenH, "Open-AITD");
+            m = GetCurrentMonitor();
+            //SetWindowPosition((w - resources.config.screenW) / 2 , (h - resources.config.screenH) / 2);
+            //SetWindowSize(resources.config.screenW, resources.config.screenH);
+        }
+        resources.config.targetFps = GetMonitorRefreshRate(m);
+
         SetWindowState(FLAG_VSYNC_HINT);
-        SetTargetFPS(resources.config.fps);
+        SetTargetFPS(resources.config.targetFps);
         SetExitKey(KEY_F10);
 
+        screenTex = LoadRenderTexture(resources.config.screenW, resources.config.screenH);
         resources.loadTexts("data/texts/english.txt");
         resources.loadFont("newdata/font.ttf", 16 * resources.config.screenH / 200);
         resources.stages.resize(8);
@@ -222,70 +356,8 @@ namespace openAITD {
         float timeDelta = 0;        
         while (!WindowShouldClose()) {
             timeDelta = GetFrameTime();
-            if (state == AppState::MainMenu) {
-                if (!processMenu(timeDelta)) break;
-            }
-            else if (state == AppState::Intro) {
-                if (world.picture.id != -1) {
-                    pictureScr.process(timeDelta);
-                }
-                else {
-                    processWorld(timeDelta);
-                }
-
-                if (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_ESCAPE)) {
-                    world.gameOver = true;
-                }
-                if (world.gameOver) {
-                    startGame();
-                }
-            }
-            else if (state == AppState::InWorld) {
-                if (world.foundItem != -1) {
-                    foundScreen.process(timeDelta);
-                }
-                else if (world.player.allowInventory && IsKeyPressed(KEY_ENTER)) {
-                    inventoryScreen.reload();
-                    state = AppState::Inventory;
-                }
-                else if (world.player.allowInventory && IsKeyPressed(KEY_ESCAPE)) {
-                    startMenu();
-                }
-                else if (world.picture.id != -1) {
-                    pictureScr.process(timeDelta);
-                }
-                else if (world.gameOver) {
-                    mainMenu.reload();
-                    state = AppState::MainMenu;
-                }
-                else {
-                    world.player.space = IsKeyDown(KEY_SPACE);
-                    if (IsKeyDown(KEY_UP)) {
-                        world.player.keyboard = 1;
-                    }
-                    else if (IsKeyDown(KEY_DOWN)) {
-                        world.player.keyboard = 2;
-                    }
-                    else if (IsKeyDown(KEY_LEFT)) {
-                        world.player.keyboard = 4;
-                    }
-                    else if (IsKeyDown(KEY_RIGHT)) {
-                        world.player.keyboard = 8;
-                    }
-                    else {
-                        world.player.keyboard = 0;
-                    }
-                    world.player.space = IsKeyDown(KEY_SPACE);
-                    processWorld(timeDelta);
-                }
-
-            }
-            else if (state == AppState::Inventory) {   
-                inventoryScreen.process(timeDelta);
-                if (inventoryScreen.exit) {
-                    state = AppState::InWorld;
-                }
-            }
+            if (!process(timeDelta)) break;            
+            render();
         }
 
         return 0;

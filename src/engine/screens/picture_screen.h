@@ -23,24 +23,24 @@ namespace openAITD {
 		}
 
 		void process(float timeDelta) {
+			auto& pic = this->world->picture;
+			pic.curTime += timeDelta;
+			if (pic.curTime > pic.delay) {
+				pic.id = -1;
+			}
+		}
+
+		void render() {
 			float screenW = this->resources->config.screenW;
 			float screenH = this->resources->config.screenH;
-
 			auto& pic = this->world->picture;
 			auto& texture = this->resources->backgrounds.loadPicture(pic.id);
-			BeginDrawing();
 			DrawTexturePro(
 				texture,
 				{ 0, 0, screenW, screenH },
 				{ 0, 0, screenW, screenH },
 				{ 0, 0 }, 0, WHITE
 			);
-			EndDrawing();
-
-			pic.curTime += timeDelta;
-			if (pic.curTime > pic.delay) {
-				pic.id = -1;
-			}
 		}
 
 	};
