@@ -127,6 +127,7 @@ namespace openAITD {
 		bool boundsCached;
 		bool collidable = 1;
 		Bounds bounds;
+		bool moving;
 		Vector3 moveVec;
 		int collidedBy = -1;
 		int staticColl = -1;

@@ -60,6 +60,17 @@ namespace openAITD {
 			}
 		}
 
+		Bounds getExpanded(float x) {
+			Bounds r(*this);
+			r.min.x -= x;
+			r.max.x += x;
+			r.min.y -= x;
+			r.max.y += x;
+			r.min.z -= x;
+			r.max.z += x;
+			return r;
+		}
+
 		Bounds getCubeBounds()
 		{
 			Bounds r(*this);

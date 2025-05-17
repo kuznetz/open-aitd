@@ -64,9 +64,15 @@ namespace openAITD {
 			bool collided = false;
 			for (int i = 0; i < room.colliders.size(); i++) {
 				Bounds& colB = room.colliders[i].bounds;
-				bool c = objB.CollToBoxV(v, colB);
+				Bounds colBE = colB.getExpanded(0.05f);
+
+				bool c = objB.CollToBox(colBE);
 				collided = collided || c;
+
 				if (c) {
+					if (gobj.physics.moving) {
+						objB.CollToBoxV(v, colB);
+					}
 					if (room.colliders[i].type == 9) {
 						gobj.physics.staticColl = room.colliders[i].parameter;
 					}
@@ -105,28 +111,34 @@ namespace openAITD {
 					}
 				}
 
-				Vector3 v2 = v;
-				bool c = objB.CollToBoxV(v2, objB2);
+				//Expand to constant collision check
+				Bounds objB2E = objB2.getExpanded(0.05f);
+				bool c = objB.CollToBox(objB2E);
+				bool c2 = false;
 				collided = collided || c;
+				//if (gobj2.id == 0) printf("chest coll = %d\n", c);
 				if (c) {
+					if (gobj.physics.moving && !gobj2.bitField.foundable) {
+						c2 = objB.CollToBoxV(v, objB2);
+					}
 					gobj.physics.objectColl = gobj2.id;
-					gobj2.physics.collidedBy = gobj.id;
-
+					if (gobj2.physics.collidedBy == -1) {
+						gobj2.physics.collidedBy = gobj.id;
+					}
 					//takable
 					if (gobj.track.mode == GOTrackMode::manual && gobj2.bitField.foundable && gobj2.invItem.foundTimeout < this->world->chrono) {
 						world->foundItem = gobj2.id;
 					}
+				}
+				if (c2) {
 					if (gobj.throwing.active) {
 						throwDamage(gobj2, gobj);
 					}
 					if (gobj.physics.hitObjectDamage) {
 						hitObjDamage(gobj2, gobj);
-					}					
+					}
 					if (gobj2.bitField.movable) {
 						pushObject(gobj2, room, v);
-					}
-					else if(!gobj2.bitField.foundable) {
-						v = v2;
 					}
 				}
 			}
@@ -155,7 +167,7 @@ namespace openAITD {
 					auto& curZone = curRoom->zones[i];
 					if (!objectInZone(gobj, &curZone)) continue;
 					if (curZone.type == RoomZoneType::ChangeRoom) {
-						printf("Change room obj %d: %d -> %d\n", gobj.id, gobj.location.roomId, curZone.parameter);
+						//printf("Change room obj %d: %d -> %d\n", gobj.id, gobj.location.roomId, curZone.parameter);
 						gobj.location.position = world->VectorChangeRoom(gobj.location.position, gobj.location.roomId, curZone.parameter);
 						gobj.location.roomId = curZone.parameter;
 						gobj.physics.boundsCached = false;
@@ -206,14 +218,19 @@ namespace openAITD {
 			for (int i = 0; i < world->gobjects.size(); i++) {
 				auto& gobj = world->gobjects[i];
 				if (gobj.location.stageId != world->curStageId) continue;
+				if (gobj.modelId == -1) continue;
 
-				gobj.physics.moveVec = Vector3RotateByQuaternion(Vector3Subtract(gobj.animation.moveRoot, gobj.animation.prevMoveRoot), gobj.location.rotation);
-				gobj.animation.prevMoveRoot = gobj.animation.moveRoot;
+				gobj.physics.moving = false;
+				auto& v = gobj.physics.moveVec;
+				v = Vector3Subtract(gobj.animation.moveRoot, gobj.animation.prevMoveRoot);
+				gobj.physics.moving = (v.x != 0 && v.y != 0 && v.z != 0);
+				if (gobj.physics.moving) {
+					v = Vector3RotateByQuaternion(v, gobj.location.rotation);
+					gobj.animation.prevMoveRoot = gobj.animation.moveRoot;
+					gobj.physics.boundsCached = false;
+				}
 
-				if (Vector3Equals(gobj.physics.moveVec, {0,0,0})) continue;
-				gobj.physics.boundsCached = false;
 				auto* curRoom = &curStage.rooms[gobj.location.roomId];
-
 				processStaticColliders(gobj, *curRoom);
 				processDynamicColliders(gobj, *curRoom);
 
@@ -227,148 +244,3 @@ namespace openAITD {
 	};
 
 }
-
-//Bounds handleCollision(Bounds& startZv, Bounds& nextZv, Bounds& collZv)
-//{
-//	int flag = 0;
-//	int var_8;
-//	float halfX;
-//	float halfZ;
-//	int var_A;
-//	int var_6;
-
-//	if (startZv.max.x > collZv.min.x)
-//	{
-//		if (collZv.max.x <= startZv.min.x)
-//		{
-//			flag = 8;
-//		}
-//	}
-//	else
-//	{
-//		flag = 4;
-//	}
-
-//	if (startZv.max.z > collZv.min.z)
-//	{
-//		if (startZv.min.z >= collZv.max.z)
-//		{
-//			flag |= 2;
-//		}
-//	}
-//	else
-//	{
-//		flag |= 1;
-//	}
-
-//	if (flag == 5 || flag == 9 || flag == 6 || flag == 10)
-//	{
-//		var_8 = 2;
-//	}
-//	else
-//	{
-//		if (!flag)
-//		{
-//			var_8 = 0;
-
-//			globHardColStepZ = 0;
-//			globHardColStepX = 0;
-
-//			return;
-//		}
-//		else
-//		{
-//			var_8 = 1;
-//		}
-//	}
-
-//	halfX = (nextZv.min.x + nextZv.max.x) / 2;
-//	halfZ = (nextZv.min.z + nextZv.max.z) / 2;
-
-//	if (collZv.min.x > halfX)
-//	{
-//		var_A = 4;
-//	}
-//	else
-//	{
-//		if (collZv.max.x < halfX)
-//		{
-//			var_A = 0;
-//		}
-//		else
-//		{
-//			var_A = 8;
-//		}
-//	}
-
-//	if (collZv.min.z > halfZ)
-//	{
-//		var_A |= 1;
-//	}
-//	else
-//	{
-//		if (collZv.max.z < halfZ)
-//		{
-//			var_A |= 0; // once again, not that much usefull
-//		}
-//		else
-//		{
-//			var_A |= 2;
-//		}
-//	}
-
-//	if (var_A == 5 || var_A == 9 || var_A == 6 || var_A == 10)
-//	{
-//		var_6 = 2;
-//	}
-//	else
-//	{
-//		if (!var_A)
-//		{
-//			var_6 = 0;
-//		}
-//		else
-//		{
-//			var_6 = 1;
-//		}
-//	}
-
-//	if (var_8 == 1)
-//	{
-//		hardColSuB1Sub1(flag);
-//		return;
-//	}
-
-//	if (var_6 == 1 && (var_A & flag))
-//	{
-//		hardColSuB1Sub1(var_A);
-//		return;
-//	}
-
-//	if (var_A == flag || flag == 15)
-//	{
-//		int Xmod = abs(nextZv.min.x - startZv.min.x); // recheck
-//		int Zmod = abs(nextZv.min.z - startZv.min.z);
-
-//		if (Xmod > Zmod)
-//		{
-//			globHardColStepZ = 0;
-//		}
-//		else
-//		{
-//			globHardColStepX = 0;
-//		}
-//	}
-//	else
-//	{
-//		if (!var_6 || (var_6 == 1 && !(var_A & flag)))
-//		{
-//			globHardColStepZ = 0;
-//			globHardColStepX = 0;
-//		}
-//		else
-//		{
-//			hardColSuB1Sub1(flag & var_A);
-//		}
-//	}
-//}

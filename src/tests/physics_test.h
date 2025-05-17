@@ -152,11 +152,11 @@ namespace PhysicsTest {
             for (int i = 0; i < 2; i++) {
                 auto& d = dynamics[i];
                 for (int j = 0; j < colls.size(); j++) {
-                    CollBoxToBox(d.bb, d.v, colls[j].bounds);
+                    //CollBoxToBox(d.bb, d.v, colls[j].bounds);
                 }
                 for (int j = 0; j < 2; j++) {
                     if (i == j) continue;
-                    CollBoxToBox(d.bb, d.v, dynamics[j].bb);
+                    //CollBoxToBox(d.bb, d.v, dynamics[j].bb);
                 }
                 dynamics[i].pos += dynamics[i].v;
                 setBB(dynamics[i]);
@@ -164,11 +164,11 @@ namespace PhysicsTest {
 
             for (int i = 0; i < colls.size(); i++) {
                 auto& coll = colls[i];
-                DrawBounds(coll.bounds, GRAY);
+                //DrawBounds(coll.bounds, GRAY);
             }
 
             for (int i = 0; i < 2; i++) {
-                DrawBounds(dynamics[i].bb, colors[i]);
+                //DrawBounds(dynamics[i].bb, colors[i]);
             }
 
             EndMode2D();
