@@ -29,6 +29,11 @@ namespace openAITD {
                 //don't process without flag. Need for sitting enemies (lady, zombies)
 				//TODO: if (gobj.modelId == -1 || !gobj.bitField.animated) continue; 
                 if (gobj.modelId == -1) continue;
+                if (!gobj.bitField.animated) {
+                    gobj.animation.animEnd = 0;
+                    continue;
+                }
+
                 auto& objAni = gobj.animation;
 				if (objAni.id == -1) continue;
                 auto mdl = resources->models.getModel(gobj.modelId);

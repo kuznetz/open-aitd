@@ -246,6 +246,7 @@ namespace openAITD {
 		gobj.animation.nextId = -1;
 		gobj.animation.flags = 0;
 		gobj.animation.bitField.repeat = 1;
+		gobj.bitField.animated = 1;
 	}
 
 	void World::setOnceAnimation(GameObject& gobj, int animId, int nextAnimId, bool uninterrupable) {
@@ -255,6 +256,7 @@ namespace openAITD {
 		gobj.animation.nextId = nextAnimId;
 		gobj.animation.flags = 0;
 		gobj.animation.bitField.uninterruptable = uninterrupable;
+		gobj.bitField.animated = 1;
 	}
 
 	void World::setModel(GameObject& gobj, int modelId) {

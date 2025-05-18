@@ -54,6 +54,7 @@ namespace openAITD {
 				MissedAnim m;
 				m.model = objsJson[i]["model"];
 				m.anims = objsJson[i]["anims"].get<std::vector<int>>();
+				anims.push_back(m);
 			}
 		};
 

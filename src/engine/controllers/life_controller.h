@@ -150,6 +150,9 @@ namespace openAITD {
 			lua->CreateFunction([this](int obj) -> int {
 				return 0; //TODO: FALLING
 				}, "FALLING");
+			lua->CreateFunction([this](int obj) -> int {
+				return 1; //TODO: MUSIC
+				}, "MUSIC");
 
 			lua->CreateFunction([this](int obj) -> int {
 				return this->world->gobjects[obj].location.stageId;
@@ -375,7 +378,10 @@ namespace openAITD {
 				}, "THROW");
 			lua->CreateFunction([this](int objId, int weight) {
 				//Weight not realising
-				}, "SET_OBJ_WEIGHT");			
+				}, "SET_OBJ_WEIGHT");
+			lua->CreateFunction([this]() {
+				//TODO: Read
+				}, "READ");			
 
 			//Animations, tracks, rotations
 			lua->CreateFunction([this](int obj, int animId, int nextAnimId) {
