@@ -22,6 +22,12 @@
 
 #include "../extractor/extractor.h"
 
+#if defined(PLATFORM_DESKTOP)
+#define GLSL_VERSION            330
+#else   // PLATFORM_ANDROID, PLATFORM_WEB
+#define GLSL_VERSION            100
+#endif
+
 using namespace std;
 namespace openAITD {
 
@@ -39,6 +45,9 @@ namespace openAITD {
     bool fastStart = false;
     
     RenderTexture screenTex;
+    int gammaDir = 1;
+    float gamma = 0;
+    Shader gammaShader;
 
     Resources resources;
     World world(&resources);
@@ -273,6 +282,22 @@ namespace openAITD {
                 state = AppState::InWorld;
             }
         }
+
+        if (gammaDir == 1) {
+            gamma -= timeDelta;
+            if (gamma < 0) {
+                gamma = 0;
+                gammaDir = 2;
+            }
+        }
+        else if (gammaDir == 2) {
+            gamma += timeDelta;
+            if (gamma > 1) {
+                gamma = 1;
+                gammaDir = 1;
+            }
+        }
+
         return true;
     }
 
@@ -296,8 +321,16 @@ namespace openAITD {
         
         BeginDrawing();
         auto& c = resources.config;
-        DrawTextureRec(screenTex.texture, {0, 0, (float)c.screenW, (float)-c.screenH }, { (float)c.screenX, (float)c.screenY }, WHITE);
+
+        gamma = 1;
+
+        SetShaderValue(gammaShader, GetShaderLocation(gammaShader, "gamma"), &gamma, SHADER_UNIFORM_FLOAT);
+        BeginShaderMode(gammaShader);
+        // NOTE: Render texture must be y-flipped due to default OpenGL coordinates (left-bottom)
+        DrawTextureRec(screenTex.texture, { 0, 0, (float)c.screenW, (float)-c.screenH }, { (float)c.screenX, (float)c.screenY }, WHITE);
+        EndShaderMode();
         if (resources.config.showFps) {
+            raylib::DrawText(to_string(gamma).c_str(), c.screenX + 10, 30, 20, WHITE);
             DrawFPS(c.screenX + 10, 10);
         }
         EndDrawing();
@@ -335,6 +368,7 @@ namespace openAITD {
         SetTargetFPS(resources.config.targetFps);
         SetExitKey(KEY_F10);
 
+        gammaShader = LoadShader(0, TextFormat("newdata/shaders/glsl%i/gamma.fs", GLSL_VERSION));
         screenTex = LoadRenderTexture(resources.config.screenW, resources.config.screenH);
         resources.loadTexts("data/texts/english.txt");
         resources.loadFont("newdata/font.ttf", 16 * resources.config.screenH / 200);
@@ -360,6 +394,8 @@ namespace openAITD {
             render();
         }
 
+        UnloadShader(gammaShader);
+        UnloadRenderTexture(screenTex);
         return 0;
     }
 }

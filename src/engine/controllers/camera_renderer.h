@@ -77,6 +77,7 @@ namespace openAITD {
 
 			auto rmodel = resources->models.getModel(gobj.modelId);
 			auto& bb = rmodel->model.bounds;
+			//auto& bb = GetModelBoundingBox(rmodel->model.model);
 			Vector3 vecs[8];
 			vecs[0] = { bb.min.x, bb.max.y, bb.max.z }; // Top left
 			vecs[1] = { bb.max.x, bb.max.y, bb.max.z }; // Top right
@@ -130,38 +131,43 @@ namespace openAITD {
 			mainCamera.up = Vector3RotateByQuaternion({ 0,1,0 }, curCamera->rotation);
 		}
 
+		void setObjectPose(GameObject& gobj)
+		{
+			auto rmodel = resources->models.getModel(gobj.modelId);
+			auto& model = rmodel->model;
+			if (!model.skin || gobj.animation.id == -1) return;
+
+			auto& curAnim = model.animations[gobj.animation.animIdx];
+			auto& newPose = curAnim.bakedPoses[gobj.animation.animFrame];
+			Transform* curPose;
+			bool isTransition = gobj.animation.oldPose.size() && (curAnim.duration > 0) && (gobj.animation.animTime <= curAnim.transition);
+			if (isTransition) {
+				//newPose[0].translation = { 0,0,0 };
+				model.PoseLerp(tempPose, gobj.animation.oldPose.data(), newPose.data(), gobj.animation.animTime / curAnim.transition);
+				//anim2.CalcPoseByTime(newPose, animIndex, 0);
+				curPose = tempPose;
+			}
+			else {
+				curPose = newPose.data();
+				//curPose[0].translation = { 0,0,0 };
+				//anim2.CalcPoseByTime(curPose, animIndex, animTime);
+			}
+			model.ApplyPose(curPose);
+			if (!gobj.animation.oldPose.size()) {
+				gobj.animation.oldPose.resize(newPose.size());
+			}
+			if (!isTransition) {
+				memcpy_s(
+					gobj.animation.oldPose.data(), gobj.animation.oldPose.size() * sizeof(Transform),
+					curPose, newPose.size() * sizeof(Transform)
+				);
+			}
+		}
+
 		void renderObject(GameObject& gobj, Color tint)
 		{
 			auto rmodel = resources->models.getModel(gobj.modelId);
 			auto& model = rmodel->model;
-
-			if (model.skin && gobj.animation.id != -1) {
-				auto& curAnim = model.animations[gobj.animation.animIdx];
-				auto& newPose = curAnim.bakedPoses[gobj.animation.animFrame];
-				Transform* curPose;
-				bool isTransition = gobj.animation.oldPose.size() && (curAnim.duration > 0) && (gobj.animation.animTime <= curAnim.transition);
-				if (isTransition) {
-					//newPose[0].translation = { 0,0,0 };
-					model.PoseLerp(tempPose, gobj.animation.oldPose.data(), newPose.data(), gobj.animation.animTime / curAnim.transition);
-					//anim2.CalcPoseByTime(newPose, animIndex, 0);
-					curPose = tempPose;
-				}
-				else {
-					curPose = newPose.data();
-					//curPose[0].translation = { 0,0,0 };
-					//anim2.CalcPoseByTime(curPose, animIndex, animTime);
-				}
-				model.ApplyPose(curPose);
-				if (!gobj.animation.oldPose.size()) {
-					gobj.animation.oldPose.resize(newPose.size());
-				}
-				if (!isTransition) {
-					memcpy_s(
-						gobj.animation.oldPose.data(), gobj.animation.oldPose.size() * sizeof(Transform),
-						curPose, newPose.size() * sizeof(Transform)
-					);
-				}
-			}
 
 			Vector3 pos = gobj.location.position;
 			Vector3& roomPos = world->curStage->rooms[gobj.location.roomId].position;
@@ -253,13 +259,13 @@ namespace openAITD {
 				//if (screenPos.z < 0) continue;
 
 				RenderOrder& ro = renderQueue[renderQueueCount++];
+				setObjectPose(gobj);
 				fillScreenBounds(ro, gobj);
 				if (ro.zPos < 0) continue;
 				if (ro.screenMax.x < 0 || ro.screenMin.x > getScreenW()) continue;
 				if (ro.screenMax.y < 0 || ro.screenMin.y > getScreenH()) continue;
 
-				renderObject(gobj, WHITE);
-				
+				//renderObject(gobj, WHITE);				
 				//string s = to_string(i);
 								
 				if (renderStart) {
