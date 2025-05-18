@@ -103,11 +103,11 @@ namespace openAITD {
 		}
 
 		void render() {
-			resources->drawCentered("Options", {
+			resources->screen.drawCentered("Options", {
 				0, config->screenH * 0.05f,
 				(float)config->screenW, 0
 				}, WHITE);
-			resources->drawCentered("Resolution applied after restart", {
+			resources->screen.drawCentered("Resolution applied after restart", {
 				0, config->screenH * 0.90f,
 				(float)config->screenW, 0
 				}, WHITE);

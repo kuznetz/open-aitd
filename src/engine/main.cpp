@@ -38,26 +38,24 @@ namespace openAITD {
     bool gameStarted = false;
     bool fastStart = false;
     
-    RenderTexture screenTex;
-
     Resources resources;
     World world(&resources);
+    FoundScreen foundScreen(&world);
     CameraRenderer renderer(&resources, &world);
     FreelookRenderer flRenderer(&resources, &world);
-    PhysicsController physContr(&resources, &world);
+    PhysicsController physContr(&resources, &world, &foundScreen);
     ObjRotateController objrotContr(&world);
     AnimationController animContr(&resources, &world);
     HitController hitContr(&world);
     ThrowController throwContr(&world);
     PlayerController playerContr(&world);
     TracksController tracksContr(&world);
-    LifeController lifeContr(&world, &tracksContr, &playerContr, &hitContr, &throwContr);
-    SaveController saveContr(&world, &lifeContr);
     InventoryScreen inventoryScreen(&world);
-    FoundScreen foundScreen(&world);
     MenuScreen mainMenu(&world);
     PictureScreen pictureScr(&world);
-    
+    LifeController lifeContr(&world, &tracksContr, &playerContr, &hitContr, &throwContr, &foundScreen);
+    SaveController saveContr(&world, &lifeContr);
+
     bool freeLook = false;
     bool pause = false;
     const float maxDelta = 1. / 30;
@@ -91,7 +89,7 @@ namespace openAITD {
     bool loadStage() {
         if (world.curStageId == world.nextStageId) return false;
         BeginDrawing();
-        auto& f = resources.mainFont;
+        auto& f = resources.screen.mainFont;
         const char* m = "Loading...";
         auto mt = MeasureTextEx(f, m, f.baseSize, 0);
         Vector2 v = { (int)(resources.config.screenW - mt.x) / 2, resources.config.screenH - (f.baseSize * 2) };
@@ -171,10 +169,6 @@ namespace openAITD {
             pictureScr.render();
             return;
         }
-        if (world.foundItem != -1) {
-            foundScreen.render();
-            return;
-        }
         if (freeLook) {
             flRenderer.render();
         }
@@ -228,10 +222,7 @@ namespace openAITD {
             }
         }
         else if (state == AppState::InWorld) {
-            if (world.foundItem != -1) {
-                foundScreen.process(timeDelta);
-            }
-            else if (world.player.allowInventory && IsKeyPressed(KEY_ENTER)) {
+            if (world.player.allowInventory && IsKeyPressed(KEY_ENTER)) {
                 inventoryScreen.reload();
                 state = AppState::Inventory;
             }
@@ -277,8 +268,7 @@ namespace openAITD {
     }
 
     void render() {
-        BeginTextureMode(screenTex);
-        ClearBackground(BLACK);
+        resources.screen.begin();
 
         if (state == AppState::MainMenu) {
             mainMenu.render();
@@ -292,15 +282,8 @@ namespace openAITD {
         else if (state == AppState::Inventory) {
             inventoryScreen.render();
         }
-        EndTextureMode();
-        
-        BeginDrawing();
-        auto& c = resources.config;
-        DrawTextureRec(screenTex.texture, {0, 0, (float)c.screenW, (float)-c.screenH }, { (float)c.screenX, (float)c.screenY }, WHITE);
-        if (resources.config.showFps) {
-            DrawFPS(c.screenX + 10, 10);
-        }
-        EndDrawing();
+            
+        resources.screen.end();
     }
 
     int main(void)
@@ -335,9 +318,9 @@ namespace openAITD {
         SetTargetFPS(resources.config.targetFps);
         SetExitKey(KEY_F10);
 
-        screenTex = LoadRenderTexture(resources.config.screenW, resources.config.screenH);
         resources.loadTexts("data/texts/english.txt");
-        resources.loadFont("newdata/font.ttf", 16 * resources.config.screenH / 200);
+        resources.screen.init();
+
         resources.stages.resize(8);
         for (int i = 0; i < 8; i++) {
             resources.stages[i].load(string("data/stages/")+to_string(i));
@@ -356,7 +339,7 @@ namespace openAITD {
         float timeDelta = 0;        
         while (!WindowShouldClose()) {
             timeDelta = GetFrameTime();
-            if (!process(timeDelta)) break;            
+            if (!process(timeDelta)) break;
             render();
         }
 

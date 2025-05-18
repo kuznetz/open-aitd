@@ -73,8 +73,6 @@ namespace openAITD {
 		//Object to follow camera
 		GameObject* followTarget = 0;
 
-		int foundItem = -1;
-
 		string messageText;
 		float messageTime = 0;
 
@@ -284,6 +282,7 @@ namespace openAITD {
 		auto& gobj = this->gobjects[gobjId];
 		gobj.location.stageId = -1;
 		gobj.invItem.bitField.in_inventory = 1;
+		gobj.bitField.foundable = 1;
 		inventory.push_back(&gobj);
 		takedObj = &gobj;
 	};

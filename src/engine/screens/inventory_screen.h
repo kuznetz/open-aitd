@@ -61,7 +61,7 @@ namespace openAITD {
 		}
 
 		void drawActions() {
-			auto& f = resources->mainFont;
+			auto& f = resources->screen.mainFont;
 			float h2 = (resources->config.screenH / 2);
 			float YOffs = (h2 - (f.baseSize * curActions.size())) / 2;
 			raylib::Rectangle r = { resources->config.screenW / 2, h2 + YOffs, resources->config.screenW / 2, 0 };
@@ -72,7 +72,7 @@ namespace openAITD {
 				if (selAction) {
 					c = (i == curActionIdx) ? GOLD : WHITE;
 				}
-				resources->drawCentered(name.c_str(), r, c);
+				resources->screen.drawCentered(name.c_str(), r, c);
 				r.y += f.baseSize;
 			}
 		}
@@ -88,7 +88,7 @@ namespace openAITD {
 		}
 
 		void drawItems() {
-			auto& f = resources->mainFont;
+			auto& f = resources->screen.mainFont;
 			raylib::Rectangle r = { 0, resources->config.screenH * 0.05, resources->config.screenW, 0 };
 			for (int i = 0; i < 5; i++) {
 				int id = i+itemsOffs;
@@ -99,7 +99,7 @@ namespace openAITD {
 				if (!selAction) {
 					c = (id == curItemIdx) ? GOLD : WHITE;
 				}
-				resources->drawCentered(name.c_str(), r, c);
+				resources->screen.drawCentered(name.c_str(), r, c);
 				r.y += f.baseSize;
 			}
 		}

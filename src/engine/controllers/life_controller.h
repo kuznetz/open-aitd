@@ -5,6 +5,7 @@
 #include "./player_controller.h"
 #include "./hit_controller.h"
 #include "./throw_controller.h"
+#include "../screens/found_screen.h"
 
 #include <luacpp/luacpp.h>
 #include <iostream>
@@ -28,18 +29,20 @@ namespace openAITD {
 		PlayerController* playerContr;
 		HitController* hitContr;
 		ThrowController* throwContr;
+		FoundScreen* foundScreen;
 		LuaState* lua = 0;
 		map <int, LifeFunc> funcs;
 		std::function<bool(uint32_t, const LuaObject&)> execCb;
 		Matrix roomMatrix;
 		float curTimeDelta = 0;
 
-		LifeController(World* world, TracksController* trackContr, PlayerController* playerContr, HitController* hitContr, ThrowController* throwContr) {
+		LifeController(World* world, TracksController* trackContr, PlayerController* playerContr, HitController* hitContr, ThrowController* throwContr, FoundScreen* foundScreen) {
 			this->world = world;
 			this->trackContr = trackContr;
 			this->playerContr = playerContr;
 			this->hitContr = hitContr;
 			this->throwContr = throwContr;
+			this->foundScreen = foundScreen;
 			this->resources = world->resources;
 			initLua();
 		}
@@ -338,7 +341,7 @@ namespace openAITD {
 				auto& gobj = this->world->gobjects[obj];
 				if (gobj.invItem.foundTimeout > this->world->chrono) return;
 				if (gobj.invItem.bitField.in_inventory) return;
-				this->world->foundItem = obj;
+				foundScreen->main(obj);
 				}, "FOUND");
 			lua->CreateFunction([this](int obj, int nameId) {
 				auto& gobj = this->world->gobjects[obj];

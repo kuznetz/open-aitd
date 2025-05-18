@@ -66,11 +66,11 @@ namespace openAITD {
 		}
 
 		void render() {
-			auto& f = resources->mainFont;
+			auto& f = resources->screen.mainFont;
 			raylib::Rectangle r = rect;
 
 			if (middle) {
-				auto& f = resources->mainFont;
+				auto& f = resources->screen.mainFont;
 				auto mt = MeasureTextEx(f, "Q", f.baseSize, 0);
 				int height = items.size();
 				if (height > maxRenderItems) {
@@ -88,7 +88,7 @@ namespace openAITD {
 				if (active) {
 					c = (id == curItemIdx) ? GOLD : WHITE;
 				}
-				resources->drawCentered(name.c_str(), r, c);
+				resources->screen.drawCentered(name.c_str(), r, c);
 				r.y += f.baseSize;
 			}
 		}

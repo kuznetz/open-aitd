@@ -192,7 +192,7 @@ namespace openAITD {
 
 		void renderMessage() {
 			if (world->messageTime > 0) {
-				auto& f = resources->mainFont;
+				auto& f = resources->screen.mainFont;
 				const char* m = world->messageText.c_str();
 				auto mt = MeasureTextEx(f, m, f.baseSize, 0);
 				Vector2 v = { (int)(getScreenW() - mt.x) / 2, getScreenH() - (f.baseSize * 2) };

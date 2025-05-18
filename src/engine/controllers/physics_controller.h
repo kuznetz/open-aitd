@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "../resources/resources.h"
 #include "../world/world.h"
+#include "../screens/found_screen.h"
 
 using namespace std;
 namespace openAITD {
@@ -9,10 +10,12 @@ namespace openAITD {
 	public:
 		World* world;
 		Resources* resources;
+		FoundScreen* foundScreen;
 
-		PhysicsController(Resources* res, World* world) {
+		PhysicsController(Resources* res, World* world, FoundScreen* found) {
 			this->resources = res;
 			this->world = world;
+			foundScreen = found;
 		}
 
 		bool objectInZone(GameObject& gobj, RoomZone* zone) {
@@ -136,7 +139,7 @@ namespace openAITD {
 					}
 					//takable
 					if (gobj.track.mode == GOTrackMode::manual && gobj2.bitField.foundable && gobj2.invItem.foundTimeout < this->world->chrono) {
-						world->foundItem = gobj2.id;
+						foundScreen->main(gobj2.id);
 					}
 				}
 				if (c2) {

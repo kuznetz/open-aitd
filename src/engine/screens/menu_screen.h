@@ -161,14 +161,14 @@ namespace openAITD {
 				menu.render();
 				break;
 			case MenuScreenState::save:
-				resources->drawCentered("Save Game", {
+				resources->screen.drawCentered("Save Game", {
 					0, resources->config.screenH * 0.05f,
 					(float)resources->config.screenW, 0
 					}, WHITE);
 				savesMenu.render();
 				break;
 			case MenuScreenState::load:
-				resources->drawCentered("Load Game", {
+				resources->screen.drawCentered("Load Game", {
 					0, resources->config.screenH * 0.05f,
 					(float)resources->config.screenW, 0
 					}, WHITE);

@@ -8,6 +8,7 @@
 #include "tracks.h"
 #include "models.h"
 #include "backgrounds.h"
+#include "screen.h"
 #include "../raylib.h"
 
 using namespace std;
@@ -17,36 +18,22 @@ namespace openAITD {
 	class Resources {
 	public:
 		Config config;
-		Font mainFont = { 0 };
 		map<int,string> texts;
 
 		vector<Stage> stages;
 		vector<Track> tracks;
 		RModels models;
 		Backgrounds backgrounds;
+		Screen screen;
 
 		Resources() {
 			models.config = &config;
 			backgrounds.config = &config;
 			backgrounds.stages = &stages;
+			screen.config = &config;
 		}
 
 		~Resources() {
-			UnloadFont(mainFont);
-		}
-
-		void drawCentered(const char* text, raylib::Rectangle r, Color color) {
-			auto& f = this->mainFont;
-			auto mt = MeasureTextEx(f, text, f.baseSize, 0);
-			int x = (int)(r.x + ((r.width - mt.x) / 2));
-			Vector2 v = { x, (int)r.y };
-			raylib::DrawTextEx(f, text, v, f.baseSize, 0, color);
-		}
-
-		void loadFont(string fontPath, int size) {
-			//Font fontTtf = LoadFontEx
-			//FONT_TTF_DEFAULT_NUMCHARS 95
-			mainFont = LoadFontEx(fontPath.c_str(), size, 0, 95);
 		}
 
 		void loadTexts(string textsPath) {

@@ -14,6 +14,7 @@ namespace openAITD {
 		World* world;
 		Resources* resources;
 		bool leave = false;
+		int foundItem = -1;
 
 		FoundScreen(World* world) {
 			this->world = world;
@@ -24,14 +25,14 @@ namespace openAITD {
 		}
 
 		void submit() {
-			auto& gobj = this->world->gobjects[world->foundItem];
+			auto& gobj = this->world->gobjects[foundItem];
 			if (leave) {
 				gobj.invItem.foundTimeout = world->chrono + 5;
-				world->foundItem = -1;
+				foundItem = -1;
 				return;
 			}
-			world->take(world->foundItem);
-			world->foundItem = -1;
+			world->take(foundItem);
+			foundItem = -1;
 		}
 
 		void process(float timeDelta) {
@@ -56,20 +57,33 @@ namespace openAITD {
 			const auto& screenW = this->resources->config.screenW;
 			const auto& screenH = this->resources->config.screenH;
 
-			auto& gobj = this->world->gobjects[world->foundItem];
+			auto& gobj = this->world->gobjects[foundItem];
 			auto& name = resources->texts[gobj.invItem.nameId];
 
-			auto& f = resources->mainFont;
+			auto& f = resources->screen.mainFont;
 			const char* m = "New item:";
 			raylib::Rectangle r = { 0, screenH * 0.05, screenW, 0 };
-			resources->drawCentered("New item:", r, WHITE);
+			resources->screen.drawCentered("New item:", r, WHITE);
 			r.y += f.baseSize;
-			resources->drawCentered(name.c_str(), r, GOLD);
+			resources->screen.drawCentered(name.c_str(), r, GOLD);
 
 			r = { (screenW / 4.f), (screenH * 0.95f) - f.baseSize, (screenW / 4.f), 0 };
-			resources->drawCentered("Leave", r, leave ? YELLOW : GRAY);
+			resources->screen.drawCentered("Leave", r, leave ? YELLOW : GRAY);
 			r = { r.x + r.width, r.y, r.width, 0 };
-			resources->drawCentered("Take", r, leave ? GRAY : YELLOW);
+			resources->screen.drawCentered("Take", r, leave ? GRAY : YELLOW);
+		}
+
+		void main(int newFoundItem) {
+			foundItem = newFoundItem;
+			int timeDelta;
+			while (foundItem != -1) {
+				timeDelta = GetFrameTime();
+				process(timeDelta);
+				if (foundItem == -1) break;
+				resources->screen.begin();
+				render();
+				resources->screen.end();
+			}
 		}
 
 	};
