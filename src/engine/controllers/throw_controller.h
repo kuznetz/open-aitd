@@ -71,6 +71,7 @@ namespace openAITD {
             item.physics.boundsCached = false;
             item.boundsType = BoundsType::rotated;
             
+            item.bitField.foundable = false;
             item.throwing.throwedBy = &gobj;
             item.throwing.hitDamage = action.hitDamage;
             item.throwing.active = true;

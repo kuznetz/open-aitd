@@ -229,7 +229,8 @@ namespace openAITD {
 				gobj.physics.moving = false;
 				auto& v = gobj.physics.moveVec;
 				v = Vector3Subtract(gobj.animation.moveRoot, gobj.animation.prevMoveRoot);
-				gobj.physics.moving = (v.x != 0 && v.y != 0 && v.z != 0);
+				gobj.physics.moving = (v.x != 0 || v.y != 0 || v.z != 0);
+
 				if (gobj.physics.moving) {
 					v = Vector3RotateByQuaternion(v, gobj.location.rotation);
 					gobj.animation.prevMoveRoot = gobj.animation.moveRoot;
@@ -240,7 +241,9 @@ namespace openAITD {
 				processStaticColliders(gobj, *curRoom);
 				processDynamicColliders(gobj, *curRoom);
 
-				gobj.location.position = Vector3Add(gobj.location.position, gobj.physics.moveVec);
+				if (gobj.physics.moving) {
+					gobj.location.position = Vector3Add(gobj.location.position, gobj.physics.moveVec);
+				}
 
 				processZones(gobj, curRoom);
 			}
