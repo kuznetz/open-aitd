@@ -74,11 +74,17 @@ namespace openAITD {
 		}
 
 		void main(int newFoundItem) {
+			bool firstFrame = true;
 			foundItem = newFoundItem;
 			int timeDelta;
 			while (foundItem != -1) {
 				timeDelta = GetFrameTime();
-				process(timeDelta);
+				if (firstFrame) {
+					firstFrame = false;
+				}
+				else {
+					process(timeDelta);
+				}
 				if (foundItem == -1) break;
 				resources->screen.begin();
 				render();
