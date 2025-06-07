@@ -78,8 +78,23 @@ namespace openAITD {
 			auto& model = rmodel->model;
 
 			if (model.skin && gobj.animation.id != -1) {
+				int bonesSize = model.skin->joints_count;
+				if (bonesSize != gobj.animation.curPose.size()) {
+					gobj.animation.curPose.resize(bonesSize);
+					gobj.animation.transitionPose.resize(bonesSize);
+					gobj.animation.hasPose = false;
+				}
+
 				auto& curAnim = model.animations[gobj.animation.animIdx];
 				auto& newPose = curAnim.bakedPoses[gobj.animation.animFrame];
+
+				if (gobj.animation.animChanged) {
+					memcpy_s(
+						gobj.animation.transitionPose.data(), gobj.animation.transitionPose.size() * sizeof(Transform),
+						gobj.animation.curPose.data(), gobj.animation.curPose.size() * sizeof(Transform)
+					);
+				}
+
 				Transform* curPose;
 				bool isTransition = (curAnim.duration > 0) && (gobj.animation.animTime <= curAnim.transition);
 				if (isTransition && gobj.animation.hasPose) {
@@ -98,6 +113,12 @@ namespace openAITD {
 					gobj.animation.curPose.data(), gobj.animation.curPose.size() * sizeof(Transform),
 					curPose, newPose.size() * sizeof(Transform)
 				);
+				if (gobj.animation.animEnd) {
+					memcpy_s(
+						gobj.animation.transitionPose.data(), gobj.animation.transitionPose.size() * sizeof(Transform),
+						gobj.animation.curPose.data(), gobj.animation.curPose.size() * sizeof(Transform)
+					);
+				}
 				gobj.animation.hasPose = true;
 			}
 

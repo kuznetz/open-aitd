@@ -159,9 +159,6 @@ namespace openAITD {
             flRenderer.freeLook = pause;
             flRenderer.process();
         }
-        else {
-            //renderer.process();
-        }
     }
 
     void renderWorld() {

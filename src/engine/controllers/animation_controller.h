@@ -26,34 +26,24 @@ namespace openAITD {
 			for (int i = 0; i < this->world->gobjects.size(); i++) {
 				auto& gobj = this->world->gobjects[i];
 				if (gobj.location.stageId != this->world->curStageId) continue;
+
                 //don't process without flag. Need for sitting enemies (lady, zombies)
 				//TODO: if (gobj.modelId == -1 || !gobj.bitField.animated) continue; 
                 if (gobj.modelId == -1) continue;
+
                 if (!gobj.bitField.animated) {
+                    gobj.animation.animChanged = false;
                     gobj.animation.animEnd = 0;
                     continue;
                 }
-
                 auto& objAni = gobj.animation;
+                objAni.animChanged = false;
 				if (objAni.id == -1) continue;
                 auto mdl = resources->models.getModel(gobj.modelId);
 
                 if (gobj.modelId != gobj.prevModelId) {
-                    int bonesSize = 0;
-                    if (mdl->model.skin && mdl->model.animations.size() > 0) {
-                        bonesSize = mdl->model.animations[0].bakedPoses[0].size();
-                    }
-                    gobj.animation.curPose.resize(bonesSize);
-                    gobj.animation.transitionPose.resize(bonesSize);
-                    gobj.animation.hasPose = false;
                     objAni.animTime = 0;
                     objAni.animEnd = 0;
-                }
-                if (objAni.prevId != objAni.id && gobj.animation.hasPose) {
-                    memcpy_s(
-                        gobj.animation.transitionPose.data(), gobj.animation.transitionPose.size() * sizeof(Transform),
-                        gobj.animation.curPose.data(), gobj.animation.curPose.size() * sizeof(Transform)
-                    );
                 }
 
                 auto p = mdl->animsIds.find(objAni.id);
@@ -81,15 +71,10 @@ namespace openAITD {
                             objAni.animTime -= mdlAnim.duration;
                         }
                     }
-                    if (gobj.animation.hasPose) {
-                        memcpy_s(
-                            gobj.animation.transitionPose.data(), gobj.animation.transitionPose.size() * sizeof(Transform),
-                            gobj.animation.curPose.data(), gobj.animation.curPose.size() * sizeof(Transform)
-                        );
-                    }
                 }
 
                 if (objAni.prevId != objAni.id) {
+                    objAni.animChanged = true;
                     objAni.prevMoveRoot = { 0,0,0 };
                     objAni.animTime = 0;
                 }
