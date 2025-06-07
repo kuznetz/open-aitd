@@ -3,8 +3,8 @@
 #include <string>
 #include "./resources/resources.h"
 #include "./world/world.h"
-#include "./controllers/camera_renderer.h"
-#include "./controllers/freelook_renderer.h"
+#include "./renderers/camera_renderer.h"
+#include "./renderers/freelook_renderer.h"
 #include "./controllers/player_controller.h"
 #include "./controllers/physics_controller.h"
 #include "./controllers/objrotate_controller.h"
@@ -41,8 +41,8 @@ namespace openAITD {
     Resources resources;
     World world(&resources);
     FoundScreen foundScreen(&world);
-    CameraRenderer renderer(&resources, &world);
-    FreelookRenderer flRenderer(&resources, &world);
+    CameraRenderer renderer(&world);
+    FreelookRenderer flRenderer(&world);
     PhysicsController physContr(&resources, &world, &foundScreen);
     ObjRotateController objrotContr(&world);
     AnimationController animContr(&resources, &world);

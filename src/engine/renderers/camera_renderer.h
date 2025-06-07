@@ -4,61 +4,50 @@
 #include "../world/world.h"
 #include "../resources/resources.h"
 #include "../raylib.h"
-#include "./common_renderers.h"
+#include "./base_renderer.h"
 
 using namespace std;
 namespace openAITD {
 
-	class CameraRenderer {
+	struct RenderOrder {
+		RenderOrder* next = 0;
+		GameObject* gobj = 0;
+		float zPos;
+		Vector2 screenMin;
+		Vector2 screenMax;
+	};
+
+	class CameraRenderer : public BaseRenderer {
 	public:
-		World* world;
-		Resources* resources;
-
-		Camera mainCamera = {
-			{ 0.0f, 0, -5 },
-			{ 0.0f, 0.0f, 0.0f },
-			{ 0.0f, 1.0f, 0.0f },   // mainCamera up vector (rotation towards target)
-			60.,
-			CAMERA_PERSPECTIVE
-		};
-
 		RenderOrder renderQueue[100];
 		RenderOrder* renderStart;
 		RenderOrder* renderIter;
 		RenderOrder* renderIterPrev;
 		int renderQueueCount = 0;
 
-		Transform tempPose[100];
-
-		int curStageId = -1;
-		int curCameraId = -1;
-		WCamera* curCamera = 0;
 		Background* curBackground = 0;
 
-		const int getScreenW() { return resources->config.screenW; }
-		const int getScreenH() { return resources->config.screenH; }
+		CameraRenderer(World* world) : BaseRenderer(world)
+		{
 
-		CameraRenderer(Resources* res, World* world) {
-			this->resources = res;
-			this->world = world;
 		}
 
-		~CameraRenderer() {
-			clearCamera();
+		void loadCamera(int newCameraId) override
+		{
+			BaseRenderer::loadCamera(newCameraId);
+			curBackground = resources->backgrounds.get(world->curStageId, newCameraId);
 		}
 
-		Vector3 GetWorldToScreenZ(Vector3 position) {
-			const int& width = getScreenW();
-			const int& height = getScreenH();
-			auto& matProj = curCamera->perspective;
-			Matrix matView = MatrixLookAt(mainCamera.position, mainCamera.target, mainCamera.up);
-			Vector3 depth = Vector3Transform(position, matView);
-			Quaternion worldPos = { position.x, position.y, position.z, 1.0f };
-			worldPos = QuaternionTransform(worldPos, matView);
-			worldPos = QuaternionTransform(worldPos, matProj);
-			Vector3 ndcPos = { worldPos.x / worldPos.w, -worldPos.y / worldPos.w, worldPos.z / worldPos.w };
-			Vector3 screenPosition = { (ndcPos.x + 1.0f) / 2.0f * (float)width, (ndcPos.y + 1.0f) / 2.0f * (float)height, -depth.z };
-			return screenPosition;
+		bool checkOverlay(GCameraOverlay& ovl, GameObject& gobj) {
+			Vector3 pos = gobj.location.position;
+			for (int i = 0; i < ovl.bounds.size(); i++) {
+				auto& b = ovl.bounds[i];
+				//if (CheckCollisionBoxes(objBnd, ovl.bounds[i])) {
+				if (pos.x >= b.min.x && pos.x <= b.max.x && pos.z >= b.min.z && pos.z <= b.max.z) {
+					return true;
+				}
+			}
+			return false;
 		}
 
 		void fillScreenBounds(RenderOrder& ord, GameObject& gobj)
@@ -105,98 +94,6 @@ namespace openAITD {
 				if (i == 0 || ord.screenMax.y < v.y) {
 					ord.screenMax.y = v.y;
 				}
-			}
-		}
-
-		void clearCamera()
-		{
-			if (curCameraId == -1) return;
-			curCameraId = -1;
-			curCamera = 0;
-		}
-
-		void loadCamera(int newCameraId)
-		{
-			printf("Load Camera %d\n", newCameraId);
-			curCameraId = newCameraId;
-			curCamera = &resources->stages[world->curStageId].cameras[newCameraId];
-			curBackground = resources->backgrounds.get(world->curStageId, newCameraId);
-
-			auto& camPers = curCamera->pers;
-			curCamera->perspective = MatrixPerspective(camPers.yfov, camPers.aspectRatio, camPers.znear, camPers.zfar);
-			
-			mainCamera.position = curCamera->position;
-			mainCamera.target = Vector3Add(curCamera->position, Vector3Negate(Vector3RotateByQuaternion({ 0,0,1 }, curCamera->rotation)));
-			mainCamera.up = Vector3RotateByQuaternion({ 0,1,0 }, curCamera->rotation);
-		}
-
-		void renderObject(GameObject& gobj, Color tint)
-		{
-			auto rmodel = resources->models.getModel(gobj.modelId);
-			auto& model = rmodel->model;
-
-			if (model.skin && gobj.animation.id != -1) {
-				auto& curAnim = model.animations[gobj.animation.animIdx];
-				auto& newPose = curAnim.bakedPoses[gobj.animation.animFrame];
-				Transform* curPose;
-				bool isTransition = gobj.animation.oldPose.size() && (curAnim.duration > 0) && (gobj.animation.animTime <= curAnim.transition);
-				if (isTransition) {
-					//newPose[0].translation = { 0,0,0 };
-					model.PoseLerp(tempPose, gobj.animation.oldPose.data(), newPose.data(), gobj.animation.animTime / curAnim.transition);
-					//anim2.CalcPoseByTime(newPose, animIndex, 0);
-					curPose = tempPose;
-				}
-				else {
-					curPose = newPose.data();
-					//curPose[0].translation = { 0,0,0 };
-					//anim2.CalcPoseByTime(curPose, animIndex, animTime);
-				}
-				model.ApplyPose(curPose);
-				if (!gobj.animation.oldPose.size()) {
-					gobj.animation.oldPose.resize(newPose.size());
-				}
-				if (!isTransition) {
-					memcpy_s(
-						gobj.animation.oldPose.data(), gobj.animation.oldPose.size() * sizeof(Transform),
-						curPose, newPose.size() * sizeof(Transform)
-					);
-				}
-			}
-
-			Vector3 pos = gobj.location.position;
-			Vector3& roomPos = world->curStage->rooms[gobj.location.roomId].position;
-			pos = Vector3Add(roomPos, pos);
-			Matrix matTranslation = MatrixTranslate(pos.x, pos.y, pos.z);
-			auto& rot = gobj.location.rotation;
-			Matrix matRotation = QuaternionToMatrix(rot);
-			Matrix matTransform = MatrixMultiply(matRotation, matTranslation);
-
-			// Combine model transformation matrix (model.transform) with matrix generated by function parameters (matTransform)
-			auto m = rlGetMatrixModelview();
-			rlSetMatrixModelview(MatrixMultiply(matTransform, m));
-			model.Render();
-			rlSetMatrixModelview(m);
-		}
-
-		bool checkOverlay(GCameraOverlay& ovl, GameObject& gobj) {
-			Vector3 pos = gobj.location.position;
-			for (int i = 0; i < ovl.bounds.size(); i++) {
-				auto& b = ovl.bounds[i];
-				//if (CheckCollisionBoxes(objBnd, ovl.bounds[i])) {
-				if (pos.x >= b.min.x && pos.x <= b.max.x && pos.z >= b.min.z && pos.z <= b.max.z) {
-					return true;
-				}
-			}
-			return false;
-		}
-
-		void renderMessage() {
-			if (world->messageTime > 0) {
-				auto& f = resources->screen.mainFont;
-				const char* m = world->messageText.c_str();
-				auto mt = MeasureTextEx(f, m, f.baseSize, 0);
-				Vector2 v = { (int)(getScreenW() - mt.x) / 2, getScreenH() - (f.baseSize * 2) };
-				DrawTextEx(f, m, v, f.baseSize, 0, WHITE);
 			}
 		}
 
@@ -298,7 +195,7 @@ namespace openAITD {
 				while (true) {
 					BeginMode3D(mainCamera);
 					//rlSetMatrixModelview(curCamera->modelview);
-					rlSetMatrixProjection(curCamera->perspective);
+					rlSetMatrixProjection(perspective);
 					renderObject(*renderIter->gobj, WHITE);
 					EndMode3D();
 

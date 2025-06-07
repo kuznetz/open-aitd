@@ -83,7 +83,7 @@ namespace openAITD {
 			else if (p2rot.x > b.max.x) {
 				res = 4;
 			}
-			cout << "POSREL=" << to_string(res) << endl;
+			//cout << "POSREL=" << to_string(res) << endl;
 			return res;
 		}
 
@@ -105,7 +105,7 @@ namespace openAITD {
 			else if (p2.x > b.max.x) {
 				res = 4;
 			}
-			cout << "POSREL_S=" << to_string(res);
+			//cout << "POSREL_S=" << to_string(res);
 			return res;
 		}
 

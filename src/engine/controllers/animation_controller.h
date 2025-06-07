@@ -39,9 +39,21 @@ namespace openAITD {
                 auto mdl = resources->models.getModel(gobj.modelId);
 
                 if (gobj.modelId != gobj.prevModelId) {
-                    gobj.animation.oldPose.resize(0);
+                    int bonesSize = 0;
+                    if (mdl->model.skin && mdl->model.animations.size() > 0) {
+                        bonesSize = mdl->model.animations[0].bakedPoses[0].size();
+                    }
+                    gobj.animation.curPose.resize(bonesSize);
+                    gobj.animation.transitionPose.resize(bonesSize);
+                    gobj.animation.hasPose = false;
                     objAni.animTime = 0;
                     objAni.animEnd = 0;
+                }
+                if (objAni.prevId != objAni.id && gobj.animation.hasPose) {
+                    memcpy_s(
+                        gobj.animation.transitionPose.data(), gobj.animation.transitionPose.size() * sizeof(Transform),
+                        gobj.animation.curPose.data(), gobj.animation.curPose.size() * sizeof(Transform)
+                    );
                 }
 
                 auto p = mdl->animsIds.find(objAni.id);
@@ -69,6 +81,12 @@ namespace openAITD {
                             objAni.animTime -= mdlAnim.duration;
                         }
                     }
+                    if (gobj.animation.hasPose) {
+                        memcpy_s(
+                            gobj.animation.transitionPose.data(), gobj.animation.transitionPose.size() * sizeof(Transform),
+                            gobj.animation.curPose.data(), gobj.animation.curPose.size() * sizeof(Transform)
+                        );
+                    }
                 }
 
                 if (objAni.prevId != objAni.id) {
@@ -84,10 +102,10 @@ namespace openAITD {
 
                 objAni.keyFrameIdx = mdl->model.getKeyFrame(mdlAnim, objAni.animTime);
 
-                auto frameCount = mdlAnim.bakedPoses.size();
+                auto lastFrame = mdlAnim.bakedPoses.size() - 1;
 
-                if (curFrame >= frameCount) {
-                    curFrame = frameCount - 1;
+                if (curFrame >= lastFrame) {
+                    curFrame = lastFrame;
                     objAni.animEnd = 1;
                 }
                 if (objAni.id != -1) {

@@ -94,7 +94,10 @@ namespace openAITD {
 		int keyFrameIdx;
 		bool isNewFrame;
 		float animTime;
-		vector<Transform> oldPose;
+
+		bool hasPose = false;
+		vector<Transform> transitionPose;
+		vector<Transform> curPose;
 		union {
 			unsigned short int flags;
 			AnimationFlags bitField;

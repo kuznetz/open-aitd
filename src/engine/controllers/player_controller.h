@@ -36,8 +36,9 @@ namespace openAITD {
 			int nextAnimation = gobj.animation.id;
 
 			//if (gobj.track.mode == GOTrackMode::manual) {
-			//	isAction = true;
-			//}
+			if (!gobj.animation.bitField.repeat) {
+				isAction = true;
+			}
 
 			//Rotate Player
 			if (!isAction) {

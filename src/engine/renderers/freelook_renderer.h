@@ -4,85 +4,29 @@
 #include "../world/world.h"
 #include "../resources/resources.h"
 #include "../raylib.h"
-#include "./common_renderers.h"
+#include "./base_renderer.h"
 
 using namespace std;
 
-struct Debug3DStruct {
-	Vector2 screenpos;
-	Color color = WHITE;
-	char label[100] = "";
-};
-
 namespace openAITD {
 
-	class FreelookRenderer {
+	struct Debug3DObject {
+		Vector2 screenpos;
+		GameObject* gobj;
+	};
+
+	class FreelookRenderer : public BaseRenderer {
 	public:
 		bool freeLook = true;
-		Debug3DStruct debug3d[100];
-		Debug3DStruct* endDebug3d;
-		World* world;
-		Resources* resources;
-		int screenW = 0;
-		int screenH = 0;
+		Debug3DObject debugObjs[100];
+		Debug3DObject* endDebugObjs;
 
 		int invX = 0;
 		int invZ = 0;
 
-		Camera initCamera = {
-			{ 0.0f, 0, -5 },
-			{ 0.0f, 0.0f, 0.0f },
-			{ 0.0f, 1.0f, 0.0f },   // mainCamera up vector (rotation towards target)
-			60.,
-			CAMERA_PERSPECTIVE
-		};
-
-		Stage* curStage = 0;
-		int curStageId = -1;
-		WCamera* curCamera = 0;
-		int curCameraId = -1;
-		Transform tempPose[100];
-
-		FreelookRenderer(Resources* res, World* world) {
-			this->resources = res;
-			this->world = world;
-		}
-
-		~FreelookRenderer() {
-			clearCamera();
-			clearStage();
-		}
-
-		Vector3 GetWorldToScreenZ(Vector3 position) {
-			int width = GetScreenWidth();
-			int height = GetScreenHeight();
-			//auto& matProj = initCamera.;
-			Matrix matView = MatrixLookAt(initCamera.position, initCamera.target, initCamera.up);
-			Quaternion worldPos = { position.x, position.y, position.z, 1.0f };
-			worldPos = QuaternionTransform(worldPos, matView);
-			//worldPos = QuaternionTransform(worldPos, matProj);
-			Vector3 ndcPos = { worldPos.x / worldPos.w, -worldPos.y / worldPos.w, worldPos.z / worldPos.w };
-			Vector3 screenPosition = { (ndcPos.x + 1.0f) / 2.0f * (float)width, (ndcPos.y + 1.0f) / 2.0f * (float)height, ndcPos.z };
-			return screenPosition;
-		}
-
-		void clearStage()
+		FreelookRenderer(World* world) : BaseRenderer(world)
 		{
-		}
 
-		void loadStage(int newStageId)
-		{
-			if (newStageId == curStageId) return;
-			clearStage();
-			curStage = &this->resources->stages[newStageId];
-			curStageId = newStageId;
-			curCameraId = -1;
-		}
-
-		void clearCamera()
-		{
-			if (curCameraId == -1) return;
-			curCameraId = -1;
 		}
 
 		void DrawBounds(Bounds bb, Color color)
@@ -115,30 +59,11 @@ namespace openAITD {
 			DrawLine3D(vecs[3], vecs[7], color);
 		}
 
-		void loadCamera(int newStageId, int newCameraId)
-		{
-			if ((newStageId == curStageId) && (newCameraId == curCameraId)) return;
-			clearCamera();
-			loadStage(newStageId);
-
-			curCameraId = newCameraId;
-			if (curCameraId == -1) return;
-
-			curCamera = &curStage->cameras[newCameraId];
-			auto& camPers = curCamera->pers;
-			curCamera->perspective = MatrixPerspective(camPers.yfov, camPers.aspectRatio, camPers.znear, camPers.zfar);
-			//It's ugly, but it didn't get any better.
-			initCamera.position = curCamera->position;
-			Matrix vw = QuaternionToMatrix(curCamera->rotation);
-			initCamera.target = Vector3Add(curCamera->position, Vector3Negate({ vw.m8, vw.m9, vw.m10 }));
-			//initCamera.target = { 0, 0, 0 };
-		}
-
 		void renderBounds() {
 			//for (int r = 0; r < curCamera->rooms.size(); r++) {
 			//auto& room = curStage->rooms[curCamera->rooms[r].roomId];
-			for (int r = 0; r < curStage->rooms.size(); r++) {
-				auto& room = curStage->rooms[r];
+			for (int r = 0; r < world->curStage->rooms.size(); r++) {
+				auto& room = world->curStage->rooms[r];
 				int curRoomId = world->followTarget->location.roomId;
 				Color c = (r == curRoomId) ? WHITE : DARKBLUE;
 				DrawCube(room.position, 0.1, 0.1, 0.1, c);
@@ -161,7 +86,7 @@ namespace openAITD {
 		void renderZones() {
 			int curRoomId = world->followTarget->location.roomId;
 			if (curRoomId == -1) return;
-			auto& room = curStage->rooms[curRoomId];
+			auto& room = world->curStage->rooms[curRoomId];
 			rlPushMatrix();
 			rlTranslatef(room.position.x, room.position.y, room.position.z);
 			for (int z = 0; z < room.zones.size(); z++) {
@@ -198,8 +123,8 @@ namespace openAITD {
 		}
 
 		void renderCamPos() {
-			auto& p = initCamera.position;
-			auto& t = initCamera.target;
+			auto& p = mainCamera.position;
+			auto& t = mainCamera.target;
 			auto s1 = string("POS: ") + to_string(p.x) + " " + to_string(p.y) + " " + to_string(p.z);
 			auto s2 = string("TAR: ") + to_string(t.x) + " " + to_string(t.y) + " " + to_string(t.z);
 			auto s3 = string("IND: ") + to_string(invX) + " " + to_string(invZ);
@@ -216,72 +141,29 @@ namespace openAITD {
 			y += text_size.y;
 		}
 
-		void render3dDebug(Vector2 screenpos, const char* label, Color color = WHITE) {
-			endDebug3d->screenpos = screenpos;
-			strcpy_s(endDebug3d->label, 100, label);
-			endDebug3d->color = color;
-			endDebug3d++;
+		void renderDebugObj(Vector2 screenpos, GameObject* gobj) {
+			endDebugObjs->screenpos = screenpos;
+			endDebugObjs->gobj = gobj;
+			endDebugObjs++;
 		}
 
-		void renderModel(GameObject& gobj)
+		void renderObjectEx(GameObject& gobj, Color tint)
 		{
-			if (gobj.modelId == -1) return;
-			auto rmodel = resources->models.getModel(gobj.modelId);
-			auto& model = rmodel->model;
-
-			if (model.skin && gobj.animation.id != -1) {
-				auto& curAnim = model.animations[gobj.animation.animIdx];
-				auto& newPose = curAnim.bakedPoses[gobj.animation.animFrame];
-				Transform* curPose;
-				bool isTransition = gobj.animation.oldPose.size() && (curAnim.duration > 0) && (gobj.animation.animTime <= curAnim.transition);
-				if (isTransition) {
-					//newPose[0].translation = { 0,0,0 };
-					model.PoseLerp(tempPose, gobj.animation.oldPose.data(), newPose.data(), gobj.animation.animTime / curAnim.transition);
-					//anim2.CalcPoseByTime(newPose, animIndex, 0);
-					curPose = tempPose;
-				}
-				else {
-					curPose = newPose.data();
-					//curPose[0].translation = { 0,0,0 };
-					//anim2.CalcPoseByTime(curPose, animIndex, animTime);
-				}
-				model.ApplyPose(curPose);
-				if (!gobj.animation.oldPose.size()) {
-					gobj.animation.oldPose.resize(newPose.size());
-				}
-				if (!isTransition) {
-					memcpy_s(
-						gobj.animation.oldPose.data(), gobj.animation.oldPose.size() * sizeof(Transform),
-						curPose, newPose.size() * sizeof(Transform)
-					);
-				}
+			if (gobj.modelId != -1) {
+				renderObject(gobj, tint);
 			}
 
-			Vector3 pos = gobj.location.position;
-			Vector3& roomPos = curStage->rooms[gobj.location.roomId].position;
-			pos = Vector3Add(roomPos, pos);
-			Matrix matTranslation = MatrixTranslate(pos.x, pos.y, pos.z);
-			auto& rot = gobj.location.rotation;
-			Matrix matRotation = QuaternionToMatrix(rot);
-			Matrix matTransform = MatrixMultiply(matRotation, matTranslation);
-
-			// Combine model transformation matrix (model.transform) with matrix generated by function parameters (matTransform)
-			auto m = rlGetMatrixModelview();
-			rlSetMatrixModelview(MatrixMultiply(matTransform, m));
-			model.Render();
-			rlSetMatrixModelview(m);
-		}
-
-		void renderObject(GameObject& gobj, Color tint)
-		{
-			renderModel(gobj);
-
 			rlPushMatrix();
-			Vector3& roomPos = curStage->rooms[gobj.location.roomId].position;
+			Vector3& roomPos = world->curStage->rooms[gobj.location.roomId].position;
 			rlMultMatrixf(MatrixToFloat(MatrixTranslate(roomPos.x,roomPos.y,roomPos.z)));
 
 			DrawCube(gobj.location.position, 0.1, 0.1, 0.1, RED);
-			render3dDebug(GetWorldToScreen(Vector3Add(roomPos, gobj.location.position), initCamera), to_string(gobj.id).c_str());
+
+			auto screenPos = GetWorldToScreenZ(Vector3Add(roomPos, gobj.location.position));
+			if (screenPos.z > 0) {
+				renderDebugObj({ screenPos.x, screenPos.y }, &gobj);
+			}
+
 			if (gobj.physics.boundsCached) {
 				DrawBounds(gobj.physics.bounds, RED);
 			}
@@ -319,23 +201,25 @@ namespace openAITD {
 
 		void process() {
 			if (freeLook) {
-				UpdateCamera(&initCamera, CAMERA_FREE);
+				UpdateCamera(&mainCamera, CAMERA_FREE);
 			}
 		}
 
 		void render() {
+			if (world->curStageId == -1 || world->curCameraId == -1) return;
 			if (world->curStageId != curStageId || world->curCameraId != curCameraId) {
-				loadCamera(world->curStageId, world->curCameraId);
+				curStageId = world->curStageId;
+				loadCamera(world->curCameraId);
 			}
 
-			endDebug3d = debug3d;
+			endDebugObjs = debugObjs;
 
 			/*
 			for (int i = 0; i < this->world->gobjects.size(); i++) {
 				auto& gobj = this->world->gobjects[i];
 				if (gobj.model.id == -1) continue;
 				if (gobj.location.stageId != curStageId) continue;
-				renderObject(gobj, WHITE);
+				renderObjectEx(gobj, WHITE);
 			}
 			*/
 
@@ -346,13 +230,13 @@ namespace openAITD {
 				if (gobj.location.stageId != curStageId) continue;
 				
 				Vector3 pos = gobj.location.position;
-				Vector3& roomPos = curStage->rooms[gobj.location.roomId].position;
+				Vector3& roomPos = world->curStage->rooms[gobj.location.roomId].position;
 
 				//auto& screenPos = GetWorldToScreenZ(pos);
 				//if (screenPos.z < 0) continue;
-				BeginMode3D(initCamera);
-				if (curCamera) rlSetMatrixProjection(curCamera->perspective);
-				renderObject(gobj, WHITE);
+				BeginMode3D(mainCamera);
+				if (curCamera) rlSetMatrixProjection(perspective);
+				renderObjectEx(gobj, WHITE);
 				EndMode3D();
 
 				string s = to_string(i);
@@ -363,9 +247,9 @@ namespace openAITD {
 
 			//int num = 1;
 			//for (auto it = renderQueue.begin(); it != renderQueue.end(); it++) {
-			//	BeginMode3D(initCamera);
+			//	BeginMode3D(mainCamera);
 			//		//rlSetMatrixModelview(curCamera->modelview);
-			//		rlSetMatrixProjection(curCamera->perspective);
+			//		rlSetMatrixProjection(perspective);
 			//		renderObject(*it->obj, WHITE);
 			//	EndMode3D();
 
@@ -375,9 +259,9 @@ namespace openAITD {
 			//	num++;
 			//}
 
-			BeginMode3D(initCamera);
+			BeginMode3D(mainCamera);
 				//rlSetMatrixModelview(curCamera->modelview);
-				if (curCamera) rlSetMatrixProjection(curCamera->perspective);
+				if (curCamera) rlSetMatrixProjection(perspective);
 				DrawCube({ 0,0,0 }, 0.2, 0.2, 0.2, GREEN);
 				renderBounds();
 				renderZones();
@@ -386,9 +270,15 @@ namespace openAITD {
 				//renderTrack();
 			EndMode3D();
 
+			string gebugStr;
 			for (int i = 0; i < 100; i++) {
-				if (&debug3d[i] == endDebug3d) break;
-				DrawText((char*)debug3d[i].label, (int)debug3d[i].screenpos.x, (int)debug3d[i].screenpos.y, 16, debug3d[i].color);
+				if (&debugObjs[i] == endDebugObjs) break;
+				gebugStr = to_string(debugObjs[i].gobj->id);
+				int a = debugObjs[i].gobj->animation.id;
+				gebugStr = gebugStr + " A" + ((a != -1) ? to_string(a) : "-");
+				int l = debugObjs[i].gobj->lifeId;
+				gebugStr = gebugStr + " L" + ((l != -1) ? to_string(l) : "-");
+				DrawText(gebugStr.c_str(), (int)debugObjs[i].screenpos.x, (int)debugObjs[i].screenpos.y, 24, WHITE);
 			}
 
 			renderCamPos();
