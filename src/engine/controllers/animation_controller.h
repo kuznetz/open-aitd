@@ -56,45 +56,53 @@ namespace openAITD {
                 objAni.animIdx = p->second;
                 auto& mdlAnim = mdl->model.animations[objAni.animIdx];
 
+                objAni.animTime += timeDelta;
+
+                if (objAni.id != objAni.prevId) {
+                    objAni.animChanged = true;
+                    objAni.animEnd = 0;
+                    objAni.animTime = 0;
+                }
+
                 if (objAni.animEnd) {
                     objAni.animEnd = 0;
-                    objAni.prevMoveRoot = { 0,0,0 };
-                    if (objAni.prevId != objAni.id) {
-                    } 
-                    else if (!objAni.bitField.repeat) {
+                    objAni.animChanged = true;
+                    if (!objAni.bitField.repeat) {
                         objAni.id = objAni.nextId;
+                        objAni.animTime = 0;
                         objAni.flags = 0;
                         objAni.bitField.repeat = 1;
                     }
                     else if (mdlAnim.duration > 0) {
-                        while (objAni.animTime > mdlAnim.duration) {
+                        while (objAni.animTime >= mdlAnim.duration) {
                             objAni.animTime -= mdlAnim.duration;
                         }
                     }
                 }
 
-                if (objAni.prevId != objAni.id) {
-                    objAni.animChanged = true;
-                    objAni.prevMoveRoot = { 0,0,0 };
-                    objAni.animTime = 0;
-                }
-
-				objAni.animTime += timeDelta;
-                int oldFrame = objAni.animFrame;
 				objAni.animFrame = (objAni.animTime * resources->config.targetFps);
-                objAni.isNewFrame = objAni.animFrame != oldFrame;
 				auto& curFrame = objAni.animFrame;
 
+                //For logic
                 objAni.keyFrameIdx = mdl->model.getKeyFrame(mdlAnim, objAni.animTime);
 
                 auto lastFrame = mdlAnim.bakedPoses.size() - 1;
-
                 if (curFrame >= lastFrame) {
                     curFrame = lastFrame;
                     objAni.animEnd = 1;
                 }
-                if (objAni.id != -1) {
+
+                if (objAni.animChanged) {
+                    objAni.prevMoveRoot = { 0,0,0 };
+                }
+                else {
+                    objAni.prevMoveRoot = objAni.moveRoot;
+                }
+                if (objAni.id != -1 && mdlAnim.duration > 0) {
                     objAni.moveRoot = mdlAnim.rootMotion[curFrame].translation;
+                }
+                else {
+                    objAni.moveRoot = { 0,0,0 };
                 }
 
                 gobj.prevModelId = gobj.modelId;

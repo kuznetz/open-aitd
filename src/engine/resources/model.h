@@ -122,9 +122,14 @@ namespace openAITD {
             if (!data) {
                 return;
             }
-            auto b = GetBounds();
-            bounds.min = b.min;
-            bounds.max = b.max;
+
+            CalcBounds();
+            /*
+            Vanilla method:
+            auto bb = GetModelBoundingBox(model);
+            bounds.min = bb.min;
+            bounds.max = bb.max;
+            */
 
             if (data->skins_count > 1)
             {
@@ -178,19 +183,19 @@ namespace openAITD {
 
         static void GetMeshBounds(Bounds& box, const Mesh& mesh)
         {
-            if (mesh.vertices != NULL) return;
+            auto& verts = mesh.animVertices; //mesh.vertices
+            if (verts == NULL) throw new exception("Verts is null");
 
             // Get min and max vertex to construct bounds (AABB)
             Vector3& minVertex = box.min;
             Vector3& maxVertex = box.max;
-
-            minVertex = { mesh.vertices[0], mesh.vertices[1], mesh.vertices[2] };
-            maxVertex = { mesh.vertices[0], mesh.vertices[1], mesh.vertices[2] };
+            minVertex = { verts[0], verts[1], verts[2] };
+            maxVertex = { verts[0], verts[1], verts[2] };
             for (int i = 1; i < mesh.vertexCount; i++)
             {
-                const float& x = mesh.vertices[i];
-                const float& y = mesh.vertices[i + 1];
-                const float& z = mesh.vertices[i + 2];
+                const float& x = verts[i*3];
+                const float& y = verts[i*3 + 1];
+                const float& z = verts[i*3 + 2];
 
                 minVertex.x = std::min(minVertex.x, x);
                 minVertex.y = std::min(minVertex.y, y);
@@ -201,9 +206,9 @@ namespace openAITD {
             }
         }
 
-        Bounds GetBounds() {
-            Bounds result;
-            if (model.meshCount == 0) return result;
+        void CalcBounds() {
+            Bounds& result = bounds;
+            if (model.meshCount == 0) return;
 
             Vector3& minVertex = result.min;
             Vector3& maxVertex = result.max;
@@ -213,8 +218,13 @@ namespace openAITD {
 
             for (int i = 0; i < model.meshCount; i++) {
                 mesh = &model.meshes[i];
-                if (mesh->vertices != NULL) continue;
+                if (mesh->vertices == NULL) continue;
+                
+                /*auto b = GetMeshBoundingBox(*mesh);
+                meshBounds.min = b.min;
+                meshBounds.max = b.max;*/
                 GetMeshBounds(meshBounds, *mesh);
+
                 if (first) {
                     result = meshBounds;
                     first = false;
@@ -231,18 +241,16 @@ namespace openAITD {
 
             Vector3TransformRef(minVertex, model.transform);
             Vector3TransformRef(maxVertex, model.transform);
-            return result;
         }
 
         void bakePoses(int fps) {
             for (int i = 0; i < animations.size(); i++) {
                 auto& anim = animations[i];
-                float t = 0;
-                int frameCount = ceil(anim.duration * fps) + 1;
-                BoundingBox b;
+                int frameCount = ceil(anim.duration * fps);
                 anim.bakedPoses.resize(frameCount);
                 //anim.bakedBounds.resize(frameCount);
                 anim.rootMotion.resize(frameCount);
+                float t = 0;
                 for (int j = 0; j < frameCount; j++) {
                     t = (float)j / fps;
                     anim.bakedPoses[j].resize(bones.size());

@@ -236,7 +236,6 @@ namespace openAITD {
 
 				if (gobj.physics.moving) {
 					v = Vector3RotateByQuaternion(v, gobj.location.rotation);
-					gobj.animation.prevMoveRoot = gobj.animation.moveRoot;
 					gobj.physics.boundsCached = false;
 				}
 

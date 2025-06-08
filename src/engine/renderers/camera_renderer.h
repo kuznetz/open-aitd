@@ -13,6 +13,7 @@ namespace openAITD {
 		RenderOrder* next = 0;
 		GameObject* gobj = 0;
 		float zPos;
+		Bounds bb;
 		Vector2 screenMin;
 		Vector2 screenMax;
 	};
@@ -62,7 +63,14 @@ namespace openAITD {
 			Matrix matTransform = MatrixMultiply(MatrixMultiply(matScale, matRotation), matTranslation);
 
 			auto rmodel = resources->models.getModel(gobj.modelId);
-			auto& bb = rmodel->model.bounds;
+
+			rmodel->model.CalcBounds();			
+			auto& bb = ord.bb;
+			bb = rmodel->model.bounds;
+			bb = bb.getRotatedBounds(rot);
+			Vector3TransformRef(bb.min, matTranslation);
+			Vector3TransformRef(bb.max, matTranslation);
+			
 			Vector3 vecs[8];
 			vecs[0] = { bb.min.x, bb.max.y, bb.max.z }; // Top left
 			vecs[1] = { bb.max.x, bb.max.y, bb.max.z }; // Top right
@@ -75,20 +83,28 @@ namespace openAITD {
 			vecs[7] = { bb.max.x, bb.min.y, bb.min.z }; // Bottom right
 
 			for (int i = 0; i < 8; i++) {
-				Vector3 v = GetWorldToScreenZ(Vector3Transform(vecs[i], matTransform));
-				if (i == 0 || ord.zPos < v.z) {
+				Vector3 v = GetWorldToScreenZ(vecs[i]);
+				if (i == 0) {
+					ord.zPos = v.z;
+					ord.screenMin.x = v.x;
+					ord.screenMin.y = v.y;
+					ord.screenMax.x = v.x;
+					ord.screenMax.y = v.y;
+					continue;
+				}
+				if (ord.zPos > v.z) {
 					ord.zPos = v.z;
 				}
-				if (i == 0 || ord.screenMin.x > v.x) {
+				if (ord.screenMin.x > v.x) {
 					ord.screenMin.x = v.x;
 				}
-				if (i == 0 || ord.screenMin.y > v.y) {
+				if (ord.screenMin.y > v.y) {
 					ord.screenMin.y = v.y;
 				}
-				if (i == 0 || ord.screenMax.x < v.x) {
+				if (ord.screenMax.x < v.x) {
 					ord.screenMax.x = v.x;
 				}
-				if (i == 0 || ord.screenMax.y < v.y) {
+				if (ord.screenMax.y < v.y) {
 					ord.screenMax.y = v.y;
 				}
 			}
@@ -143,6 +159,11 @@ namespace openAITD {
 				Vector3& roomPos = world->curStage->rooms[gobj.location.roomId].position;
 				pos = Vector3Add(roomPos, pos);
 
+				if (gobj.modelId != -1) {
+					auto rmodel = resources->models.getModel(gobj.modelId);
+					ProcessPose(gobj, rmodel->model);
+				}
+
 				//auto& screenPos = GetWorldToScreenZ(pos);
 				//if (screenPos.z < 0) continue;
 
@@ -193,6 +214,7 @@ namespace openAITD {
 					//rlSetMatrixModelview(curCamera->modelview);
 					rlSetMatrixProjection(perspective);
 					renderObject(*renderIter->gobj, WHITE);
+					//DrawBounds(renderIter->bb, GREEN);
 					EndMode3D();
 
 					//auto s = to_string(num)+" R" + to_string(it->obj->location.roomId);

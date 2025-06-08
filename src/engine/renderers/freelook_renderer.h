@@ -120,6 +120,8 @@ namespace openAITD {
 		void renderObjectEx(GameObject& gobj, Color tint)
 		{
 			if (gobj.modelId != -1) {
+				auto rmodel = resources->models.getModel(gobj.modelId);
+				ProcessPose(gobj, rmodel->model);
 				renderObject(gobj, tint);
 			}
 

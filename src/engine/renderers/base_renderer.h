@@ -116,7 +116,8 @@ namespace openAITD {
 			auto& curAnim = model.animations[gobj.animation.animIdx];
 			auto& newPose = curAnim.bakedPoses[gobj.animation.animFrame];
 
-			if (gobj.animation.animChanged) {
+			if (gobj.animation.hasPose && gobj.animation.animChanged) {
+				//Set current pose to transition start
 				memcpy_s(
 					gobj.animation.transitionPose.data(), gobj.animation.transitionPose.size() * sizeof(Transform),
 					gobj.animation.curPose.data(), gobj.animation.curPose.size() * sizeof(Transform)
@@ -142,13 +143,14 @@ namespace openAITD {
 				gobj.animation.curPose.data(), gobj.animation.curPose.size() * sizeof(Transform),
 				curPose, newPose.size() * sizeof(Transform)
 			);
-			if (gobj.animation.animEnd) {
+			if (!gobj.animation.hasPose) {
+				//Init transition start pose
 				memcpy_s(
 					gobj.animation.transitionPose.data(), gobj.animation.transitionPose.size() * sizeof(Transform),
-					gobj.animation.curPose.data(), gobj.animation.curPose.size() * sizeof(Transform)
+					curPose, newPose.size() * sizeof(Transform)
 				);
+				gobj.animation.hasPose = true;
 			}
-			gobj.animation.hasPose = true;
 		}
 
 		void renderObject(GameObject& gobj, Color tint)
@@ -156,9 +158,9 @@ namespace openAITD {
 			auto rmodel = resources->models.getModel(gobj.modelId);
 			auto& model = rmodel->model;
 
-			if (model.skin && gobj.animation.id != -1) {
-				ProcessPose(gobj, model);
-			}
+			//if (model.skin && gobj.animation.id != -1) {
+			//	ProcessPose(gobj, model);
+			//}
 
 			Vector3 pos = gobj.location.position;
 			Vector3& roomPos = world->curStage->rooms[gobj.location.roomId].position;

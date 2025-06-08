@@ -93,7 +93,6 @@ namespace openAITD {
 		int animIdx;
 		int animFrame;
 		int keyFrameIdx;
-		bool isNewFrame;
 		float animTime;
 
 		bool hasPose = false;
