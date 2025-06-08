@@ -27,10 +27,7 @@ namespace openAITD {
 
 		Background* curBackground = 0;
 
-		CameraRenderer(World* world) : BaseRenderer(world)
-		{
-
-		}
+		CameraRenderer(World* world) : BaseRenderer(world) {}
 
 		void loadCamera(int newCameraId) override
 		{
@@ -41,7 +38,7 @@ namespace openAITD {
 		bool checkOverlay(GCameraOverlay& ovl, GameObject& gobj) {
 			Vector3 pos = gobj.location.position;
 			for (int i = 0; i < ovl.bounds.size(); i++) {
-				auto& b = ovl.bounds[i];
+				auto& b = ovl.bounds[i].getExpanded(-0.01);
 				//if (CheckCollisionBoxes(objBnd, ovl.bounds[i])) {
 				if (pos.x >= b.min.x && pos.x <= b.max.x && pos.z >= b.min.z && pos.z <= b.max.z) {
 					return true;
@@ -50,7 +47,7 @@ namespace openAITD {
 			return false;
 		}
 
-		void fillScreenBounds(RenderOrder& ord, GameObject& gobj)
+		void fillRenderOrder(RenderOrder& ord, GameObject& gobj)
 		{
 			ord.next = 0;
 			ord.gobj = &gobj;
@@ -150,13 +147,12 @@ namespace openAITD {
 				//if (screenPos.z < 0) continue;
 
 				RenderOrder& ro = renderQueue[renderQueueCount++];
-				fillScreenBounds(ro, gobj);
+				fillRenderOrder(ro, gobj);
 				if (ro.zPos < 0) continue;
 				if (ro.screenMax.x < 0 || ro.screenMin.x > getScreenW()) continue;
 				if (ro.screenMax.y < 0 || ro.screenMin.y > getScreenH()) continue;
 
-				renderObject(gobj, WHITE);
-				
+				//renderObject(gobj, WHITE);				
 				//string s = to_string(i);
 								
 				if (renderStart) {

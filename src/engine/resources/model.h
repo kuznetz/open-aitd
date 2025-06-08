@@ -26,6 +26,7 @@ namespace openAITD {
         vector <float> keyFrames;
         vector <Transform> rootMotion;
         vector <vector<Transform>> bakedPoses;
+        vector <Bounds> bakedBounds;
         float transition;
         float duration;
     };
@@ -33,6 +34,70 @@ namespace openAITD {
     struct Bone {
         int parent;
     };
+
+    void Vector3TransformRef(Vector3& result, const Matrix& mat)
+    {
+        float x = result.x;
+        float y = result.y;
+        float z = result.z;
+        result.x = mat.m0 * x + mat.m4 * y + mat.m8 * z + mat.m12;
+        result.y = mat.m1 * x + mat.m5 * y + mat.m9 * z + mat.m13;
+        result.z = mat.m2 * x + mat.m6 * y + mat.m10 * z + mat.m14;
+    }
+
+    void MatrixInvertRef(Matrix& result)
+    {
+        Matrix mat = result;
+        // Cache the matrix values (speed optimization)
+        float a00 = mat.m0, a01 = mat.m1, a02 = mat.m2, a03 = mat.m3;
+        float a10 = mat.m4, a11 = mat.m5, a12 = mat.m6, a13 = mat.m7;
+        float a20 = mat.m8, a21 = mat.m9, a22 = mat.m10, a23 = mat.m11;
+        float a30 = mat.m12, a31 = mat.m13, a32 = mat.m14, a33 = mat.m15;
+
+        float b00 = a00 * a11 - a01 * a10;
+        float b01 = a00 * a12 - a02 * a10;
+        float b02 = a00 * a13 - a03 * a10;
+        float b03 = a01 * a12 - a02 * a11;
+        float b04 = a01 * a13 - a03 * a11;
+        float b05 = a02 * a13 - a03 * a12;
+        float b06 = a20 * a31 - a21 * a30;
+        float b07 = a20 * a32 - a22 * a30;
+        float b08 = a20 * a33 - a23 * a30;
+        float b09 = a21 * a32 - a22 * a31;
+        float b10 = a21 * a33 - a23 * a31;
+        float b11 = a22 * a33 - a23 * a32;
+
+        // Calculate the invert determinant (inlined to avoid double-caching)
+        float invDet = 1.0f / (b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06);
+
+        result.m0 = (a11 * b11 - a12 * b10 + a13 * b09) * invDet;
+        result.m1 = (-a01 * b11 + a02 * b10 - a03 * b09) * invDet;
+        result.m2 = (a31 * b05 - a32 * b04 + a33 * b03) * invDet;
+        result.m3 = (-a21 * b05 + a22 * b04 - a23 * b03) * invDet;
+        result.m4 = (-a10 * b11 + a12 * b08 - a13 * b07) * invDet;
+        result.m5 = (a00 * b11 - a02 * b08 + a03 * b07) * invDet;
+        result.m6 = (-a30 * b05 + a32 * b02 - a33 * b01) * invDet;
+        result.m7 = (a20 * b05 - a22 * b02 + a23 * b01) * invDet;
+        result.m8 = (a10 * b10 - a11 * b08 + a13 * b06) * invDet;
+        result.m9 = (-a00 * b10 + a01 * b08 - a03 * b06) * invDet;
+        result.m10 = (a30 * b04 - a31 * b02 + a33 * b00) * invDet;
+        result.m11 = (-a20 * b04 + a21 * b02 - a23 * b00) * invDet;
+        result.m12 = (-a10 * b09 + a11 * b07 - a12 * b06) * invDet;
+        result.m13 = (a00 * b09 - a01 * b07 + a02 * b06) * invDet;
+        result.m14 = (-a30 * b03 + a31 * b01 - a32 * b00) * invDet;
+        result.m15 = (a20 * b03 - a21 * b01 + a22 * b00) * invDet;
+    }
+
+    void MatrixTransposeRef(Matrix& mat)
+    {
+        // Меняем элементы попарно
+        std::swap(mat.m1, mat.m4);
+        std::swap(mat.m2, mat.m8);   // строки 1-3 меняются столбцами
+        std::swap(mat.m3, mat.m12);  // строки 1-4 меняются столбцами
+        std::swap(mat.m6, mat.m9);   // строки 2-3 меняются столбцами
+        std::swap(mat.m7, mat.m13);  // строки 2-4 меняются столбцами
+        std::swap(mat.m11, mat.m14); // строки 3-4 меняются столбцами
+    }
 
     class Model {
     public:
@@ -57,7 +122,7 @@ namespace openAITD {
             if (!data) {
                 return;
             }
-            auto b = GetModelBoundingBox(model);
+            auto b = GetBounds();
             bounds.min = b.min;
             bounds.max = b.max;
 
@@ -111,19 +176,83 @@ namespace openAITD {
             }
         }
 
+        static void GetMeshBounds(Bounds& box, const Mesh& mesh)
+        {
+            if (mesh.vertices != NULL) return;
+
+            // Get min and max vertex to construct bounds (AABB)
+            Vector3& minVertex = box.min;
+            Vector3& maxVertex = box.max;
+
+            minVertex = { mesh.vertices[0], mesh.vertices[1], mesh.vertices[2] };
+            maxVertex = { mesh.vertices[0], mesh.vertices[1], mesh.vertices[2] };
+            for (int i = 1; i < mesh.vertexCount; i++)
+            {
+                const float& x = mesh.vertices[i];
+                const float& y = mesh.vertices[i + 1];
+                const float& z = mesh.vertices[i + 2];
+
+                minVertex.x = std::min(minVertex.x, x);
+                minVertex.y = std::min(minVertex.y, y);
+                minVertex.z = std::min(minVertex.z, z);
+                maxVertex.x = std::max(maxVertex.x, x);
+                maxVertex.y = std::max(maxVertex.y, y);
+                maxVertex.z = std::max(maxVertex.z, z);
+            }
+        }
+
+        Bounds GetBounds() {
+            Bounds result;
+            if (model.meshCount == 0) return result;
+
+            Vector3& minVertex = result.min;
+            Vector3& maxVertex = result.max;
+            Bounds meshBounds;
+            Mesh* mesh;
+            bool first = true;
+
+            for (int i = 0; i < model.meshCount; i++) {
+                mesh = &model.meshes[i];
+                if (mesh->vertices != NULL) continue;
+                GetMeshBounds(meshBounds, *mesh);
+                if (first) {
+                    result = meshBounds;
+                    first = false;
+                    continue;
+                }
+
+                minVertex.x = std::min(minVertex.x, meshBounds.min.x);
+                minVertex.y = std::min(minVertex.y, meshBounds.min.y);
+                minVertex.z = std::min(minVertex.z, meshBounds.min.z);
+                maxVertex.x = std::max(maxVertex.x, meshBounds.max.x);
+                maxVertex.y = std::max(maxVertex.y, meshBounds.max.y);
+                maxVertex.z = std::max(maxVertex.z, meshBounds.max.z);
+            }
+
+            Vector3TransformRef(minVertex, model.transform);
+            Vector3TransformRef(maxVertex, model.transform);
+            return result;
+        }
+
         void bakePoses(int fps) {
             for (int i = 0; i < animations.size(); i++) {
                 auto& anim = animations[i];
                 float t = 0;
                 int frameCount = ceil(anim.duration * fps) + 1;
+                BoundingBox b;
                 anim.bakedPoses.resize(frameCount);
+                //anim.bakedBounds.resize(frameCount);
                 anim.rootMotion.resize(frameCount);
                 for (int j = 0; j < frameCount; j++) {
+                    t = (float)j / fps;
                     anim.bakedPoses[j].resize(bones.size());
                     CalcPoseByTime(anim.bakedPoses[j].data(), i, t);
                     anim.rootMotion[j] = anim.bakedPoses[j][0];
                     anim.bakedPoses[j][0].translation = { 0,0,0 };
-                    t = (float)j / fps;
+
+                    //TOO Slow
+                    //ApplyPose(anim.bakedPoses[j].data());
+                    //anim.bakedBounds[j] = GetBounds();
                 }
             }
         }
@@ -141,9 +270,16 @@ namespace openAITD {
             ApplyParentJoints(curPose);
             UpdateBones(model, curPose);
             UpdateSkin(model);
-            auto b = GetModelBoundingBox(model);
-            bounds.min = b.min;
-            bounds.max = b.max;
+        }
+
+        void UpdateBuffer()
+        {
+            for (int m = 0; m < model.meshCount; m++)
+            {
+                auto& mesh = model.meshes[m];
+                rlUpdateVertexBuffer(mesh.vboId[0], mesh.animVertices, mesh.vertexCount * 3 * sizeof(float), 0); // Update vertex position
+                if (mesh.normals != NULL) rlUpdateVertexBuffer(mesh.vboId[2], mesh.animNormals, mesh.vertexCount * 3 * sizeof(float), 0); // Update vertex normals
+            }
         }
 
         int getKeyFrame(const Animation& anim, float animTime) {
@@ -540,14 +676,15 @@ namespace openAITD {
         {
             for (int m = 0; m < model.meshCount; m++)
             {
-                Mesh mesh = model.meshes[m];
+                Mesh& mesh = model.meshes[m];
                 Vector3 animVertex = { 0 };
-                Vector3 animNormal = { 0 };
+                //Vector3 animNormal = { 0 };
                 int boneId = 0;
                 int boneCounter = 0;
                 float boneWeight = 0.0;
                 bool updated = false; // Flag to check when anim vertex information is updated
                 const int vValues = mesh.vertexCount * 3;
+                //Matrix curMatrix;
 
                 // Skip if missing bone data, causes segfault without on some models
                 if ((mesh.boneWeights == NULL) || (mesh.boneIds == NULL)) continue;
@@ -557,12 +694,12 @@ namespace openAITD {
                     mesh.animVertices[vCounter] = 0;
                     mesh.animVertices[vCounter + 1] = 0;
                     mesh.animVertices[vCounter + 2] = 0;
-                    if (mesh.animNormals != NULL)
-                    {
-                        mesh.animNormals[vCounter] = 0;
-                        mesh.animNormals[vCounter + 1] = 0;
-                        mesh.animNormals[vCounter + 2] = 0;
-                    }
+                    //if (mesh.animNormals != NULL)
+                    //{
+                    //    mesh.animNormals[vCounter] = 0;
+                    //    mesh.animNormals[vCounter + 1] = 0;
+                    //    mesh.animNormals[vCounter + 2] = 0;
+                    //}
 
                     // Iterates over 4 bones per vertex
                     for (int j = 0; j < 4; j++, boneCounter++)
@@ -573,7 +710,8 @@ namespace openAITD {
                         // Early stop when no transformation will be applied
                         if (boneWeight == 0.0f) continue;
                         animVertex = { mesh.vertices[vCounter], mesh.vertices[vCounter + 1], mesh.vertices[vCounter + 2] };
-                        animVertex = Vector3Transform(animVertex, model.meshes[m].boneMatrices[boneId]);
+                        Vector3TransformRef(animVertex, model.meshes[m].boneMatrices[boneId]);
+                        
                         mesh.animVertices[vCounter] += animVertex.x * boneWeight;
                         mesh.animVertices[vCounter + 1] += animVertex.y * boneWeight;
                         mesh.animVertices[vCounter + 2] += animVertex.z * boneWeight;
@@ -581,21 +719,24 @@ namespace openAITD {
 
                         // Normals processing
                         // NOTE: We use meshes.baseNormals (default normal) to calculate meshes.normals (animated normals)
-                        if ((mesh.normals != NULL) && (mesh.animNormals != NULL))
-                        {
-                            animNormal = { mesh.normals[vCounter], mesh.normals[vCounter + 1], mesh.normals[vCounter + 2] };
-                            animNormal = Vector3Transform(animNormal, MatrixTranspose(MatrixInvert(model.meshes[m].boneMatrices[boneId])));
-                            mesh.animNormals[vCounter] += animNormal.x * boneWeight;
-                            mesh.animNormals[vCounter + 1] += animNormal.y * boneWeight;
-                            mesh.animNormals[vCounter + 2] += animNormal.z * boneWeight;
-                        }
+                        //if ((mesh.normals != NULL) && (mesh.animNormals != NULL))
+                        //{
+                        //    curMatrix = model.meshes[m].boneMatrices[boneId];
+                        //    MatrixInvertRef(curMatrix);
+                        //    MatrixTransposeRef(curMatrix);
+                        //    animNormal = { mesh.normals[vCounter], mesh.normals[vCounter + 1], mesh.normals[vCounter + 2] };
+                        //    Vector3TransformRef(animNormal, curMatrix);
+                        //    mesh.animNormals[vCounter] += animNormal.x * boneWeight;
+                        //    mesh.animNormals[vCounter + 1] += animNormal.y * boneWeight;
+                        //    mesh.animNormals[vCounter + 2] += animNormal.z * boneWeight;
+                        //}
                     }
                 }
 
                 if (updated)
                 {
-                    rlUpdateVertexBuffer(mesh.vboId[0], mesh.animVertices, mesh.vertexCount * 3 * sizeof(float), 0); // Update vertex position
-                    if (mesh.normals != NULL) rlUpdateVertexBuffer(mesh.vboId[2], mesh.animNormals, mesh.vertexCount * 3 * sizeof(float), 0); // Update vertex normals
+                    //rlUpdateVertexBuffer(mesh.vboId[0], mesh.animVertices, mesh.vertexCount * 3 * sizeof(float), 0); // Update vertex position
+                    //if (mesh.normals != NULL) rlUpdateVertexBuffer(mesh.vboId[2], mesh.animNormals, mesh.vertexCount * 3 * sizeof(float), 0); // Update vertex normals
                 }
             }
         }

@@ -72,54 +72,92 @@ namespace openAITD {
 			return screenPosition;
 		}
 
+		void DrawBounds(Bounds bb, Color color)
+		{
+			Vector3 vecs[8];
+			// Front face        
+			vecs[0] = { bb.min.x, bb.max.y, bb.max.z }; // Top left
+			vecs[1] = { bb.max.x, bb.max.y, bb.max.z }; // Top right
+			vecs[2] = { bb.min.x, bb.min.y, bb.max.z }; // Bottom left
+			vecs[3] = { bb.max.x, bb.min.y, bb.max.z }; // Bottom right
+			// Back face
+			vecs[4] = { bb.min.x, bb.max.y, bb.min.z }; // Top left
+			vecs[5] = { bb.max.x, bb.max.y, bb.min.z }; // Top right
+			vecs[6] = { bb.min.x, bb.min.y, bb.min.z }; // Bottom left
+			vecs[7] = { bb.max.x, bb.min.y, bb.min.z }; // Bottom right
+
+			DrawLine3D(vecs[0], vecs[1], color);
+			DrawLine3D(vecs[1], vecs[3], color);
+			DrawLine3D(vecs[3], vecs[2], color);
+			DrawLine3D(vecs[2], vecs[0], color);
+
+			DrawLine3D(vecs[4], vecs[5], color);
+			DrawLine3D(vecs[5], vecs[7], color);
+			DrawLine3D(vecs[7], vecs[6], color);
+			DrawLine3D(vecs[6], vecs[4], color);
+
+			DrawLine3D(vecs[0], vecs[4], color);
+			DrawLine3D(vecs[1], vecs[5], color);
+			DrawLine3D(vecs[2], vecs[6], color);
+			DrawLine3D(vecs[3], vecs[7], color);
+		}
+
+		void ProcessPose(GameObject& gobj, Model& model)
+		{
+			if (!model.skin || gobj.animation.id == -1) return;
+
+			int bonesSize = model.skin->joints_count;
+			if (bonesSize != gobj.animation.curPose.size()) {
+				gobj.animation.curPose.resize(bonesSize);
+				gobj.animation.transitionPose.resize(bonesSize);
+				gobj.animation.hasPose = false;
+			}
+
+			auto& curAnim = model.animations[gobj.animation.animIdx];
+			auto& newPose = curAnim.bakedPoses[gobj.animation.animFrame];
+
+			if (gobj.animation.animChanged) {
+				memcpy_s(
+					gobj.animation.transitionPose.data(), gobj.animation.transitionPose.size() * sizeof(Transform),
+					gobj.animation.curPose.data(), gobj.animation.curPose.size() * sizeof(Transform)
+				);
+			}
+
+			Transform* curPose;
+			bool isTransition = (curAnim.duration > 0) && (gobj.animation.animTime <= curAnim.transition);
+			if (isTransition && gobj.animation.hasPose) {
+				//newPose[0].translation = { 0,0,0 };
+				model.PoseLerp(tempPose, gobj.animation.transitionPose.data(), newPose.data(), gobj.animation.animTime / curAnim.transition);
+				//anim2.CalcPoseByTime(newPose, animIndex, 0);
+				curPose = tempPose;
+			}
+			else {
+				curPose = newPose.data();
+				//curPose[0].translation = { 0,0,0 };
+				//anim2.CalcPoseByTime(curPose, animIndex, animTime);
+			}
+			model.ApplyPose(curPose);
+			model.UpdateBuffer();
+			memcpy_s(
+				gobj.animation.curPose.data(), gobj.animation.curPose.size() * sizeof(Transform),
+				curPose, newPose.size() * sizeof(Transform)
+			);
+			if (gobj.animation.animEnd) {
+				memcpy_s(
+					gobj.animation.transitionPose.data(), gobj.animation.transitionPose.size() * sizeof(Transform),
+					gobj.animation.curPose.data(), gobj.animation.curPose.size() * sizeof(Transform)
+				);
+			}
+			gobj.animation.hasPose = true;
+		}
+
 		void renderObject(GameObject& gobj, Color tint)
 		{
 			auto rmodel = resources->models.getModel(gobj.modelId);
 			auto& model = rmodel->model;
 
 			if (model.skin && gobj.animation.id != -1) {
-				int bonesSize = model.skin->joints_count;
-				if (bonesSize != gobj.animation.curPose.size()) {
-					gobj.animation.curPose.resize(bonesSize);
-					gobj.animation.transitionPose.resize(bonesSize);
-					gobj.animation.hasPose = false;
-				}
-
-				auto& curAnim = model.animations[gobj.animation.animIdx];
-				auto& newPose = curAnim.bakedPoses[gobj.animation.animFrame];
-
-				if (gobj.animation.animChanged) {
-					memcpy_s(
-						gobj.animation.transitionPose.data(), gobj.animation.transitionPose.size() * sizeof(Transform),
-						gobj.animation.curPose.data(), gobj.animation.curPose.size() * sizeof(Transform)
-					);
-				}
-
-				Transform* curPose;
-				bool isTransition = (curAnim.duration > 0) && (gobj.animation.animTime <= curAnim.transition);
-				if (isTransition && gobj.animation.hasPose) {
-					//newPose[0].translation = { 0,0,0 };
-					model.PoseLerp(tempPose, gobj.animation.transitionPose.data(), newPose.data(), gobj.animation.animTime / curAnim.transition);
-					//anim2.CalcPoseByTime(newPose, animIndex, 0);
-					curPose = tempPose;
-				}
-				else {
-					curPose = newPose.data();
-					//curPose[0].translation = { 0,0,0 };
-					//anim2.CalcPoseByTime(curPose, animIndex, animTime);
-				}
-				model.ApplyPose(curPose);
-				memcpy_s(
-					gobj.animation.curPose.data(), gobj.animation.curPose.size() * sizeof(Transform),
-					curPose, newPose.size() * sizeof(Transform)
-				);
-				if (gobj.animation.animEnd) {
-					memcpy_s(
-						gobj.animation.transitionPose.data(), gobj.animation.transitionPose.size() * sizeof(Transform),
-						gobj.animation.curPose.data(), gobj.animation.curPose.size() * sizeof(Transform)
-					);
-				}
-				gobj.animation.hasPose = true;
+				ProcessPose(gobj, model);
 			}
 
 			Vector3 pos = gobj.location.position;

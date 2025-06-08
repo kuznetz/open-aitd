@@ -67,14 +67,14 @@ namespace openAITD {
 			bool collided = false;
 			for (int i = 0; i < room.colliders.size(); i++) {
 				Bounds& colB = room.colliders[i].bounds;
-				Bounds colBE = colB.getExpanded(0.05f);
 
-				bool c = objB.CollToBox(colBE);
+				bool c = objB.CollToBox(colB);
 				collided = collided || c;
 
 				if (c) {
+					Bounds colBS = colB.getExpanded(-0.01f);
 					if (gobj.physics.moving) {
-						objB.CollToBoxV(v, colB);
+						objB.CollToBoxV(v, colBS);
 					}
 					if (room.colliders[i].type == 9) {
 						gobj.physics.staticColl = room.colliders[i].parameter;
@@ -115,22 +115,22 @@ namespace openAITD {
 				}
 
 				//Expand to constant collision check
-				Bounds objB2E = objB2.getExpanded(0.05f);
-				bool c = objB.CollToBox(objB2E);
+				bool c = objB.CollToBox(objB2);
 				bool c2 = false;
 				collided = collided || c;
 				//if (gobj2.id == 0) printf("chest coll = %d\n", c);
 				if (c) {
+					Bounds objB2S = objB2.getExpanded(-0.01f);
 					if (gobj.physics.moving && !gobj2.bitField.foundable) {
 						if (gobj2.bitField.movable) {
 							auto v2 = v;
-							c2 = objB.CollToBoxV(v2, objB2);
+							c2 = objB.CollToBoxV(v2, objB2S);
 							if (c2) {
 								pushObject(gobj2, room, v);
 							}
 						}
 						else {
-							c2 = objB.CollToBoxV(v, objB2);
+							c2 = objB.CollToBoxV(v, objB2S);
 						}
 					}
 					gobj.physics.objectColl = gobj2.id;

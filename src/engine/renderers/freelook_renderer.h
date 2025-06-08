@@ -29,36 +29,6 @@ namespace openAITD {
 
 		}
 
-		void DrawBounds(Bounds bb, Color color)
-		{
-			Vector3 vecs[8];
-			// Front face        
-			vecs[0] = { bb.min.x, bb.max.y, bb.max.z }; // Top left
-			vecs[1] = { bb.max.x, bb.max.y, bb.max.z }; // Top right
-			vecs[2] = { bb.min.x, bb.min.y, bb.max.z }; // Bottom left
-			vecs[3] = { bb.max.x, bb.min.y, bb.max.z }; // Bottom right
-			// Back face
-			vecs[4] = { bb.min.x, bb.max.y, bb.min.z }; // Top left
-			vecs[5] = { bb.max.x, bb.max.y, bb.min.z }; // Top right
-			vecs[6] = { bb.min.x, bb.min.y, bb.min.z }; // Bottom left
-			vecs[7] = { bb.max.x, bb.min.y, bb.min.z }; // Bottom right
-
-			DrawLine3D(vecs[0], vecs[1], color);
-			DrawLine3D(vecs[1], vecs[3], color);
-			DrawLine3D(vecs[3], vecs[2], color);
-			DrawLine3D(vecs[2], vecs[0], color);
-
-			DrawLine3D(vecs[4], vecs[5], color);
-			DrawLine3D(vecs[5], vecs[7], color);
-			DrawLine3D(vecs[7], vecs[6], color);
-			DrawLine3D(vecs[6], vecs[4], color);
-
-			DrawLine3D(vecs[0], vecs[4], color);
-			DrawLine3D(vecs[1], vecs[5], color);
-			DrawLine3D(vecs[2], vecs[6], color);
-			DrawLine3D(vecs[3], vecs[7], color);
-		}
-
 		void renderBounds() {
 			//for (int r = 0; r < curCamera->rooms.size(); r++) {
 			//auto& room = curStage->rooms[curCamera->rooms[r].roomId];
