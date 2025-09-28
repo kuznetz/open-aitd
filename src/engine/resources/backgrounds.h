@@ -23,6 +23,13 @@ namespace openAITD {
 		vector<vector<BackgroundOverlay>> overlays;
 	};
 
+	struct IntRect {
+		int x;
+		int y;
+		int width;
+		int height;
+	};
+
 	class Backgrounds
 	{
 	public:
@@ -102,7 +109,6 @@ namespace openAITD {
 				auto bgImg = raylib::LoadImage(path.c_str());
 				auto& fullBgImg = resizeImg(bgImg, config->screenW, config->screenH);
 				UnloadImage(bgImg);
-
 				bg.texture = LoadTextureFromImage(fullBgImg);
 
 				auto& camRooms = curStage->cameras[camId].rooms;
@@ -139,18 +145,53 @@ namespace openAITD {
 			return res;
 		}
 
+		IntRect findImageBounds(const Image& image) {
+			int left = image.width;
+			int top = image.height;
+			int right = -1;
+			int bottom = -1;
+			uint8_t px;
+			for (int y = 0; y < image.height; ++y) {
+				for (int x = 0; x < image.width; ++x) {
+					px = ((uint8_t*)image.data)[(y * image.width + x) * 2 + 1];
+					if (px != 0) {						
+						left = std::min(left, x);
+						right = std::max(right, x);
+						top = std::min(top, y);
+						bottom = std::max(bottom, y);
+					}
+				}
+			}
+			// If no non-background pixels found, return empty bounds
+			if (right == -1) {
+				return { 0, 0, 0, 0 };
+			}
+			return { left, top, (right - left), (bottom - top) };
+		}
+
 		BackgroundOverlay generateOverlayMask(Image& fullBg, Image& mask) {
 			Image maskImageScaled = resizeImg(mask, config->screenW, config->screenH);
-			Image resImg = { 0, config->screenW, config->screenH, 1, PIXELFORMAT_UNCOMPRESSED_GRAYSCALE };
-			int pixelCount = config->screenW * config->screenH;
+			IntRect rect = findImageBounds(maskImageScaled);
+
+			Image resImg = { 0, rect.width, rect.height, 1, PIXELFORMAT_UNCOMPRESSED_GRAYSCALE };
+			int pixelCount = resImg.width * resImg.height;
 			resImg.data = new uint8_t[pixelCount];
-			for (int i = 0; i < pixelCount; i++) {
-				((uint8_t*)resImg.data)[i] = ((uint8_t*)maskImageScaled.data)[i * 2 + 1];
+
+			int oriIdx;
+			for (int y = 0; y < rect.height; y++) {
+				for (int x = 0; x < rect.width; x++) {
+					oriIdx = (y + rect.y) * config->screenW + x + rect.x;
+					((uint8_t*)resImg.data)[ y * rect.width + x ] = 
+						((uint8_t*)maskImageScaled.data)[oriIdx * 2 + 1];
+				}
 			}
+
+			
+
 			Texture2D result = LoadTextureFromImage(resImg);
 			UnloadImage(maskImageScaled);
 			UnloadImage(resImg);
-			return { {}, result };
+			return { { (float)rect.x, (float)rect.y, (float)rect.width, (float)rect.height }, result };
 		}
 
 		BackgroundOverlay generateOverlayColored(Image& fullBg, Image& mask) {

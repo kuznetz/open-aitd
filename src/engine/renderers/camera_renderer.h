@@ -36,6 +36,7 @@ namespace openAITD {
 
 		RenderTexture2D maskTex;
 		RenderTexture2D colorTex;
+		float scale3dTex = 1;
 
 		CameraRenderer(World* world) : BaseRenderer(world) {
 			resources = world->resources;
@@ -43,7 +44,9 @@ namespace openAITD {
 
 		void initShaders() {
 			auto& cfg = world->resources->config;
-			colorTex = LoadRenderTexture(cfg.screenW, cfg.screenH);
+			
+			colorTex = LoadRenderTexture(cfg.screenW * scale3dTex, cfg.screenH * scale3dTex);
+			SetTextureFilter(colorTex.texture, (scale3dTex == 1.0)? TEXTURE_FILTER_POINT: TEXTURE_FILTER_BILINEAR);
 			maskTex = LoadRenderTexture(cfg.screenW, cfg.screenH);
 
 			//maskShader = LoadShaderFromMemory(vertexShaderSrc, fragmentShaderSrc);
@@ -83,15 +86,18 @@ namespace openAITD {
 				for (int ovlIdx = 0; ovlIdx < curCamera->rooms[camRoomIdx].overlays.size(); ovlIdx++) {
 					auto& ovl = curCamera->rooms[camRoomIdx].overlays[ovlIdx];
 					if (checkOverlay(ovl, *renderIter->gobj)) {
-						/*DrawTexturePro(
-							curBackground->overlays[camRoomIdx][ovlIdx].texture, r, r, { 0, 0 }, 0, WHITE
-						);*/
-						renderRect(curBackground->overlays[camRoomIdx][ovlIdx].texture, r);
+						renderOverlay(curBackground->overlays[camRoomIdx][ovlIdx]);
 					}
 				}
 			}
 			EndBlendMode();
 			EndTextureMode();
+
+			/*
+			auto testImg = LoadImageFromTexture(maskTex.texture);
+    		raylib::ExportImage(testImg, "./image-test.png");
+			UnloadImage(testImg);
+			*/
 
 			/*
 			BeginTextureMode(resources->screen.screenTex);
@@ -165,14 +171,16 @@ namespace openAITD {
 			}
 		}
 
-		void renderRect(const Texture2D tex, const raylib::Rectangle& r, const bool upsideDown = false) {
+		void renderMasked(const Texture2D tex, const raylib::Rectangle& r) {
+			float width = maskTex.texture.width;
+			float height = maskTex.texture.height;
 			Vector2 topLeft = { 
-				r.x / tex.width,
-				(upsideDown ? (tex.height - r.y): r.y) / tex.height
+				r.x / width,
+				(height - r.y) / height
 			};
 			Vector2 botRight = {
-				(r.x+r.width) / tex.width,
-				(upsideDown? (tex.height - (r.y+r.height)) : (r.y + r.height)) / tex.height
+				(r.x + r.width) / width,
+				(height - (r.y+r.height)) / height
 			};
 			
 			rlSetTexture(tex.id);
@@ -191,6 +199,27 @@ namespace openAITD {
 			// Top-right corner for texture and quad
 			rlTexCoord2f(botRight.x, topLeft.y);
 			rlVertex2f(r.x + r.width, r.y);
+			rlEnd();
+		}
+
+		void renderOverlay(const BackgroundOverlay ovl) {
+			auto& b = ovl.bounds;
+			rlSetTexture(ovl.texture.id);
+			rlBegin(RL_QUADS);
+			//rlColor4ub(1,1,1,1);
+			//rlNormal3f(0.0f, 0.0f, 1.0f);
+			// Top-left corner for texture and quad
+			rlTexCoord2f(0, 0);
+			rlVertex2f(b.x, b.y);
+			// Bottom-left corner for texture and quad
+			rlTexCoord2f(0, 1);
+			rlVertex2f(b.x, b.y + b.height);
+			// Bottom-right corner for texture and quad
+			rlTexCoord2f(1, 1);
+			rlVertex2f(b.x + b.width, b.y + b.height);
+			// Top-right corner for texture and quad
+			rlTexCoord2f(1, 0);
+			rlVertex2f(b.x + b.width, b.y);
 			rlEnd();
 		}
 
@@ -332,18 +361,24 @@ namespace openAITD {
 					EndMode3D();
 					EndTextureMode();
 
+					/*
+					auto testImg = LoadImageFromTexture(colorTex.texture);
+					raylib::ExportImage(testImg, "./image-test.png");
+					UnloadImage(testImg);
+					*/
+
 					BeginTextureMode(resources->screen.screenTex);
-					BeginBlendMode(BLEND_ALPHA);
+					//BeginBlendMode(BLEND_ALPHA);
 					BeginShaderMode(maskShader);
 					SetShaderValueTexture(maskShader, shTextureColorLoc, colorTex.texture);
 					SetShaderValueTexture(maskShader, shTextureMaskLoc, maskTex.texture);
 					
 					//DrawTextureRec(colorTex.texture, { 0, 0, (float)colorTex.texture.width, ((float)-colorTex.texture.height) / 2 }, { 0, 0 }, WHITE);
-					renderRect(colorTex.texture, r, true);
-					DrawRectangleLinesEx(r2, 1, RED);
+					renderMasked(colorTex.texture, r);
+					//DrawRectangleLinesEx(r2, 1, RED);
 
 					EndShaderMode();
-					EndBlendMode();
+					//EndBlendMode();
 					EndTextureMode();
 
 					//it->marker = s;
