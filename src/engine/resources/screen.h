@@ -33,7 +33,10 @@ namespace openAITD {
 
 		void end() {
 			EndTextureMode();
+			finalRender();
+		}
 
+		void finalRender() {
 			BeginDrawing();
 			auto& c = *config;
 			DrawTextureRec(screenTex.texture, { 0, 0, (float)c.screenW, (float)-c.screenH }, { (float)c.screenX, (float)c.screenY }, WHITE);

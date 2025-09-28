@@ -162,16 +162,19 @@ namespace openAITD {
     }
 
     void renderWorld() {
-        if (world.picture.id != -1) {
-            pictureScr.render();
+        if (freeLook) {
+            resources.screen.begin();
+            flRenderer.render();
+            resources.screen.end();
             return;
         }
-        if (freeLook) {
-            flRenderer.render();
+        if (world.picture.id != -1) {
+            resources.screen.begin();
+            pictureScr.render();
+            resources.screen.end();
+            return;
         }
-        else {
-            renderer.render();
-        }
+        renderer.render();
     }
 
     void startMenu() {
@@ -265,10 +268,10 @@ namespace openAITD {
     }
 
     void render() {
-        resources.screen.begin();
-
         if (state == AppState::MainMenu) {
+            resources.screen.begin();
             mainMenu.render();
+            resources.screen.end();
         }
         else if (state == AppState::Intro) {
             renderWorld();
@@ -277,10 +280,10 @@ namespace openAITD {
             renderWorld();
         }
         else if (state == AppState::Inventory) {
+            resources.screen.begin();
             inventoryScreen.render();
+            resources.screen.end();
         }
-            
-        resources.screen.end();
     }
 
     int main(void)

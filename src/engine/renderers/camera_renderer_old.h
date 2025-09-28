@@ -1,9 +1,9 @@
 ﻿#pragma once
 #include <vector>
 #include <string>
-#include "../raylib.h"
 #include "../world/world.h"
 #include "../resources/resources.h"
+#include "../raylib.h"
 #include "./base_renderer.h"
 
 using namespace std;
@@ -20,41 +20,15 @@ namespace openAITD {
 
 	class CameraRenderer : public BaseRenderer {
 	public:
-		Resources* resources;
-
 		RenderOrder renderQueue[100];
-		RenderOrder* renderStart = 0;
-		RenderOrder* renderIter = 0;
-		RenderOrder* renderIterPrev = 0;
+		RenderOrder* renderStart;
+		RenderOrder* renderIter;
+		RenderOrder* renderIterPrev;
 		int renderQueueCount = 0;
 
 		Background* curBackground = 0;
 
-		Shader maskShader = { 0 };
-		int shTextureColorLoc = 0;
-		int shTextureMaskLoc = 0;
-
-		RenderTexture2D maskTex;
-		RenderTexture2D colorTex;
-
-		CameraRenderer(World* world) : BaseRenderer(world) {
-			resources = world->resources;
-		}
-
-		void initShaders() {
-			auto& cfg = world->resources->config;
-			colorTex = LoadRenderTexture(cfg.screenW, cfg.screenH);
-			maskTex = LoadRenderTexture(cfg.screenW, cfg.screenH);
-
-			//maskShader = LoadShaderFromMemory(vertexShaderSrc, fragmentShaderSrc);
-			maskShader = LoadShader(
-				"newdata/shaders/glsl330/mask.vs",
-				"newdata/shaders/glsl330/mask.fs"
-			);
-			// Get shader uniform locations
-			shTextureColorLoc = GetShaderLocation(maskShader, "texture0");
-			shTextureMaskLoc = GetShaderLocation(maskShader, "texture1");
-		}
+		CameraRenderer(World* world) : BaseRenderer(world) {}
 
 		void loadCamera(int newCameraId) override
 		{
@@ -72,35 +46,6 @@ namespace openAITD {
 				}
 			}
 			return false;
-		}
-
-		void renderMask(const raylib::Rectangle& r) {
-			BeginTextureMode(maskTex);
-			ClearBackground(BLACK);
-			BeginBlendMode(BLEND_ADDITIVE);
-			for (int camRoomIdx = 0; camRoomIdx < curCamera->rooms.size(); camRoomIdx++) {
-				if (renderIter->gobj->location.roomId != curCamera->rooms[camRoomIdx].roomId) continue;
-				for (int ovlIdx = 0; ovlIdx < curCamera->rooms[camRoomIdx].overlays.size(); ovlIdx++) {
-					auto& ovl = curCamera->rooms[camRoomIdx].overlays[ovlIdx];
-					if (checkOverlay(ovl, *renderIter->gobj)) {
-						/*DrawTexturePro(
-							curBackground->overlays[camRoomIdx][ovlIdx].texture, r, r, { 0, 0 }, 0, WHITE
-						);*/
-						renderRect(curBackground->overlays[camRoomIdx][ovlIdx].texture, r);
-					}
-				}
-			}
-			EndBlendMode();
-			EndTextureMode();
-
-			/*
-			BeginTextureMode(resources->screen.screenTex);
-			BeginBlendMode(BLEND_ADDITIVE);
-			//DrawTexturePro( maskTex.texture, r, r, { 0, 0 }, 0, WHITE );
-			DrawTextureRec(maskTex.texture, { 0, 0, (float)maskTex.texture.width, (float)-maskTex.texture.height }, { 0, 0 }, WHITE);
-			EndBlendMode();
-			EndTextureMode();
-			*/
 		}
 
 		void fillRenderOrder(RenderOrder& ord, GameObject& gobj)
@@ -165,52 +110,24 @@ namespace openAITD {
 			}
 		}
 
-		void renderRect(const Texture2D tex, const raylib::Rectangle& r, const bool upsideDown = false) {
-			Vector2 topLeft = { 
-				r.x / tex.width,
-				(upsideDown ? (tex.height - r.y): r.y) / tex.height
-			};
-			Vector2 botRight = {
-				(r.x+r.width) / tex.width,
-				(upsideDown? (tex.height - (r.y+r.height)) : (r.y + r.height)) / tex.height
-			};
-			
-			rlSetTexture(tex.id);
-			rlBegin(RL_QUADS);
-			//rlColor4ub(1,1,1,1);
-			//rlNormal3f(0.0f, 0.0f, 1.0f);
-			// Top-left corner for texture and quad
-			rlTexCoord2f(topLeft.x, topLeft.y);
-			rlVertex2f(r.x, r.y);
-			// Bottom-left corner for texture and quad
-			rlTexCoord2f(topLeft.x, botRight.y);
-			rlVertex2f(r.x, r.y + r.height);
-			// Bottom-right corner for texture and quad
-			rlTexCoord2f(botRight.x, botRight.y);
-			rlVertex2f(r.x + r.width, r.y + r.height);
-			// Top-right corner for texture and quad
-			rlTexCoord2f(botRight.x, topLeft.y);
-			rlVertex2f(r.x + r.width, r.y);
-			rlEnd();
-		}
-
 		void render() {
-			if (maskShader.id == 0) {
-				initShaders();
-			}
-
 			if (world->inDark) {
-				resources->screen.begin();
 				renderMessage();
-				resources->screen.end();
 				return;
 			}
 
-    		if (world->curStageId == -1 || world->curCameraId == -1) return;
+			if (world->curStageId == -1 || world->curCameraId == -1) return;
 			if (world->curStageId != curStageId || world->curCameraId != curCameraId) {
 				curStageId = world->curStageId;
 				loadCamera(world->curCameraId);
 			}
+
+			DrawTexturePro(
+				curBackground->texture,
+				{ 0, 0, (float)getScreenW(), (float)getScreenH() },
+				{ 0, 0, (float)getScreenW(), (float)getScreenH() },
+				{ 0, 0 }, 0, WHITE
+			);
 
 			/*
 			for (int i = 0; i < this->world->gobjects.size(); i++) {
@@ -289,22 +206,17 @@ namespace openAITD {
 
 			}
 
-			BeginTextureMode(resources->screen.screenTex);
-			ClearBackground(BLACK);
-
-			DrawTexturePro(
-				curBackground->texture,
-				{ 0, 0, (float)getScreenW(), (float)getScreenH() },
-				{ 0, 0, (float)getScreenW(), (float)getScreenH() },
-				{ 0, 0 }, 0, WHITE
-			);
-
-			EndTextureMode();
-
 			if (renderStart) {
 				int num = 1;
 				renderIter = renderStart;
 				while (true) {
+					BeginMode3D(mainCamera);
+					//rlSetMatrixModelview(curCamera->modelview);
+					rlSetMatrixProjection(perspective);
+					renderObject(*renderIter->gobj, WHITE);
+					//DrawBounds(renderIter->bb, GREEN);
+					EndMode3D();
+
 					//auto s = to_string(num)+" R" + to_string(it->obj->location.roomId);
 					//auto s = to_string(it->obj->);
 
@@ -314,38 +226,18 @@ namespace openAITD {
 						(renderIter->screenMax.x - renderIter->screenMin.x) + 1,
 						(renderIter->screenMax.y - renderIter->screenMin.y) + 1
 					};
-					raylib::Rectangle r2 = {
-						renderIter->screenMin.x,
-						GetScreenHeight() - renderIter->screenMin.y,
-						(renderIter->screenMax.x - renderIter->screenMin.x) + 1,
-						- (renderIter->screenMax.y - renderIter->screenMin.y) - 1
-					};
-					renderMask(r);
-					
-					BeginTextureMode(colorTex);
-					ClearBackground(BLANK);
-					BeginMode3D(mainCamera);
-					//rlSetMatrixModelview(curCamera->modelview);
-					rlSetMatrixProjection(perspective);
-					renderObject(*renderIter->gobj, WHITE);
-					//DrawBounds(renderIter->bb, GREEN);
-					EndMode3D();
-					EndTextureMode();
 
-					BeginTextureMode(resources->screen.screenTex);
-					BeginBlendMode(BLEND_ALPHA);
-					BeginShaderMode(maskShader);
-					SetShaderValueTexture(maskShader, shTextureColorLoc, colorTex.texture);
-					SetShaderValueTexture(maskShader, shTextureMaskLoc, maskTex.texture);
-					
-					//DrawTextureRec(colorTex.texture, { 0, 0, (float)colorTex.texture.width, ((float)-colorTex.texture.height) / 2 }, { 0, 0 }, WHITE);
-					renderRect(colorTex.texture, r, true);
-					DrawRectangleLinesEx(r2, 1, RED);
-
-					EndShaderMode();
-					EndBlendMode();
-					EndTextureMode();
-
+					for (int camRoomIdx = 0; camRoomIdx < curCamera->rooms.size(); camRoomIdx++) {
+						if (renderIter->gobj->location.roomId != curCamera->rooms[camRoomIdx].roomId) continue;
+						for (int ovlIdx = 0; ovlIdx < curCamera->rooms[camRoomIdx].overlays.size(); ovlIdx++) {
+							auto& ovl = curCamera->rooms[camRoomIdx].overlays[ovlIdx];
+							if (checkOverlay(ovl, *renderIter->gobj)) {
+								DrawTexturePro(
+									curBackground->overlays[camRoomIdx][ovlIdx].texture, r, r, { 0, 0 }, 0, WHITE
+								);
+							}
+						}
+					}
 					//it->marker = s;
 					num++;
 					renderIter = renderIter->next;
@@ -353,10 +245,7 @@ namespace openAITD {
 				}
 			}
 
-			BeginTextureMode(resources->screen.screenTex);
 			renderMessage();
-			EndTextureMode();
-			resources->screen.finalRender();
 
 			//for (auto it = renderQueue.begin(); it != renderQueue.end(); it++) {
 			//	DrawLine(it->screenMin.x, it->screenMin.y, it->screenMax.x, it->screenMin.y, RED);

@@ -112,7 +112,7 @@ namespace openAITD {
 					for (int ovlId = 0; ovlId < camRooms[cr].overlays.size(); ovlId++) {
 						path = getImgStagePath(cameraDir + "/mask_" + to_string(cr) + "_" + to_string(ovlId) + ".png");
 						auto mskImg = raylib::LoadImage(path.c_str());
-						bg.overlays[cr][ovlId] = generateOverlay(fullBgImg, mskImg);
+						bg.overlays[cr][ovlId] = generateOverlayMask(fullBgImg, mskImg);
 						UnloadImage(mskImg);
 					}
 				}
@@ -139,7 +139,21 @@ namespace openAITD {
 			return res;
 		}
 
-		BackgroundOverlay generateOverlay(Image& fullBg, Image& mask) {
+		BackgroundOverlay generateOverlayMask(Image& fullBg, Image& mask) {
+			Image maskImageScaled = resizeImg(mask, config->screenW, config->screenH);
+			Image resImg = { 0, config->screenW, config->screenH, 1, PIXELFORMAT_UNCOMPRESSED_GRAYSCALE };
+			int pixelCount = config->screenW * config->screenH;
+			resImg.data = new uint8_t[pixelCount];
+			for (int i = 0; i < pixelCount; i++) {
+				((uint8_t*)resImg.data)[i] = ((uint8_t*)maskImageScaled.data)[i * 2 + 1];
+			}
+			Texture2D result = LoadTextureFromImage(resImg);
+			UnloadImage(maskImageScaled);
+			UnloadImage(resImg);
+			return { {}, result };
+		}
+
+		BackgroundOverlay generateOverlayColored(Image& fullBg, Image& mask) {
 			Image maskImageScaled = resizeImg(mask, config->screenW, config->screenH);
 			Image resImg = { 0, config->screenW, config->screenH, 1, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8 };
 			int pixelCount = config->screenW * config->screenH;
@@ -155,6 +169,7 @@ namespace openAITD {
 			UnloadImage(resImg);
 			return { {}, result };
 		}
+
 
 	};
 
