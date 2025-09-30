@@ -29,3 +29,4 @@ int createVertexes(tinygltf::Model& m, const vector<Vector3>& vertexes);
 const VertexSkin addVertexSkin(tinygltf::Model& m, vector<unsigned char> vecBoneAffect);
 tinygltf::Primitive createPolyPrimitive(tinygltf::Model& m, const vector<unsigned int>& indices, int vertAccIdx, int material);
 tinygltf::Primitive createSpherePrim(tinygltf::Model& m, float radius, int vertCount, Vector3 pos, int material);
+tinygltf::Primitive createPipePrim(tinygltf::Model& m, Vector3 points[], float radius, int sides, int material);

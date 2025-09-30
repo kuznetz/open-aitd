@@ -506,6 +506,35 @@ void saveModelGLTF(const PakModel& model, vector<Animation*> animations, const s
             mesh.primitives.push_back(prim2);
         }
 
+        //Lines
+        for (int pIdx = 0; pIdx < model.primitives.size(); pIdx++)
+        {
+            auto& prim = model.primitives[pIdx];
+            if (prim.type != 0) continue;
+            if (prim.vertexIdxs.size() != 2) {
+                throw new exception("Line indexes not 2");
+            }
+            auto matIdx = getMaterialIdx(m, prim.colorIndex, prim.subType);
+            Vector3 points[2] = {
+                modelVerts[prim.vertexIdxs[0] / 6],
+                modelVerts[prim.vertexIdxs[1] / 6]
+            };
+            auto& prim2 = createPipePrim(m, points, 0.01f, 4, matIdx);
+            if (model.bones.size()) {
+                vector<u8> vecBoneAffect2(8);
+                for (int i = 0; i < 4; i++) {
+                    vecBoneAffect2[i] = vecBoneAffect[prim.vertexIdxs[0] / 6];
+                }
+                for (int i = 4; i < 8; i++) {
+                    vecBoneAffect2[i] = vecBoneAffect[prim.vertexIdxs[1] / 6];
+                }
+                auto vSkin2 = addVertexSkin(m, vecBoneAffect2);
+                prim2.attributes["JOINTS_0"] = vSkin2.jointsAccIdx;
+                prim2.attributes["WEIGHTS_0"] = vSkin2.weightsAccIdx;
+            }
+            mesh.primitives.push_back(prim2);
+        }
+
         m.meshes.push_back(mesh);
         auto meshIdx = m.meshes.size()-1;
 
