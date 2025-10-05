@@ -34,9 +34,12 @@ void ComputeUV(vector<Vector3>& allVertices, vector<int>& polyVertices, Vector3&
 
 int getMaterialIdx(tinygltf::Model& m, u8 colorIdx, u8 subType = 0)
 {
-    string matName = string("mat_")+ to_string(colorIdx) + "_" + to_string(subType);
+    //string matName = string("mat_")+ to_string(colorIdx) + "_" + to_string(subType);
+    string matName = string("mat_") + to_string(colorIdx);
     for (int i = 0; i < m.materials.size(); i++) {
-        if (m.materials[i].name == matName) return i;
+        if (m.materials[i].name == matName) {
+            return i;
+        }
     }
     tinygltf::Material newMat;
     newMat.name = matName;
@@ -514,12 +517,12 @@ void saveModelGLTF(const PakModel& model, vector<Animation*> animations, const s
             if (prim.vertexIdxs.size() != 2) {
                 throw new exception("Line indexes not 2");
             }
-            auto matIdx = getMaterialIdx(m, prim.colorIndex, prim.subType);
+            auto matIdx = getMaterialIdx(m, prim.subType, 0);
             Vector3 points[2] = {
                 modelVerts[prim.vertexIdxs[0] / 6],
                 modelVerts[prim.vertexIdxs[1] / 6]
             };
-            auto& prim2 = createPipePrim(m, points, 0.01f, 4, matIdx);
+            auto& prim2 = createPipePrim(m, points, 0.005f, 4, matIdx);
             if (model.bones.size()) {
                 vector<u8> vecBoneAffect2(8);
                 for (int i = 0; i < 4; i++) {
@@ -527,6 +530,32 @@ void saveModelGLTF(const PakModel& model, vector<Animation*> animations, const s
                 }
                 for (int i = 4; i < 8; i++) {
                     vecBoneAffect2[i] = vecBoneAffect[prim.vertexIdxs[1] / 6];
+                }
+                auto vSkin2 = addVertexSkin(m, vecBoneAffect2);
+                prim2.attributes["JOINTS_0"] = vSkin2.jointsAccIdx;
+                prim2.attributes["WEIGHTS_0"] = vSkin2.weightsAccIdx;
+            }
+            mesh.primitives.push_back(prim2);
+        }
+
+        //1x1 pixel, 2x2 square, NxN square, size depends projected z-value
+        for (int pIdx = 0; pIdx < model.primitives.size(); pIdx++)
+        {
+            auto& prim = model.primitives[pIdx];
+            float size = 0.01f;
+            if (prim.type == 2) {
+            } else if (prim.type == 6) {
+                size = 0.02f;
+            } else if (prim.type == 7) {
+                size = 0.1f;
+            } else continue;
+
+            auto matIdx = getMaterialIdx(m, prim.colorIndex, 0);
+            auto& prim2 = createCubePrim(m, modelVerts[prim.vertexIdxs[0] / 6], { size,size,size }, matIdx);
+            if (model.bones.size()) {
+                vector<u8> vecBoneAffect2(8);
+                for (int i = 0; i < 8; i++) {
+                    vecBoneAffect2[i] = vecBoneAffect[prim.vertexIdxs[0] / 6];
                 }
                 auto vSkin2 = addVertexSkin(m, vecBoneAffect2);
                 prim2.attributes["JOINTS_0"] = vSkin2.jointsAccIdx;
@@ -562,7 +591,7 @@ void saveModelGLTF(const PakModel& model, vector<Animation*> animations, const s
        false, // embedImages
        false, // embedBuffers
        false, // pretty print
-       false
+       false  // binary (glb)
     );
 
     Vector3 v1 = Vector3Transform({

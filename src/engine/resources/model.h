@@ -247,6 +247,9 @@ namespace openAITD {
             for (int i = 0; i < animations.size(); i++) {
                 auto& anim = animations[i];
                 int frameCount = ceil(anim.duration * fps);
+                if (frameCount <= 0) {
+                    frameCount = 1;
+                }
                 anim.bakedPoses.resize(frameCount);
                 //anim.bakedBounds.resize(frameCount);
                 anim.rootMotion.resize(frameCount);
@@ -335,7 +338,7 @@ namespace openAITD {
             unsigned char* fileData = LoadFileData(fileName, &dataSize);
 
             // glTF data loading
-            cgltf_options options = { cgltf_file_type_invalid };
+            cgltf_options options = { cgltf_file_type_gltf };
             options.file.read = LoadFileGLTFCallback;
             options.file.release = ReleaseFileGLTFCallback;
             cgltf_data* data = NULL;

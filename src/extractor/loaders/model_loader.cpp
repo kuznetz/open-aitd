@@ -49,8 +49,8 @@ void loadModelPrimitives(PakModel& body, char* data) {
 		case 0:
 		{
 			int numPoints = READ_LE_U8(data + i);
-			prim.subType = READ_LE_U8(data + i + 1);
-			prim.colorIndex = READ_LE_U8(data + i + 2);
+			prim.colorIndex = READ_LE_U8(data + i + 1);
+			prim.subType = READ_LE_U8(data + i + 2);
 			i += 3;
 
 			prim.vertexIdxs.resize(2);
