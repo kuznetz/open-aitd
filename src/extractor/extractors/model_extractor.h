@@ -3,7 +3,7 @@
 #include "structs/model.h"
 #include "structs/animation.h"
 #include <raymath.h>
-#include "TriangulatePolygon.h"
+#include "../utils/TriangulatePolygon.h"
 #include "../loaders/loaders.h"
 #include "../utils/my_gltf.h"
 #define NLOHMANN_JSON_NAMESPACE_NO_VERSION 1

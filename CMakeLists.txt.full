@@ -1,0 +1,59 @@
+cmake_minimum_required(VERSION 3.5)
+project(open-AITD CXX)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set(CMAKE_TOOLCHAIN_FILE "${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake")
+set(VCPKG_INSTALLED_DIR "vcpkg_installed")
+set(VCPKG_TARGET_TRIPLET "x64-windows") #x64-linux, x64-osx
+#vcpkg_installed\x64-windows\share
+list(APPEND CMAKE_PREFIX_PATH
+    "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}"
+)
+
+#
+find_package(PNG REQUIRED)
+find_package(zlib-ng CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
+find_package(raylib CONFIG REQUIRED)
+find_package(lua REQUIRED)
+
+#LUACPP
+add_subdirectory( ${CMAKE_SOURCE_DIR}/libs/luacpp ${CMAKE_CURRENT_BINARY_DIR}/libs/luacpp )
+
+# Adding our source files
+# set(PROJECT_INCLUDE "${CMAKE_CURRENT_LIST_DIR}/src/")
+
+add_library(libextractor STATIC)
+file(GLOB_RECURSE EXTRACTOR_SOURCES CONFIGURE_DEPENDS "src/extractor/*.cpp" "src/extractor/*.h" "src/extractor/*.hpp")
+target_sources(libextractor PRIVATE ${EXTRACTOR_SOURCES})
+target_include_directories(libextractor PRIVATE ${ZLIB_INCLUDE_DIR} ${PNG_INCLUDE_DIR} ${GLFW_INCLUDE})
+target_include_directories(libextractor PRIVATE ${CMAKE_SOURCE_DIR}/libs/includes)
+target_link_libraries(libextractor PRIVATE png_static raylib ZLIB::ZLIB )
+target_link_libraries(main PRIVATE zlib-ng::zlib)
+
+add_executable(extractor_cli)
+#target_compile_definitions(${PROJECT_NAME} PRIVATE XXX)
+target_sources(extractor_cli PRIVATE "src/extractor-cli/main.cpp" )
+target_include_directories(extractor_cli PRIVATE ${ZLIB_INCLUDE_DIR} ${PNG_INCLUDE_DIR} ${GLFW_INCLUDE})
+target_include_directories(extractor_cli PRIVATE ${CMAKE_SOURCE_DIR}/libs/includes)
+target_link_libraries(extractor_cli PRIVATE png_static raylib ZLIB::ZLIB libextractor )
+set_property(TARGET extractor_cli PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/data")
+
+#add_executable(open-aitd) WIN32
+#add_executable(open-aitd)
+#file(GLOB_RECURSE AITD_SOURCES CONFIGURE_DEPENDS "src/engine/*.cpp" "src/engine/*.h" "src/engine/*.hpp")
+#target_sources(open-aitd PRIVATE ${AITD_SOURCES} )
+#target_include_directories(open-aitd PRIVATE ${ZLIB_INCLUDE_DIR} ${PNG_INCLUDE_DIR} ${GLFW_INCLUDE})
+#target_include_directories(open-aitd PRIVATE ${CMAKE_SOURCE_DIR}/libs/includes)
+#target_link_libraries(open-aitd PRIVATE png_static raylib ZLIB::ZLIB libextractor lua_static luacpp_static)
+#set_property(TARGET open-aitd PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/data")
+
+#add_executable(open-aitd) WIN32
+#add_executable(open-aitd-tests)
+#file(GLOB_RECURSE AITD_SOURCES CONFIGURE_DEPENDS "src/tests/*.cpp" "src/tests/*.h" "src/tests/*.hpp")
+#target_sources(open-aitd-tests PRIVATE ${AITD_SOURCES} )
+#target_include_directories(open-aitd-tests PRIVATE ${ZLIB_INCLUDE_DIR} ${PNG_INCLUDE_DIR} ${GLFW_INCLUDE})
+#target_include_directories(open-aitd-tests PRIVATE ${CMAKE_SOURCE_DIR}/libs/includes)
+#target_link_libraries(open-aitd-tests PRIVATE png_static raylib ZLIB::ZLIB libextractor )
+#set_property(TARGET open-aitd-tests PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/data")

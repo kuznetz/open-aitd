@@ -1,6 +1,12 @@
 [submodule "libs/raylib"]
 	path = libs/raylib
 	url = https://github.com/raysan5/raylib.git
-[submodule "libs/libpng"]
-	path = libs/libpng
-	url = https://github.com/pnggroup/libpng.git
+[submodule "libs/luacpp"]
+	path = libs/luacpp
+	url = https://github.com/ouonline/luacpp
+[submodule "avir"]
+	path = avir
+	url = https://github.com/avaneev/avir
+[submodule "libs/avir"]
+	path = libs/avir
+	url = https://github.com/avaneev/avir
