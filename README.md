@@ -3,7 +3,7 @@ A converter of resources from Alone In The Dark 1992 to open formats and an engi
 
 The project does not contain any data from the original game, and a legal copy of Alone In The Dark 1992 is required to run it.
 
-The project is currently unplayable. Ready-made builds, build and installation instructions will appear when the game becomes passable.
+The project is currently unplayable.
 
 Based on sources:
 - https://github.com/jmimu/FITD
@@ -22,6 +22,14 @@ FITD uses algorithms identical to the original, in open-AITD:
 - Alternative camera algorithm: the engine tries to select a camera facing the character's direction
 - Character run on separate key
 
+## Building release (Windows)
+- Install MS Build Tools 2022 (with cmake, vcpkg)
+- Clone this repo with submodules
+- Run in dir with sources (via x64 Native Tools Command Prompt for VS 2022):
+```
+build-release.cmd
+```
+
 ## Develop environment (Windows)
 - Install Visual Studio Code
 - Install MS Build Tools 2022 (with cmake, vcpkg)
@@ -38,3 +46,4 @@ start code
 ```
 - run in VSCode "Cmake configure"
 - then run in VSCode "Debug open-aitd"
+
