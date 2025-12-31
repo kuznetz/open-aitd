@@ -21,3 +21,20 @@ FITD uses algorithms identical to the original, in open-AITD:
 - Background images can be any size, background masks has alpha channel
 - Alternative camera algorithm: the engine tries to select a camera facing the character's direction
 - Character run on separate key
+
+## Develop environment (Windows)
+- Install Visual Studio Code
+- Install MS Build Tools 2022 (with cmake, vcpkg)
+- Clone this repo with submodules
+- Run in Prompt for VS 2022 (in dir with sources):
+```
+vcpkg install
+```
+- Open dir in VSCode with environment, for example:
+```
+call "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
+cd "C:\Program Files\Microsoft VS Code"
+start code
+```
+- run in VSCode "Cmake configure"
+- then run in VSCode "Debug open-aitd"
