@@ -3,7 +3,7 @@
 #include <string>
 #include <cstring>
 #include "../raylib-cpp.h"
-#include <cgltf.h>
+#include <external/cgltf.h>
 #include "bounds.h"
 
 //using namespace raylib;

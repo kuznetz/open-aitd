@@ -6,7 +6,37 @@ project(open-AITD CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Установите путь к vcpkg установленным пакетам
+#Release
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    # Disable asserts
+    add_compile_definitions(NDEBUG)
+	# For now - disable warns
+	add_compile_definitions(_CRT_SECURE_NO_WARNINGS)	
+    if(MSVC)
+        add_compile_options(/O2 /Ob2 /Oi /Ot /Oy /GL)
+        set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /LTCG")
+        set(CMAKE_STATIC_LINKER_FLAGS_RELEASE "${CMAKE_STATIC_LINKER_FLAGS_RELEASE} /LTCG")
+        add_compile_options(/sdl /guard:cf)
+    else()
+        add_compile_options(-O3 -march=native -flto=auto -fomit-frame-pointer)
+        add_compile_options(-D_FORTIFY_SOURCE=2 -fstack-protector-strong)
+        set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -Wl,-z,relro,-z,now")
+        if(ENABLE_LTO)
+            add_compile_options(-flto)
+            set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -flto")
+        endif()
+    endif()
+#Debug
+else()
+    add_compile_definitions(_DEBUG)
+    if(MSVC)
+        add_compile_options(/Zi /Od)
+    else()
+        add_compile_options(-g -O0)
+    endif()
+endif()
+
+# vcpkg path
 set(VCPKG_INSTALLED_DIR "vcpkg_installed")
 set(VCPKG_TARGET_TRIPLET "x64-windows") #x64-linux, x64-osx
 list(APPEND CMAKE_PREFIX_PATH 
@@ -44,8 +74,8 @@ add_subdirectory( ${CMAKE_SOURCE_DIR}/libs/raylib ${CMAKE_CURRENT_BINARY_DIR}/ra
 
 add_library(libextractor STATIC)
 file(GLOB_RECURSE EXTRACTOR_SOURCES CONFIGURE_DEPENDS "src/extractor/*.cpp" "src/extractor/*.h" "src/extractor/*.hpp")
-target_sources(libextractor PRIVATE ${EXTRACTOR_SOURCES})
-target_include_directories(libextractor PRIVATE ${ZLIB_INCLUDE_DIR} ${PNG_INCLUDE_DIR} ${GLFW_INCLUDE})
+target_sources(libextractor PRIVATE ${EXTRACTOR_SOURCES}  ${RAYLIB_SOURCES})
+target_include_directories(libextractor PRIVATE ${ZLIB_INCLUDE_DIR} ${PNG_INCLUDE_DIR} ${GLFW_INCLUDE} ${RAYLIB_INCLUDE_DIR})
 target_link_libraries(libextractor PRIVATE PNG::PNG ZLIB::ZLIB )
 
 add_executable(extractor)

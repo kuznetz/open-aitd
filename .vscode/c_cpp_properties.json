@@ -4,7 +4,10 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/vcpkg_installed/x64-windows/include/**",
-                "${workspaceFolder}/include/**"
+                "${workspaceFolder}/include/**",
+                "${workspaceFolder}/libs/luacpp/include/**",
+                "${workspaceFolder}/libs/raylib/src/**",
+                "${workspaceFolder}/libs/avir/**",
 //                "${env:INCLUDE}",  // MSVC system includes
 //                "C:/Program Files (x86)/Windows Kits/10/Include/**"
             ],
