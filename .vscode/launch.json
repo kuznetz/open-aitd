@@ -13,13 +13,25 @@
             "name": "Debug Extractor",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/Debug/extractor_cli.exe",
+            "program": "${workspaceFolder}/build/Debug/extractor.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
             "console": "integratedTerminal",
             "preLaunchTask": "CMake: build extractor"
+        },
+        {
+            "name": "Debug openAITD",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/Debug/open-aitd.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "console": "integratedTerminal",
+            "preLaunchTask": "CMake: build open-aitd"
         }
     ]
 }

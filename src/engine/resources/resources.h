@@ -9,7 +9,7 @@
 #include "models.h"
 #include "backgrounds.h"
 #include "screen.h"
-#include "../raylib.h"
+#include "../raylib-cpp.h"
 
 using namespace std;
 namespace openAITD {

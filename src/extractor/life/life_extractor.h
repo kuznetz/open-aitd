@@ -26,8 +26,8 @@ inline s16 read16(lifeBuffer& buf) {
 }
 
 inline parseLifeExpr getParseExpr(EvalEnum::EvalEnum l) {
-	for (int i = 0; i < LifeExprParams.size(); i++) {
-		if (LifeExprParams[i].type == l) return LifeExprParams[i];
+	for (int i = 0; i < LifeExprParams_V1.size(); i++) {
+		if (LifeExprParams_V1[i].type == l) return LifeExprParams_V1[i];
 	}
 	throw new exception("Not found");
 }
@@ -47,7 +47,7 @@ inline LifeExpr readExpr(lifeBuffer& buf) {
 	}
 	varTypeN &= 0x7FFF;
 
-	auto& parse = LifeExprParams[varTypeN]; //getParseExpr(ExprTable_v1[varTypeN]);
+	auto& parse = LifeExprParams_V1[varTypeN]; //getParseExpr(ExprTable_v1[varTypeN]);
 	result.type = &parse;
 
 	//if (result.type == LifeEnum::READ) {}
@@ -71,13 +71,13 @@ inline LifeExpr readExpr(lifeBuffer& buf) {
 }
 
 inline parseLifeInstruction getParseLife(LifeEnum::LifeEnum l) {
-	for (int i = 0; i < LifeParams.size(); i++) {
-		if (LifeParams[i].type == l) return LifeParams[i];
+	for (int i = 0; i < LifeParams_V1.size(); i++) {
+		if (LifeParams_V1[i].type == l) return LifeParams_V1[i];
 	}
 	throw new exception("Not found");
 }
 
-inline LifeInstruction readInstruction(lifeBuffer &buf) {
+inline LifeInstruction readInstruction(lifeBuffer &buf, bool floppy = false) {
 	LifeInstruction result;
 	u16 opCodeN = read16(buf);
 
@@ -88,10 +88,14 @@ inline LifeInstruction readInstruction(lifeBuffer &buf) {
 	}
 	opCodeN &= 0x7FFF;
 
-	auto& parse = LifeParams[opCodeN]; //getParseLife(LifeTable_v1[opCodeN]);
-	result.type = &parse;
+	auto* parse = &LifeParams_V1[opCodeN]; //getParseLife(LifeTable_v1[opCodeN]);
+	if (floppy && parse->type == LifeEnum::READ) {
+		parse = &LifeParams_Floppy_V1;
+	}
 
-	if (parse.type == LifeEnum::MULTI_CASE)
+
+	result.type = parse;
+	if (parse->type == LifeEnum::MULTI_CASE)
 	{
 		int numCases = read16(buf);
 		for (int n = 0; n < numCases; n++)
@@ -104,10 +108,10 @@ inline LifeInstruction readInstruction(lifeBuffer &buf) {
 	}
 	else
 	{
-		for (int i = 0; i < parse.arguments.size(); i++)
+		for (int i = 0; i < parse->arguments.size(); i++)
 		{
 			LifeExpr arg;
-			switch (parse.arguments[i]) {
+			switch (parse->arguments[i]) {
 			case lifeConst:
 				arg.constVal = read16(buf);
 				result.arguments.push_back(arg);
@@ -126,7 +130,7 @@ inline LifeInstruction readInstruction(lifeBuffer &buf) {
 	return result;
 }
 
-inline vector<LifeInstruction> loadLife(u8* data, int size)
+inline vector<LifeInstruction> loadLife(u8* data, int size, bool floppy = false)
 {
 	lifeBuffer buf = {
 		data,
@@ -135,7 +139,7 @@ inline vector<LifeInstruction> loadLife(u8* data, int size)
 	vector<LifeInstruction> life;
 	while (true) {
 		int pos = buf.data - data;
-		auto& oper = readInstruction(buf);
+		auto& oper = readInstruction(buf, floppy);
 		oper.Size = (buf.data - data) - pos;
 		oper.Position = pos;
 		life.push_back(oper);
@@ -168,7 +172,7 @@ inline vector<LifeInstruction> loadLife(u8* data, int size)
 	return life;
 }
 
-inline void extractLife(string fname, string outFile)
+inline void extractLife(string fname, string outFile, bool floppy = false)
 {
 	PakFile pak(fname);
 	vector<vector<LifeInstruction>> lifes;
@@ -177,7 +181,7 @@ inline void extractLife(string fname, string outFile)
 	for (int i = 0; i < pak.headers.size(); i++)
 	{
 		auto& data = pak.readBlock(i);
-		lifes.push_back(loadLife(data.data(), pak.headers[i].uncompressedSize));
+		lifes.push_back(loadLife(data.data(), pak.headers[i].uncompressedSize, floppy));
 		auto& life = lifes.back();
 
 		LifeInstructionsP lifep;
@@ -219,16 +223,16 @@ inline string to_hex(int i) {
 inline void dumpInstructions(string outFile) {
 	ofstream out(outFile, ios::trunc | ios::out);
 	out << "EXPR:\n";
-	for (int j = 0; j < LifeExprParams.size(); j++)
+	for (int j = 0; j < LifeExprParams_V1.size(); j++)
 	{
-		auto& e = LifeExprParams[j];
+		auto& e = LifeExprParams_V1[j];
 		out << e.typeStr << " " << to_string(j) << " " << to_hex(j) << "\n";
 	}
 
 	out << "\nLIFE:\n";
-	for (int j = 0; j < LifeParams.size(); j++)
+	for (int j = 0; j < LifeParams_V1.size(); j++)
 	{
-		auto& e = LifeParams[j];
+		auto& e = LifeParams_V1[j];
 		out << e.typeStr << " " << to_string(j) << " " << to_hex(j) << "\n";
 	}
 	out.close();

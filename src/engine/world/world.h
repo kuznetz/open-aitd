@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <vector>
 #include <string>
-#include "../raylib.h"
+#include "../raylib-cpp.h"
 #include "game_objects.h"
 #include "../resources/resources.h"
 

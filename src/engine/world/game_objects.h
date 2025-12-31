@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <vector>
 #include <string>
-#include "../raylib.h"
+#include "../raylib-cpp.h"
 #include "../resources/resources.h"
 
 using namespace std;

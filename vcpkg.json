@@ -6,7 +6,6 @@
   "dependencies": [
     "zlib-ng",
     "libpng",
-    "raylib",
     "lua",
     "nlohmann-json",
 	"tinygltf"

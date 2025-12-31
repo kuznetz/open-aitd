@@ -6,20 +6,32 @@
             "type": "shell",
             "command": "cmake",
             "args": [
-                "--build",
-                "${workspaceFolder}/build",
-                "--target",
-                "extractor_cli",                
-                "--config",
-                "Debug",
-                "--parallel",
-                "8"
+                "--build", "${workspaceFolder}/build",
+                "--target", "extractor",                
+                "--config", "Debug",
+                "--parallel", "8"
             ],
             "group": "build",
             "presentation": {
                 "reveal": "always"
             },
             "problemMatcher": "$msCompile"
-        }        
+        },
+        {
+            "label": "CMake: build open-aitd",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build", "${workspaceFolder}/build",
+                "--target", "open-aitd",
+                "--config", "Debug",
+                "--parallel", "8"
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always"
+            },
+            "problemMatcher": "$msCompile"
+        }          
     ]	
 }

@@ -3,7 +3,7 @@
 #include <map>
 #include <string>
 
-#include "../raylib.h"
+#include "../raylib-cpp.h"
 #include "bounds.h"
 #include "config.h"
 #include "model.h"

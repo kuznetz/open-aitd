@@ -3,7 +3,7 @@
 #include <string>
 #include "../world/world.h"
 #include "../resources/resources.h"
-#include "../raylib.h"
+#include "../raylib-cpp.h"
 
 using namespace std;
 namespace openAITD {

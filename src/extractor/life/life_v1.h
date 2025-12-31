@@ -1,6 +1,6 @@
 ﻿#include "../structs/life.h"
 
-inline const vector<parseLifeInstruction> LifeParams =
+inline const vector<parseLifeInstruction> LifeParams_V1 =
 {
 	{ LifeEnum::DO_MOVE, "DO_MOVE", { }, true},
 	{ LifeEnum::ANIM_ONCE, "SET_ANIM_ONCE", { lifeConst, lifeConst }, true},
@@ -37,7 +37,8 @@ inline const vector<parseLifeInstruction> LifeParams =
 	{ LifeEnum::DELETE_OBJ, "DELETE_OBJ", { lifeConst }},
 	{ LifeEnum::TAKE, "TAKE", { lifeConst }},
 	{ LifeEnum::SET_IN_HAND, "SET_IN_HAND", { lifeConst }},
-	{ LifeEnum::READ, "READ", { lifeConst, lifeConst }}, //3rd lifeConst in cd version
+	//{ LifeEnum::READ, "READ", { lifeConst, lifeConst }}, // !!! floppy version
+	{ LifeEnum::READ, "READ_CD", { lifeConst, lifeConst, lifeConst }}, // !!! cd version
 	{ LifeEnum::SET_ANIM_SOUND, "SET_ANIM_SOUND", { lifeExpr, lifeConst, lifeConst }, true},
 	{ LifeEnum::SPECIAL, "SPECIAL", { lifeConst }},
 	{ LifeEnum::DO_REAL_ZV, "DO_REAL_ZV", { }, true},
@@ -113,8 +114,12 @@ inline const vector<parseLifeInstruction> LifeParams =
 	{ LifeEnum::STOP_CLUT, "STOP_CLUT", { }, true },
 };
 
+//floppy version of read
+inline const parseLifeInstruction LifeParams_Floppy_V1 = 
+	{ LifeEnum::READ, "READ", { lifeConst, lifeConst }};
+
 // Start by 0
-inline const vector<parseLifeExpr> LifeExprParams =
+inline const vector<parseLifeExpr> LifeExprParams_V1 =
 {
 	{ EvalEnum::GET, "GET", { lifeConst }},
 	{ EvalEnum::ACTOR_COLLIDER, "ACTOR_COLLIDER", { }, true },

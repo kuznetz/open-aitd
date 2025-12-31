@@ -2,8 +2,8 @@
 #include <vector>
 #include <string>
 #include <cstring>
-#include "../raylib.h"
-#include <external/cgltf.h>
+#include "../raylib-cpp.h"
+#include <cgltf.h>
 #include "bounds.h"
 
 //using namespace raylib;

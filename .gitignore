@@ -3,3 +3,5 @@ CMakeSettings.json
 .idea/
 cmake-build-debug/
 build/
+original
+data
