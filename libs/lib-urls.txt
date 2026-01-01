@@ -1,11 +1,8 @@
-In vcpkg.json:
 zlib-ng-2.2.4 - https://github.com/zlib-ng/zlib-ng/releases/tag/2.2.4
-raylib - 5.5 - https://github.com/raysan5/raylib/releases/tag/5.5 (https://www.raylib.com/)
 libpng - libpng-1.6.48 - https://github.com/pnggroup/libpng
-lua-5.4.7 - https://lua.org/download.html
 json.hpp, json_fwd.hpp - 3.11.3 - https://github.com/nlohmann/json
-
-In submodules:
+lua-5.4.7 - https://lua.org/download.html
 luacpp - Commit d84822c - https://github.com/ouonline/luacpp
 tiny_gltf.h - https://github.com/syoyo/tinygltf
 avir - 3.0 - https://github.com/avaneev/avir
+raylib - 5.5 - https://github.com/raysan5/raylib/releases/tag/5.5 (https://www.raylib.com/)

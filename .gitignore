@@ -4,5 +4,6 @@ CMakeSettings.json
 cmake-build-debug/
 build/
 build-release/
+dist/
 original
 data

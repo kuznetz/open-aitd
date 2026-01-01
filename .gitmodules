@@ -10,3 +10,18 @@
 [submodule "libs/avir"]
 	path = libs/avir
 	url = https://github.com/avaneev/avir
+[submodule "libs/zlib-ng"]
+	path = libs/zlib-ng
+	url = https://github.com/zlib-ng/zlib-ng.git
+[submodule "libs/libpng"]
+	path = libs/libpng
+	url = https://github.com/pnggroup/libpng.git
+[submodule "libs/lua"]
+	path = libs/lua
+	url = https://github.com/lua/lua
+[submodule "libs/tinygltf"]
+	path = libs/tinygltf
+	url = https://github.com/syoyo/tinygltf
+[submodule "libs/json"]
+	path = libs/json
+	url = https://github.com/nlohmann/json.git
