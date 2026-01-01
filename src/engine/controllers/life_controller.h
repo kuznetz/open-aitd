@@ -185,7 +185,7 @@ namespace openAITD {
 				}, "ACTOR_COLLIDER");
 			lua->CreateFunction([this](int obj) -> int {
 				return this->world->gobjects[obj].physics.zoneTriggered;
-				}, "TRIGGER_COLLIDER");			
+				}, "TRIGGER_COLLIDER");
 
 			lua->CreateFunction([this](int obj) -> int {
 				auto hb = this->world->gobjects[obj].damage.hitBy;
@@ -197,7 +197,7 @@ namespace openAITD {
 				}, "HIT_TO");
 			lua->CreateFunction([this](int obj) -> int {
 				return this->world->gobjects[obj].damage.damage;
-				}, "HIT_DAMAGE");			
+				}, "HIT_DAMAGE");
 
 			lua->CreateFunction([this](int obj) -> int {
 				//return this->world->gobjects[obj].animation.scriptAnimId;
@@ -208,7 +208,7 @@ namespace openAITD {
 				}, "END_ANIM");
 			lua->CreateFunction([this](int obj, int animId, int param) -> int {
 				return 1;
-				}, "TEST_ZV_END_ANIM");			
+				}, "TEST_ZV_END_ANIM");
 
 			lua->CreateFunction([this](int obj) -> int {
 				return this->world->gobjects[obj].animation.animFrame;
@@ -510,12 +510,16 @@ namespace openAITD {
 			//Sound & music
 			lua->CreateFunction([this](int obj, int sampleId, int animId, int animFrame) {
 				//TODO: remember frame, not play in life
-				if (this->world->gobjects[obj].animation.id != animId) return;
-				if (this->world->gobjects[obj].animation.animTime != animFrame) return;
-				//cout << "SET_ANIM_SOUND " << sampleId << endl;
+				GOAnimation& curAnim = this->world->gobjects[obj].animation;
+				if (curAnim.id != animId) return;
+				if (curAnim.keyFrameSoundIdx == animFrame) return;
+				if (curAnim.keyFrameIdx != animFrame) return;
+				curAnim.keyFrameSoundIdx = animFrame;
+				resources->audio.PlaySound(sampleId);
 				}, "SET_ANIM_SOUND");
 			lua->CreateFunction([this](int sampleId) {
 				//cout << "SOUND " << sampleId << endl;
+				resources->audio.PlaySound(sampleId);
 				}, "SOUND");
 			//Set Random sound frequency
 			lua->CreateFunction([this](int freqDiff) {

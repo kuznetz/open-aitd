@@ -9,6 +9,7 @@
 #include "models.h"
 #include "backgrounds.h"
 #include "screen.h"
+#include "audio.h"
 #include "../raylib-cpp.h"
 
 using namespace std;
@@ -25,6 +26,7 @@ namespace openAITD {
 		RModels models;
 		Backgrounds backgrounds;
 		Screen screen;
+		Audio audio;
 
 		Resources() {
 			models.config = &config;
