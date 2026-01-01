@@ -84,7 +84,11 @@ namespace openAITD {
 				auto& curFrame = objAni.animFrame;
 
                 //For logic
-                objAni.keyFrameIdx = mdl->model.getKeyFrame(mdlAnim, objAni.animTime);
+                auto newFrameIdx = mdl->model.getKeyFrame(mdlAnim, objAni.animTime);
+                if (newFrameIdx != objAni.keyFrameIdx) {
+                    objAni.keyFrameSoundIdx = -1;
+                    objAni.keyFrameIdx = mdl->model.getKeyFrame(mdlAnim, objAni.animTime);
+                }
 
                 auto lastFrame = mdlAnim.bakedPoses.size() - 1;
                 if (curFrame >= lastFrame) {

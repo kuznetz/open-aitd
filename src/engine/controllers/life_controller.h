@@ -546,7 +546,7 @@ namespace openAITD {
 				this->world->picture.id = picId;
 				this->world->picture.curTime = 0;
 				this->world->picture.delay = delay / 30.;
-				this->world->picture.sampleId = sampleId;
+				resources->audio.PlaySound(sampleId);
 				}, "PICTURE");			
 			lua->CreateFunction([this](int light) {
 				this->world->inDark = !light;

@@ -37,7 +37,6 @@ namespace openAITD {
 		int id = -1;
 		float curTime;
 		float delay;
-		int sampleId;
 	};
 
 	//Store all dynamic data in game
