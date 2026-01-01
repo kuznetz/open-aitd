@@ -1,6 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
-message(STATUS "VCPKG_ROOT = $ENV{VCPKG_ROOT}")
-set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake")
+cmake_minimum_required(VERSION 3.10)
 
 project(open-AITD CXX)
 set(CMAKE_CXX_STANDARD 17)
@@ -36,28 +34,31 @@ else()
     endif()
 endif()
 
-# vcpkg path
-set(VCPKG_INSTALLED_DIR "vcpkg_installed")
-set(VCPKG_TARGET_TRIPLET "x64-windows") #x64-linux, x64-osx
-list(APPEND CMAKE_PREFIX_PATH 
-    "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}"
-    "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share"
-)
+#ZLIB
+set(BUILD_SHARED_LIBS OFF)
+set(BUILD_TESTING OFF)
+set(ZLIB_COMPAT ON)
+#find_package(zlib-ng CONFIG REQUIRED PATHS "${CMAKE_SOURCE_DIR}/libs/zlib-ng")
+add_subdirectory( ${CMAKE_SOURCE_DIR}/libs/zlib-ng ${CMAKE_CURRENT_BINARY_DIR}/zlib-ng EXCLUDE_FROM_ALL)
+set(ZLIB_FOUND TRUE)
+set(ZLIB_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/zlib-ng)
+set(ZLIB_LIBRARY zlibstatic)
+#add_library(ZLIB::ZLIB ALIAS zlibstatic)
+add_library(ZLIB::ZLIB INTERFACE IMPORTED)
+target_link_libraries(ZLIB::ZLIB INTERFACE zlibstatic)
 
-#VCPKG
-find_package(PNG CONFIG REQUIRED)
-find_package(zlib-ng CONFIG REQUIRED)
-find_package(nlohmann_json CONFIG REQUIRED)
-#find_package(raylib CONFIG REQUIRED)
+#PNG
+set(PNG_SHARED OFF)
+set(PNG_TESTS OFF)
+set(PNG_TOOLS OFF)
+set(PNG_BUILD_ZLIB OFF)
+#find_package(PNG CONFIG REQUIRED PATHS "${CMAKE_SOURCE_DIR}/libs/png")
+add_subdirectory( ${CMAKE_SOURCE_DIR}/libs/png ${CMAKE_CURRENT_BINARY_DIR}/png EXCLUDE_FROM_ALL)
+add_library(PNG::PNG ALIAS png_static)
 
 #LUA
-set(LUA_INCLUDE_DIR "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include")
-set(LUA_LIBRARIES "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib")
-#set(COMPILE_AS_CPP ON)
-find_package(Lua REQUIRED)
-message(STATUS "Lua version: ${LUA_VERSION_STRING}")
-message(STATUS "Lua include dir: ${LUA_INCLUDE_DIR}")
-message(STATUS "Lua libraries: ${LUA_LIBRARIES}")
+add_subdirectory( ${CMAKE_SOURCE_DIR}/libs/lua2 ${CMAKE_CURRENT_BINARY_DIR}/lua EXCLUDE_FROM_ALL)
+set(LUA_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/libs/lua2/src")
 
 #LUACPP
 #add_subdirectory( ${CMAKE_SOURCE_DIR}/libs/luacpp ${CMAKE_CURRENT_BINARY_DIR}/luacpp )
@@ -68,28 +69,55 @@ file(GLOB_RECURSE LUACPP_SOURCES CONFIGURE_DEPENDS "libs/luacpp/src/*.cpp")
 set(RAYLIB_INCLUDE_DIR "libs/raylib/src")
 set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE) # don't build the supplied examples
 set(BUILD_GAMES    OFF CACHE BOOL "" FORCE) # don't build the supplied example games
-add_subdirectory( ${CMAKE_SOURCE_DIR}/libs/raylib ${CMAKE_CURRENT_BINARY_DIR}/raylib )
+add_subdirectory( ${CMAKE_SOURCE_DIR}/libs/raylib ${CMAKE_CURRENT_BINARY_DIR}/raylib EXCLUDE_FROM_ALL)
 #file(GLOB_RECURSE RAYLIB_SOURCES CONFIGURE_DEPENDS "libs/raylib/src/*.c")
 
+#JSON
+set(COMPILE_AS_CPP ON)
+add_subdirectory( ${CMAKE_SOURCE_DIR}/libs/json ${CMAKE_CURRENT_BINARY_DIR}/json EXCLUDE_FROM_ALL)
+set(JSON_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/libs/json/include")
+
+#TINYGLTF
+add_subdirectory( ${CMAKE_SOURCE_DIR}/libs/tinygltf ${CMAKE_CURRENT_BINARY_DIR}/tinygltf EXCLUDE_FROM_ALL)
+set(TINYGLTF_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/libs/tinygltf")
+
+set(ALL_INCLUDES 
+    ${ZLIB_INCLUDE_DIR}
+    ${PNG_INCLUDE_DIR}
+    ${GLFW_INCLUDE}
+    ${LUA_INCLUDE_DIR}
+    ${LUACPP_INCLUDE_DIR}
+    ${RAYLIB_INCLUDE_DIR}
+    ${JSON_INCLUDE_DIR}
+    ${TINYGLTF_INCLUDE_DIR})
 
 add_library(libextractor STATIC)
 file(GLOB_RECURSE EXTRACTOR_SOURCES CONFIGURE_DEPENDS "src/extractor/*.cpp" "src/extractor/*.h" "src/extractor/*.hpp")
 target_sources(libextractor PRIVATE ${EXTRACTOR_SOURCES}  ${RAYLIB_SOURCES})
-target_include_directories(libextractor PRIVATE ${ZLIB_INCLUDE_DIR} ${PNG_INCLUDE_DIR} ${GLFW_INCLUDE} ${RAYLIB_INCLUDE_DIR})
+target_include_directories(libextractor PRIVATE ${ALL_INCLUDES})
 target_link_libraries(libextractor PRIVATE PNG::PNG ZLIB::ZLIB )
 
 add_executable(extractor)
 #target_compile_definitions(${PROJECT_NAME} PRIVATE XXX)
 target_sources(extractor PRIVATE "src/extractor-cli/main.cpp" )
-target_include_directories(extractor PRIVATE ${ZLIB_INCLUDE_DIR} ${PNG_INCLUDE_DIR} ${GLFW_INCLUDE})
-target_include_directories(extractor PRIVATE ${CMAKE_SOURCE_DIR}/libs/includes)
+target_include_directories(extractor PRIVATE ${ALL_INCLUDES})
 target_link_libraries(extractor PRIVATE PNG::PNG ZLIB::ZLIB libextractor )
 set_property(TARGET extractor PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/data")
 
 add_executable(open-aitd)
 file(GLOB_RECURSE AITD_SOURCES CONFIGURE_DEPENDS "src/engine/*.cpp" "src/engine/*.h" "src/engine/*.hpp")
 target_sources(open-aitd PRIVATE ${AITD_SOURCES} ${LUACPP_SOURCES} ${RAYLIB_SOURCES})
-target_include_directories(open-aitd PRIVATE ${ZLIB_INCLUDE_DIR} ${PNG_INCLUDE_DIR} ${GLFW_INCLUDE} ${LUA_INCLUDE_DIR} ${LUACPP_INCLUDE_DIR} ${RAYLIB_INCLUDE_DIR})
+target_include_directories(open-aitd PRIVATE ${ALL_INCLUDES})
 #target_include_directories(open-aitd PRIVATE ${CMAKE_SOURCE_DIR}/libs/includes)
-target_link_libraries(open-aitd PRIVATE PNG::PNG ZLIB::ZLIB libextractor lua raylib)
+target_link_libraries(open-aitd PRIVATE PNG::PNG ZLIB::ZLIB lua::lua libextractor raylib)
 set_property(TARGET open-aitd PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/data")
+
+#INSTALL
+install(TARGETS open-aitd RUNTIME DESTINATION .)
+install(TARGETS extractor RUNTIME DESTINATION .)
+install(DIRECTORY newdata/ DESTINATION newdata)
+
+# get_target_property(ZLIB_DLL ZLIB::ZLIB IMPORTED_LOCATION_RELEASE)
+# if(ZLIB_DLL AND EXISTS "${ZLIB_DLL}")
+# 	install(FILES ${ZLIB_DLL} DESTINATION . )
+# endif()

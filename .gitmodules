@@ -22,3 +22,9 @@
 [submodule "libs/json"]
 	path = libs/json
 	url = https://github.com/nlohmann/json.git
+[submodule "libs/lua2"]
+	path = libs/lua2
+	url = https://github.com/marovira/lua.git
+[submodule "libs/png"]
+	path = libs/png
+	url = https://github.com/pnggroup/libpng

@@ -1,8 +1,21 @@
+Archives:
+https://github.com/zlib-ng/zlib-ng/archive/refs/tags/2.2.5.zip
+https://github.com/pnggroup/libpng/archive/refs/tags/v1.6.53.zip
+https://github.com/nlohmann/json/archive/refs/tags/v3.12.0.zip
+https://github.com/marovira/lua/archive/refs/tags/5.4.8.zip
+https://github.com/ouonline/luacpp/archive/refs/heads/master.zip
+https://github.com/syoyo/tinygltf/archive/refs/tags/v2.9.7.zip
+https://github.com/avaneev/avir/archive/refs/tags/3.1.zip
+https://github.com/raysan5/raylib/archive/refs/tags/5.5.zip
+
+Repos:
 zlib-ng-2.2.4 - https://github.com/zlib-ng/zlib-ng/releases/tag/2.2.4
 libpng - libpng-1.6.48 - https://github.com/pnggroup/libpng
 json.hpp, json_fwd.hpp - 3.11.3 - https://github.com/nlohmann/json
-lua-5.4.7 - https://lua.org/download.html
+//lua-5.4.7 - https://lua.org/download.html
+lua (with cmake) - https://github.com/marovira/lua.git
 luacpp - Commit d84822c - https://github.com/ouonline/luacpp
 tiny_gltf.h - https://github.com/syoyo/tinygltf
 avir - 3.0 - https://github.com/avaneev/avir
 raylib - 5.5 - https://github.com/raysan5/raylib/releases/tag/5.5 (https://www.raylib.com/)
+
