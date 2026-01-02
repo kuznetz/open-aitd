@@ -125,7 +125,7 @@ namespace openAITD {
 
 			auto rmodel = resources->models.getModel(gobj.modelId);
 
-			rmodel->model.CalcBounds();			
+			rmodel->model.CalcBounds();
 			auto& bb = ord.bb;
 			bb = rmodel->model.bounds;
 			bb = bb.getRotatedBounds(rot);

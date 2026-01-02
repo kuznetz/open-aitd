@@ -82,8 +82,12 @@ namespace openAITD {
     void loadGame(int slot) {
         world.gameOver = false;
         world.loadGObjects("data/objects.json");
-        saveContr.load(mainMenu.saveSlot);
-        state = AppState::InWorld;
+        try {
+            saveContr.load(mainMenu.saveSlot);
+            state = AppState::InWorld;
+        } catch (exception e) {
+            cout << e.what() << endl;
+        }
     }
 
     bool loadStage() {
@@ -205,6 +209,7 @@ namespace openAITD {
             loadGame(mainMenu.saveSlot);
             break;
         }
+        mainMenu.result = MenuScreenResult::none;
         return true;
     }
 

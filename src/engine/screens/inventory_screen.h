@@ -22,6 +22,15 @@ namespace openAITD {
 		bool selAction = false;
 		bool exit;
 
+		Camera3D modelCamera = {
+				{ 0, 2.5, -5 },      // position
+				{ 0, 0, 0 },        // target  
+				{ 0, 1, 0 },        // up
+				50.0f,              // fovy
+				CAMERA_PERSPECTIVE  // projection
+		};
+		float modelRotate = 0;
+
 		InventoryScreen(World* world) {
 			this->world = world;
 			this->resources = world->resources;
@@ -75,6 +84,24 @@ namespace openAITD {
 				resources->screen.drawCentered(name.c_str(), r, c);
 				r.y += f.baseSize;
 			}
+		}
+
+		void drawModel() {
+			if (!world->inventory.size()) return;
+			GameObject& gobj = *world->inventory[curItemIdx];
+			RModel* rmodel = resources->models.getModel(gobj.invItem.modelId);
+			if (!rmodel) return;
+
+			BeginMode3D(modelCamera);
+			rlViewport(
+				0, 0, //resources->config.screenH / 2,
+			  resources->config.screenW / 2, resources->config.screenH / 2
+			);
+			rlMatrixMode(RL_MODELVIEW);
+			rlRotatef(modelRotate, 0, 1, 0);
+			rmodel->model.Render();
+			rlViewport( 0, 0, resources->config.screenW, resources->config.screenH );
+			EndMode3D();
 		}
 
 		void nextAction() {
@@ -163,6 +190,7 @@ namespace openAITD {
 
 		void process(float timeDelta) {
 			if (!firstFrame) {
+				modelRotate += timeDelta * 180;
 				processKeys();
 			}
 			firstFrame = false;
@@ -172,6 +200,7 @@ namespace openAITD {
 			drawLines();
 			drawItems();
 			drawActions();
+			drawModel();
 		}
 
 	};

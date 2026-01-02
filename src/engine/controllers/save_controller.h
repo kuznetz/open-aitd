@@ -2,6 +2,7 @@
 #include "../resources/resources.h"
 #include "../world/world.h"
 #include "life_controller.h"
+#include <stdexcept>
 
 using namespace std;
 
@@ -12,12 +13,12 @@ namespace openAITD {
         World* world;
         Resources* resources;
         LifeController* life;
+        string saveDir = "./saves/";
 
         SaveController(World* world, LifeController* life) {
             this->world = world;
             this->resources = world->resources;
             this->life = life;
-            
         }
 
         json vector2json(Vector3 vec) {
@@ -106,15 +107,22 @@ namespace openAITD {
                 outJson["objects"].push_back(outObj);
             }
 
-            string path = "saves/" + to_string(slot) + ".json";
+            string path = this->saveDir + "/" + to_string(slot) + ".json";
             std::ofstream o(path);
             o << std::setw(2) << outJson << std::endl;
         }
 
         void load(int slot) {
-            string path = "saves/" + to_string(slot) + ".json";
-            ifstream ifs(path);
-            json inJson = json::parse(ifs);
+            string path = this->saveDir + "/" + to_string(slot) + ".json";
+            json inJson;
+
+            try {
+                ifstream ifs(path);
+                inJson.parse(ifs);
+            } catch(exception e) {
+                string message = "Error loading : " + path;
+                throw exception(message.c_str());
+            }
 
             world->vars.resize(inJson["vars"].size());
             for (int i = 0; i < world->vars.size(); i++) {

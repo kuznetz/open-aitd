@@ -38,6 +38,7 @@ namespace openAITD {
 
 	RModel* RModels::getModel(int id, bool alt)
 	{
+		if (id == -1) return 0;
 		auto& modMap = alt ? models : altModels;
 		auto mi = modMap.find(id);
 		if (mi != modMap.end()) {
