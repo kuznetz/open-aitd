@@ -6,6 +6,7 @@
 #include "../raylib-cpp.h"
 #include "config.h"
 #include "stages.h"
+#include "data_path.h"
 
 using namespace std;
 using namespace raylib;
@@ -35,8 +36,6 @@ namespace openAITD {
 	public:
 		Config* config = 0;
 		vector<Stage>* stages = 0;
-		string stageDir = "data/stages";
-		string newStageDir = "newdata/stages";
 		vector<Background> items;
 
 		int curPictureId = -1;
@@ -85,15 +84,10 @@ namespace openAITD {
 		}
 
 		string getImgStagePath(string tail) {
-			string path = newStageDir + "/" + tail;
-			if (filesystem::exists(path)) {
-				return path;
-			}
-			path = stageDir + "/" + tail;
-			if (filesystem::exists(path)) {
-				return path;
-			}
-			throw new exception((path + " not exists").c_str());
+			string path = string("stages/") + tail;
+			path = DataPath::GetFile(path);
+			if (path == "")	throw new exception((path + " not exists").c_str());
+			return path;
 		}
 
 		void loadStage(int newStageId)
