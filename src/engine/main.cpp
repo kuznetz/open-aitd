@@ -43,11 +43,11 @@ namespace openAITD {
     FoundScreen foundScreen(&world);
     CameraRenderer renderer(&world);
     FreelookRenderer flRenderer(&world);
-    PhysicsController physContr(&resources, &world, &foundScreen);
+    ThrowController throwContr(&world);
+    PhysicsController physContr(&resources, &world, &foundScreen, &throwContr);
     ObjRotateController objrotContr(&world);
     AnimationController animContr(&resources, &world);
     HitController hitContr(&world);
-    ThrowController throwContr(&world);
     PlayerController playerContr(&world);
     TracksController tracksContr(&world);
     InventoryScreen inventoryScreen(&world);

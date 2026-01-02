@@ -85,12 +85,20 @@ namespace openAITD {
             if (!action.throwedItem) return;
             auto& item = *action.throwedItem;
             if (!item.throwing.active) return;
-
             //auto v = Vector3Scale(item.throwing.direction, 3 * timeDelta);
             item.animation.prevMoveRoot = { 0,0,0 };
             item.animation.moveRoot = { 0, 0, -3 * timeDelta };
             //item.location.position += v;
         }
+
+		void throwStop(GameObject& gobj) {
+            action.throwedItem = 0;
+			gobj.throwing.active = false;
+			gobj.bitField.foundable = true;
+			gobj.location.position.y = 0;
+            gobj.animation.prevMoveRoot = { 0,0,0 };
+            gobj.animation.moveRoot = { 0,0,0 };
+		}
 
         void process(float timeDelta) {
             processAnim(timeDelta);

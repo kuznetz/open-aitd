@@ -2,6 +2,7 @@
 #include "../resources/resources.h"
 #include "../world/world.h"
 #include "../screens/found_screen.h"
+#include "./throw_controller.h"
 
 using namespace std;
 namespace openAITD {
@@ -11,10 +12,12 @@ namespace openAITD {
 		World* world;
 		Resources* resources;
 		FoundScreen* foundScreen;
+		ThrowController* throwContr;
 
-		PhysicsController(Resources* res, World* world, FoundScreen* found) {
+		PhysicsController(Resources* res, World* world, FoundScreen* found, ThrowController* throwContr) {
 			this->resources = res;
 			this->world = world;
+			this->throwContr = throwContr;
 			foundScreen = found;
 		}
 
@@ -55,12 +58,6 @@ namespace openAITD {
 			gobj.damage.damage = throwed.throwing.hitDamage;
 		}
 
-		void throwStop(GameObject& gobj) {
-			gobj.throwing.active = false;
-			gobj.bitField.foundable = true;
-			gobj.location.position.y = 0;
-		}
-
 		void processStaticColliders(GameObject& gobj, Room& room) {
 			Bounds& objB = world->getObjectBounds(gobj);
 			Vector3 v = gobj.physics.moveVec;
@@ -85,7 +82,7 @@ namespace openAITD {
 				}
 			}
 			if (collided) {
-				if (gobj.throwing.active) throwStop(gobj);
+				if (gobj.throwing.active) throwContr->throwStop(gobj);
 			}
 			if (gobj.physics.collidable) {
 				gobj.physics.moveVec = v;
@@ -144,7 +141,7 @@ namespace openAITD {
 				}
 				if (c2) {
 					if (gobj.throwing.active) {
-						throwStop(gobj);
+						throwContr->throwStop(gobj);
 						throwDamage(gobj2, gobj);
 					}
 					if (gobj.physics.hitObjectDamage) {
