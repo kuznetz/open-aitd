@@ -22,5 +22,6 @@ void main() {
     vec2 screenPos = gl_FragCoord.xy / resolution;
     
     //finalColor = vec4(tex1.r, tex1.r, tex1.r, tex0.a);
-    finalColor = vec4(tex0.rgb, min(tex0.a, 1-tex1.r));
+    //finalColor = vec4(tex0.rgb, min(tex0.a, 1-tex1.r));
+    finalColor = vec4(tex0.rgb, tex0.a * (1-tex1.r));
 }
