@@ -31,7 +31,9 @@
             "presentation": {
                 "reveal": "always"
             },
-            "problemMatcher": "$msCompile"
+            "problemMatcher": {
+                "base": "$msCompile"
+            }
         }          
     ]	
 }
