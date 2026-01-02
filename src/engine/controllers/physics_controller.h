@@ -75,10 +75,13 @@ namespace openAITD {
 					}
 					if (room.colliders[i].type == 9) {
 						gobj.physics.staticColl = room.colliders[i].parameter;
-						GameObject& gobjStat = world->gobjects[room.colliders[i].parameter];
-						if (gobj.throwing.active) {
-							this->throwDamage(gobjStat, gobj);
-							gobjStat.physics.collidedBy = gobj.id;
+						int gobjStatId = room.colliders[i].linkedObjectId;
+						if (gobjStatId >= 0 ) {
+							GameObject& gobjStat = world->gobjects[gobjStatId];
+							if (gobj.throwing.active) {
+								this->throwDamage(gobjStat, gobj);
+								gobjStat.physics.collidedBy = gobj.id;
+							}
 						}
 					}
 					else if (room.colliders[i].type == 3) {

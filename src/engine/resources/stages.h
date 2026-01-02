@@ -181,7 +181,7 @@ namespace openAITD {
 		Bounds bounds;
 		int type; // 1 - simple, 3 - climbing,  9 - linked
 		int parameter;
-		int objectLink = -1;
+		int linkedObjectId = -1;
 	};
 
 	enum class RoomZoneType {

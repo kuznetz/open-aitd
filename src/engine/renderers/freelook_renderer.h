@@ -246,10 +246,6 @@ namespace openAITD {
 			for (int i = 0; i < 100; i++) {
 				if (&debugObjs[i] == endDebugObjs) break;
 				gebugStr = to_string(debugObjs[i].gobj->id);
-				int a = debugObjs[i].gobj->animation.id;
-				gebugStr = gebugStr + " A" + ((a != -1) ? to_string(a) : "-");
-				int l = debugObjs[i].gobj->lifeId;
-				gebugStr = gebugStr + " L" + ((l != -1) ? to_string(l) : "-");
 				DrawText(gebugStr.c_str(), (int)debugObjs[i].screenpos.x, (int)debugObjs[i].screenpos.y, 24, WHITE);
 			}
 

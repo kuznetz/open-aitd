@@ -190,6 +190,7 @@ namespace openAITD {
 					if (cols[j].type != 9) continue;
 					if (cols[j].parameter == gobj.staticColliderId) {
 						gobj.staticCollider = &cols[j];
+						cols[j].linkedObjectId = i;
 						break;
 					}
 				}
