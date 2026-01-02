@@ -25,18 +25,19 @@ namespace openAITD {
 		void process(float timeDelta) {
 			for (int i = 0; i < this->world->gobjects.size(); i++) {
 				auto& gobj = this->world->gobjects[i];
+                if (gobj.modelId == -1) continue; 
 				if (gobj.location.stageId != this->world->curStageId) continue;
-
-                //don't process without flag. Need for sitting enemies (lady, zombies)
-				//TODO: if (gobj.modelId == -1 || !gobj.bitField.animated) continue; 
-                if (gobj.modelId == -1) continue;
+                
+                auto& objAni = gobj.animation;
 
                 if (!gobj.bitField.animated) {
                     gobj.animation.animChanged = false;
                     gobj.animation.animEnd = 0;
+                    objAni.keyFrameIdx = 0;
+                    objAni.animFrame = 0;
                     continue;
                 }
-                auto& objAni = gobj.animation;
+
                 objAni.animChanged = false;
 				if (objAni.id == -1) continue;
                 auto mdl = resources->models.getModel(gobj.modelId);

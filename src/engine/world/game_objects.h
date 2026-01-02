@@ -129,6 +129,7 @@ namespace openAITD {
 	struct GOPhysics
 	{
 		bool boundsCached;
+		bool falling = 0;
 		bool collidable = 1;
 		Bounds bounds;
 		bool moving;

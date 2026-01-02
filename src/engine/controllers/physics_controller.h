@@ -165,6 +165,22 @@ namespace openAITD {
 			gobj.physics.moving = false;
 		}
 
+		void processGravity(GameObject& gobj, Room& room) {
+			if (!gobj.bitField.fallable) return;
+			gobj.physics.falling = 1;
+			Bounds& objB = world->getObjectBounds(gobj);
+			if (gobj.location.position.y < 0) {
+				gobj.physics.falling = 0;
+				return;
+			}
+			for (int i = 0; i < room.colliders.size(); i++) {
+				Bounds& colB = room.colliders[i].bounds;
+				if (!objB.CollToBox(colB)) continue;
+				gobj.physics.falling = 0;
+				gobj.location.position.y = colB.max.y - 0.001;
+			}
+		}
+
 		void processZones(GameObject& gobj, Room* curRoom) {
 			//Check Zones
 			gobj.physics.zoneTriggered = -1;
@@ -239,9 +255,13 @@ namespace openAITD {
 				auto* curRoom = &curStage.rooms[gobj.location.roomId];
 				processStaticColliders(gobj, *curRoom);
 				processDynamicColliders(gobj, *curRoom);
-
 				if (gobj.physics.moving) {
 					gobj.location.position = Vector3Add(gobj.location.position, gobj.physics.moveVec);
+				}
+
+				processGravity(gobj, *curRoom);
+				if (gobj.physics.falling) {
+					gobj.location.position.y -= 1 * timeDelta;
 				}
 
 				processZones(gobj, curRoom);

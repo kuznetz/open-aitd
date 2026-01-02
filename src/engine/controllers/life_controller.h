@@ -151,7 +151,9 @@ namespace openAITD {
 				return this->world->player.keyboard;
 				}, "KEYBOARD_INPUT");
 			lua->CreateFunction([this](int obj) -> int {
-				return 0; //TODO: FALLING
+				auto& gobj = this->world->gobjects[obj];
+				if (!gobj.bitField.fallable) return 0;
+				return (int)this->world->gobjects[obj].physics.falling;
 				}, "FALLING");
 			lua->CreateFunction([this](int obj) -> int {
 				return 1; //TODO: MUSIC
