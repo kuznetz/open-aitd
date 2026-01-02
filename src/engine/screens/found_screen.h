@@ -15,6 +15,14 @@ namespace openAITD {
 		Resources* resources;
 		bool leave = false;
 		int foundItem = -1;
+		Camera3D modelCamera = {
+				{ 0, 2.5, -5 },      // position
+				{ 0, 0, 0 },        // target  
+				{ 0, 1, 0 },        // up
+				50.0f,              // fovy
+				CAMERA_PERSPECTIVE  // projection
+		};
+		float modelRotate = 0;		
 
 		FoundScreen(World* world) {
 			this->world = world;
@@ -36,6 +44,7 @@ namespace openAITD {
 		}
 
 		void process(float timeDelta) {
+			modelRotate += timeDelta * 180;
 			if (IsKeyPressed(KEY_LEFT)) {
 				leave = true;
 			}
@@ -53,12 +62,29 @@ namespace openAITD {
 			}
 		}
 
+		void renderModel(GameObject& gobj) {
+			RModel* rmodel = resources->models.getModel(gobj.invItem.modelId);
+			if (!rmodel) return;
+
+			BeginMode3D(modelCamera);
+			//const auto& screenW = this->resources->config.screenW;
+			//const auto& screenH = this->resources->config.screenH;
+			//rlViewport(	0, screenH * 0.05, screenW, screenH * 0.9	);
+			rlMatrixMode(RL_MODELVIEW);
+			rlRotatef(modelRotate, 0, 1, 0);
+			rmodel->model.Render();
+			//rlViewport( 0, 0, resources->config.screenW, resources->config.screenH );
+			EndMode3D();
+		}
+
 		void render() {
 			const auto& screenW = this->resources->config.screenW;
 			const auto& screenH = this->resources->config.screenH;
 
 			auto& gobj = this->world->gobjects[foundItem];
 			auto& name = resources->texts[gobj.invItem.nameId];
+
+			renderModel(gobj);
 
 			auto& f = resources->screen.mainFont;
 			const char* m = "New item:";
@@ -76,13 +102,13 @@ namespace openAITD {
 		void main(int newFoundItem) {
 			bool firstFrame = true;
 			foundItem = newFoundItem;
-			int timeDelta;
+			float timeDelta;
 			while (foundItem != -1) {
-				timeDelta = GetFrameTime();
 				if (firstFrame) {
 					firstFrame = false;
 				}
 				else {
+  				timeDelta = GetFrameTime();
 					process(timeDelta);
 				}
 				if (foundItem == -1) break;
