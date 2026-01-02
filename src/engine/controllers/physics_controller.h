@@ -75,6 +75,11 @@ namespace openAITD {
 					}
 					if (room.colliders[i].type == 9) {
 						gobj.physics.staticColl = room.colliders[i].parameter;
+						GameObject& gobjStat = world->gobjects[room.colliders[i].parameter];
+						if (gobj.throwing.active) {
+							this->throwDamage(gobjStat, gobj);
+							gobjStat.physics.collidedBy = gobj.id;
+						}
 					}
 					else if (room.colliders[i].type == 3) {
 						gobj.physics.staticColl = 255;
@@ -82,7 +87,9 @@ namespace openAITD {
 				}
 			}
 			if (collided) {
-				if (gobj.throwing.active) throwContr->throwStop(gobj);
+				if (gobj.throwing.active) {
+					throwContr->throwStop(gobj);
+				}
 			}
 			if (gobj.physics.collidable) {
 				gobj.physics.moveVec = v;
@@ -261,6 +268,8 @@ namespace openAITD {
 
 				processGravity(gobj, *curRoom);
 				if (gobj.physics.falling) {
+					gobj.physics.moving = true;
+					gobj.physics.boundsCached = false;
 					gobj.location.position.y -= 1 * timeDelta;
 				}
 
