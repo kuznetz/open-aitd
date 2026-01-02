@@ -381,6 +381,10 @@ namespace openAITD {
 				this->world->setOnceAnimation(*gobj, animThrow, animNext, true);
 				this->throwContr->throw_(gobj, gobj2, animThrow, frameThrow, frameThrow, activeBone, hitDamage);
 				}, "THROW");
+			lua->CreateFunction([this](int obj) {
+				auto& gobj = this->world->gobjects[obj];				
+				return gobj.throwing.active;
+				}, "THROWING");
 			lua->CreateFunction([this](int objId, int weight) {
 				//Weight not realising
 				}, "SET_OBJ_WEIGHT");
