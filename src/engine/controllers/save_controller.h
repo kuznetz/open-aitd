@@ -3,6 +3,7 @@
 #include "../world/world.h"
 #include "life_controller.h"
 #include <stdexcept>
+#include <filesystem>
 
 using namespace std;
 
@@ -13,7 +14,7 @@ namespace openAITD {
         World* world;
         Resources* resources;
         LifeController* life;
-        string saveDir = "./saves/";
+        string saveDir = "./saves";
 
         SaveController(World* world, LifeController* life) {
             this->world = world;
@@ -35,7 +36,6 @@ namespace openAITD {
 
         void save(int slot) {
             auto& cVars = world->cVars;
-
             json outJson = json::object();
 
             outJson["follow"] = world->followTarget->id;
@@ -107,6 +107,7 @@ namespace openAITD {
                 outJson["objects"].push_back(outObj);
             }
 
+            filesystem::create_directories(saveDir);
             string path = this->saveDir + "/" + to_string(slot) + ".json";
             std::ofstream o(path);
             o << std::setw(2) << outJson << std::endl;
@@ -114,78 +115,79 @@ namespace openAITD {
 
         void load(int slot) {
             string path = this->saveDir + "/" + to_string(slot) + ".json";
-            json inJson;
-
             try {
                 ifstream ifs(path);
-                inJson.parse(ifs);
+                json inJson = json::parse(ifs);
+
+                world->vars.resize(inJson["vars"].size());
+                for (int i = 0; i < world->vars.size(); i++) {
+                    world->vars[i] = inJson["vars"][i];
+                }
+                life->reloadVars();
+
+                world->cVars.resize(inJson["cVars"].size());
+                for (int i = 0; i < world->cVars.size(); i++) {
+                    world->cVars[i] = inJson["cVars"][i];
+                }
+
+                world->gobjects.resize(inJson["objects"].size());
+                for (int i = 0; i < world->gobjects.size(); i++) {
+                    auto& inObj = inJson["objects"][i];
+                    auto& gobj = world->gobjects[i];
+                    gobj.id = i;
+                    
+                    gobj.location.stageId = inObj["location"]["stageId"];
+                    gobj.location.roomId = inObj["location"]["roomId"];
+                    gobj.location.position = json2vector(inObj["location"]["position"]);
+                    auto& r = inObj["location"]["rotation"];
+                    gobj.location.rotation = { r[0], r[1], r[2], r[3] };
+                    auto& r2 = inObj["location"]["rotOrig"];
+                    gobj.location.rotOrig = { r2[0], r2[1], r2[2] };
+
+                    gobj.animation.id = inObj["animation"]["id"];
+                    gobj.animation.nextId = inObj["animation"]["nextId"];
+                    gobj.animation.flags = inObj["animation"]["flags"];
+
+                    gobj.track.id = inObj["track"]["id"];
+                    gobj.track.pos = inObj["track"]["pos"];
+                    gobj.track.mode = inObj["track"]["mode"];
+
+                    gobj.invItem.nameId = inObj["invItem"]["nameId"];
+                    gobj.invItem.modelId = inObj["invItem"]["modelId"];
+                    gobj.invItem.lifeId = inObj["invItem"]["lifeId"];
+                    gobj.invItem.flags = inObj["invItem"]["flags"];
+
+                    gobj.modelId = inObj["modelId"];
+                    gobj.boundsType = inObj["boundsType"];
+                    gobj.flags = inObj["flags"];
+                    gobj.stageLifeId = inObj["stageLifeId"];
+                    gobj.lifeId = inObj["lifeId"];
+                    gobj.lifeMode = inObj["lifeMode"];
+                    gobj.chrono = world->chrono + inObj["chrono"];
+                    gobj.physics.hitObjectDamage = inObj["hitObjectDamage"];
+
+                    gobj.physics.boundsCached = false;
+                }
+
+                world->inventory.resize(inJson["inventory"].size());
+                for (int i = 0; i < world->inventory.size(); i++) {
+                    world->inventory[i] = &world->gobjects[inJson["inventory"][i]];
+                }
+
+                int inHand = inJson["inHand"].get<int>();
+                world->inHandObj = &world->gobjects[inHand];
+                int followTarget = inJson["follow"].get<int>();
+                world->followTarget = &world->gobjects[followTarget];
+                world->inDark = inJson["inDark"];
+
+                auto foll = world->followTarget;
+                world->setCurStage(foll->location.stageId, foll->location.roomId);
+                //followCameraProcess
+
             } catch(exception e) {
                 string message = "Error loading : " + path;
                 throw exception(message.c_str());
             }
-
-            world->vars.resize(inJson["vars"].size());
-            for (int i = 0; i < world->vars.size(); i++) {
-                world->vars[i] = inJson["vars"][i];
-            }
-            life->reloadVars();
-
-            world->cVars.resize(inJson["cVars"].size());
-            for (int i = 0; i < world->cVars.size(); i++) {
-                world->cVars[i] = inJson["cVars"][i];
-            }
-
-            world->gobjects.resize(inJson["objects"].size());
-            for (int i = 0; i < world->gobjects.size(); i++) {
-                auto& inObj = inJson["objects"][i];
-                auto& gobj = world->gobjects[i];
-                gobj.id = i;
-                
-                gobj.location.stageId = inObj["location"]["stageId"];
-                gobj.location.roomId = inObj["location"]["roomId"];
-                gobj.location.position = json2vector(inObj["location"]["position"]);
-                auto& r = inObj["location"]["rotation"];
-                gobj.location.rotation = { r[0], r[1], r[2], r[3] };
-                auto& r2 = inObj["location"]["rotOrig"];
-                gobj.location.rotOrig = { r2[0], r2[1], r2[2] };
-
-                gobj.animation.id = inObj["animation"]["id"];
-                gobj.animation.nextId = inObj["animation"]["nextId"];
-                gobj.animation.flags = inObj["animation"]["flags"];
-
-                gobj.track.id = inObj["track"]["id"];
-                gobj.track.pos = inObj["track"]["pos"];
-                gobj.track.mode = inObj["track"]["mode"];
-
-                gobj.invItem.nameId = inObj["invItem"]["nameId"];
-                gobj.invItem.modelId = inObj["invItem"]["modelId"];
-                gobj.invItem.lifeId = inObj["invItem"]["lifeId"];
-                gobj.invItem.flags = inObj["invItem"]["flags"];
-
-                gobj.modelId = inObj["modelId"];
-                gobj.boundsType = inObj["boundsType"];
-                gobj.flags = inObj["flags"];
-                gobj.stageLifeId = inObj["stageLifeId"];
-                gobj.lifeId = inObj["lifeId"];
-                gobj.lifeMode = inObj["lifeMode"];
-                gobj.chrono = world->chrono + inObj["chrono"];
-                gobj.physics.hitObjectDamage = inObj["hitObjectDamage"];
-
-                gobj.physics.boundsCached = false;
-            }
-
-            world->inventory.resize(inJson["inventory"].size());
-            for (int i = 0; i < world->inventory.size(); i++) {
-                world->inventory[i] = &world->gobjects[inJson["inventory"][i]];
-            }
-
-            world->inHandObj = &world->gobjects[inJson["inHand"]];
-            world->followTarget = &world->gobjects[inJson["follow"]];
-            world->inDark = inJson["inDark"];
-
-            auto foll = world->followTarget;
-            world->setCurStage(foll->location.stageId, foll->location.roomId);
-            //followCameraProcess
         }
 
     };
