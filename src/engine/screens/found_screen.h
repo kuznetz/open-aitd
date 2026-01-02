@@ -22,7 +22,8 @@ namespace openAITD {
 				50.0f,              // fovy
 				CAMERA_PERSPECTIVE  // projection
 		};
-		float modelRotate = 0;		
+		float modelRotate = 0;
+		RenderTexture renderTexture;
 
 		FoundScreen(World* world) {
 			this->world = world;
@@ -62,29 +63,54 @@ namespace openAITD {
 			}
 		}
 
-		void renderModel(GameObject& gobj) {
+		void renderModel() {
+			auto& gobj = this->world->gobjects[foundItem];
 			RModel* rmodel = resources->models.getModel(gobj.invItem.modelId);
-			if (!rmodel) return;
 
+			BeginTextureMode(renderTexture);
+			ClearBackground(BLACK);
 			BeginMode3D(modelCamera);
 			//const auto& screenW = this->resources->config.screenW;
 			//const auto& screenH = this->resources->config.screenH;
 			//rlViewport(	0, screenH * 0.05, screenW, screenH * 0.9	);
 			rlMatrixMode(RL_MODELVIEW);
 			rlRotatef(modelRotate, 0, 1, 0);
-			rmodel->model.Render();
-			//rlViewport( 0, 0, resources->config.screenW, resources->config.screenH );
+			if (rmodel) {
+				rmodel->model.Render();
+			}
 			EndMode3D();
+			EndTextureMode();
 		}
+
+		void DrawRenderTex(const Texture2D texture) {
+			float screenW = (float)this->resources->config.screenW;
+			float screenH = (float)this->resources->config.screenH;
+			rlSetTexture(texture.id);
+			rlColor4f(1, 1, 1, 1);
+			rlBegin(RL_QUADS);
+			// Top-left corner for texture and quad
+			rlTexCoord2f(0, 1);
+			rlVertex2f(0, 0);
+			// Bottom-left corner for texture and quad
+			rlTexCoord2f(0, 0);
+			rlVertex2f(0, screenH);
+			// Bottom-right corner for texture and quad
+			rlTexCoord2f(1, 0);
+			rlVertex2f(screenW, screenH);
+			// Top-right corner for texture and quad
+			rlTexCoord2f(1, 1);
+			rlVertex2f(screenW, 0);
+			rlEnd();
+	  }
 
 		void render() {
 			const auto& screenW = this->resources->config.screenW;
 			const auto& screenH = this->resources->config.screenH;
 
+			DrawRenderTex(renderTexture.texture);
+
 			auto& gobj = this->world->gobjects[foundItem];
 			auto& name = resources->texts[gobj.invItem.nameId];
-
-			renderModel(gobj);
 
 			auto& f = resources->screen.mainFont;
 			const char* m = "New item:";
@@ -100,6 +126,16 @@ namespace openAITD {
 		}
 
 		void main(int newFoundItem) {
+			auto aa = resources->config.antialiasing;
+			renderTexture = LoadRenderTexture(
+				resources->config.screenW * aa,
+				resources->config.screenH * aa
+			);
+			SetTextureFilter(
+				renderTexture.texture,
+				(aa == 1.0)? TEXTURE_FILTER_POINT: TEXTURE_FILTER_BILINEAR
+			);			
+
 			bool firstFrame = true;
 			foundItem = newFoundItem;
 			float timeDelta;
@@ -112,10 +148,14 @@ namespace openAITD {
 					process(timeDelta);
 				}
 				if (foundItem == -1) break;
+
+				renderModel();
 				resources->screen.begin();
-				render();
-				resources->screen.end();
+				render();				
+  			resources->screen.end();
 			}
+
+			UnloadRenderTexture(renderTexture);
 		}
 
 	};

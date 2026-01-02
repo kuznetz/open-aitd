@@ -23,6 +23,7 @@ namespace openAITD {
 		int screenW = 1280;
 		int screenH = 960;
 		int targetFps = 60;
+		float antialiasing = 2.0f;
 	};
 
 	Config loadConfig() {
@@ -32,6 +33,9 @@ namespace openAITD {
 		json confJson = json::parse(ifs);
 		if (confJson.contains("fulllscreen")) {
 			cfg.fulllscreen = confJson["fulllscreen"];
+		}
+		if (confJson.contains("antialiasing")) {
+			cfg.antialiasing = confJson["antialiasing"];
 		}
 		if (!cfg.fulllscreen) {
 			cfg.screenW = 320;
@@ -56,6 +60,7 @@ namespace openAITD {
 		json outJson = json::object();
 
 		outJson["fulllscreen"] = cfg.fulllscreen;
+		outJson["antialiasing"] = cfg.antialiasing;
 		outJson["screenW"] = cfg.screenW;
 		outJson["screenH"] = cfg.screenH;
 		outJson["showFps"] = cfg.showFps;

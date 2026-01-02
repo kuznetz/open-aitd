@@ -33,13 +33,13 @@ namespace openAITD {
 
 		void end() {
 			EndTextureMode();
-			finalRender();
+			finalRender(screenTex.texture);
 		}
 
-		void finalRender() {
+		void finalRender(const Texture texture) {
 			BeginDrawing();
 			auto& c = *config;
-			DrawTextureRec(screenTex.texture, { 0, 0, (float)c.screenW, (float)-c.screenH }, { (float)c.screenX, (float)c.screenY }, WHITE);
+			DrawTextureRec(texture, { 0, 0, (float)c.screenW, (float)-c.screenH }, { (float)c.screenX, (float)c.screenY }, WHITE);
 			if (c.showFps) {
 				DrawFPS(c.screenX + 10, 10);
 			}

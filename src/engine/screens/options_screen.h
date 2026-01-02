@@ -5,6 +5,7 @@
 #include "../world/world.h"
 #include "../resources/resources.h"
 #include "./base_menu.h"
+#include <sstream>
 
 using namespace std;
 using namespace raylib;
@@ -55,7 +56,10 @@ namespace openAITD {
 		}
 
 		void reloadMenu() {
-			string fullscreen = string("Fullscreen: ") + (newConfig.fulllscreen ? "yes" : "no");
+			std::ostringstream sstream;
+			string fullscreen = string("Fullscreen: ") + (newConfig.fulllscreen ? "yes" : "no");			
+			sstream << std::fixed << std::setprecision(2) << newConfig.antialiasing;			
+			string antialiasing = string("Antialiasing: ") + sstream.str();
 			string resol = string("Resolution: ") + to_string(newConfig.screenW) + "x" + to_string(newConfig.screenH);
 			string showFps = string("Show fps: ") + (newConfig.showFps ? "yes" : "no");
 			menu.items.clear();
@@ -63,6 +67,7 @@ namespace openAITD {
 			if (!newConfig.fulllscreen) {
 				menu.items.push_back({ 2, resol });
 			}
+			menu.items.push_back({ 4, antialiasing });
 			menu.items.push_back({ 3, showFps });
 		}
 
@@ -88,7 +93,12 @@ namespace openAITD {
 				newConfig.showFps = !newConfig.showFps;
 				changeConfig();
 				break;
-		    }
+			case 4:
+				newConfig.antialiasing = newConfig.antialiasing + 0.25;
+				if (newConfig.antialiasing > 2) newConfig.antialiasing = 1;
+				changeConfig();
+				break;
+		  }
 		}
 
 		void processKeys() {

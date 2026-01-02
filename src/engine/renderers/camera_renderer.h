@@ -45,6 +45,7 @@ namespace openAITD {
 		void initShaders() {
 			auto& cfg = world->resources->config;
 			
+			scale3dTex = resources->config.antialiasing;
 			colorTex = LoadRenderTexture(cfg.screenW * scale3dTex, cfg.screenH * scale3dTex);
 			SetTextureFilter(colorTex.texture, (scale3dTex == 1.0)? TEXTURE_FILTER_POINT: TEXTURE_FILTER_BILINEAR);
 			maskTex = LoadRenderTexture(cfg.screenW, cfg.screenH);
@@ -391,7 +392,7 @@ namespace openAITD {
 			BeginTextureMode(resources->screen.screenTex);
 			renderMessage();
 			EndTextureMode();
-			resources->screen.finalRender();
+			resources->screen.finalRender(resources->screen.screenTex.texture);
 
 			//for (auto it = renderQueue.begin(); it != renderQueue.end(); it++) {
 			//	DrawLine(it->screenMin.x, it->screenMin.y, it->screenMax.x, it->screenMin.y, RED);
