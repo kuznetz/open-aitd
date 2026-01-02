@@ -134,15 +134,16 @@ namespace openAITD {
 			Vector3TransformRef(bb.max, matTranslation);
 			
 			Vector3 vecs[8];
-			vecs[0] = { bb.min.x, bb.max.y, bb.max.z }; // Top left
-			vecs[1] = { bb.max.x, bb.max.y, bb.max.z }; // Top right
-			vecs[2] = { bb.min.x, bb.min.y, bb.max.z }; // Bottom left
-			vecs[3] = { bb.max.x, bb.min.y, bb.max.z }; // Bottom right
-			// Back face
-			vecs[4] = { bb.min.x, bb.max.y, bb.min.z }; // Top left
-			vecs[5] = { bb.max.x, bb.max.y, bb.min.z }; // Top right
-			vecs[6] = { bb.min.x, bb.min.y, bb.min.z }; // Bottom left
-			vecs[7] = { bb.max.x, bb.min.y, bb.min.z }; // Bottom right
+			//Bottom
+			vecs[0] = { bb.min.x, bb.min.y, bb.max.z }; // Front left
+			vecs[1] = { bb.max.x, bb.min.y, bb.max.z }; // Front right
+			vecs[2] = { bb.min.x, bb.min.y, bb.min.z }; // Back left
+			vecs[3] = { bb.max.x, bb.min.y, bb.min.z }; // Back right
+			//Top
+			vecs[4] = { bb.min.x, bb.max.y, bb.max.z }; // Front left
+			vecs[5] = { bb.max.x, bb.max.y, bb.max.z }; // Front right
+			vecs[6] = { bb.min.x, bb.max.y, bb.min.z }; // Back left
+			vecs[7] = { bb.max.x, bb.max.y, bb.min.z }; // Back right
 
 			for (int i = 0; i < 8; i++) {
 				Vector3 v = GetWorldToScreenZ(vecs[i]);
@@ -154,7 +155,7 @@ namespace openAITD {
 					ord.screenMax.y = v.y;
 					continue;
 				}
-				if (ord.zPos > v.z) {
+				if (i < 4 && ord.zPos > v.z) {
 					ord.zPos = v.z;
 				}
 				if (ord.screenMin.x > v.x) {
