@@ -19,6 +19,7 @@
 #include "./screens/inventory_screen.h"
 #include "./screens/menu_screen.h"
 #include "./screens/picture_screen.h"
+#include "./screens/console_screen.h"
 
 #include "../extractor/extractor.h"
 
@@ -55,6 +56,7 @@ namespace openAITD {
     PictureScreen pictureScr(&world);
     LifeController lifeContr(&world, &tracksContr, &playerContr, &hitContr, &throwContr, &foundScreen);
     SaveController saveContr(&world, &lifeContr);
+    ConsoleScreen consoleScreen(&world);
 
     bool freeLook = false;
     bool pause = false;
@@ -133,6 +135,9 @@ namespace openAITD {
         
         if (IsKeyPressed(KEY_O)) {
             freeLook = !freeLook;
+        }
+        if (IsKeyPressed(KEY_GRAVE)) {
+            consoleScreen.start();
         }
         if (IsKeyPressed(KEY_P)) {
             pause = !pause;
