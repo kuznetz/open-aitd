@@ -77,7 +77,7 @@ namespace openAITD {
       }
       char cmd = toupper(tokens[0][0], std::locale::classic());
       if (cmd == 'J') {
-        lines[0] = "JUMP!";
+        JumpToRoom(tokens);
       } else if (cmd == 'T') {
         lines[0] = "TAKE!";
       } else if (cmd == 'O') {
@@ -102,6 +102,43 @@ namespace openAITD {
       //lines[4] = "[H]eal";
     }
 
+    template<typename... Args> std::string BuildString(Args&&... args) {
+        std::ostringstream ss;
+        (ss << ... << std::forward<Args>(args));
+        return ss.str();
+    }
+
+    void JumpToRoom(const vector<string>& tokens) {
+      int stageId = -1;
+      int roomId = -1;
+      try {
+          stageId = std::stoi(tokens.at(1));
+          roomId = std::stoi(tokens.at(2));
+      }
+      catch (const exception& e) {
+      }
+      try {
+        if (stageId < 0) {
+            lines[0] = BuildString("Stage count: ", world->resources->stages.size());
+            return;
+        }
+        auto& stage = world->resources->stages[stageId];
+        if (roomId < 0) {
+            lines[0] = BuildString("Room count in ",stageId,": ", stage.rooms.size());
+            return;
+        }
+        auto& room = stage.rooms[roomId];
+        auto& player = world->gobjects[1];
+				player.location.stageId = stageId;
+				player.location.roomId = roomId;
+				player.location.position = { 0,0,0 };
+
+      } catch (const exception& e) {
+          lines[0] = "Invalid Arguments";
+          ShowHelp();
+      }
+    }
+
     void ShowObjectInfo(const vector<string>& tokens) {
       if (tokens.size() != 2) {
         lines[0] = "Invalid arguments";
@@ -109,7 +146,7 @@ namespace openAITD {
         return;
       }
       try {
-          int objId = std::stoi(tokens[1]);
+          int objId = std::stoi(tokens.at(1));
           ShowObjectInfo2(objId);
       }
       catch (const std::exception& e) {
@@ -121,34 +158,23 @@ namespace openAITD {
     void ShowObjectInfo2(int objId) {
       curInfo = objId;
       try {
-
         auto& gobj = world->gobjects[objId];
-        stringstream ss;
-        ss << "Object " << objId << ":";
-        lines[0] = ss.str();
-        ss.str("");
+        lines[0] = BuildString("Object ", objId, ":");
 
         auto& loc = gobj.location;
-        ss << "Stage:" << loc.stageId << " Room:" << loc.roomId;
-        lines[1] = ss.str();
-        ss.str("");
-
-        ss << "X:" << loc.position.x << " Y:" << loc.position.y << " Z:" << loc.position.z;
-        lines[2] = ss.str();
-        ss.str("");
-
-        ss << 
-          "Model: " << gobj.modelId << 
-          " Anim: " << gobj.animation.animIdx;
-        if (gobj.animation.bitField.repeat) ss << " Rep";
-        if (gobj.animation.bitField.reset) ss << " Rst";
-        if (gobj.animation.bitField.uninterruptable) ss << " UnInt";
-        lines[3] = ss.str();
-        ss.str("");
-
-        ss << "Life: " << (int)gobj.lifeMode << " " << gobj.lifeId;
-        lines[3] = ss.str();
-        ss.str("");     
+        lines[1] = BuildString("Stage:", loc.stageId, " Room:", loc.roomId);
+        lines[2] = BuildString("X:", loc.position.x, 
+                              " Y:", loc.position.y, 
+                              " Z:", loc.position.z);
+        
+        string animInfo = BuildString("Model: ", gobj.modelId, 
+                                          " Anim: ", gobj.animation.animIdx);
+        if (gobj.animation.bitField.repeat) animInfo += " Rep";
+        if (gobj.animation.bitField.reset) animInfo += " Rst";
+        if (gobj.animation.bitField.uninterruptable) animInfo += " UnInt";
+        lines[3] = animInfo;
+        
+        lines[4] = BuildString("Life: ", (int)gobj.lifeMode, " ", gobj.lifeId);
 
       } catch (exception e) {
         lines[0] = "Invalid object ID";
@@ -207,3 +233,39 @@ namespace openAITD {
 	};
 
 }
+
+/*
+
+			bool teleportPlayer = false;
+			int newStageId = world->curStageId;
+			int newRoomId = world->curRoomId;
+			if (IsKeyPressed(KEY_KP_MULTIPLY) && (newRoomId < world->curStage->rooms.size() - 1)) {
+				newRoomId++;
+				teleportPlayer = true;
+			}
+			if (IsKeyPressed(KEY_KP_DIVIDE) && (world->curRoomId > 0)) {
+				newRoomId--;
+				teleportPlayer = true;
+			}
+			if (IsKeyPressed(KEY_KP_ADD)) {
+				newStageId++;
+				newRoomId = 0;
+				teleportPlayer = true;
+			}
+			if (IsKeyPressed(KEY_KP_SUBTRACT) && (newStageId > 0)) {
+				newStageId--;
+				newRoomId = 0;
+				teleportPlayer = true;
+			}
+			if (IsKeyDown(KEY_KP_ENTER)) {
+				teleportPlayer = true;
+			}
+			if (teleportPlayer) {
+				//world->setCurRoom(newStageId, newRoomId);
+				gobj.location.stageId = newStageId;
+				gobj.location.roomId = newRoomId;
+				gobj.location.position = { 0,0,0 };//resources->stages[world->curStageId].rooms[newRoom].position;
+			}
+
+			//world->setCurStage(gobj.location.stageId, gobj.location.roomId);
+*/
