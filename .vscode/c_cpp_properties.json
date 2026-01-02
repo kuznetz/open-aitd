@@ -3,14 +3,14 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceFolder}/src/**",
-                "${workspaceFolder}/libs/raylib/src/**",
-                "${workspaceFolder}/libs/luacpp/include/**",
-                "${workspaceFolder}/libs/avir/**",
-                "${workspaceFolder}/libs/tinygltf/**",
-                "${workspaceFolder}/libs/json/include/**"
-//                "${env:INCLUDE}",  // MSVC system includes
-//                "C:/Program Files (x86)/Windows Kits/10/Include/**"
+                "${workspaceFolder}/src",
+                "${workspaceFolder}/libs/raylib/src",
+                "${workspaceFolder}/libs/lua2/src",
+                "${workspaceFolder}/libs/luacpp/include",
+                "${workspaceFolder}/libs/avir",
+                "${workspaceFolder}/libs/tinygltf",
+                "${workspaceFolder}/libs/json/include",
+                "${env:INCLUDE}"  // MSVC system includes
             ],
             "defines": [
                 "_DEBUG",
@@ -18,11 +18,10 @@
                 "_UNICODE"
             ],
             "windowsSdkVersion": "10.0.19041.0",
-//            "compilerPath": "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.38.33130/bin/Hostx64/x64/cl.exe",
+            "compilerPath": "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe",
             "cStandard": "c17",
             "cppStandard": "c++17",
-            "intelliSenseMode": "windows-msvc-x64",
-            "configurationProvider": "ms-vscode.cpptools"
+            "intelliSenseMode": "windows-msvc-x64"
         }
     ],
     "version": 4

@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <cctype>
+#include <sstream>
 #include "../world/world.h"
 #include "../resources/resources.h"
 #include "../raylib-cpp.h"
@@ -80,7 +81,7 @@ namespace openAITD {
       } else if (cmd == 'T') {
         lines[0] = "TAKE!";
       } else if (cmd == 'O') {
-        lines[0] = "Object Info:";
+        ShowObjectInfo(tokens);
       } else {
         ShowHelp();
       }
@@ -95,10 +96,64 @@ namespace openAITD {
 
     void ShowHelp() {
       lines[1] = "Commands: ";
-      lines[2] = "[J]ump to room - {STAGE} {ROOM}";
-      lines[3] = "[T]ake item - {OBJECT_ID}";
-      lines[4] = "[O]bject info - {OBJECT_ID}";
+      lines[2] = "J {STAGE} {ROOM} - Jump to room";
+      lines[3] = "T {OBJECT_ID} - Take item ";
+      lines[4] = "O {OBJECT_ID} - Object info";
       //lines[4] = "[H]eal";
+    }
+
+    void ShowObjectInfo(const vector<string>& tokens) {
+      if (tokens.size() != 2) {
+        lines[0] = "Invalid arguments";
+        ShowHelp();
+        return;
+      }
+      try {
+          int objId = std::stoi(tokens[1]);
+          ShowObjectInfo2(objId);
+      }
+      catch (const std::exception& e) {
+          lines[0] = "Invalid object ID";
+          ShowHelp();
+      }
+    }
+
+    void ShowObjectInfo2(int objId) {
+      curInfo = objId;
+      try {
+
+        auto& gobj = world->gobjects[objId];
+        stringstream ss;
+        ss << "Object " << objId << ":";
+        lines[0] = ss.str();
+        ss.str("");
+
+        auto& loc = gobj.location;
+        ss << "Stage:" << loc.stageId << " Room:" << loc.roomId;
+        lines[1] = ss.str();
+        ss.str("");
+
+        ss << "X:" << loc.position.x << " Y:" << loc.position.y << " Z:" << loc.position.z;
+        lines[2] = ss.str();
+        ss.str("");
+
+        ss << 
+          "Model: " << gobj.modelId << 
+          " Anim: " << gobj.animation.animIdx;
+        if (gobj.animation.bitField.repeat) ss << " Rep";
+        if (gobj.animation.bitField.reset) ss << " Rst";
+        if (gobj.animation.bitField.uninterruptable) ss << " UnInt";
+        lines[3] = ss.str();
+        ss.str("");
+
+        ss << "Life: " << (int)gobj.lifeMode << " " << gobj.lifeId;
+        lines[3] = ss.str();
+        ss.str("");     
+
+      } catch (exception e) {
+        lines[0] = "Invalid object ID";
+        ShowHelp();
+      }
     }
 
 		void ProcessKeys() {
@@ -131,7 +186,7 @@ namespace openAITD {
 			float timeDelta;
 
       if (curInfo >=0 ) {
-
+        ShowObjectInfo2(curInfo);
       } else {
         ShowHelp();
       }      
