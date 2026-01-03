@@ -479,13 +479,13 @@ namespace openAITD {
 				auto& obj = this->world->gobjects[objId];
 				switch (obj.track.mode) {
 				case GOTrackMode::track:
-					trackContr->processObjTrack(obj);
+					trackContr->processObjTrack(obj, curTimeDelta);
 					break;
 				case GOTrackMode::manual:
 					playerContr->processObj(obj, curTimeDelta);
 					break;
 				case GOTrackMode::follow:
-					trackContr->processObjFollow(obj);
+					trackContr->processObjFollow(obj, curTimeDelta);
 					break;
 				};
 				}, "DO_MOVE");

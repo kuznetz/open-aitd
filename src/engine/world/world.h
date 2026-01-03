@@ -141,6 +141,8 @@ namespace openAITD {
 		void take(int gObjId);
 		void drop(int itemObjId, int actorObjId);
 		void put(int objId, int room, int stage, Vector3 pos, Quaternion rot);
+		
+		Vector3 AbsolutePos(const GameObject& gobj);
 		Vector3 VectorChangeRoom(const Vector3 v, int fromRoomId, int toRoomId);
 		Bounds BoundsChangeRoom(const Bounds v, int fromRoomId, int toRoomId);
 	};
@@ -219,6 +221,11 @@ namespace openAITD {
 		}
 
 	};
+
+	Vector3 World::AbsolutePos(const GameObject& gobj) {
+		auto& room = curStage->rooms[gobj.location.roomId];
+		return Vector3Add(gobj.location.position, room.position);
+	}
 
 	Vector3 World::VectorChangeRoom(const Vector3 v, int fromRoomId, int toRoomId) {
 		if (fromRoomId == toRoomId) return v;

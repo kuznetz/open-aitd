@@ -155,6 +155,12 @@ namespace openAITD {
 		track = 3
 	};
 
+  struct GOTrackDebug {
+		Vector2 forward2D;
+		Vector2 targetDir;
+		float angle;
+	};
+
 	struct GOTrack {
 		int mark = -1;
 		int id = -1;
@@ -164,6 +170,7 @@ namespace openAITD {
 		Vector3 startPos;
 		Vector3 direction;
 		Vector3 targetPos;
+		GOTrackDebug debug;
 	};
 
 	struct GODamage

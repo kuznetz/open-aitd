@@ -10,16 +10,17 @@ using namespace std;
 
 namespace openAITD {
 
-	struct Debug3DObject {
+	struct Debug3DText {
 		Vector2 screenpos;
-		GameObject* gobj;
+		string text;
+		Color color;
 	};
 
 	class FreelookRenderer : public BaseRenderer {
 	public:
 		bool freeLook = true;
-		Debug3DObject debugObjs[100];
-		Debug3DObject* endDebugObjs;
+		Debug3DText debugObjs[100];
+		Debug3DText* endDebugObjs;
 
 		int invX = 0;
 		int invZ = 0;
@@ -34,7 +35,10 @@ namespace openAITD {
 			//auto& room = curStage->rooms[curCamera->rooms[r].roomId];
 			for (int r = 0; r < world->curStage->rooms.size(); r++) {
 				auto& room = world->curStage->rooms[r];
-				int curRoomId = world->followTarget->location.roomId;
+				int curRoomId = -1;
+				if (world->followTarget) {
+					curRoomId = world->followTarget->location.roomId;
+				}
 				Color c = (r == curRoomId) ? WHITE : DARKBLUE;
 				DrawCube(room.position, 0.1, 0.1, 0.1, c);
 				rlPushMatrix();
@@ -54,13 +58,21 @@ namespace openAITD {
 		}
 
 		void renderZones() {
+			if (!world->followTarget) return;
 			int curRoomId = world->followTarget->location.roomId;
 			if (curRoomId == -1) return;
 			auto& room = world->curStage->rooms[curRoomId];
 			rlPushMatrix();
 			rlTranslatef(room.position.x, room.position.y, room.position.z);
 			for (int z = 0; z < room.zones.size(); z++) {
-				DrawBounds(room.zones[z].bounds, YELLOW);
+				auto& zone = room.zones[z];
+				if (zone.type == RoomZoneType::ChangeStage) {
+					DrawBounds(zone.bounds, YELLOW);
+					renderDebugText3D(Vector3Add(room.position, zone.bounds.min), to_string(zone.parameter), YELLOW);
+					
+				} else {
+					DrawBounds(zone.bounds, MAGENTA);
+				}
 			}
 			rlPopMatrix();
 		}
@@ -111,9 +123,17 @@ namespace openAITD {
 			y += text_size.y;
 		}
 
-		void renderDebugObj(Vector2 screenpos, GameObject* gobj) {
+		void renderDebugText3D(Vector3 pos, const string& text, Color color) {
+			auto screenPos = GetWorldToScreenZ(pos);
+			if (screenPos.z > 0) {
+				renderDebugText({ screenPos.x, screenPos.y }, text, color);
+			}
+		}
+
+		void renderDebugText(Vector2 screenpos, const string& text, Color color) {
 			endDebugObjs->screenpos = screenpos;
-			endDebugObjs->gobj = gobj;
+			endDebugObjs->text = text;
+			endDebugObjs->color = color;
 			endDebugObjs++;
 		}
 
@@ -126,15 +146,14 @@ namespace openAITD {
 			}
 
 			rlPushMatrix();
+  		Vector3& pos = gobj.location.position;			
 			Vector3& roomPos = world->curStage->rooms[gobj.location.roomId].position;
 			rlMultMatrixf(MatrixToFloat(MatrixTranslate(roomPos.x,roomPos.y,roomPos.z)));
 
-			DrawCube(gobj.location.position, 0.1, 0.1, 0.1, RED);
+			DrawCube(pos, 0.1, 0.1, 0.1, RED);
 
-			auto screenPos = GetWorldToScreenZ(Vector3Add(roomPos, gobj.location.position));
-			if (screenPos.z > 0) {
-				renderDebugObj({ screenPos.x, screenPos.y }, &gobj);
-			}
+			string debugStr = to_string(gobj.id);
+  		renderDebugText3D(Vector3Add(roomPos, pos), debugStr, RED);
 
 			if (gobj.physics.boundsCached) {
 				DrawBounds(gobj.physics.bounds, RED);
@@ -151,7 +170,22 @@ namespace openAITD {
 			//DrawCube(mMax, 0.1, 0.1, 0.1, MAGENTA);
 
 			if (gobj.track.mode == GOTrackMode::track) {
-				DrawLine3D(gobj.location.position, gobj.track.targetPos, ORANGE);
+
+				DrawLine3D(pos, gobj.track.targetPos, ORANGE);
+				
+				/*Vector3 forw = { 
+					pos.x + gobj.track.debug.forward2D.x,
+					pos.y,
+					pos.z + gobj.track.debug.forward2D.y
+				};				
+				DrawCube(forw, 0.1, 0.1, 0.1, PINK);*/
+				Vector3 targDir = { 
+					pos.x + gobj.track.debug.targetDir.x,
+					pos.y,
+					pos.z + gobj.track.debug.targetDir.y
+				};				
+				DrawCube(targDir, 0.1, 0.1, 0.1, BROWN);
+				renderDebugText3D(Vector3Add(roomPos, targDir), to_string(gobj.track.debug.angle), PINK);
 			}
 
 			rlPopMatrix();
@@ -238,15 +272,14 @@ namespace openAITD {
 				renderBounds();
 				renderZones();
 				renderCameraZones();
-				renderOvlBounds();
+				//renderOvlBounds();
 				//renderTrack();
 			EndMode3D();
 
-			string gebugStr;
 			for (int i = 0; i < 100; i++) {
 				if (&debugObjs[i] == endDebugObjs) break;
-				gebugStr = to_string(debugObjs[i].gobj->id);
-				DrawText(gebugStr.c_str(), (int)debugObjs[i].screenpos.x, (int)debugObjs[i].screenpos.y, 24, WHITE);
+				auto& dobj = debugObjs[i];
+				DrawText(dobj.text.c_str(), (int)dobj.screenpos.x, (int)dobj.screenpos.y, 24, dobj.color);
 			}
 
 			renderCamPos();

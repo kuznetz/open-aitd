@@ -177,6 +177,7 @@ namespace openAITD {
 
 		void processGravity(GameObject& gobj, Room& room) {
 			if (!gobj.bitField.fallable) return;
+			if (gobj.track.id != -1 ) return;
 			gobj.physics.falling = 1;
 			Bounds& objB = world->getObjectBounds(gobj);
 			if (gobj.location.position.y < 0) {
