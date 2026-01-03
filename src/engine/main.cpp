@@ -94,13 +94,13 @@ namespace openAITD {
 
     bool loadStage() {
         if (world.curStageId == world.nextStageId) return false;
-        BeginDrawing();
+        resources.screen.begin();
         auto& f = resources.screen.mainFont;
         const char* m = "Loading...";
         auto mt = MeasureTextEx(f, m, f.baseSize, 0);
         Vector2 v = { (int)(resources.config.screenW - mt.x) / 2, resources.config.screenH - (f.baseSize * 2) };
         DrawTextEx(f, m, v, f.baseSize, 0, WHITE);
-        EndDrawing();
+        resources.screen.end();
 
         world.curStage = &resources.stages[world.nextStageId];
         world.curStageId = world.nextStageId;

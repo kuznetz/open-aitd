@@ -62,6 +62,7 @@ namespace openAITD {
 			Bounds& objB = world->getObjectBounds(gobj);
 			Vector3 v = gobj.physics.moveVec;
 			bool collided = false;
+			gobj.physics.staticColl = -1;
 			for (int i = 0; i < room.colliders.size(); i++) {
 				Bounds& colB = room.colliders[i].bounds;
 
@@ -195,30 +196,32 @@ namespace openAITD {
 		void processZones(GameObject& gobj, Room* curRoom) {
 			//Check Zones
 			gobj.physics.zoneTriggered = -1;
-			if (gobj.bitField.trigger) {
-				for (int i = 0; i < curRoom->zones.size(); i++) {
-					auto& curZone = curRoom->zones[i];
-					if (!objectInZone(gobj, &curZone)) continue;
-					if (curZone.type == RoomZoneType::ChangeRoom) {
-						//printf("Change room obj %d: %d -> %d\n", gobj.id, gobj.location.roomId, curZone.parameter);
-						gobj.location.position = world->VectorChangeRoom(gobj.location.position, gobj.location.roomId, curZone.parameter);
-						gobj.location.roomId = curZone.parameter;
-						gobj.physics.boundsCached = false;
-						break;
-					}
-					if (curZone.type == RoomZoneType::Trigger) {
-						//printf("Triggered obj %d zone %d\n", gobj.id, curZone.parameter);
+			if (!gobj.bitField.trigger) return;
+
+			for (int i = 0; i < curRoom->zones.size(); i++) {
+				auto& curZone = curRoom->zones[i];
+				if (!objectInZone(gobj, &curZone)) continue;
+				if (curZone.type == RoomZoneType::ChangeRoom) {
+					//printf("Change room obj %d: %d -> %d\n", gobj.id, gobj.location.roomId, curZone.parameter);
+					gobj.location.position = world->VectorChangeRoom(gobj.location.position, gobj.location.roomId, curZone.parameter);
+					gobj.location.roomId = curZone.parameter;
+					gobj.physics.boundsCached = false;
+					break;
+				} else if (curZone.type == RoomZoneType::Trigger) {
+					//printf("Triggered obj %d zone %d\n", gobj.id, curZone.parameter);
+					gobj.physics.zoneTriggered = curZone.parameter;
+					// AITD1 stops at the first zone
+					break;
+				} else if (curZone.type == RoomZoneType::ChangeStage) {
+					// if (gobj.location.stageId == 5) {
+					// 	return;
+					// }					
+					if (gobj.stageLifeId != -1) {
+						gobj.lifeId = gobj.stageLifeId;
 						gobj.physics.zoneTriggered = curZone.parameter;
-						// AITD1 stops at the first zone
-						break;
+						//flagFloorChange = true;
 					}
-					if (curZone.type == RoomZoneType::ChangeStage) {
-						if (gobj.stageLifeId != -1) {
-							gobj.lifeId = gobj.stageLifeId;
-							gobj.physics.zoneTriggered = curZone.parameter;
-							//flagFloorChange = true;
-						}
-					}
+					break;
 				}
 			}
 		}

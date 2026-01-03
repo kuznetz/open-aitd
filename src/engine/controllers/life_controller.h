@@ -209,7 +209,8 @@ namespace openAITD {
 				return this->world->gobjects[obj].animation.animEnd;
 				}, "END_ANIM");
 			lua->CreateFunction([this](int obj, int animId, int param) -> int {
-				return 1;
+				//TODO: For climbing
+				return 0;
 				}, "TEST_ZV_END_ANIM");
 
 			lua->CreateFunction([this](int obj) -> int {
