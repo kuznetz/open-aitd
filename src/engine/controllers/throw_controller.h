@@ -76,19 +76,8 @@ namespace openAITD {
             item.throwing.hitDamage = action.hitDamage;
             item.throwing.active = true;
             //item.throwing.direction = Vector3RotateByQuaternion({ -1, 0, 0}, item.location.rotation);
-
             world->delFromInventory(item.id);
             action.gobj = 0;
-        }
-
-        void processItem(float timeDelta) {
-            if (!action.throwedItem) return;
-            auto& item = *action.throwedItem;
-            if (!item.throwing.active) return;
-            //auto v = Vector3Scale(item.throwing.direction, 3 * timeDelta);
-            item.animation.prevMoveRoot = { 0,0,0 };
-            item.animation.moveRoot = { 0, 0, -3 * timeDelta };
-            //item.location.position += v;
         }
 
 		void throwStop(GameObject& gobj) {
@@ -102,7 +91,6 @@ namespace openAITD {
 
         void process(float timeDelta) {
             processAnim(timeDelta);
-            processItem(timeDelta);
         }
     };
 

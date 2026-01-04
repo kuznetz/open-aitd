@@ -69,12 +69,10 @@ namespace openAITD {
 			gobj.physics.staticColl = -1;
 			for (int i = 0; i < room.colliders.size(); i++) {
 				Bounds& colB = room.colliders[i].bounds;
-
-				bool c = objB.CollToBox(colB);
-				collided = collided || c;
-				if (c) {
+				if (objB.CollToBox(colB)) {
+					collided = true;
 					Bounds colBS = colB.getExpanded(-0.001f);
-					if (gobj.physics.moving) {
+					if (gobj.physics.moving && objB.CollToBox(colBS)) {
 						objB.CollToBoxV_XZ(v, colBS);
 					}
 					if (room.colliders[i].type == 9) {
@@ -111,6 +109,7 @@ namespace openAITD {
 			for (int i = 0; i < world->gobjects.size(); i++) {
 				auto& gobj2 = world->gobjects[i];
 				if (&gobj == &gobj2) continue;
+				if (!gobj2.physics.collidable) continue;
 				if (gobj2.modelId == -1) continue;
 				if (gobj2.location.stageId != gobj.location.stageId) continue;
 				if (gobj.throwing.active && gobj.throwing.throwedBy == &gobj2) continue;
@@ -185,7 +184,7 @@ namespace openAITD {
 			gobj.physics.falling = true;
 
 			auto& objB = world->getObjectBounds(gobj);
-			float moveY = (-1 * timeDelta);
+			float moveY = (-2 * timeDelta);
 			auto objBM = objB;
 			objBM.min.y += moveY;
 			objBM.max.y += moveY;
@@ -198,14 +197,15 @@ namespace openAITD {
 
 			for (int i = 0; i < room.colliders.size(); i++) {
 				Bounds& colB = room.colliders[i].bounds;
-				Bounds colBS = colB.getExpanded(-0.001f);
+				Bounds colBS = colB.getExpanded(-0.002f);
 				if (!objBM.CollToBox(colBS)) continue;
 				gobj.physics.falling = false;
-				moveY = 0;
+				moveY = (colBS.max.y - objB.min.y) + 0.0019f;
 			}
-
-  		gobj.physics.boundsCached = false;
-	  	gobj.location.position.y += moveY;
+			if (moveY < 0.0001f) {
+				gobj.physics.boundsCached = false;
+				gobj.location.position.y += moveY;
+			}
 		}
 
 		void processZones(GameObject& gobj, Room* curRoom) {
@@ -270,17 +270,26 @@ namespace openAITD {
 
 				auto* curRoom = &curStage.rooms[gobj.location.roomId];
   			auto& moveVec = gobj.physics.moveVec;
-				moveVec = {0,0,0};
+				moveVec = { 0,0,0 };
+				Vector3 moveVec0 = { 0,0,0 };
+				if (gobj.throwing.active) {
+					moveVec0.z += -3 * timeDelta;
+				}
 				if (gobj.bitField.animated) {
-					moveVec = Vector3Subtract(gobj.animation.moveRoot, gobj.animation.prevMoveRoot);
-          moveVec = Vector3RotateByQuaternion(moveVec, gobj.location.rotation);
-					processStaticColliders(gobj, *curRoom);
-					processDynamicColliders(gobj, *curRoom);
-					gobj.physics.moving = ( fabs(moveVec.x) > 0.0001 || fabs(moveVec.y) > 0.0001 || fabs(moveVec.z) > 0.0001 );
-					if (gobj.physics.moving) {
-						gobj.physics.boundsCached = false;
-						gobj.location.position = Vector3Add(gobj.location.position, moveVec);
+					moveVec0 = Vector3Add(
+						moveVec0,
+						Vector3Subtract(gobj.animation.moveRoot, gobj.animation.prevMoveRoot)
+					);
+				}
+				gobj.physics.moving = ( fabs(moveVec0.x) > 0.0001 || fabs(moveVec0.z) > 0.0001 );
+				if (gobj.physics.moving) {
+        	moveVec = Vector3RotateByQuaternion(moveVec0, gobj.location.rotation);
+					if (gobj.physics.collidable) {
+						processStaticColliders(gobj, *curRoom);
+						processDynamicColliders(gobj, *curRoom);
 					}
+					gobj.physics.boundsCached = false;
+					gobj.location.position = Vector3Add(gobj.location.position, moveVec);
 				}
 
 				processGravity(gobj, *curRoom, timeDelta);
