@@ -8,17 +8,40 @@ namespace openAITD {
 
 	class Bounds {
 	public:
-		static Vector3 CalculateMTV(const Bounds& b1, const Bounds& b2)
+		static Vector3 CalculateMTV_XYZ(const Bounds& b1, const Bounds& b2)
+		{
+				float overlapX = std::min(b1.max.x, b2.max.x) - std::max(b1.min.x, b2.min.x);
+				float overlapY = std::min(b1.max.y, b2.max.y) - std::max(b1.min.y, b2.min.y);
+				float overlapZ = std::min(b1.max.z, b2.max.z) - std::max(b1.min.z, b2.min.z);
+
+				if (overlapX <= 0 || overlapY <= 0 || overlapZ <= 0) {
+						return { 0, 0, 0 };
+				}
+
+				float minOverlap = std::min({ abs(overlapX), abs(overlapY), abs(overlapZ) });
+
+				Vector3 mtv = { 0, 0, 0 };
+				if (minOverlap == abs(overlapX)) {
+						mtv.x = overlapX * ((b1.min.x + b1.max.x) / 2 >= (b2.min.x + b2.max.x) / 2 ? -1 : 1);
+				}
+				else if (minOverlap == abs(overlapY)) {
+						mtv.y = overlapY * ((b1.min.y + b1.max.y) / 2 >= (b2.min.y + b2.max.y) / 2 ? -1 : 1);
+				}
+				else {
+						mtv.z = overlapZ * ((b1.min.z + b1.max.z) / 2 >= (b2.min.z + b2.max.z) / 2 ? -1 : 1);
+				}
+
+				return mtv;
+		}
+
+		static Vector3 CalculateMTV_XZ(const Bounds& b1, const Bounds& b2)
 		{
 			float overlapX = std::min(b1.max.x, b2.max.x) - std::max(b1.min.x, b2.min.x);
 			float overlapZ = std::min(b1.max.z, b2.max.z) - std::max(b1.min.z, b2.min.z);
-
 			if (overlapX <= 0 || overlapZ <= 0) {
 				return { 0,0,0 };
 			}
-
 			bool pushAlongX = abs(overlapX) < abs(overlapZ);
-
 			Vector3 mtv = { 0,0,0 };
 			if (pushAlongX) {
 				mtv.x = overlapX * ((b1.min.x + b1.max.x) / 2 >= (b2.min.x + b2.max.x) / 2 ? -1 : 1);
@@ -26,10 +49,9 @@ namespace openAITD {
 			else {
 				mtv.z = overlapZ * ((b1.min.z + b1.max.z) / 2 >= (b2.min.z + b2.max.z) / 2 ? -1 : 1);
 			}
-
 			return mtv;
 		}
-
+		
 		Vector3 min = { 0,0,0 }; // Minimum vertex box-corner
 		Vector3 max = { 0,0,0 }; // Maximum vertex box-corner
 
@@ -116,15 +138,29 @@ namespace openAITD {
 			return res;
 		}
 
-		bool CollToBoxV(Vector3& v, Bounds& b2) {
-			if (v.x == 0 && v.z == 0) return false;
+		bool CollToBoxV_XYZ(Vector3& v, Bounds& b2) {
+			if (v.x == 0 && v.y == 0 && v.z == 0) return false;
 			Bounds b1( Vector3Add(this->min, v), Vector3Add(this->max, v) );
 
 			if (b1.max.x < b2.min.x || b1.min.x > b2.max.x)  return false;
 			if (b1.max.y < b2.min.y || b1.min.y > b2.max.y)  return false;
 			if (b1.max.z < b2.min.z || b1.min.z > b2.max.z)  return false;
 
-			auto& mtv = CalculateMTV(b1, b2);
+			auto& mtv = CalculateMTV_XYZ(b1, b2);
+			v.x -= mtv.x;
+			v.x -= mtv.y;
+			v.z -= mtv.z;
+			return true;
+		}
+
+		bool CollToBoxV_XZ(Vector3& v, Bounds& b2) {
+			if (v.x == 0 && v.z == 0) return false;
+			Bounds b1( Vector3Add(this->min, v), Vector3Add(this->max, v) );
+
+			if (b1.max.x < b2.min.x || b1.min.x > b2.max.x)  return false;
+			if (b1.max.z < b2.min.z || b1.min.z > b2.max.z)  return false;
+
+			auto& mtv = CalculateMTV_XZ(b1, b2);
 			v.x -= mtv.x;
 			v.z -= mtv.z;
 			return true;

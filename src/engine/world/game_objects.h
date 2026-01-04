@@ -76,7 +76,7 @@ namespace openAITD {
 		int stageId = -1;
 		int roomId = -1;
 		Vector3 position;
-		Vector4 rotation;
+		Vector4 rotation = { 0,0,0,1};
 		Vector3i rotOrig;
 	};
 

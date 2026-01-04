@@ -24,7 +24,11 @@ namespace openAITD {
 		bool objectInZone(GameObject& gobj, RoomZone* zone) {
 			auto& p = gobj.location.position;
 			auto& b = zone->bounds;
-			return ((p.x > b.min.x) && (p.x < b.max.x) && (p.z > b.min.z) && (p.z < b.max.z));
+			return (
+				(p.x >= b.min.x) && (p.x <= b.max.x) &&
+				((p.y+0.001) >= b.min.y) && (p.y <= b.max.y) &&
+				(p.z >= b.min.z) && (p.z <= b.max.z)
+			);
 		}
 
 		bool CollPointToBox(const Vector3& p, Vector3& v, Bounds& b) {
@@ -68,11 +72,10 @@ namespace openAITD {
 
 				bool c = objB.CollToBox(colB);
 				collided = collided || c;
-
 				if (c) {
-					Bounds colBS = colB.getExpanded(-0.01f);
+					Bounds colBS = colB.getExpanded(-0.001f);
 					if (gobj.physics.moving) {
-						objB.CollToBoxV(v, colBS);
+						objB.CollToBoxV_XZ(v, colBS);
 					}
 					if (room.colliders[i].type == 9) {
 						gobj.physics.staticColl = room.colliders[i].parameter;
@@ -128,17 +131,17 @@ namespace openAITD {
 				collided = collided || c;
 				//if (gobj2.id == 0) printf("chest coll = %d\n", c);
 				if (c) {
-					Bounds objB2S = objB2.getExpanded(-0.01f);
+					Bounds objB2S = objB2.getExpanded(-0.001f);
 					if (gobj.physics.moving && !gobj2.bitField.foundable) {
 						if (gobj2.bitField.movable) {
 							auto v2 = v;
-							c2 = objB.CollToBoxV(v2, objB2S);
+							c2 = objB.CollToBoxV_XZ(v2, objB2S);
 							if (c2) {
 								pushObject(gobj2, room, v);
 							}
 						}
 						else {
-							c2 = objB.CollToBoxV(v, objB2S);
+							c2 = objB.CollToBoxV_XZ(v, objB2S);
 						}
 					}
 					gobj.physics.objectColl = gobj2.id;
@@ -179,23 +182,30 @@ namespace openAITD {
 		void processGravity(GameObject& gobj, Room& room, float timeDelta) {
 			if (!gobj.bitField.fallable) return;
 			if (gobj.track.id != -1 ) return;
-			
-			gobj.physics.falling = 1;
-  		gobj.physics.boundsCached = false;
-			gobj.location.position.y += -1 * timeDelta;
+			gobj.physics.falling = true;
 
-			Bounds& objB = world->getObjectBounds(gobj);
-			if (gobj.location.position.y <= 0) {
-				gobj.physics.falling = 0;
-				gobj.location.position.y = -0.001;
+			auto& objB = world->getObjectBounds(gobj);
+			float moveY = (-1 * timeDelta);
+			auto objBM = objB;
+			objBM.min.y += moveY;
+			objBM.max.y += moveY;
+
+			if (objBM.min.y <= 0.001) {
+				gobj.location.position.y = 0;
+				gobj.physics.falling = false;
 				return;
 			}
+
 			for (int i = 0; i < room.colliders.size(); i++) {
 				Bounds& colB = room.colliders[i].bounds;
-				if (!objB.CollToBox(colB)) continue;
-				gobj.physics.falling = 0;
-				gobj.location.position.y = colB.max.y - 0.001;
+				Bounds colBS = colB.getExpanded(-0.001f);
+				if (!objBM.CollToBox(colBS)) continue;
+				gobj.physics.falling = false;
+				moveY = 0;
 			}
+
+  		gobj.physics.boundsCached = false;
+	  	gobj.location.position.y += moveY;
 		}
 
 		void processZones(GameObject& gobj, Room* curRoom) {
@@ -218,9 +228,6 @@ namespace openAITD {
 					// AITD1 stops at the first zone
 					break;
 				} else if (curZone.type == RoomZoneType::ChangeStage) {
-					if (gobj.location.stageId == 5) {						
-						return;
-					}
 					if (gobj.stageLifeId != -1) {
 						gobj.lifeId = gobj.stageLifeId;
 						gobj.physics.zoneTriggered = curZone.parameter;
@@ -263,20 +270,20 @@ namespace openAITD {
 
 				auto* curRoom = &curStage.rooms[gobj.location.roomId];
   			auto& moveVec = gobj.physics.moveVec;
+				moveVec = {0,0,0};
 				if (gobj.bitField.animated) {
 					moveVec = Vector3Subtract(gobj.animation.moveRoot, gobj.animation.prevMoveRoot);
           moveVec = Vector3RotateByQuaternion(moveVec, gobj.location.rotation);
-					gobj.physics.moving = ( fabs(moveVec.x) > 0.0001 || fabs(moveVec.y) > 0.0001 || fabs(moveVec.z) > 0.0001 );
 					processStaticColliders(gobj, *curRoom);
 					processDynamicColliders(gobj, *curRoom);
-				}
-				if (gobj.physics.moving) {
-					gobj.physics.boundsCached = false;
-					gobj.location.position = Vector3Add(gobj.location.position, moveVec);
+					gobj.physics.moving = ( fabs(moveVec.x) > 0.0001 || fabs(moveVec.y) > 0.0001 || fabs(moveVec.z) > 0.0001 );
+					if (gobj.physics.moving) {
+						gobj.physics.boundsCached = false;
+						gobj.location.position = Vector3Add(gobj.location.position, moveVec);
+					}
 				}
 
 				processGravity(gobj, *curRoom, timeDelta);
-
 				processZones(gobj, curRoom);
 			}
 
