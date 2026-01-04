@@ -158,6 +158,7 @@ namespace openAITD {
 			Bounds b1( Vector3Add(this->min, v), Vector3Add(this->max, v) );
 
 			if (b1.max.x < b2.min.x || b1.min.x > b2.max.x)  return false;
+			if (b1.max.y < b2.min.y || b1.min.y > b2.max.y)  return false;
 			if (b1.max.z < b2.min.z || b1.min.z > b2.max.z)  return false;
 
 			auto& mtv = CalculateMTV_XZ(b1, b2);

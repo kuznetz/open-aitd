@@ -124,12 +124,10 @@ namespace openAITD {
 					}
 				}
 
-				//Expand to constant collision check
-				bool c = objB.CollToBox(objB2);
 				bool c2 = false;
-				collided = collided || c;
-				//if (gobj2.id == 0) printf("chest coll = %d\n", c);
-				if (c) {
+				if (objB.CollToBox(objB2)) {
+					collided = true;
+  				//Shrink to constant collision check
 					Bounds objB2S = objB2.getExpanded(-0.001f);
 					if (gobj.physics.moving && !gobj2.bitField.foundable) {
 						if (gobj2.bitField.movable) {
@@ -148,7 +146,11 @@ namespace openAITD {
 						gobj2.physics.collidedBy = gobj.id;
 					}
 					//takable
-					if (gobj.track.mode == GOTrackMode::manual && gobj2.bitField.foundable && gobj2.invItem.foundTimeout < this->world->chrono) {
+					if (
+						 gobj.track.mode == GOTrackMode::manual &&
+						 gobj2.bitField.foundable && 
+						 gobj2.invItem.foundTimeout < this->world->chrono
+					) {
 						foundScreen->main(gobj2.id);
 					}
 				}
@@ -200,8 +202,26 @@ namespace openAITD {
 				Bounds colBS = colB.getExpanded(-0.002f);
 				if (!objBM.CollToBox(colBS)) continue;
 				gobj.physics.falling = false;
-				moveY = (colBS.max.y - objB.min.y) + 0.0019f;
+				moveY = (colBS.max.y - objB.min.y) + 0.002f;
 			}
+
+			for (int i = 0; i < world->gobjects.size(); i++) {
+				auto& gobj2 = world->gobjects[i];
+				if (&gobj == &gobj2) continue;
+				if (!gobj2.physics.collidable) continue;
+				if (gobj2.modelId == -1) continue;
+				if (gobj2.location.stageId != gobj.location.stageId) continue;
+				if (gobj.throwing.active && gobj.throwing.throwedBy == &gobj2) continue;
+				if (gobj2.location.roomId != gobj.location.roomId) {
+					continue;
+				}				
+				Bounds objB2 = world->getObjectBounds(gobj2);
+				Bounds objB2S = objB2.getExpanded(-0.002f);
+				if (!objBM.CollToBox(objB2S)) continue;
+				gobj.physics.falling = false;
+				moveY = (objB2S.max.y - objB.min.y) + 0.002f;
+			}
+
 			if (moveY < 0.0001f) {
 				gobj.physics.boundsCached = false;
 				gobj.location.position.y += moveY;
