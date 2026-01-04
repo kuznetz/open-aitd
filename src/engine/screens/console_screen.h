@@ -132,6 +132,7 @@ namespace openAITD {
 				player.location.stageId = stageId;
 				player.location.roomId = roomId;
 				player.location.position = { 0,0,0 };
+        exit = true;
 
       } catch (const exception& e) {
           lines[0] = "Invalid Arguments";

@@ -113,6 +113,13 @@ namespace openAITD {
             resources.models.getModel(gobj.modelId);
         }
 
+        //reset animation
+        for (int i = 0; i < world.gobjects.size(); i++) {
+            auto& gobj = world.gobjects[i];
+            if (gobj.animation.id == -1) continue;
+            gobj.animation.animTime = 0;
+        }
+
         //reset frame time
         BeginDrawing();
         EndDrawing();

@@ -44,8 +44,7 @@ namespace openAITD {
 			if (!isAction) {
 				float rotate = 0;
 				if (IsKeyDown(KEY_LEFT)) {
-					rotate = 1;
-					
+					rotate = 1;					
 					nextAnimation = world->player.animations.turnCCW;
 				}
 				if (IsKeyDown(KEY_RIGHT)) {

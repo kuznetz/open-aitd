@@ -433,6 +433,9 @@ namespace openAITD {
 				gobj.track.id = trackId;
 				gobj.track.pos = positionInTrack;
 				gobj.track.posStarted = false;
+				if (gobj.track.mode == GOTrackMode::manual) {
+					world->setRepeatAnimation(gobj, world->player.animations.idle);
+				}
 				}, "SET_TRACKMODE");
 
 			lua->CreateFunction([this](int obj, int toAngle, int time) {

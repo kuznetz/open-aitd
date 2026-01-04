@@ -48,7 +48,7 @@ namespace openAITD {
 			gobj.track.debug.targetDir = targetDir;
     
 	    float angle = Vector2Angle(forward2D, targetDir);
-  	  const float rotateSpeed = PI; // 180°/sec
+  	  const float rotateSpeed = 2*PI;
 			gobj.track.debug.angle = angle;
       
 			float rotateSpeedD = rotateSpeed * timeDelta;
@@ -153,7 +153,7 @@ namespace openAITD {
 
 		void rotateXYZ(GameObject& gobj, TrackItem& trackItm) {
 			Matrix mx = MatrixRotateX(trackItm.rot.x);
-			Matrix my = MatrixRotateY(trackItm.rot.y); // + PI
+			Matrix my = MatrixRotateY(trackItm.rot.y + PI); // + PI
 			Matrix mz = MatrixRotateZ(trackItm.rot.z);
 			Matrix matRotation = MatrixMultiply(MatrixMultiply(my, mx), mz);
 			matRotation = MatrixTranspose(matRotation);
@@ -162,6 +162,10 @@ namespace openAITD {
 
 		void processObjTrack( GameObject& gobj, const float timeDelta ) {
 			if (gobj.track.id == -1) return;
+			if (gobj.id == 1) {
+				gobj.animation.id = world->player.animations.walkForw;
+			}
+
 			auto& trackItm = world->resources->tracks[gobj.track.id][gobj.track.pos];
 			bool nextPos = true;
 			switch (trackItm.type) {
