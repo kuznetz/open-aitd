@@ -176,13 +176,18 @@ namespace openAITD {
 			gobj.physics.moving = false;
 		}
 
-		void processGravity(GameObject& gobj, Room& room) {
+		void processGravity(GameObject& gobj, Room& room, float timeDelta) {
 			if (!gobj.bitField.fallable) return;
 			if (gobj.track.id != -1 ) return;
+			
 			gobj.physics.falling = 1;
+  		gobj.physics.boundsCached = false;
+			gobj.location.position.y += -1 * timeDelta;
+
 			Bounds& objB = world->getObjectBounds(gobj);
-			if (gobj.location.position.y < 0) {
+			if (gobj.location.position.y <= 0) {
 				gobj.physics.falling = 0;
+				gobj.location.position.y = -0.001;
 				return;
 			}
 			for (int i = 0; i < room.colliders.size(); i++) {
@@ -213,9 +218,9 @@ namespace openAITD {
 					// AITD1 stops at the first zone
 					break;
 				} else if (curZone.type == RoomZoneType::ChangeStage) {
-					// if (gobj.location.stageId == 5) {
-					// 	return;
-					// }					
+					if (gobj.location.stageId == 5) {						
+						return;
+					}
 					if (gobj.stageLifeId != -1) {
 						gobj.lifeId = gobj.stageLifeId;
 						gobj.physics.zoneTriggered = curZone.parameter;
@@ -256,29 +261,21 @@ namespace openAITD {
 				if (gobj.location.stageId != world->curStageId) continue;
 				if (gobj.modelId == -1) continue;
 
-				gobj.physics.moving = false;
-				auto& v = gobj.physics.moveVec;
-				v = Vector3Subtract(gobj.animation.moveRoot, gobj.animation.prevMoveRoot);
-				gobj.physics.moving = (v.x != 0 || v.y != 0 || v.z != 0);
-
-				if (gobj.physics.moving) {
-					v = Vector3RotateByQuaternion(v, gobj.location.rotation);
-					gobj.physics.boundsCached = false;
-				}
-
 				auto* curRoom = &curStage.rooms[gobj.location.roomId];
-				processStaticColliders(gobj, *curRoom);
-				processDynamicColliders(gobj, *curRoom);
+  			auto& moveVec = gobj.physics.moveVec;
+				if (gobj.bitField.animated) {
+					moveVec = Vector3Subtract(gobj.animation.moveRoot, gobj.animation.prevMoveRoot);
+          moveVec = Vector3RotateByQuaternion(moveVec, gobj.location.rotation);
+					gobj.physics.moving = ( fabs(moveVec.x) > 0.0001 || fabs(moveVec.y) > 0.0001 || fabs(moveVec.z) > 0.0001 );
+					processStaticColliders(gobj, *curRoom);
+					processDynamicColliders(gobj, *curRoom);
+				}
 				if (gobj.physics.moving) {
-					gobj.location.position = Vector3Add(gobj.location.position, gobj.physics.moveVec);
+					gobj.physics.boundsCached = false;
+					gobj.location.position = Vector3Add(gobj.location.position, moveVec);
 				}
 
-				processGravity(gobj, *curRoom);
-				if (gobj.physics.falling) {
-					gobj.physics.moving = true;
-					gobj.physics.boundsCached = false;
-					gobj.location.position.y -= 1 * timeDelta;
-				}
+				processGravity(gobj, *curRoom, timeDelta);
 
 				processZones(gobj, curRoom);
 			}

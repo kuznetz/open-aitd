@@ -49,17 +49,19 @@ namespace openAITD {
     
 	    float angle = Vector2Angle(forward2D, targetDir);
   	  const float rotateSpeed = PI; // 180°/sec
-      const float angleThreshold = 0.01f; // ~0.57°
 			gobj.track.debug.angle = angle;
       
-			if (fabs(angle) < angleThreshold) return;
-    
-	    //int dir = calcRotateDirection(forward2D, targetDir);
-    	//if (dir == 0) return;
-    	//float cw = (dir == 2) ? -1.0f : 1.0f;
-			float cw = (angle > 0) ? -1.0f : 1.0f;
-			auto q = QuaternionFromAxisAngle({ 0, 1, 0 }, rotateSpeed * timeDelta * cw);
-      gobj.location.rotation = QuaternionMultiply(gobj.location.rotation, q);
+			float rotateSpeedD = rotateSpeed * timeDelta;
+			float newAngle;
+			if (fabs(angle) > rotateSpeedD) {
+					float cw = (angle > 0) ? -1.0f : 1.0f;
+					newAngle = rotateSpeedD * cw;
+    	} else {
+				  newAngle = -angle;
+			}
+
+			auto q = QuaternionFromAxisAngle({ 0, 1, 0 }, newAngle);
+	    gobj.location.rotation = QuaternionMultiply(gobj.location.rotation, q);
 		}
 
 		bool gotoPos(GameObject& gobj, TrackItem& trackItm, const float timeDelta) {
@@ -80,7 +82,7 @@ namespace openAITD {
 			//TODO: change code 4 distance reach
 
 			float distanceToPoint = Vector3DistanceSqr(gobj.location.position, gobj.track.targetPos);
-			if (distanceToPoint >= 0.1 || gobj.rotateAnim.timeEnd > 0) // || distanceToPoint >= nextDistanceToPoint
+			if (distanceToPoint >= 0.05 || gobj.rotateAnim.timeEnd > 0) // || distanceToPoint >= nextDistanceToPoint
 			{
 				// not yet at position
 				gobj.track.posStarted = true;

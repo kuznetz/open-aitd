@@ -62,15 +62,6 @@ namespace openAITD {
     bool pause = false;
     const float maxDelta = 1. / 30;
 
-    void startIntro() {
-        world.gameOver = false;
-        world.loadVars("data/vars.json");
-        world.loadGObjects("data/objects.json");
-        world.setCurStage(7, 1);
-        lifeContr.reloadVars();
-        state = AppState::Intro;
-    }
-
     void startGame() {
         world.gameOver = false;
         world.loadVars("data/vars.json");
@@ -81,12 +72,17 @@ namespace openAITD {
         state = AppState::InWorld;
     }
 
+    void startIntro() {
+        startGame();
+        world.setCurStage(7, 1);
+        state = AppState::Intro;
+    }
+
+
     void loadGame(int slot) {
-        world.gameOver = false;
-        world.loadGObjects("data/objects.json");
+        startGame();
         try {
             saveContr.load(mainMenu.saveSlot);
-            state = AppState::InWorld;
         } catch (exception e) {
             cout << e.what() << endl;
         }

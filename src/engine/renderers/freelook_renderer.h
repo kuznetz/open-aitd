@@ -59,6 +59,7 @@ namespace openAITD {
 
 		void renderZones() {
 			if (!world->followTarget) return;
+			if (world->curStageId != world->nextStageId) return;
 			int curRoomId = world->followTarget->location.roomId;
 			if (curRoomId == -1) return;
 			auto& room = world->curStage->rooms[curRoomId];
