@@ -517,7 +517,7 @@ void saveModelGLTF(const PakModel& model, vector<Animation*> animations, const s
             if (prim.vertexIdxs.size() != 2) {
                 throw new exception("Line indexes not 2");
             }
-            auto matIdx = getMaterialIdx(m, prim.subType, 0);
+            auto matIdx = getMaterialIdx(m, prim.colorIndex, 0);
             Vector3 points[2] = {
                 modelVerts[prim.vertexIdxs[0] / 6],
                 modelVerts[prim.vertexIdxs[1] / 6]
