@@ -5,6 +5,8 @@
 
 #include "pak/pak.h"
 #include "loaders/loaders.h"
+
+#include "./extractor_path.h"
 #include "extractors/background_extractor.h"
 #include "extractors/object_extractor.h"
 //#include "extractors/floor_extractor.h"
@@ -24,34 +26,38 @@ namespace AITDExtractor {
     vector <gameObjectStruct> gameObjs;
     vector <floorStruct> stages;
 
+    inline string intToStrWidth(int number, int width) {
+        std::stringstream ss;
+        ss << std::setw(width) << std::setfill('0') << number;
+        return ss.str();
+    }
+
     inline void processStages() {
-        char floordir[100];
-        char cameradir[100];
-        char str[100];
-        char str2[100];
+        string floordir;
+        string cameradir;
+        string str;
 
         int tmp = 3;
         for (int fl = 0; fl < stages.size(); fl++) {
             auto& curFloor = stages[fl];
+            floordir = ExtractorPath::data + "/stages/" + to_string(fl);
 
-            sprintf(floordir, "data/stages/%d", fl);
             std::filesystem::create_directories(floordir);
-            sprintf(str, "%s/stage", floordir);
-            sprintf(str2, "%s.json", str);
-            if (!std::filesystem::exists(str2)) {
-                saveFloorGLTF(fl, curFloor, gameObjs, str);
+            floordir = floordir;
+            if (!std::filesystem::exists(floordir + "/stage.gltf")) {
+                saveFloorGLTF(fl, curFloor, gameObjs, floordir);
             }
 
-            sprintf(str, "original/CAMERA%02d.PAK", fl);
-            PakFile camPak(str);
+            string origCamera = ExtractorPath::original + "/CAMERA" + intToStrWidth(fl,2) + ".PAK";
+            PakFile camPak(origCamera);
             for (int cam = 0; cam < curFloor.cameras.size(); cam++) {
                 //background
-                sprintf(cameradir, "%s/camera_%d", floordir, cam);
+                cameradir = floordir + "/camera_" + to_string(cam);
                 std::filesystem::create_directories(cameradir);
-                sprintf(str2, "%s/background.png", cameradir);
-                if (!std::filesystem::exists(str2)) {
+                str = cameradir + "/background.png";
+                if (!std::filesystem::exists(str)) {
                     auto& data = camPak.readBlock(cam);
-                    extractBackground(data.data(), str2);
+                    extractBackground(data.data(), str.c_str());
                 }
 
                 //overlays
@@ -59,9 +65,9 @@ namespace AITDExtractor {
                     auto curVw = &curFloor.cameras[cam].viewedRoomTable[vw];
                     for (int ovl = 0; ovl < curVw->overlays_V1.size(); ovl++) {
                         auto polys = &curVw->overlays_V1[ovl].polygons;
-                        sprintf(str, "%s/mask_%d_%d.png", cameradir, vw, ovl);
+                        str = cameradir + "/mask_"+to_string(vw)+"_"+to_string(ovl)+".png";
                         if (!std::filesystem::exists(str)) {
-                            extractV1Mask(polys, str);
+                            extractV1Mask(polys, str.c_str());
                         }
                     }
                 }
@@ -241,6 +247,10 @@ namespace AITDExtractor {
             if (std::filesystem::exists(s)) continue;
             writeWav(&voc, s);
         }
+    }
+
+    void proocessMusics() {
+
     }
 
     void processTexts() {

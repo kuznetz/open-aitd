@@ -85,7 +85,7 @@ int createBoxNode(tinygltf::Model& m, string name, hardColStruct& coll) {
     return m.nodes.size() - 1;
 }
 
-void saveFloorGLTF(int stageId, floorStruct& floor2, const vector<gameObjectStruct>& gameObjs, char* filename)
+void saveFloorGLTF(int stageId, floorStruct& floor2, const vector<gameObjectStruct>& gameObjs, const string& stageDir)
 {
     floorStruct* floor = &floor2;
     nlohmann::json floorJson;
@@ -272,11 +272,11 @@ void saveFloorGLTF(int stageId, floorStruct& floor2, const vector<gameObjectStru
     }
 
     // Save it to a file
-    std::ofstream o(string(filename) + ".json");
+    std::ofstream o( stageDir + "/stage.json" );
     o << std::setw(2) << floorJson;
 
     tinygltf::TinyGLTF gltf;
-    gltf.WriteGltfSceneToFile(&m, string(filename) + ".gltf",
+    gltf.WriteGltfSceneToFile(&m, stageDir + "/stage.gltf",
         false, // embedImages
         true, // embedBuffers
         true, // pretty print
