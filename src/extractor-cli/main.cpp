@@ -5,6 +5,6 @@
 int main(void)
 {
     //linkAnimations();
-    AITDExtractor::extractAllData();
+    AITDExtractor::extractAllData(false);
     return 0;
 }

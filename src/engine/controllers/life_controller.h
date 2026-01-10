@@ -542,10 +542,10 @@ namespace openAITD {
 				//TODO: SOUND_THEN
 				}, "SOUND_THEN");
 			lua->CreateFunction([this](int musicId) {
-				//TODO: SET_MUSIC
+				resources->audio.PlayMusic(musicId);
 				}, "SET_MUSIC");
 			lua->CreateFunction([this](int musicId) {
-				//TODO: NEXT_MUSIC
+				resources->audio.PlayMusic(musicId);
 				}, "NEXT_MUSIC");			
 			lua->CreateFunction([this](int musicId) {
 				//TODO: SOUND_THEN

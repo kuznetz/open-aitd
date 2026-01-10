@@ -178,7 +178,7 @@ namespace AITDExtractor {
         out.close();*/
     }
 
-    void processScripts() {
+    void processScripts(bool floppy) {
         if (!std::filesystem::exists("data/vars.json")) {
             extractVars("original", "data/vars.json");
         }
@@ -189,7 +189,7 @@ namespace AITDExtractor {
         for (int i = 0; i < lifePak.headers.size(); i++)
         {
             auto& data = lifePak.readBlock(i);
-            auto& life = loadLife(data.data(), lifePak.headers[i].uncompressedSize);
+            auto& life = loadLife(data.data(), lifePak.headers[i].uncompressedSize, floppy);
             allLifes.push_back(life);
 
         }
@@ -251,8 +251,10 @@ namespace AITDExtractor {
         }
     }
 
-    void proocessMusics() {
-        PakFile musicPak("original/LISTMUS.PAK");
+    void processAdlibMusic() {
+        //PakFile musicPak("original/LISTMUS.PAK");
+        PakFile musicPak;
+        musicPak.open("original/LISTMUS.PAK");
         auto dir = string("data/music");
         std::filesystem::create_directories(dir);
         for (int i2 = 0; i2 < musicPak.headers.size(); i2++) {
@@ -344,7 +346,7 @@ namespace AITDExtractor {
         saveModelGLTF(model, { &anim1 }, "data/test");
     }
 
-    void extractAllData() {
+    void extractAllData(bool floppy) {
         //roomMatrix = MatrixMultiply(MatrixRotateX(PI), MatrixRotateY(PI));
         roomMatrix = MatrixRotateX(PI);
 
@@ -365,12 +367,16 @@ namespace AITDExtractor {
         processStages();
         processModels();
         //processTestScript();
-        processScripts();
+        processScripts(floppy);
         processTracks();
         processSounds();
-        proocessMusics();
         processPictures();
 
+        if (floppy) {
+            processAdlibMusic();
+        } else {
+            //TODO: CD Audio Ripper
+        }
 
         //PakFile animPak("original/LISTANIM.PAK");
         //vector<Animation> anims;

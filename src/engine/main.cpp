@@ -297,12 +297,13 @@ namespace openAITD {
             inventoryScreen.render();
             resources.screen.end();
         }
+        resources.audio.Process();
     }
 
     int main(void)
     {
         resources.config = loadConfig();
-        AITDExtractor::extractAllData();
+        AITDExtractor::extractAllData(false);
 
         int m;
         if (resources.config.fulllscreen) {

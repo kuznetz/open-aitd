@@ -69,13 +69,6 @@ set(LUA_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/libs/lua2/src")
 set(LUACPP_INCLUDE_DIR "libs/luacpp/include")
 file(GLOB_RECURSE LUACPP_SOURCES CONFIGURE_DEPENDS "libs/luacpp/src/*.cpp")
 
-#RAYLIB
-set(RAYLIB_INCLUDE_DIR "libs/raylib/src")
-set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE) # don't build the supplied examples
-set(BUILD_GAMES    OFF CACHE BOOL "" FORCE) # don't build the supplied example games
-add_subdirectory( ${CMAKE_SOURCE_DIR}/libs/raylib ${CMAKE_CURRENT_BINARY_DIR}/raylib EXCLUDE_FROM_ALL)
-#file(GLOB_RECURSE RAYLIB_SOURCES CONFIGURE_DEPENDS "libs/raylib/src/*.c")
-
 #JSON
 set(COMPILE_AS_CPP ON)
 add_subdirectory( ${CMAKE_SOURCE_DIR}/libs/json ${CMAKE_CURRENT_BINARY_DIR}/json EXCLUDE_FROM_ALL)
@@ -94,6 +87,12 @@ add_subdirectory( ${CMAKE_SOURCE_DIR}/libs/ogg ${CMAKE_CURRENT_BINARY_DIR}/ogg E
 set(VORBIS_INCLUDE_DIR "libs/vorbis/include")
 add_subdirectory( ${CMAKE_SOURCE_DIR}/libs/vorbis ${CMAKE_CURRENT_BINARY_DIR}/vorbis EXCLUDE_FROM_ALL)
 
+#RAYLIB
+set(RAYLIB_INCLUDE_DIR "libs/raylib/src")
+set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE) # don't build the supplied examples
+set(BUILD_GAMES    OFF CACHE BOOL "" FORCE) # don't build the supplied example games
+add_subdirectory( ${CMAKE_SOURCE_DIR}/libs/raylib ${CMAKE_CURRENT_BINARY_DIR}/raylib EXCLUDE_FROM_ALL)
+#file(GLOB_RECURSE RAYLIB_SOURCES CONFIGURE_DEPENDS "libs/raylib/src/*.c")
 
 set(ALL_INCLUDES 
     ${ZLIB_INCLUDE_DIR}

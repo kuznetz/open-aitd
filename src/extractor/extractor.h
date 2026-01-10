@@ -3,8 +3,9 @@
 namespace AITDExtractor {
 	void processStages();
 	void processModels();
-	void processScripts();
+	void processScripts(bool floppy);
 	void processSounds();
 	void processTracks();
-	void extractAllData();
+	void processAdlibMusic();
+	void extractAllData(bool floppy);
 }

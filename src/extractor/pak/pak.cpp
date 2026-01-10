@@ -18,24 +18,31 @@ PakFile::~PakFile()
     }
 }
 
+PakFile::PakFile()
+{
+}
+
 PakFile::PakFile(string fname)
 {
     this->open(fname);
 }
 
-void PakFile::open(string fname)
+void PakFile::open(string fname, int blockcount)
 {
     this->fileHandle = fopen(fname.c_str(), "rb");
 
-    //u32 start;
-    //fread(&start, 4, 1, fileHandle);
-    //start = READ_LE_U32(&start);
-    fseek(this->fileHandle, 4, SEEK_CUR);
+    u32 start;
+    fread(&start, 4, 1, fileHandle);
+    start = READ_LE_U32(&start);    
+    //fseek(this->fileHandle, 4, SEEK_CUR);
 
     u32 fileOffset;
     fread(&fileOffset, 4, 1, fileHandle);
     fileOffset = READ_LE_U32(&fileOffset);
-    int blockcount = (fileOffset - 4) / 4;
+
+    if (blockcount == 0) {
+        blockcount = (fileOffset - 4) / 4;
+    }    
     this->headers.resize(blockcount);
     this->headers[0].headerOffset = fileOffset;
     for (int i = 1; i < blockcount; i++) {

@@ -21,10 +21,11 @@ typedef struct pakInfoStruct
 class PakFile {
 public:
     FILE* fileHandle = 0;
-    vector<pakInfoStruct> headers;
+    vector<pakInfoStruct> headers = {};
 
+    PakFile();
     PakFile(string fname);
     ~PakFile();
-    void open(string fname);
+    void open(string fname, int blockcount = 0);
     vector<u8> readBlock(int index);
 };
