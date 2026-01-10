@@ -85,6 +85,16 @@ set(JSON_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/libs/json/include")
 add_subdirectory( ${CMAKE_SOURCE_DIR}/libs/tinygltf ${CMAKE_CURRENT_BINARY_DIR}/tinygltf EXCLUDE_FROM_ALL)
 set(TINYGLTF_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/libs/tinygltf")
 
+#OGG
+set(OGG_INCLUDE_DIR "libs/ogg/include")
+set(INSTALL_DOCS OFF CACHE BOOL "" FORCE)
+add_subdirectory( ${CMAKE_SOURCE_DIR}/libs/ogg ${CMAKE_CURRENT_BINARY_DIR}/ogg EXCLUDE_FROM_ALL)
+
+#VORBIS
+set(VORBIS_INCLUDE_DIR "libs/vorbis/include")
+add_subdirectory( ${CMAKE_SOURCE_DIR}/libs/vorbis ${CMAKE_CURRENT_BINARY_DIR}/vorbis EXCLUDE_FROM_ALL)
+
+
 set(ALL_INCLUDES 
     ${ZLIB_INCLUDE_DIR}
     ${PNG_INCLUDE_DIR}
@@ -93,19 +103,21 @@ set(ALL_INCLUDES
     ${LUACPP_INCLUDE_DIR}
     ${RAYLIB_INCLUDE_DIR}
     ${JSON_INCLUDE_DIR}
-    ${TINYGLTF_INCLUDE_DIR})
+    ${TINYGLTF_INCLUDE_DIR}
+	${OGG_INCLUDE_DIR}
+	${VORBIS_INCLUDE_DIR})
 
 add_library(libextractor STATIC)
 file(GLOB_RECURSE EXTRACTOR_SOURCES CONFIGURE_DEPENDS "src/extractor/*.cpp" "src/extractor/*.h" "src/extractor/*.hpp")
 target_sources(libextractor PRIVATE ${EXTRACTOR_SOURCES}  ${RAYLIB_SOURCES})
 target_include_directories(libextractor PRIVATE ${ALL_INCLUDES})
-target_link_libraries(libextractor PRIVATE PNG::PNG ZLIB::ZLIB )
+target_link_libraries(libextractor PRIVATE PNG::PNG ZLIB::ZLIB Ogg::ogg Vorbis::vorbis )
 
 add_executable(extractor)
 #target_compile_definitions(${PROJECT_NAME} PRIVATE XXX)
 target_sources(extractor PRIVATE "src/extractor-cli/main.cpp" )
 target_include_directories(extractor PRIVATE ${ALL_INCLUDES})
-target_link_libraries(extractor PRIVATE PNG::PNG ZLIB::ZLIB libextractor )
+target_link_libraries(extractor PRIVATE PNG::PNG ZLIB::ZLIB Ogg::ogg Vorbis::vorbis libextractor )
 set_property(TARGET extractor PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/data")
 
 add_executable(open-aitd)
@@ -113,7 +125,7 @@ file(GLOB_RECURSE AITD_SOURCES CONFIGURE_DEPENDS "src/engine/*.cpp" "src/engine/
 target_sources(open-aitd PRIVATE ${AITD_SOURCES} ${LUACPP_SOURCES} ${RAYLIB_SOURCES})
 target_include_directories(open-aitd PRIVATE ${ALL_INCLUDES})
 #target_include_directories(open-aitd PRIVATE ${CMAKE_SOURCE_DIR}/libs/includes)
-target_link_libraries(open-aitd PRIVATE PNG::PNG ZLIB::ZLIB lua::lua libextractor raylib)
+target_link_libraries(open-aitd PRIVATE PNG::PNG ZLIB::ZLIB lua::lua Ogg::ogg Vorbis::vorbis libextractor raylib)
 set_property(TARGET open-aitd PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/data")
 
 #INSTALL

@@ -17,7 +17,9 @@
 //#include "extractors/skeleton_extractor.h"
 #include "extractors/track_extractor.h"
 #include "extractors/vars_extractor.h"
-#include "life/life_extractor.h"
+
+#include "./music/music_extractor.h"
+#include "./life/life_extractor.h"
 
 Matrix roomMatrix;
 
@@ -250,7 +252,19 @@ namespace AITDExtractor {
     }
 
     void proocessMusics() {
-
+        PakFile musicPak("original/LISTMUS.PAK");
+        auto dir = string("data/music");
+        std::filesystem::create_directories(dir);
+        for (int i2 = 0; i2 < musicPak.headers.size(); i2++) {
+            auto& data = musicPak.readBlock(i2);
+            auto s = dir + "/" + to_string(i2) + ".ogg";
+            if (std::filesystem::exists(s)) continue;
+            renderMusic(data.data(), s, true, 0.8f);            
+            // auto s = dir + "/" + to_string(i2) + ".adl";
+            // ofstream f(s, ios::binary);
+            // f.write((char*)data.data(), data.size());
+            // f.close();            
+        }
     }
 
     void processTexts() {
@@ -354,6 +368,7 @@ namespace AITDExtractor {
         processScripts();
         processTracks();
         processSounds();
+        proocessMusics();
         processPictures();
 
 

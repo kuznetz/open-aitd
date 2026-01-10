@@ -10,6 +10,8 @@
                 "${workspaceFolder}/libs/avir",
                 "${workspaceFolder}/libs/tinygltf",
                 "${workspaceFolder}/libs/json/include",
+                "${workspaceFolder}/libs/ogg/include",
+                "${workspaceFolder}/libs/vorbis/include",
                 "${env:INCLUDE}"  // MSVC system includes
             ],
             "defines": [
