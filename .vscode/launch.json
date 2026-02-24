@@ -22,6 +22,18 @@
             "preLaunchTask": "CMake: build extractor"
         },
         {
+            "name": "Debug Model-Render",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/Debug/model-render-test.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "console": "integratedTerminal",
+            "preLaunchTask": "CMake: build model-render"
+        },
+        {
             "name": "Debug openAITD",
             "type": "cppvsdbg",
             "request": "launch",

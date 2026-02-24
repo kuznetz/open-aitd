@@ -2,12 +2,10 @@
 #include <vector>
 #include <string>
 #include <cstring>
-#include "../../raylib-cpp/raylib-cpp.h"
-#include <external/cgltf.h>
-#include "bounds.h"
+#include "../raylib-cpp/raylib-cpp.h"
+#include "./bounds.h"
 
-//using namespace raylib;
-
+using namespace raylib;
 namespace openAITD {
 
     using namespace ::std;
@@ -90,13 +88,12 @@ namespace openAITD {
 
     void MatrixTransposeRef(Matrix& mat)
     {
-        // Меняем элементы попарно
         std::swap(mat.m1, mat.m4);
-        std::swap(mat.m2, mat.m8);   // строки 1-3 меняются столбцами
-        std::swap(mat.m3, mat.m12);  // строки 1-4 меняются столбцами
-        std::swap(mat.m6, mat.m9);   // строки 2-3 меняются столбцами
-        std::swap(mat.m7, mat.m13);  // строки 2-4 меняются столбцами
-        std::swap(mat.m11, mat.m14); // строки 3-4 меняются столбцами
+        std::swap(mat.m2, mat.m8);
+        std::swap(mat.m3, mat.m12);
+        std::swap(mat.m6, mat.m9);
+        std::swap(mat.m7, mat.m13);
+        std::swap(mat.m11, mat.m14);
     }
 
     class Model {
@@ -181,6 +178,10 @@ namespace openAITD {
             }
         }
 
+        void LoadDataBounds() {
+
+        }
+
         static void GetMeshBounds(Bounds& box, const Mesh& mesh)
         {
             auto& verts = mesh.animVertices; //mesh.vertices
@@ -212,7 +213,7 @@ namespace openAITD {
 
             Vector3& minVertex = result.min;
             Vector3& maxVertex = result.max;
-            Bounds meshBounds;
+            Bounds newMeshBounds;
             Mesh* mesh;
             bool first = true;
 
@@ -221,22 +222,22 @@ namespace openAITD {
                 if (mesh->vertices == NULL) continue;
                 
                 /*auto b = GetMeshBoundingBox(*mesh);
-                meshBounds.min = b.min;
-                meshBounds.max = b.max;*/
-                GetMeshBounds(meshBounds, *mesh);
+                newMeshBounds.min = b.min;
+                newMeshBounds.max = b.max;*/
+                GetMeshBounds(newMeshBounds, *mesh);
 
                 if (first) {
-                    result = meshBounds;
+                    result = newMeshBounds;
                     first = false;
                     continue;
                 }
 
-                minVertex.x = std::min(minVertex.x, meshBounds.min.x);
-                minVertex.y = std::min(minVertex.y, meshBounds.min.y);
-                minVertex.z = std::min(minVertex.z, meshBounds.min.z);
-                maxVertex.x = std::max(maxVertex.x, meshBounds.max.x);
-                maxVertex.y = std::max(maxVertex.y, meshBounds.max.y);
-                maxVertex.z = std::max(maxVertex.z, meshBounds.max.z);
+                minVertex.x = std::min(minVertex.x, newMeshBounds.min.x);
+                minVertex.y = std::min(minVertex.y, newMeshBounds.min.y);
+                minVertex.z = std::min(minVertex.z, newMeshBounds.min.z);
+                maxVertex.x = std::max(maxVertex.x, newMeshBounds.max.x);
+                maxVertex.y = std::max(maxVertex.y, newMeshBounds.max.y);
+                maxVertex.z = std::max(maxVertex.z, newMeshBounds.max.z);
             }
 
             Vector3TransformRef(minVertex, model.transform);

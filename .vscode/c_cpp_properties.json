@@ -4,6 +4,7 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/src",
+                "${workspaceFolder}/libs/png",
                 "${workspaceFolder}/libs/raylib/src",
                 "${workspaceFolder}/libs/lua2/src",
                 "${workspaceFolder}/libs/luacpp/include",

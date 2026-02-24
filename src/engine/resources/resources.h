@@ -10,7 +10,7 @@
 #include "backgrounds.h"
 #include "screen.h"
 #include "audio.h"
-#include "../raylib-cpp.h"
+#include "../../raylib-cpp/raylib-cpp.h"
 
 using namespace std;
 namespace openAITD {

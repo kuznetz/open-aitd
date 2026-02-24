@@ -108,7 +108,7 @@ set(ALL_INCLUDES
 
 add_library(libextractor STATIC)
 file(GLOB_RECURSE EXTRACTOR_SOURCES CONFIGURE_DEPENDS "src/extractor/*.cpp" "src/extractor/*.h" "src/extractor/*.hpp")
-target_sources(libextractor PRIVATE ${EXTRACTOR_SOURCES}  ${RAYLIB_SOURCES})
+target_sources(libextractor PRIVATE ${EXTRACTOR_SOURCES} ${RAYLIB_SOURCES})
 target_include_directories(libextractor PRIVATE ${ALL_INCLUDES})
 target_link_libraries(libextractor PRIVATE PNG::PNG ZLIB::ZLIB Ogg::ogg Vorbis::vorbis )
 
@@ -119,10 +119,20 @@ target_include_directories(extractor PRIVATE ${ALL_INCLUDES})
 target_link_libraries(extractor PRIVATE PNG::PNG ZLIB::ZLIB Ogg::ogg Vorbis::vorbis libextractor )
 set_property(TARGET extractor PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/data")
 
+#MODEL-RENDER
+add_executable(model-render-test)
+file(GLOB_RECURSE MR_SOURCES CONFIGURE_DEPENDS "src/model-render/*.cpp" "src/model-render/*.h" "src/model-render/*.hpp")
+file(GLOB_RECURSE MR_TEST_SOURCES CONFIGURE_DEPENDS "src/model-render-test/*.cpp" "src/model-render-test/*.h" "src/model-render-test/*.hpp")
+target_sources(model-render-test PRIVATE ${MR_SOURCES} ${MR_TEST_SOURCES} ${RAYLIB_SOURCES})
+target_include_directories(model-render-test PRIVATE ${ALL_INCLUDES})
+target_link_libraries(model-render-test PRIVATE PNG::PNG ZLIB::ZLIB raylib)
+set_property(TARGET model-render-test PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/data")
+
+#OPEN-AITD
 add_executable(open-aitd)
 file(GLOB_RECURSE AITD_SOURCES CONFIGURE_DEPENDS "src/engine/*.cpp" "src/engine/*.h" "src/engine/*.hpp")
-target_sources(open-aitd PRIVATE ${AITD_SOURCES} ${LUACPP_SOURCES} ${RAYLIB_SOURCES})
 target_include_directories(open-aitd PRIVATE ${ALL_INCLUDES})
+target_sources(open-aitd PRIVATE ${AITD_SOURCES} ${LUACPP_SOURCES} ${RAYLIB_SOURCES})
 #target_include_directories(open-aitd PRIVATE ${CMAKE_SOURCE_DIR}/libs/includes)
 target_link_libraries(open-aitd PRIVATE PNG::PNG ZLIB::ZLIB lua::lua Ogg::ogg Vorbis::vorbis libextractor raylib)
 set_property(TARGET open-aitd PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/data")

@@ -34,6 +34,24 @@
             "problemMatcher": {
                 "base": "$msCompile"
             }
-        }          
+        },
+        {
+            "label": "CMake: build model-render",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build", "${workspaceFolder}/build",
+                "--target", "model-render-test",
+                "--config", "Debug",
+                "--parallel", "8"
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always"
+            },
+            "problemMatcher": {
+                "base": "$msCompile"
+            }
+        }
     ]	
 }

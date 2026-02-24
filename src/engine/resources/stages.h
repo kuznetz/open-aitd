@@ -11,7 +11,7 @@
 #define TINYGLTF_NO_STB_IMAGE_WRITE
 #include <tiny_gltf.h>
 
-#include "../raylib-cpp.h"
+#include "../../raylib-cpp/raylib-cpp.h"
 #include "bounds.h"
 
 using nlohmann::json;
