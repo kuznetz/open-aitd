@@ -12,21 +12,12 @@ namespace openAITD {
     using namespace ::std;
     using namespace ::raylib;
 
-    struct BoneChannels {
-        cgltf_animation_channel* translate;
-        cgltf_animation_channel* rotate;
-        cgltf_animation_channel* scale;
-        cgltf_interpolation_type interpolationType;
-    };
-
     struct KeyFrame {
         float time;
         vector<Transform> bonePoses;
     };
 
     struct Animation {
-        cgltf_animation* anim;
-        vector<BoneChannels> boneChannels;
         vector<KeyFrame> keyframes;
         vector<Transform> rootMotion;
         float duration;
@@ -34,6 +25,13 @@ namespace openAITD {
 
     struct Bone {
         int parent;
+    };
+
+    struct GLTFBoneChannels {
+        cgltf_animation_channel* translate;
+        cgltf_animation_channel* rotate;
+        cgltf_animation_channel* scale;
+        cgltf_interpolation_type interpolationType;
     };
 
     class Model {
@@ -71,15 +69,6 @@ namespace openAITD {
             makeAnimations();
         }
 
-        void PoseLerp(Transform* result, const Transform* poseFrom, const Transform* poseTo, const float n) const {
-            if (!skin) return;
-            for (int i = 0; i < skin->joints_count; i++) {
-                result[i].translation = Vector3Lerp(poseFrom[i].translation, poseTo[i].translation, n);
-                result[i].rotation = QuaternionSlerp(poseFrom[i].rotation, poseTo[i].rotation, n);
-                result[i].scale = Vector3Lerp(poseFrom[i].scale, poseTo[i].scale, n);
-            }
-        }
-
         int GetKeyFrame(const Animation& anim, float animTime) const {
             for (size_t i = 1; i < anim.keyframes.size(); i++) {
                 if (animTime < anim.keyframes[i].time) {
@@ -87,14 +76,6 @@ namespace openAITD {
                 }
             }
             return static_cast<int>(anim.keyframes.size()) - 1;
-        }
-
-        void GetKeyFramePose(raylib::Transform* pose, const Animation& anim, const int keyFrame) {
-            if (!skin) return;
-            if (keyFrame < 0 || keyFrame >= anim.keyframes.size()) return;
-            
-            const auto& bonePoses = anim.keyframes[keyFrame].bonePoses;
-            std::copy(bonePoses.begin(), bonePoses.end(), pose);
         }
 
         void RenderStatic() const {
@@ -162,21 +143,17 @@ namespace openAITD {
             for (unsigned int i = 0; i < data->animations_count; i++)
             {
                 cgltf_animation& animData = data->animations[i];
-                animations[i].anim = &animData;
-                animations[i].boneChannels.resize((int)skin->joints_count);
                 animations[i].duration = 0;
-                BoneChannels* boneChannels = animations[i].boneChannels.data();
 
+                vector<GLTFBoneChannels> boneChannels(skin->joints_count);
                 auto inp = animData.channels[0].sampler->input;
                 
-                // === Инициализация keyframes ===
                 animations[i].keyframes.resize(inp->count);
                 for (int j = 0; j < (int)inp->count; j++) {
                     cgltf_accessor_read_float(inp, j, &animations[i].keyframes[j].time, 1);
                     animations[i].keyframes[j].bonePoses.reserve(skin->joints_count);
                 }
 
-                // === Привязка каналов к костям ===
                 for (unsigned int j = 0; j < animData.channels_count; j++)
                 {
                     cgltf_animation_channel channel = animData.channels[j];
@@ -211,11 +188,11 @@ namespace openAITD {
                     }
                 }
 
-                LoadKeyframePoses(animations[i]);
+                LoadKeyframePoses(animations[i], boneChannels);
             }
         }
 
-        void LoadKeyframePoses(Animation& animation) {
+        void LoadKeyframePoses(Animation& animation, const vector<GLTFBoneChannels>& boneChannels) {
             if (!skin) return;
             
             const int boneCount = skin->joints_count;
@@ -223,7 +200,7 @@ namespace openAITD {
             
             for (int kf = 0; kf < keyframeCount; kf++) {
                 animation.keyframes[kf].bonePoses.resize(boneCount);
-                ComputePoseFromGLTF(animation.keyframes[kf].bonePoses.data(), animation, kf);
+                ComputePoseFromGLTF(animation.keyframes[kf].bonePoses.data(), animation, kf, boneChannels);
             }
         }
 
@@ -320,123 +297,9 @@ namespace openAITD {
             return false;
         }        
 
-        static bool GetPoseAtTimeGLTF(cgltf_interpolation_type interpolationType, cgltf_accessor* input, cgltf_accessor* output, float time, void* data)
-        {
-            if (interpolationType >= cgltf_interpolation_type_max_enum) return false;
-
-            float tstart = 0.0f;
-            float tend = 0.0f;
-            int keyframe = 0;
-
-            for (int i = 0; i < (int)input->count - 1; i++)
-            {
-                cgltf_bool r1 = cgltf_accessor_read_float(input, i, &tstart, 1);
-                if (!r1) return false;
-                cgltf_bool r2 = cgltf_accessor_read_float(input, i + 1, &tend, 1);
-                if (!r2) return false;
-
-                if ((tstart <= time) && (time < tend))
-                {
-                    keyframe = i;
-                    break;
-                }
-            }
-
-            if (FloatEquals(tend, tstart)) return true;
-
-            float duration = fmaxf((tend - tstart), EPSILON);
-            float t = (time - tstart) / duration;
-            t = (t < 0.0f) ? 0.0f : t;
-            t = (t > 1.0f) ? 1.0f : t;
-
-            if (output->component_type != cgltf_component_type_r_32f) return false;
-
-            if (output->type == cgltf_type_vec3)
-            {
-                switch (interpolationType)
-                {
-                case cgltf_interpolation_type_step:
-                {
-                    float tmp[3] = { 0.0f };
-                    cgltf_accessor_read_float(output, keyframe, tmp, 3);
-                    *(Vector3*)data = { tmp[0], tmp[1], tmp[2] };
-                } break;
-                case cgltf_interpolation_type_linear:
-                {
-                    float tmp[3] = { 0.0f };
-                    cgltf_accessor_read_float(output, keyframe, tmp, 3);
-                    Vector3 v1 = { tmp[0], tmp[1], tmp[2] };
-                    cgltf_accessor_read_float(output, keyframe + 1, tmp, 3);
-                    Vector3 v2 = { tmp[0], tmp[1], tmp[2] };
-                    *(Vector3*)data = Vector3Lerp(v1, v2, t);
-                } break;
-                case cgltf_interpolation_type_cubic_spline:
-                {
-                    float tmp[3] = { 0.0f };
-                    cgltf_accessor_read_float(output, 3 * keyframe + 1, tmp, 3);
-                    Vector3 v1 = { tmp[0], tmp[1], tmp[2] };
-                    cgltf_accessor_read_float(output, 3 * keyframe + 2, tmp, 3);
-                    Vector3 tangent1 = { tmp[0], tmp[1], tmp[2] };
-                    cgltf_accessor_read_float(output, 3 * (keyframe + 1) + 1, tmp, 3);
-                    Vector3 v2 = { tmp[0], tmp[1], tmp[2] };
-                    cgltf_accessor_read_float(output, 3 * (keyframe + 1), tmp, 3);
-                    Vector3 tangent2 = { tmp[0], tmp[1], tmp[2] };
-                    *(Vector3*)data = Vector3CubicHermite(v1, tangent1, v2, tangent2, t);
-                } break;
-                default: break;
-                }
-            }
-            else if (output->type == cgltf_type_vec4)
-            {
-                switch (interpolationType)
-                {
-                case cgltf_interpolation_type_step:
-                {
-                    float tmp[4] = { 0.0f };
-                    cgltf_accessor_read_float(output, keyframe, tmp, 4);
-                    *(Vector4*)data = { tmp[0], tmp[1], tmp[2], tmp[3] };
-                } break;
-                case cgltf_interpolation_type_linear:
-                {
-                    float tmp[4] = { 0.0f };
-                    cgltf_accessor_read_float(output, keyframe, tmp, 4);
-                    Vector4 v1 = { tmp[0], tmp[1], tmp[2], tmp[3] };
-                    cgltf_accessor_read_float(output, keyframe + 1, tmp, 4);
-                    Vector4 v2 = { tmp[0], tmp[1], tmp[2], tmp[3] };
-                    *(Vector4*)data = QuaternionSlerp(v1, v2, t);
-                } break;
-                case cgltf_interpolation_type_cubic_spline:
-                {
-                    float tmp[4] = { 0.0f };
-                    cgltf_accessor_read_float(output, 3 * keyframe + 1, tmp, 4);
-                    Vector4 v1 = { tmp[0], tmp[1], tmp[2], tmp[3] };
-                    cgltf_accessor_read_float(output, 3 * keyframe + 2, tmp, 4);
-                    Vector4 outTangent1 = { tmp[0], tmp[1], tmp[2], 0.0f };
-                    cgltf_accessor_read_float(output, 3 * (keyframe + 1) + 1, tmp, 4);
-                    Vector4 v2 = { tmp[0], tmp[1], tmp[2], tmp[3] };
-                    cgltf_accessor_read_float(output, 3 * (keyframe + 1), tmp, 4);
-                    Vector4 inTangent2 = { tmp[0], tmp[1], tmp[2], 0.0f };
-                    
-                    v1 = QuaternionNormalize(v1);
-                    v2 = QuaternionNormalize(v2);
-                    if (Vector4DotProduct(v1, v2) < 0.0f) v2 = Vector4Negate(v2);
-
-                    outTangent1 = Vector4Scale(outTangent1, duration);
-                    inTangent2 = Vector4Scale(inTangent2, duration);
-
-                    *(Vector4*)data = QuaternionCubicHermiteSpline(v1, outTangent1, v2, inTangent2, t);
-                } break;
-                default: break;
-                }
-            }
-            return true;
-        }
-
-        void ComputePoseFromGLTF(Transform* pose, const Animation& anim, int keyFrameIndex) const {
+        void ComputePoseFromGLTF(Transform* pose, const Animation& anim, int keyFrameIndex, const vector<GLTFBoneChannels>& boneChannels) const {
             if (!skin) return;
             if (keyFrameIndex < 0 || keyFrameIndex >= anim.keyframes.size()) return;
-            
-            const auto* boneChannels = anim.boneChannels.data();
             
             for (int k = 0; k < skin->joints_count; k++) {
                 // Bind pose по умолчанию

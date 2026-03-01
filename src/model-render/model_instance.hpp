@@ -56,7 +56,7 @@ namespace openAITD {
 
                 this->animId = animId;
                 SetAnimation(this->animId);
-                copyPose(fromPose, toPosePtr);
+                PoseCopy(fromPose, toPosePtr);
             }
         }
 
@@ -77,7 +77,7 @@ namespace openAITD {
                 toPosePtr = anim.keyframes[0].bonePoses.data();
             }
             
-            copyPose(fromPose, curPose);
+            PoseCopy(fromPose, curPose);
         }
 
         void Process(float dt) {
@@ -98,7 +98,7 @@ namespace openAITD {
                 startAnimTime = animTime;
                 nextFrameTime = anim.keyframes[nextFrameId].time;
                 
-                copyPose(fromPose, curPose);
+                PoseCopy(fromPose, curPose);
                 toPosePtr = anim.keyframes[nextFrameId].bonePoses.data();
             } 
             else {
@@ -108,13 +108,13 @@ namespace openAITD {
                     int nextFrameId = (frameId + 1) % anim.keyframes.size();
                     startAnimTime = animTime;
                     nextFrameTime = anim.keyframes[nextFrameId].time;                    
-                    copyPose(fromPose, curPose);
+                    PoseCopy(fromPose, curPose);
                     toPosePtr = anim.keyframes[nextFrameId].bonePoses.data();
                 }
             }
             
             float t = (animTime - startAnimTime)/(nextFrameTime - startAnimTime);
-            modelData->PoseLerp(curPose, fromPose, toPosePtr, t);
+            PoseLerp(curPose, fromPose, toPosePtr, t);
             ApplyCurPose();
         }
 
@@ -126,17 +126,25 @@ namespace openAITD {
             }
         }
 
-        void copyPose(Transform* dest, const Transform* src) {
+    private:
+        void PoseCopy(Transform* dest, const Transform* src) {
             for (int i = 0; i < modelData->skin->joints_count; i++)
             {
                 dest[i] = src[i];
             }
         }
 
-    private:
+        void PoseLerp(Transform* result, const Transform* poseFrom, const Transform* poseTo, const float n) const {
+            for (int i = 0; i < modelData->skin->joints_count; i++) {
+                result[i].translation = Vector3Lerp(poseFrom[i].translation, poseTo[i].translation, n);
+                result[i].rotation = QuaternionSlerp(poseFrom[i].rotation, poseTo[i].rotation, n);
+                result[i].scale = Vector3Lerp(poseFrom[i].scale, poseTo[i].scale, n);
+            }
+        }
+
         void ApplyCurPose() {
             if (!modelData) return;
-            copyPose(curPoseRec, curPose);
+            PoseCopy(curPoseRec, curPose);
             ApplyParentJoints(curPoseRec);
             UpdateBones(curPoseRec);
             UpdateSkin();
