@@ -19,14 +19,16 @@ namespace openAITD {
         cgltf_interpolation_type interpolationType;
     };
 
+    struct KeyFrame {
+        float time;
+        vector<Transform> bonePoses;
+    };
+
     struct Animation {
         cgltf_animation* anim;
         vector<BoneChannels> boneChannels;
-        vector <float> keyFrames;
-        vector <Transform> rootMotion;
-        vector <vector<Transform>> bakedPoses;
-        vector <Bounds> bakedBounds;
-        float transition;
+        vector<KeyFrame> keyframes;
+        vector<Transform> rootMotion;
         float duration;
     };
 
@@ -69,44 +71,6 @@ namespace openAITD {
             makeAnimations();
         }
 
-        void CalcPoseByTime(Transform* pose, int animationId, float time) const {
-            if (animationId < 0 || animationId >= animations.size()) return;
-            auto boneChannels = animations[animationId].boneChannels.data();
-            
-            for (int k = 0; k < skin->joints_count; k++)
-            {
-                Vector3 translation = { skin->joints[k]->translation[0], skin->joints[k]->translation[1], skin->joints[k]->translation[2] };
-                Quaternion rotation = { skin->joints[k]->rotation[0], skin->joints[k]->rotation[1], skin->joints[k]->rotation[2], skin->joints[k]->rotation[3] };
-                Vector3 scale = { skin->joints[k]->scale[0], skin->joints[k]->scale[1], skin->joints[k]->scale[2] };
-
-                if (boneChannels[k].translate)
-                {
-                    if (!GetPoseAtTimeGLTF(boneChannels[k].interpolationType, boneChannels[k].translate->sampler->input, boneChannels[k].translate->sampler->output, time, &translation))
-                    {
-                        TRACELOG(LOG_INFO, "MODEL: Failed to load translate pose data for bone %d", k);
-                    }
-                }
-
-                if (boneChannels[k].rotate)
-                {
-                    if (!GetPoseAtTimeGLTF(boneChannels[k].interpolationType, boneChannels[k].rotate->sampler->input, boneChannels[k].rotate->sampler->output, time, &rotation))
-                    {
-                        TRACELOG(LOG_INFO, "MODEL: Failed to load rotate pose data for bone %d", k);
-                    }
-                }
-
-                if (boneChannels[k].scale)
-                {
-                    if (!GetPoseAtTimeGLTF(boneChannels[k].interpolationType, boneChannels[k].scale->sampler->input, boneChannels[k].scale->sampler->output, time, &scale))
-                    {
-                        TRACELOG(LOG_INFO, "MODEL: Failed to load scale pose data for bone %d", k);
-                    }
-                }
-
-                pose[k] = { translation, rotation, scale };
-            }
-        }
-
         void PoseLerp(Transform* result, const Transform* poseFrom, const Transform* poseTo, const float n) const {
             if (!skin) return;
             for (int i = 0; i < skin->joints_count; i++) {
@@ -116,33 +80,21 @@ namespace openAITD {
             }
         }
 
-        void BakePoses(int fps) {
-            for (size_t i = 0; i < animations.size(); i++) {
-                auto& anim = animations[i];
-                int frameCount = ceil(anim.duration * fps);
-                if (frameCount <= 0) frameCount = 1;
-                
-                anim.bakedPoses.resize(frameCount);
-                anim.rootMotion.resize(frameCount);
-                
-                for (int j = 0; j < frameCount; j++) {
-                    float t = (float)j / fps;
-                    anim.bakedPoses[j].resize(bones.size());
-                    CalcPoseByTime(anim.bakedPoses[j].data(), (int)i, t); 
-                    anim.rootMotion[j] = anim.bakedPoses[j][0];
-                    anim.bakedPoses[j][0].translation = { 0,0,0 };
+        int GetKeyFrame(const Animation& anim, float animTime) const {
+            for (size_t i = 1; i < anim.keyframes.size(); i++) {
+                if (animTime < anim.keyframes[i].time) {
+                    return static_cast<int>(i) - 1;
                 }
             }
+            return static_cast<int>(anim.keyframes.size()) - 1;
         }
 
-        int GetKeyFrame(const Animation& anim, float animTime) const {
-            int i = 1;
-            for (i = 1; i < (int)anim.keyFrames.size(); i++) {
-                if (animTime < anim.keyFrames[i]) {
-                    return i - 1;
-                }
-            }
-            return i - 1;
+        void GetKeyFramePose(raylib::Transform* pose, const Animation& anim, const int keyFrame) {
+            if (!skin) return;
+            if (keyFrame < 0 || keyFrame >= anim.keyframes.size()) return;
+            
+            const auto& bonePoses = anim.keyframes[keyFrame].bonePoses;
+            std::copy(bonePoses.begin(), bonePoses.end(), pose);
         }
 
         void RenderStatic() const {
@@ -206,6 +158,7 @@ namespace openAITD {
         {
             if (!data || !skin) return;
             animations.resize(data->animations_count);
+            
             for (unsigned int i = 0; i < data->animations_count; i++)
             {
                 cgltf_animation& animData = data->animations[i];
@@ -215,13 +168,15 @@ namespace openAITD {
                 BoneChannels* boneChannels = animations[i].boneChannels.data();
 
                 auto inp = animData.channels[0].sampler->input;
-                animations[i].keyFrames.resize(inp->count);
+                
+                // === Инициализация keyframes ===
+                animations[i].keyframes.resize(inp->count);
                 for (int j = 0; j < (int)inp->count; j++) {
-                    cgltf_accessor_read_float(inp, j, &animations[i].keyFrames[j], 1);
+                    cgltf_accessor_read_float(inp, j, &animations[i].keyframes[j].time, 1);
+                    animations[i].keyframes[j].bonePoses.reserve(skin->joints_count);
                 }
 
-                animations[i].transition = (inp->count > 1) ? animations[i].keyFrames[1] : 0;
-
+                // === Привязка каналов к костям ===
                 for (unsigned int j = 0; j < animData.channels_count; j++)
                 {
                     cgltf_animation_channel channel = animData.channels[j];
@@ -235,7 +190,6 @@ namespace openAITD {
                             break;
                         }
                     }
-
                     if (boneIndex == -1) continue;
 
                     boneChannels[boneIndex].interpolationType = animData.channels[j].sampler->interpolation;
@@ -248,8 +202,6 @@ namespace openAITD {
                             boneChannels[boneIndex].rotate = &animData.channels[j];
                         else if (channel.target_path == cgltf_animation_path_type_scale)
                             boneChannels[boneIndex].scale = &animData.channels[j];
-                        else
-                            TRACELOG(LOG_WARNING, "MODEL: Unsupported target_path on channel %d", j);
                     }
 
                     float t = 0.0f;
@@ -258,6 +210,20 @@ namespace openAITD {
                         animations[i].duration = t;
                     }
                 }
+
+                LoadKeyframePoses(animations[i]);
+            }
+        }
+
+        void LoadKeyframePoses(Animation& animation) {
+            if (!skin) return;
+            
+            const int boneCount = skin->joints_count;
+            const int keyframeCount = animation.keyframes.size();
+            
+            for (int kf = 0; kf < keyframeCount; kf++) {
+                animation.keyframes[kf].bonePoses.resize(boneCount);
+                ComputePoseFromGLTF(animation.keyframes[kf].bonePoses.data(), animation, kf);
             }
         }
 
@@ -265,8 +231,8 @@ namespace openAITD {
             Bounds& result = bounds;
             if (model.meshCount == 0) return;
 
-            Vector3& minVertex = result.min;
-            Vector3& maxVertex = result.max;
+            raylib::Vector3& minVertex = result.min;
+            raylib::Vector3& maxVertex = result.max;
             Bounds newMeshBounds;
             Mesh* mesh;
             bool first = true;
@@ -300,8 +266,8 @@ namespace openAITD {
             auto& verts = mesh.animVertices; 
             if (verts == NULL) throw new exception("Verts is null");
 
-            Vector3& minVertex = box.min;
-            Vector3& maxVertex = box.max;
+            raylib::Vector3& minVertex = box.min;
+            raylib::Vector3& maxVertex = box.max;
             minVertex = { verts[0], verts[1], verts[2] };
             maxVertex = { verts[0], verts[1], verts[2] };
             for (int i = 1; i < mesh.vertexCount; i++)
@@ -333,6 +299,26 @@ namespace openAITD {
         {
             UnloadFileData((unsigned char*)data);
         }
+
+        static bool ReadKeyFrameValue(const cgltf_accessor* output, const int keyFrame, void* data) {
+            if (!output) return false;
+            if (output->component_type != cgltf_component_type_r_32f) return false;
+            
+            if (output->type == cgltf_type_vec3) {
+                float tmp[3] = { 0.0f };
+                cgltf_accessor_read_float(output, keyFrame, tmp, 3);
+                *(Vector3*)data = { tmp[0], tmp[1], tmp[2] };
+                return true;
+            }
+            else if (output->type == cgltf_type_vec4) {
+                float tmp[4] = { 0.0f };
+                cgltf_accessor_read_float(output, keyFrame, tmp, 4);
+                *(Vector4*)data = { tmp[0], tmp[1], tmp[2], tmp[3] };
+                return true;
+            }
+            
+            return false;
+        }        
 
         static bool GetPoseAtTimeGLTF(cgltf_interpolation_type interpolationType, cgltf_accessor* input, cgltf_accessor* output, float time, void* data)
         {
@@ -445,6 +431,41 @@ namespace openAITD {
             }
             return true;
         }
+
+        void ComputePoseFromGLTF(Transform* pose, const Animation& anim, int keyFrameIndex) const {
+            if (!skin) return;
+            if (keyFrameIndex < 0 || keyFrameIndex >= anim.keyframes.size()) return;
+            
+            const auto* boneChannels = anim.boneChannels.data();
+            
+            for (int k = 0; k < skin->joints_count; k++) {
+                // Bind pose по умолчанию
+                raylib::Vector3 translation = { skin->joints[k]->translation[0], 
+                                                skin->joints[k]->translation[1], 
+                                                skin->joints[k]->translation[2] };
+                Quaternion rotation = { skin->joints[k]->rotation[0], 
+                                    skin->joints[k]->rotation[1], 
+                                    skin->joints[k]->rotation[2], 
+                                    skin->joints[k]->rotation[3] };
+                raylib::Vector3 scale = { skin->joints[k]->scale[0], 
+                                        skin->joints[k]->scale[1], 
+                                        skin->joints[k]->scale[2] };
+
+                if (boneChannels[k].translate) {
+                    ReadKeyFrameValue(boneChannels[k].translate->sampler->output, 
+                                    keyFrameIndex, &translation);
+                }                
+                if (boneChannels[k].rotate) {
+                    ReadKeyFrameValue(boneChannels[k].rotate->sampler->output, 
+                                    keyFrameIndex, &rotation);
+                }                
+                if (boneChannels[k].scale) {
+                    ReadKeyFrameValue(boneChannels[k].scale->sampler->output, 
+                                    keyFrameIndex, &scale);
+                }                
+                pose[k] = { translation, rotation, scale };
+            }
+        }    
     };
 
 }

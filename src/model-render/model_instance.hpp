@@ -10,73 +10,112 @@ namespace openAITD {
     public:
         const Model* modelData = nullptr;
         Transform* fromPose = nullptr;
-        Transform* toPose = nullptr;
+        const Transform* toPosePtr = nullptr;
         Transform* curPose = nullptr;
-
+        Transform* curPoseRec = nullptr;
         raylib::Mesh* curMeshes;
         
         int animId = 0;
         int frameId = 0;
+        float startAnimTime = 0.0f;
         float animTime = 0.0f;
-        float frameTime = 0.0f;
+        float nextFrameTime = 0.0f;
         bool isPlaying = true;
 
         ModelInstance() = default;
 
         ~ModelInstance() {
+            if (fromPose) delete[] fromPose;
             if (curPose) delete[] curPose;
+            if (curPoseRec) delete[] curPoseRec;
+            if (curMeshes) {
+                for (int i = 0; i < modelData->model.meshCount; i++)
+                {
+                    delete[] curMeshes[i].vertices;
+                    delete[] curMeshes[i].boneMatrices;
+                }
+                delete[] curMeshes;
+            }
         }
 
-        void Init(const Model& mData) {
+        void Init(const Model& mData, int animId = 0) {
+            if (modelData) {
+                throw exception("ModelInstance already initialized");
+            }
             modelData = &mData;
-            curMeshes = new raylib::Mesh[modelData->model.meshCount];
-            for (int i = 0; i < modelData->model.meshCount; i++)
-            {
-                curMeshes[i].vertices = new float[modelData->model.meshes[i].vertexCount * 3];
-                curMeshes[i].boneMatrices = new Matrix[modelData->model.meshes[i].boneCount];
-            }
-
             if (modelData->skin) {
-                if (curPose) delete[] curPose;
-                curPose = new Transform[modelData->skin->joints_count];
-                for (int i = 0; i < modelData->skin->joints_count; ++i) {
-                    curPose[i] = { {0,0,0}, {0,0,0,1}, {1,1,1} };
+                curMeshes = new raylib::Mesh[modelData->model.meshCount];
+                for (int i = 0; i < modelData->model.meshCount; i++)
+                {
+                    curMeshes[i].vertices = new float[modelData->model.meshes[i].vertexCount * 3];
+                    curMeshes[i].boneMatrices = new Matrix[modelData->model.meshes[i].boneCount];
                 }
+                fromPose = new Transform[modelData->skin->joints_count];
+                curPose = new Transform[modelData->skin->joints_count];
+                curPoseRec = new Transform[modelData->skin->joints_count];
+
+                this->animId = animId;
+                SetAnimation(this->animId);
+                copyPose(fromPose, toPosePtr);
             }
+        }
+
+        void SetAnimation(int id) {
+            if (!modelData || id < 0 || id >= (int)modelData->animations.size()) return;
+            
+            animId = id;
+            animTime = 0.0f;
+            frameId = 0;
+            startAnimTime = 0.0f;
+            
+            const auto& anim = modelData->animations[animId];
+            if (anim.keyframes.size() >= 2) {
+                nextFrameTime = anim.keyframes[1].time;
+                toPosePtr = anim.keyframes[1].bonePoses.data();
+            } else {
+                nextFrameTime = anim.keyframes[0].time;
+                toPosePtr = anim.keyframes[0].bonePoses.data();
+            }
+            
+            copyPose(fromPose, curPose);
         }
 
         void Process(float dt) {
             if (!modelData || !isPlaying || modelData->animations.empty()) return;
             
             const auto& anim = modelData->animations[animId];
+            if (anim.keyframes.empty()) return;
+            
             animTime += dt;
-            //Animation ended
+            
+            // Обработка окончания анимации
             if (animTime >= anim.duration) {
                 animTime = fmod(animTime, anim.duration);
+                frameId = modelData->GetKeyFrame(anim, animTime);
+                
+                // Определение следующего кадра (с циклическим переходом)
+                int nextFrameId = (frameId + 1) % anim.keyframes.size();
+                startAnimTime = animTime;
+                nextFrameTime = anim.keyframes[nextFrameId].time;
+                
+                copyPose(fromPose, curPose);
+                toPosePtr = anim.keyframes[nextFrameId].bonePoses.data();
+            } 
+            else {
+                // Переход к следующему кадру при необходимости
+                while (animTime >= nextFrameTime) {
+                    frameId = (frameId + 1) % anim.keyframes.size();
+                    int nextFrameId = (frameId + 1) % anim.keyframes.size();
+                    startAnimTime = animTime;
+                    nextFrameTime = anim.keyframes[nextFrameId].time;                    
+                    copyPose(fromPose, curPose);
+                    toPosePtr = anim.keyframes[nextFrameId].bonePoses.data();
+                }
             }
-            ApplyPoseForTime(animTime);
-        }
-
-        void SetAnimation(int id) {
-            if (!modelData || id < 0 || id >= (int)modelData->animations.size()) return;
-            animId = id;
-            animTime = 0.0f;
-            frameId = 0;
-            frameTime = 0.0f;
-            ApplyPoseForTime(0.0f);
-            //rootMotion = {0,0,0};
-        }
-
-        void ApplyPoseForTime(float time) {
-            if (!modelData || !curPose) return;
-            modelData->CalcPoseByTime(curPose, animId, time);
-            ApplyInternalPose(curPose);
-        }
-
-        void LerpPose(const Transform* poseFrom, const Transform* poseTo, float t) {
-            if (!modelData || !curPose) return;
-            modelData->PoseLerp(curPose, poseFrom, poseTo, t);
-            ApplyInternalPose(curPose);
+            
+            float t = (animTime - startAnimTime)/(nextFrameTime - startAnimTime);
+            modelData->PoseLerp(curPose, fromPose, toPosePtr, t);
+            ApplyCurPose();
         }
 
         void Render() const {
@@ -85,13 +124,21 @@ namespace openAITD {
             {
                 DrawMesh(modelData->model.meshes[i], modelData->model.materials[modelData->model.meshMaterial[i]], modelData->model.transform);
             }
-        }        
+        }
+
+        void copyPose(Transform* dest, const Transform* src) {
+            for (int i = 0; i < modelData->skin->joints_count; i++)
+            {
+                dest[i] = src[i];
+            }
+        }
 
     private:
-        void ApplyInternalPose(Transform* pose) {
+        void ApplyCurPose() {
             if (!modelData) return;
-            ApplyParentJoints(pose);
-            UpdateBones(pose);
+            copyPose(curPoseRec, curPose);
+            ApplyParentJoints(curPoseRec);
+            UpdateBones(curPoseRec);
             UpdateSkin();
             UpdateBuffer();
         }

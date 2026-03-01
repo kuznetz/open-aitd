@@ -6,4 +6,5 @@ namespace raylib {
 	#include <rlgl.h>
 	#include <external/stb_image_resize2.h>
 	#include <external/cgltf.h>
+	static Model LoadGLTF(const char *fileName);
 }

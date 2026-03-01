@@ -1,0 +1,60 @@
+vector <vector<Transform>> bakedPoses;
+vector <Bounds> bakedBounds;
+
+
+void BakePoses(int fps) {
+    for (size_t i = 0; i < animations.size(); i++) {
+        auto& anim = animations[i];
+        int frameCount = ceil(anim.duration * fps);
+        if (frameCount <= 0) frameCount = 1;
+        
+        anim.bakedPoses.resize(frameCount);
+        anim.rootMotion.resize(frameCount);
+        
+        for (int j = 0; j < frameCount; j++) {
+            float t = (float)j / fps;
+            anim.bakedPoses[j].resize(bones.size());
+            CalcPoseByTime(anim.bakedPoses[j].data(), (int)i, t); 
+            anim.rootMotion[j] = anim.bakedPoses[j][0];
+            anim.bakedPoses[j][0].translation = { 0,0,0 };
+        }
+    }
+}
+
+void CalcPoseByTime(Transform* pose, int animationId, float time) const {
+    if (animationId < 0 || animationId >= animations.size()) return;
+    auto boneChannels = animations[animationId].boneChannels.data();
+    
+    for (int k = 0; k < skin->joints_count; k++)
+    {
+        raylib::Vector3 translation = { skin->joints[k]->translation[0], skin->joints[k]->translation[1], skin->joints[k]->translation[2] };
+        Quaternion rotation = { skin->joints[k]->rotation[0], skin->joints[k]->rotation[1], skin->joints[k]->rotation[2], skin->joints[k]->rotation[3] };
+        raylib::Vector3 scale = { skin->joints[k]->scale[0], skin->joints[k]->scale[1], skin->joints[k]->scale[2] };
+
+        if (boneChannels[k].translate)
+        {
+            if (!GetPoseAtTimeGLTF(boneChannels[k].interpolationType, boneChannels[k].translate->sampler->input, boneChannels[k].translate->sampler->output, time, &translation))
+            {
+                TRACELOG(LOG_INFO, "MODEL: Failed to load translate pose data for bone %d", k);
+            }
+        }
+
+        if (boneChannels[k].rotate)
+        {
+            if (!GetPoseAtTimeGLTF(boneChannels[k].interpolationType, boneChannels[k].rotate->sampler->input, boneChannels[k].rotate->sampler->output, time, &rotation))
+            {
+                TRACELOG(LOG_INFO, "MODEL: Failed to load rotate pose data for bone %d", k);
+            }
+        }
+
+        if (boneChannels[k].scale)
+        {
+            if (!GetPoseAtTimeGLTF(boneChannels[k].interpolationType, boneChannels[k].scale->sampler->input, boneChannels[k].scale->sampler->output, time, &scale))
+            {
+                TRACELOG(LOG_INFO, "MODEL: Failed to load scale pose data for bone %d", k);
+            }
+        }
+
+        pose[k] = { translation, rotation, scale };
+    }
+}
