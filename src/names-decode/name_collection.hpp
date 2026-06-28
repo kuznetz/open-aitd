@@ -53,12 +53,16 @@ namespace openAITD {
             return _names.find(id) != _names.end();
         }
 
-        std::string getName(int id) const {
+        std::string getName(int id, bool alwaysPrefix = false) const {
             auto it = _names.find(id);
             if (it == _names.end()) {
                 return prefix + std::to_string(id);
             }
-            return it->second;
+            if (alwaysPrefix) {
+                return prefix + it->second;
+            } else {
+                return it->second;
+            }
         }
 
         std::string operator[](int id) const {

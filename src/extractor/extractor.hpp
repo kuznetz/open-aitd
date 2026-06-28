@@ -14,7 +14,7 @@
 #include "./extractors/model_extractor.h"
 //#include "extractors/skeleton_extractor.h"
 #include "./extractors/track_extractor.h"
-#include "./extractors/vars_extractor.h"
+#include "./extractors/vars_extractor.hpp"
 
 #include "./music/music_extractor.h"
 #include "./life/life_extractor.h"
@@ -35,6 +35,8 @@ namespace AITDExtractor {
         openAITD::NameDecoders nameDecoders;
         Matrix roomMatrix;
         vector <floorStruct> stages;
+        int modelCount = 0;
+        int varCount = 0;
 
         AITDExtractor() {
             //roomMatrix = MatrixMultiply(MatrixRotateX(PI), MatrixRotateY(PI));
@@ -108,6 +110,7 @@ namespace AITDExtractor {
             PakFile bodyPak("original/LISTBODY.PAK");
             PakFile body2Pak("original/LISTBOD2.PAK");
             //int bodyId = 2;
+            this->modelCount = bodyPak.headers.size();
             for (int i = 0; i < bodyPak.headers.size(); i++)
             {
                 auto h = bodyPak.headers[i];
@@ -154,48 +157,7 @@ namespace AITDExtractor {
             }
         }
 
-        void processTestScript() {
-            PakFile lifePak("original/LISTLIFE.PAK");
-            vector<LifeInstructions> allLifes;
-            //int i2 = 514;
-            for (int i = 0; i < lifePak.headers.size(); i++)
-            {
-                auto& data = lifePak.readBlock(i);
-                auto& life = loadLife(data.data(), lifePak.headers[i].uncompressedSize);
-                allLifes.push_back(life);
-
-            }
-
-            int n = 0;
-            LifeInstructionsP lifep;
-            auto& life = allLifes[n];
-            auto lifeData = life.data();
-            for (int j = 0; j < life.size(); j++) {
-                lifep.push_back(lifeData + j);
-            }
-            auto& nodes = lifeOptimize(lifep);
-
-            ofstream out(string("data/life_")+to_string(n)+".lua", ios::trunc | ios::out);
-            out << "function life_" << n << "(obj)\n";
-            writeLifeNodes(out, 1, nodes);
-            out << "end\n\n";
-            out.close();
-
-            /*ofstream out("data/all_life.lua", ios::trunc | ios::out);
-            for (int j = 0; j < lifesNodes.size(); j++)
-            {
-                out << "function life_" << j << "(obj)\n";
-                writeLifeNodes(out, 1, lifesNodes[j]);
-                out << "end\n\n";
-            }
-            out.close();*/
-        }
-
         void processScripts(bool floppy) {
-            if (!std::filesystem::exists("data/vars.json")) {
-                extractVars("original", "data/vars.json");
-            }
-
             PakFile lifePak("original/LISTLIFE.PAK");
             vector<LifeInstructions> allLifes;
             //int i2 = 514;
@@ -204,7 +166,6 @@ namespace AITDExtractor {
                 auto& data = lifePak.readBlock(i);
                 auto& life = loadLife(data.data(), lifePak.headers[i].uncompressedSize, floppy);
                 allLifes.push_back(life);
-
             }
 
             //for allLifes
@@ -221,13 +182,23 @@ namespace AITDExtractor {
                 lifesNodes.push_back(nodes);
             }
 
+            const char* filename_c = "data/constants.lua";
+            if (!std::filesystem::exists(filename_c)) {
+                ofstream out(filename_c, ios::trunc | ios::out);
+                LifeLUAWriter writer(out, nameDecoders);
+                int objectCount = this->gameObjs.size();
+                writer.writeConsts(this->varCount, objectCount, modelCount);		
+            }
+
             const char* filename = "data/scripts.lua";
             if (!std::filesystem::exists(filename)) {
                 ofstream out(filename, ios::trunc | ios::out);
+                LifeLUAWriter writer(out, nameDecoders);
                 for (int j = 0; j < lifesNodes.size(); j++)
                 {
+                    out << "-- " << nameDecoders.life.getName(j) << "\n";
                     out << "function life_" << j << "(obj)\n";
-                    writeLifeNodes(out, 1, lifesNodes[j]);
+                    writer.writeLifeNodes(1, lifesNodes[j]);
                     out << "end\n\n";
                 }
                 out.flush();
@@ -363,15 +334,22 @@ namespace AITDExtractor {
             //dumpInstructions("instr.txt");
             this->processTexts();
 
-            gameObjs = loadGameObjects("original/OBJETS.ITD");
+            this->gameObjs = loadGameObjects("original/OBJETS.ITD");
             if (!std::filesystem::exists("data/objects.json")) {
                 extractGameObjects(this->gameObjs, "data/objects.json", nameDecoders);
+            }
+
+            VarsExtractor varsExtractor("original");
+            varsExtractor.loadVars();
+            varsExtractor.loadDefines();
+            this->varCount = varsExtractor.getVars().size();
+            if (!std::filesystem::exists("data/vars.json")) {
+                varsExtractor.saveToJson("data/vars.json");
             }
 
             this->processStages();
             this->processModels();
             //processTestScript();
-            this->processScripts(floppy);
             this->processTracks();
             this->processSounds();
             this->processPictures();
@@ -382,6 +360,8 @@ namespace AITDExtractor {
                 //TODO: CD Audio Ripper
             }
 
+            this->processScripts(floppy);
+
             //PakFile animPak("original/LISTANIM.PAK");
             //vector<Animation> anims;
             //for (int j = 0; j < animPak.headers.size(); j++)
@@ -390,7 +370,6 @@ namespace AITDExtractor {
             //    auto& anim = loadAnimation(data.data());
             //    anims.push_back(anim);
             //}
-
         }
 
     private:

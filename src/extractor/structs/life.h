@@ -201,8 +201,14 @@ enum parseArgType {
 	lifeConst,
 	lifeExpr,
 	lifeGoto,
-	lifeModel,
-	lifeLife
+};
+
+enum parseArgVarType {
+	varInt,
+	varObject,
+	varModel,
+	varLifeScript,
+	varAnimation,
 };
 
 struct parseLifeExpr {
@@ -210,6 +216,7 @@ struct parseLifeExpr {
 	string typeStr;
 	vector<parseArgType> arguments;
 	bool needActor = false;
+	parseArgVarType returnType = varInt;
 };
 
 struct parseLifeInstruction {
@@ -224,6 +231,7 @@ typedef struct LifeExpr
 	const parseLifeExpr* type = 0;
 	s16 Actor = -1;
 	s16 constVal = 0;
+	parseArgVarType constType = varInt;
 	vector<LifeExpr> arguments;
 } LifeExpr;
 

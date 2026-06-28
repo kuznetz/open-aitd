@@ -9,115 +9,58 @@
 #include <fstream>
 #include "life_v1.h"
 #include "life_optimizer.h"
-#include "life_writer.h"
+#include "life_writer.hpp"
 
-using namespace std;
+namespace AITDExtractor {
+  using namespace std;
+	using namespace openAITD;
 
-struct lifeBuffer {
-	u8* data;
-	u8* dataEnd;
-};
+	struct lifeBuffer {
+		u8* data;
+		u8* dataEnd;
+	};
 
-inline s16 read16(lifeBuffer& buf) {
-	if (buf.data >= buf.dataEnd) throw new exception("read16 over buffer size");
-    s16 res = READ_LE_S16(buf.data);
-	buf.data += 2;
-	return res;
-}
-
-inline parseLifeExpr getParseExpr(EvalEnum::EvalEnum l) {
-	for (int i = 0; i < LifeExprParams_V1.size(); i++) {
-		if (LifeExprParams_V1[i].type == l) return LifeExprParams_V1[i];
-	}
-	throw new exception("Not found");
-}
-
-inline LifeExpr readExpr(lifeBuffer& buf) {
-	LifeExpr result;
-	s16 varTypeN = read16(buf);
-	if (varTypeN == -1) {
-		result.constVal = read16(buf);
-		return result;
+	inline s16 read16(lifeBuffer& buf) {
+		if (buf.data >= buf.dataEnd) throw new exception("read16 over buffer size");
+			s16 res = READ_LE_S16(buf.data);
+		buf.data += 2;
+		return res;
 	}
 
-	if ((varTypeN & 0x8000) == 0x8000)
-	{
-		//change actor
-		result.Actor = read16(buf);
-	}
-	varTypeN &= 0x7FFF;
-
-	auto& parse = LifeExprParams_V1[varTypeN]; //getParseExpr(ExprTable_v1[varTypeN]);
-	result.type = &parse;
-
-	//if (result.type == LifeEnum::READ) {}
-
-	for (int i = 0; i < parse.arguments.size(); i++)
-	{
-		LifeExpr arg;
-		switch (parse.arguments[i]) {
-		case lifeConst:
-			arg.constVal = read16(buf);
-			result.arguments.push_back(arg);
-			break;
-		case lifeExpr:
-			arg = readExpr(buf);
-			result.arguments.push_back(arg);
-			break;
+	inline parseLifeExpr getParseExpr(EvalEnum::EvalEnum l) {
+		for (int i = 0; i < LifeExprParams_V1.size(); i++) {
+			if (LifeExprParams_V1[i].type == l) return LifeExprParams_V1[i];
 		}
+		throw new exception("Not found");
 	}
 
-	return result;
-}
+	inline LifeExpr readExpr(lifeBuffer& buf) {
+		LifeExpr result;
+		s16 varTypeN = read16(buf);
+		if (varTypeN == -1) {
+			result.constVal = read16(buf);
+			return result;
+		}
 
-inline parseLifeInstruction getParseLife(LifeEnum::LifeEnum l) {
-	for (int i = 0; i < LifeParams_V1.size(); i++) {
-		if (LifeParams_V1[i].type == l) return LifeParams_V1[i];
-	}
-	throw new exception("Not found");
-}
+		if ((varTypeN & 0x8000) == 0x8000)
+		{
+			//change actor
+			result.Actor = read16(buf);
+		}
+		varTypeN &= 0x7FFF;
 
-inline LifeInstruction readInstruction(lifeBuffer &buf, bool floppy = false) {
-	LifeInstruction result;
-	u16 opCodeN = read16(buf);
+		auto& parse = LifeExprParams_V1[varTypeN]; //getParseExpr(ExprTable_v1[varTypeN]);
+		result.type = &parse;
 
-	if ((opCodeN & 0x8000) == 0x8000)
-	{
-		//change actor
-		result.Actor = read16(buf);
-	}
-	opCodeN &= 0x7FFF;
+		//if (result.type == LifeEnum::READ) {}
 
-	auto* parse = &LifeParams_V1[opCodeN]; //getParseLife(LifeTable_v1[opCodeN]);
-	if (floppy && parse->type == LifeEnum::READ) {
-		parse = &LifeParams_Floppy_V1;
-	}
-
-
-	result.type = parse;
-	if (parse->type == LifeEnum::MULTI_CASE)
-	{
-		int numCases = read16(buf);
-		for (int n = 0; n < numCases; n++)
+		for (int i = 0; i < parse.arguments.size(); i++)
 		{
 			LifeExpr arg;
-			arg.constVal = read16(buf);
-			result.arguments.push_back(arg);
-		}
-		result.Goto = read16(buf);
-	}
-	else
-	{
-		for (int i = 0; i < parse->arguments.size(); i++)
-		{
-			LifeExpr arg;
-			switch (parse->arguments[i]) {
+			switch (parse.arguments[i]) {
 			case lifeConst:
 				arg.constVal = read16(buf);
 				result.arguments.push_back(arg);
-				break;
-			case lifeGoto:
-				result.Goto = read16(buf);
 				break;
 			case lifeExpr:
 				arg = readExpr(buf);
@@ -125,116 +68,180 @@ inline LifeInstruction readInstruction(lifeBuffer &buf, bool floppy = false) {
 				break;
 			}
 		}
+
+		return result;
 	}
 
-	return result;
-}
-
-inline vector<LifeInstruction> loadLife(u8* data, int size, bool floppy = false)
-{
-	lifeBuffer buf = {
-		data,
-		data + size
-	};
-	vector<LifeInstruction> life;
-	while (true) {
-		int pos = buf.data - data;
-		auto& oper = readInstruction(buf, floppy);
-		oper.Size = (buf.data - data) - pos;
-		oper.Position = pos;
-		life.push_back(oper);
-		if (oper.type->type == LifeEnum::ENDLIFE) break;
+	inline parseLifeInstruction getParseLife(LifeEnum::LifeEnum l) {
+		for (int i = 0; i < LifeParams_V1.size(); i++) {
+			if (LifeParams_V1[i].type == l) return LifeParams_V1[i];
+		}
+		throw new exception("Not found");
 	}
 
-	//Fix Goto
-	for (int i = 0; i < life.size(); i++) {
-		if (life[i].Goto == -1) continue;
-		auto gotoPos = life[i].Position + life[i].Size + (life[i].Goto * 2);
-		bool changed = false;
-		for (int j = 0; j < life.size(); j++) {
-			if (gotoPos == life[j].Position) {
-				life[i].Goto = j;
-				changed = true;
-				break;
+	inline LifeInstruction readInstruction(lifeBuffer &buf, bool floppy = false) {
+		LifeInstruction result;
+		u16 opCodeN = read16(buf);
+
+		if ((opCodeN & 0x8000) == 0x8000)
+		{
+			//change actor
+			result.Actor = read16(buf);
+		}
+		opCodeN &= 0x7FFF;
+
+		auto* parse = &LifeParams_V1[opCodeN]; //getParseLife(LifeTable_v1[opCodeN]);
+		if (floppy && parse->type == LifeEnum::READ) {
+			parse = &LifeParams_Floppy_V1;
+		}
+
+
+		result.type = parse;
+		if (parse->type == LifeEnum::MULTI_CASE)
+		{
+			int numCases = read16(buf);
+			for (int n = 0; n < numCases; n++)
+			{
+				LifeExpr arg;
+				arg.constVal = read16(buf);
+				result.arguments.push_back(arg);
+			}
+			result.Goto = read16(buf);
+		}
+		else
+		{
+			for (int i = 0; i < parse->arguments.size(); i++)
+			{
+				LifeExpr arg;
+				switch (parse->arguments[i]) {
+				case lifeConst:
+					arg.constVal = read16(buf);
+					result.arguments.push_back(arg);
+					break;
+				case lifeGoto:
+					result.Goto = read16(buf);
+					break;
+				case lifeExpr:
+					arg = readExpr(buf);
+					result.arguments.push_back(arg);
+					break;
+				}
 			}
 		}
-		if (!changed) 
+
+		return result;
+	}
+
+	inline vector<LifeInstruction> loadLife(u8* data, int size, bool floppy = false)
+	{
+		lifeBuffer buf = {
+			data,
+			data + size
+		};
+		vector<LifeInstruction> life;
+		while (true) {
+			int pos = buf.data - data;
+			auto& oper = readInstruction(buf, floppy);
+			oper.Size = (buf.data - data) - pos;
+			oper.Position = pos;
+			life.push_back(oper);
+			if (oper.type->type == LifeEnum::ENDLIFE) break;
+		}
+
+		//Fix Goto
+		for (int i = 0; i < life.size(); i++) {
+			if (life[i].Goto == -1) continue;
+			auto gotoPos = life[i].Position + life[i].Size + (life[i].Goto * 2);
+			bool changed = false;
+			for (int j = 0; j < life.size(); j++) {
+				if (gotoPos == life[j].Position) {
+					life[i].Goto = j;
+					changed = true;
+					break;
+				}
+			}
+			if (!changed) 
+			{
+				throw new exception("Cant calc goto");
+			}
+		}
+
+		//Fix Position
+		for (int i = 0; i < life.size(); i++) {
+			life[i].Position = i;
+		}
+
+		return life;
+	}
+
+	inline void extractLife(string fname, string outFile, int varCount, NameDecoders& nameDecs, int objectCount, int modelCount, bool floppy = false)
+	{
+		PakFile pak(fname);
+		vector<vector<LifeInstruction>> lifes;
+		vector<vector<LifeNode>> lifesNodes;
+		//int i = 514;
+		for (int i = 0; i < pak.headers.size(); i++)
 		{
-			throw new exception("Cant calc goto");
+			auto& data = pak.readBlock(i);
+			lifes.push_back(loadLife(data.data(), pak.headers[i].uncompressedSize, floppy));
+			auto& life = lifes.back();
+
+			LifeInstructionsP lifep;
+			auto lifeData = life.data();
+			for (int j = 0; j < life.size(); j++) {
+				lifep.push_back(lifeData + j);
+			}
+				auto& nodes = lifeOptimize(lifep);
+			lifesNodes.push_back(nodes);
 		}
-	}
 
-	//Fix Position
-	for (int i = 0; i < life.size(); i++) {
-		life[i].Position = i;
-	}
+		//ofstream out(outFile, ios::trunc | ios::out);
+		//for (int j = 0; j < lifes.size(); j++)
+		//{
+		//	out << "LIFE " << j << "\n";
+		//	saveLifeInstructions(out, lifes[j]);
+		//	out << "\n";
+		//}
+		//out.close();
 
-	return life;
-}
-
-inline void extractLife(string fname, string outFile, bool floppy = false)
-{
-	PakFile pak(fname);
-	vector<vector<LifeInstruction>> lifes;
-	vector<vector<LifeNode>> lifesNodes;
-	//int i = 514;
-	for (int i = 0; i < pak.headers.size(); i++)
-	{
-		auto& data = pak.readBlock(i);
-		lifes.push_back(loadLife(data.data(), pak.headers[i].uncompressedSize, floppy));
-		auto& life = lifes.back();
-
-		LifeInstructionsP lifep;
-		auto lifeData = life.data();
-		for (int j = 0; j < life.size(); j++) {
-			lifep.push_back(lifeData + j);
+		ofstream out(outFile, ios::trunc | ios::out);
+		LifeLUAWriter writer(out, nameDecs);
+		writer.writeConsts(varCount, objectCount, modelCount);		
+		for (int j = 0; j < lifesNodes.size(); j++)
+		{
+			out << "-- " << nameDecs.life.getName(j) << "\n";
+			out << "function life_" << j << "(obj)\n";
+			writer.writeLifeNodes(1, lifesNodes[j]);
+			out << "end\n\n";
 		}
-	    auto& nodes = lifeOptimize(lifep);
-		lifesNodes.push_back(nodes);
+		out.close();
 	}
 
-	//ofstream out(outFile, ios::trunc | ios::out);
-	//for (int j = 0; j < lifes.size(); j++)
-	//{
-	//	out << "LIFE " << j << "\n";
-	//	saveLifeInstructions(out, lifes[j]);
-	//	out << "\n";
-	//}
-	//out.close();
-
-	ofstream out(outFile, ios::trunc | ios::out);
-	for (int j = 0; j < lifesNodes.size(); j++)
-	{
-		out << "function life_" << j << "(obj)\n";
-		writeLifeNodes(out, 1, lifesNodes[j]);
-		out << "end\n\n";
-	}
-	out.close();
-}
-
-inline string to_hex(int i) {
-	std::stringstream strs;
-	strs << "0x"
-		<< std::setfill('0') << std::setw(4)
-		<< std::hex << i;
-	return strs.str();
-}
-
-inline void dumpInstructions(string outFile) {
-	ofstream out(outFile, ios::trunc | ios::out);
-	out << "EXPR:\n";
-	for (int j = 0; j < LifeExprParams_V1.size(); j++)
-	{
-		auto& e = LifeExprParams_V1[j];
-		out << e.typeStr << " " << to_string(j) << " " << to_hex(j) << "\n";
+	inline string to_hex(int i) {
+		std::stringstream strs;
+		strs << "0x"
+			<< std::setfill('0') << std::setw(4)
+			<< std::hex << i;
+		return strs.str();
 	}
 
-	out << "\nLIFE:\n";
-	for (int j = 0; j < LifeParams_V1.size(); j++)
-	{
-		auto& e = LifeParams_V1[j];
-		out << e.typeStr << " " << to_string(j) << " " << to_hex(j) << "\n";
+	inline void dumpInstructions(string outFile) {
+		ofstream out(outFile, ios::trunc | ios::out);
+		out << "EXPR:\n";
+		for (int j = 0; j < LifeExprParams_V1.size(); j++)
+		{
+			auto& e = LifeExprParams_V1[j];
+			out << e.typeStr << " " << to_string(j) << " " << to_hex(j) << "\n";
+		}
+
+		out << "\nLIFE:\n";
+		for (int j = 0; j < LifeParams_V1.size(); j++)
+		{
+			auto& e = LifeParams_V1[j];
+			out << e.typeStr << " " << to_string(j) << " " << to_hex(j) << "\n";
+		}
+		out.close();
+
 	}
-	out.close();
 
 }
