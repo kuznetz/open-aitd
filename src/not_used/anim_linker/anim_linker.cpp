@@ -3,12 +3,12 @@
 #include <filesystem>
 #include <map>
 
-#include "pak/pak.h"
-#include "loaders/loaders.h"
-#include "life/life_extractor.h"
-#include "res_using/life_using.h"
-#include "res_using/body_using.h"
-#include "res_using/anim_using.h"
+#include "../pak/pak.h"
+#include "../loaders/loaders.h"
+#include "../life/life_extractor.h"
+#include "../res_using/life_using.h"
+#include "../res_using/body_using.h"
+#include "../res_using/anim_using.h"
 
 #define NLOHMANN_JSON_NAMESPACE_NO_VERSION 1
 #include <nlohmann/json.hpp>
