@@ -200,7 +200,9 @@ namespace LifeEnum {
 enum parseArgType {
 	lifeConst,
 	lifeExpr,
-	lifeGoto
+	lifeGoto,
+	lifeModel,
+	lifeLife
 };
 
 struct parseLifeExpr {

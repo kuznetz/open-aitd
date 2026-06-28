@@ -1,5 +1,4 @@
 ﻿#include "../structs/track.h"
-#include "../utils/room_matrix.h"
 
 inline const vector<ParseTrackNode> TrackTable_v1 =
 {
@@ -60,7 +59,7 @@ inline Track loadTrack(u8* data, int size)
 	return result;
 }
 
-inline void extractTrack(Track track, string jsonTo) {
+inline void extractTrack(Track track, string jsonTo, const Matrix& roomMatrix) {
     json outJson = json::array();
     for (int i = 0; i < track.size(); i++)
     {
