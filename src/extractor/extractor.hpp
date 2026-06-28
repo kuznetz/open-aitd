@@ -365,7 +365,7 @@ namespace AITDExtractor {
 
             gameObjs = loadGameObjects("original/OBJETS.ITD");
             if (!std::filesystem::exists("data/objects.json")) {
-                extractGameObjects(this->gameObjs, "data/objects.json");
+                extractGameObjects(this->gameObjs, "data/objects.json", nameDecoders);
             }
 
             this->processStages();

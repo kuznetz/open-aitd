@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "../structs/int_types.h"
 #include "../structs/game_objects.h"
+#include "../names-decode/name_decoders.hpp"
 #include <stdio.h>
 #include <string>
 #include <fstream>
@@ -24,7 +25,7 @@ inline Quaternion convertRotate(int alpha, int beta, int gamma) {
     return QuaternionFromMatrix(matRotation);
 }
 
-inline void extractGameObjects(vector <gameObjectStruct> objects, string josnTo) {
+inline void extractGameObjects(vector <gameObjectStruct> objects, string josnTo, const openAITD::NameDecoders& nameDec) {
     roomMatObj = MatrixRotateX(PI);
 
     json outJson = json::array();
@@ -32,7 +33,8 @@ inline void extractGameObjects(vector <gameObjectStruct> objects, string josnTo)
     {
         auto& obj = objects[i];
         json objJson = json::object();
-        objJson["id"] = i; //obj.id        
+        objJson["id"] = i; //obj.id
+        objJson["name"] = nameDec.obj.getName(i);
 
         if (obj.boundsType == 4) {
             //static object
