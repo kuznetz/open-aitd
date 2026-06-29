@@ -46,6 +46,13 @@ namespace openAITD {
 			EndDrawing();
 		}
 
+		void drawLeft(const char* text, raylib::Rectangle r, Color color) {
+			auto& f = this->mainFont;
+			auto mt = MeasureTextEx(f, text, f.baseSize, 0);
+			Vector2 v = { (int)r.x, (int)r.y };
+			raylib::DrawTextEx(f, text, v, f.baseSize, 0, color);
+		}
+
 		void drawCentered(const char* text, raylib::Rectangle r, Color color) {
 			auto& f = this->mainFont;
 			auto mt = MeasureTextEx(f, text, f.baseSize, 0);

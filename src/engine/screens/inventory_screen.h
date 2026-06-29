@@ -102,6 +102,20 @@ namespace openAITD {
 			rmodel->model.Render();
 			rlViewport( 0, 0, resources->config.screenW, resources->config.screenH );
 			EndMode3D();
+			drawVariable();
+		}
+
+		void drawVariable() {
+			auto& gobj = *world->inventory[curItemIdx];
+			if (gobj.stageLifeId == -1) return;
+			string valStr = std::to_string(world->vars[gobj.stageLifeId]);
+			raylib::Rectangle r = { 
+				resources->config.screenW * 0.01, 
+				(resources->config.screenH / 2), 
+				(resources->config.screenW / 2),
+				resources->config.screenH
+			};
+			resources->screen.drawLeft(valStr.c_str(), r, raylib::WHITE);
 		}
 
 		void nextAction() {
