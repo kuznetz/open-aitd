@@ -97,7 +97,9 @@ namespace AITDExtractor {
 
 	inline void LifeLUAWriter::writeLifeExpr(const LifeExpr& expr) {
 			if (!expr.type) {
-				  if (expr.constType == varObject) {
+				  if (expr.constVal < 0) {
+						out << std::to_string(expr.constVal);
+					} else if (expr.constType == varObject) {
 						out << namesDecoders->obj.getName(expr.constVal, true);
 					} else if (expr.constType == varModel) {
 						out << namesDecoders->model.getName(expr.constVal, true);
@@ -117,7 +119,8 @@ namespace AITDExtractor {
 			out << "(";
 
 			if (expr.type->needActor && expr.Actor != -1) {
-					out << expr.Actor;
+				  string actor = namesDecoders->obj.getName(expr.Actor, true);
+					out << actor;
 			} else if (expr.type->needActor && expr.Actor == -1) {
 					out << "obj";
 			} else if (!expr.type->needActor && expr.Actor != -1) {
@@ -171,7 +174,8 @@ namespace AITDExtractor {
 			out << instr.type->typeStr << "(";
 
 			if (instr.type->needActor && instr.Actor != -1) {
-					out << instr.Actor;
+				  string actor = namesDecoders->obj.getName(instr.Actor, true);
+					out << actor;
 			} else if (instr.type->needActor && instr.Actor == -1) {
 					out << "obj";
 			} else if (!instr.type->needActor && instr.Actor != -1) {
@@ -226,7 +230,7 @@ namespace AITDExtractor {
 			}
 	}
 
-	inline void LifeLUAWriter::writeConsts(int varCount, int objectCount, int modelCount) {
+	inline void LifeLUAWriter::writeConsts(int scriptCount, int objectCount, int modelCount) {
 			/*
 		  for (int i = 0; i < varCount; ++i) {
 				out << "local " << namesDecoders->var.getName(i, true) << " = " << i << "\n";
@@ -239,6 +243,10 @@ namespace AITDExtractor {
 			out << "\n-- Models:\n";
 			for (int i = 0; i < modelCount; ++i) {
 				out << "local " << namesDecoders->model.getName(i, true) << " = " << i << "\n";
+			}
+			out << "\n-- Life Scripts:\n";
+			for (int i = 0; i < scriptCount; ++i) {
+				out << "local " << namesDecoders->life.getName(i, true) << " = " << i << "\n";
 			}
 	}
 

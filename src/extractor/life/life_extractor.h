@@ -27,13 +27,6 @@ namespace AITDExtractor {
 		return res;
 	}
 
-	inline parseLifeExpr getParseExpr(EvalEnum::EvalEnum l) {
-		for (int i = 0; i < LifeExprParams_V1.size(); i++) {
-			if (LifeExprParams_V1[i].type == l) return LifeExprParams_V1[i];
-		}
-		throw new exception("Not found");
-	}
-
 	inline LifeExpr readExpr(lifeBuffer& buf) {
 		LifeExpr result;
 		s16 varTypeN = read16(buf);
@@ -49,7 +42,7 @@ namespace AITDExtractor {
 		}
 		varTypeN &= 0x7FFF;
 
-		auto& parse = LifeExprParams_V1[varTypeN]; //getParseExpr(ExprTable_v1[varTypeN]);
+		auto& parse = LifeExprParams_V1[varTypeN];
 		result.type = &parse;
 
 		//if (result.type == LifeEnum::READ) {}
@@ -57,26 +50,21 @@ namespace AITDExtractor {
 		for (int i = 0; i < parse.arguments.size(); i++)
 		{
 			LifeExpr arg;
-			switch (parse.arguments[i]) {
+			switch (parse.arguments[i].type) {
 			case lifeConst:
 				arg.constVal = read16(buf);
+				arg.constType = parse.arguments[i].varType;
 				result.arguments.push_back(arg);
 				break;
 			case lifeExpr:
 				arg = readExpr(buf);
+				arg.constType = parse.arguments[i].varType;
 				result.arguments.push_back(arg);
 				break;
 			}
 		}
 
 		return result;
-	}
-
-	inline parseLifeInstruction getParseLife(LifeEnum::LifeEnum l) {
-		for (int i = 0; i < LifeParams_V1.size(); i++) {
-			if (LifeParams_V1[i].type == l) return LifeParams_V1[i];
-		}
-		throw new exception("Not found");
 	}
 
 	inline LifeInstruction readInstruction(lifeBuffer &buf, bool floppy = false) {
@@ -90,7 +78,7 @@ namespace AITDExtractor {
 		}
 		opCodeN &= 0x7FFF;
 
-		auto* parse = &LifeParams_V1[opCodeN]; //getParseLife(LifeTable_v1[opCodeN]);
+		auto* parse = &LifeParams_V1[opCodeN];
 		if (floppy && parse->type == LifeEnum::READ) {
 			parse = &LifeParams_Floppy_V1;
 		}
@@ -113,9 +101,10 @@ namespace AITDExtractor {
 			for (int i = 0; i < parse->arguments.size(); i++)
 			{
 				LifeExpr arg;
-				switch (parse->arguments[i]) {
+				switch (parse->arguments[i].type) {
 				case lifeConst:
 					arg.constVal = read16(buf);
+					arg.constType = parse->arguments[i].varType;
 					result.arguments.push_back(arg);
 					break;
 				case lifeGoto:
@@ -123,6 +112,7 @@ namespace AITDExtractor {
 					break;
 				case lifeExpr:
 					arg = readExpr(buf);
+  				arg.constType = parse->arguments[i].varType;
 					result.arguments.push_back(arg);
 					break;
 				}
@@ -209,7 +199,7 @@ namespace AITDExtractor {
 		writer.writeConsts(varCount, objectCount, modelCount);		
 		for (int j = 0; j < lifesNodes.size(); j++)
 		{
-			out << "-- " << nameDecs.life.getName(j) << "\n";
+			out << "-- " << nameDecs.life.getName(j, true) << "\n";
 			out << "function life_" << j << "(obj)\n";
 			writer.writeLifeNodes(1, lifesNodes[j]);
 			out << "end\n\n";

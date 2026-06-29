@@ -211,10 +211,15 @@ enum parseArgVarType {
 	varAnimation,
 };
 
+struct parseArg {
+	parseArgType type;
+	parseArgVarType varType = varInt;
+};
+
 struct parseLifeExpr {
 	EvalEnum::EvalEnum type;
 	string typeStr;
-	vector<parseArgType> arguments;
+	vector<parseArg> arguments;
 	bool needActor = false;
 	parseArgVarType returnType = varInt;
 };
@@ -222,7 +227,7 @@ struct parseLifeExpr {
 struct parseLifeInstruction {
 	LifeEnum::LifeEnum type;
 	string typeStr;
-	vector<parseArgType> arguments;
+	vector<parseArg> arguments;
 	bool needActor = false;
 };
 

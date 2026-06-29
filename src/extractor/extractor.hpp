@@ -187,7 +187,8 @@ namespace AITDExtractor {
                 ofstream out(filename_c, ios::trunc | ios::out);
                 LifeLUAWriter writer(out, nameDecoders);
                 int objectCount = this->gameObjs.size();
-                writer.writeConsts(this->varCount, objectCount, modelCount);		
+                //this->varCount
+                writer.writeConsts(lifesNodes.size(), objectCount, modelCount);		
             }
 
             const char* filename = "data/scripts.lua";
@@ -196,7 +197,7 @@ namespace AITDExtractor {
                 LifeLUAWriter writer(out, nameDecoders);
                 for (int j = 0; j < lifesNodes.size(); j++)
                 {
-                    out << "-- " << nameDecoders.life.getName(j) << "\n";
+                    out << "-- " << nameDecoders.life.getName(j, true) << "\n";
                     out << "function life_" << j << "(obj)\n";
                     writer.writeLifeNodes(1, lifesNodes[j]);
                     out << "end\n\n";
