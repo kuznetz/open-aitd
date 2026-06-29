@@ -11,6 +11,7 @@
 #include "screen.h"
 #include "audio.h"
 #include "../../raylib-cpp/raylib-cpp.h"
+#include "../../names-decode/name_decoders.hpp"
 
 using namespace std;
 namespace openAITD {
@@ -19,8 +20,8 @@ namespace openAITD {
 	class Resources {
 	public:
 		Config config;
+		NameDecoders nameDecoders;
 		map<int,string> texts;
-
 		vector<Stage> stages;
 		vector<Track> tracks;
 		RModels models;
@@ -29,10 +30,12 @@ namespace openAITD {
 		Audio audio;
 
 		Resources() {
+			nameDecoders.load();
 			models.config = &config;
 			backgrounds.config = &config;
 			backgrounds.stages = &stages;
 			screen.config = &config;
+			models.nameDecoders = &nameDecoders;
 		}
 
 		~Resources() {

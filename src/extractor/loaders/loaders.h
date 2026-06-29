@@ -10,11 +10,15 @@
 #include <fstream>
 #include <iomanip>
 #include <vector>
-using namespace std;
 
+namespace AITDExtractor {
 
-u8* getPalColor(u8 idx);
-vector<gameObjectStruct> loadGameObjects(string from);
-PakModel loadModel(char* data, int size);
-floorStruct loadFloorPak(string filename);
-Animation loadAnimation(int id, u8* animPtr);
+  using namespace std;
+  
+  u8* getPalColor(u8 idx);
+  vector<gameObjectStruct> loadGameObjects(string from);
+  PakModel loadModel(char* data, int size);
+  floorStruct loadFloorPak(string filename);
+  Animation loadAnimation(int id, u8* animPtr);
+
+}

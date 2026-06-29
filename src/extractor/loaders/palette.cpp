@@ -5,17 +5,21 @@
 #include "../structs/int_types.h"
 #include "../pak/pak.h"
 
-bool paletteLoaded = false;
-vector<u8> palette; //[256 * 30];
+namespace AITDExtractor {
 
-void loadPalette() {
-    if (paletteLoaded) return;
-    PakFile pak("original/ITD_RESS.PAK");
-    palette = pak.readBlock(3);
-    paletteLoaded = true;
-}
+    bool paletteLoaded = false;
+    vector<u8> palette; //[256 * 30];
 
-u8* getPalColor(u8 idx) {
-    loadPalette();
-    return &palette.data()[idx*3];
+    void loadPalette() {
+        if (paletteLoaded) return;
+        PakFile pak("original/ITD_RESS.PAK");
+        palette = pak.readBlock(3);
+        paletteLoaded = true;
+    }
+
+    u8* getPalColor(u8 idx) {
+        loadPalette();
+        return &palette.data()[idx*3];
+    }
+
 }

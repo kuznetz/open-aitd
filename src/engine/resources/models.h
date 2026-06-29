@@ -4,12 +4,15 @@
 #include <string>
 
 #include "../../raylib-cpp/raylib-cpp.h"
+#include "../../names-decode/name_decoders.hpp"
+
 #include "bounds.h"
 #include "config.h"
 #include "model.h"
 
-using namespace std;
 namespace openAITD {
+
+	using namespace std;
 
 	struct RModel
 	{
@@ -26,6 +29,7 @@ namespace openAITD {
 		map<int, RModel> altModels;
 	public:
 		Config* config = 0;
+		NameDecoders* nameDecoders = 0;
 		string modelsPath = "data/models";
 		RModels();
 		~RModels();
@@ -57,7 +61,7 @@ namespace openAITD {
 			}
 		}
 
-		str = modelsPath + "/" + to_string(id) + (alt ? "_alt" : "") + "/data.json";
+		str = modelsPath + "/" + nameDecoders->model.getName(id) + (alt ? "_alt" : "") + "/data.json";
 		std::ifstream ifs(str);
 		json dataJson = json::parse(ifs);
 		auto& b = dataJson["bounds"];

@@ -21,7 +21,7 @@
 #include "./screens/picture_screen.h"
 #include "./screens/console_screen.h"
 
-#include "../extractor/extractor.h"
+#include "../extractor/extractor.hpp"
 
 using namespace std;
 namespace openAITD {
@@ -303,7 +303,9 @@ namespace openAITD {
     int main(void)
     {
         resources.config = loadConfig();
-        AITDExtractor::extractAllData(false);
+
+        AITDExtractor::AITDExtractor extractor;
+        extractor.extractAllData(false);
 
         int m;
         if (resources.config.fulllscreen) {
