@@ -100,11 +100,11 @@ namespace AITDExtractor {
 				  if (expr.constVal < 0) {
 						out << std::to_string(expr.constVal);
 					} else if (expr.constType == varObject) {
-						out << namesDecoders->obj.getName(expr.constVal, true);
+						out << "GObj." << namesDecoders->obj.getName(expr.constVal);
 					} else if (expr.constType == varModel) {
-						out << namesDecoders->model.getName(expr.constVal, true);
+						out << "Model." <<  namesDecoders->model.getName(expr.constVal);
 					} else if (expr.constType == varLifeScript) {
-						out << namesDecoders->life.getName(expr.constVal, true);
+						out << "Life." <<  namesDecoders->life.getName(expr.constVal);
 					} else {
 						out << std::to_string(expr.constVal);
 					}
@@ -119,8 +119,7 @@ namespace AITDExtractor {
 			out << "(";
 
 			if (expr.type->needActor && expr.Actor != -1) {
-				  string actor = namesDecoders->obj.getName(expr.Actor, true);
-					out << actor;
+					out << "GObj." << namesDecoders->obj.getName(expr.Actor);
 			} else if (expr.type->needActor && expr.Actor == -1) {
 					out << "obj";
 			} else if (!expr.type->needActor && expr.Actor != -1) {
@@ -174,8 +173,7 @@ namespace AITDExtractor {
 			out << instr.type->typeStr << "(";
 
 			if (instr.type->needActor && instr.Actor != -1) {
-				  string actor = namesDecoders->obj.getName(instr.Actor, true);
-					out << actor;
+					out << "GObj." << namesDecoders->obj.getName(instr.Actor);
 			} else if (instr.type->needActor && instr.Actor == -1) {
 					out << "obj";
 			} else if (!instr.type->needActor && instr.Actor != -1) {
@@ -231,22 +229,22 @@ namespace AITDExtractor {
 	}
 
 	inline void LifeLUAWriter::writeConsts(int scriptCount, int objectCount, int modelCount) {
-			/*
-		  for (int i = 0; i < varCount; ++i) {
-				out << "local " << namesDecoders->var.getName(i, true) << " = " << i << "\n";
-			}
-			*/
-			out << "-- Objects:\n";
+			out << "-- Game Objects table\n";
+			out << "GObj = {}\n";
 			for (int i = 0; i < objectCount; ++i) {
-				out << "local " << namesDecoders->obj.getName(i, true) << " = " << i << "\n";
+					out << "GObj." << namesDecoders->obj.getName(i) << " = " << i << "\n";
 			}
-			out << "\n-- Models:\n";
+
+			out << "\n-- Models table\n";
+			out << "Model = {}\n";
 			for (int i = 0; i < modelCount; ++i) {
-				out << "local " << namesDecoders->model.getName(i, true) << " = " << i << "\n";
+					out << "Model." << namesDecoders->model.getName(i) << " = " << i << "\n";
 			}
-			out << "\n-- Life Scripts:\n";
+
+			out << "\n-- Life Scripts table\n";
+			out << "Life = {}\n";
 			for (int i = 0; i < scriptCount; ++i) {
-				out << "local " << namesDecoders->life.getName(i, true) << " = " << i << "\n";
+					out << "Life." << namesDecoders->life.getName(i) << " = " << i << "\n";
 			}
 	}
 

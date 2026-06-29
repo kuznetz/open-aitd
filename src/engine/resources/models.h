@@ -27,6 +27,7 @@ namespace openAITD {
 		map<int, RModel> models;
 		//For AITD1 - Emily character
 		map<int, RModel> altModels;
+		string getModelDir(int id, bool alt);
 	public:
 		Config* config = 0;
 		NameDecoders* nameDecoders = 0;
@@ -48,7 +49,7 @@ namespace openAITD {
 		if (mi != modMap.end()) {
 			return &(*mi).second;
 		}
-		string str = modelsPath + "/" + to_string(id) + (alt ? "_alt" : "") + "/model.gltf";
+		string str = this->getModelDir(id, alt) + "/model.gltf";
 		auto& newMod = modMap[id];
 		newMod.model.load(str.c_str());
 		newMod.model.bakePoses(config->targetFps);
@@ -61,7 +62,7 @@ namespace openAITD {
 			}
 		}
 
-		str = modelsPath + "/" + nameDecoders->model.getName(id) + (alt ? "_alt" : "") + "/data.json";
+		str = this->getModelDir(id, alt) + "/data.json";
 		std::ifstream ifs(str);
 		json dataJson = json::parse(ifs);
 		auto& b = dataJson["bounds"];
@@ -69,6 +70,10 @@ namespace openAITD {
 		newMod.bounds = { { b[0], b[1], -(float)b[2] }, { b[3], b[4], -(float)b[5] } };
 
 		return &newMod;
+	}
+
+	string RModels::getModelDir(int id, bool alt) {
+		return modelsPath + "/" + nameDecoders->model.getName(id) + (alt ? "_alt" : "");
 	}
 
 	void RModels::clear() {

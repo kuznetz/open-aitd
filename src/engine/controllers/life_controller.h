@@ -589,6 +589,9 @@ namespace openAITD {
 			//TODO: load vars
 
 			string errstr;
+			if (!lua->DoFile("data/constants.lua", &errstr)) {
+				cout << "Load life failed: " << errstr;
+			}
 			if (!lua->DoFile("data/scripts.lua", &errstr)) {
 				cout << "Load life failed: " << errstr;
 			}
