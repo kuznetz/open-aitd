@@ -201,6 +201,7 @@ namespace openAITD {
 	{
 	public:
 		int id = -1;
+		string name;
 
 		//openAITD::Model* model;
 		int prevModelId = -1;

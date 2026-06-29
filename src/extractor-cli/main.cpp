@@ -1,10 +1,10 @@
 ﻿//#include "tests/tests.h"
-#include "../extractor/extractor.hpp"
+#include "../extractor/include/extractor.h"
 
 int main(void)
 {
     //linkAnimations();
-    AITDExtractor::AITDExtractor extractor;
-    extractor.extractAllData(false);
+    auto extractor = AITDExtractor::createAITDExtractor();
+    extractor->extractAllData(false);
     return 0;
 }

@@ -3,7 +3,6 @@
 //#include <json_fwd.hpp>
 #include <fstream>
 #include <vector>
-#include <raymath.h>
 #include <iomanip>
 
 #include "../utils/my_gltf.h"
