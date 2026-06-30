@@ -34,6 +34,7 @@ namespace openAITD {
 		map <int, LifeFunc> funcs;
 		std::function<bool(uint32_t, const LuaObject&)> execCb;
 		Matrix roomMatrix;
+		GameObject* curGObj = 0;
 		float curTimeDelta = 0;
 
 		LifeController(World* world, TracksController* trackContr, PlayerController* playerContr, HitController* hitContr, ThrowController* throwContr, FoundScreen* foundScreen) {
@@ -169,6 +170,10 @@ namespace openAITD {
 				return this->world->gobjects[obj].modelId;
 				}, "MODEL");
 			lua->CreateFunction([this](int obj) -> int {
+				//TODO: Camera index?
+				return 0;
+				}, "CAMERA");
+			lua->CreateFunction([this](int obj) -> int {
 				return this->world->gobjects[obj].physics.collidedBy;
 				}, "COL_BY");
 			lua->CreateFunction([this](int obj) -> int {
@@ -215,7 +220,7 @@ namespace openAITD {
 				}, "TEST_ZV_END_ANIM");
 
 			lua->CreateFunction([this](int obj) -> int {
-				return this->world->gobjects[obj].animation.animFrame;
+				return this->world->gobjects[obj].animation.keyFrameIdx;
 				}, "FRAME");
 			lua->CreateFunction([this](int obj, int obj2) -> int {
 				return getPosRel(&this->world->gobjects[obj], &this->world->gobjects[obj2]);
@@ -517,6 +522,18 @@ namespace openAITD {
 			lua->CreateFunction([this]() {
 				//Do nothing?
 				}, "GET_HARD_CLIP");
+			lua->CreateFunction([this]() {
+				curGObj->location.position.y += 2.001f;
+				curGObj->physics.boundsCached = false;
+				//curGObj->animation.moveRoot.y -= 3.0f;
+				cout << "UP_COOR_Y" << endl;
+				//TODO: UP_COOR_Y
+				}, "UP_COOR_Y");
+
+      lua->CreateFunction([this](int fromObjId) {
+				auto& obj = this->world->gobjects[fromObjId];
+				curGObj->location.rotation = obj.location.rotation;
+				}, "COPY_ANGLE");			
 
 			//Sound & music
 			lua->CreateFunction([this](int obj, int sampleId, int animId, int animFrame) {
@@ -637,35 +654,36 @@ namespace openAITD {
 			auto& animIdx = animIter->second;
 			raylib::Vector3 rootMotion = m->model.getLastFrameRootMotion(animIdx);
 			raylib::Vector3 globalMotion = Vector3RotateByQuaternion(rootMotion, gobj.location.rotation);
-			globalMotion.y += yOffset;
+			globalMotion.y += yOffset + 0.001f;
 
-			// Копируем текущие границы объекта и смещаем их
 			Bounds newBounds = world->getObjectBounds(gobj);
 			newBounds.min.x += globalMotion.x;
 			newBounds.max.x += globalMotion.x;
-			newBounds.min.y += globalMotion.y + 0.01f;
-			newBounds.max.y += globalMotion.y + 0.01f;
+			newBounds.min.y += globalMotion.y;
+			newBounds.max.y += globalMotion.y;
 			newBounds.min.z += globalMotion.z;
 			newBounds.max.z += globalMotion.z;
 
 			Room& room = resources->stages[world->curStageId].rooms[gobj.location.roomId];
 			for (const auto& collider : room.colliders) {
 					if (newBounds.CollToBox(collider.bounds)) {
+							cout << "Collision!" << endl;
 							return false;
 					}
 			}
 
-			newBounds.min.y -= 0.01f;
-			newBounds.max.y -= 0.01f;
+			newBounds.min.y -= 0.1f;
+			newBounds.max.y -= 0.1f;
 			for (const auto& collider : room.colliders) {
-					if (collider.type == 9) {
-							if (newBounds.CollToBox(collider.bounds)) {
-									return true;
-							}
+					if (collider.type != 3) continue;
+					if (newBounds.CollToBox(collider.bounds)) {
+						  cout << "!!!collider.type " << collider.type << endl;
+							return true;
 					}
 			}
-			return false;
-			
+
+			cout << "Collision, no floor!" << endl;
+			return false;			
 		}
 
 		void reloadVars() {
@@ -684,13 +702,15 @@ namespace openAITD {
 			return result;
 		}
 
-		void executeLife(int lifeId, int objId) {
+		void executeLife(int lifeId, GameObject& gobj) {
+			int objId = gobj.id;
 			auto& f = funcs.find(lifeId);
 			if (f == funcs.end()) {
 				cout << "Life " << lifeId << " not found, (objId: " << objId << ")" << endl;
 				return;
 			}
 
+  		curGObj = &gobj;
 			string errstr;
 			if (!f->second.func->Execute(execCb, &errstr, objId)) {
 				cout << "Execute life_" << lifeId << " error: " << errstr << endl;
@@ -714,27 +734,27 @@ namespace openAITD {
 			for (int i = 0; i < world->gobjects.size(); i++) {				
 				auto& gobj = world->gobjects[i];
 				if (!isObjectActive(gobj)) continue;
-				executeLife(gobj.lifeId, i);
+				executeLife(gobj.lifeId, gobj);
 			}
 
 			if (world->takedObj) {
-				auto gobj = world->takedObj;
+				auto& gobj = world->takedObj;
 				world->curInvAction = 2048;
-				executeLife(gobj->invItem.lifeId, gobj->id);
+				executeLife(gobj->invItem.lifeId, *gobj);
 				world->curInvAction = 0;
 				world->takedObj = 0;
 			}
 
 			if (world->curInvGObject) {
-				executeLife(world->curInvGObject->invItem.lifeId, world->curInvGObject->id);
+				executeLife(world->curInvGObject->invItem.lifeId, *world->curInvGObject);
 				world->curInvGObject = 0;
 				world->curInvAction = 0;
 			}
 
 			if (world->inHandObj) {
-    			world->curInvAction = world->player.space ? 8192 : 0;
-				auto gobj = world->inHandObj;
-				executeLife(gobj->invItem.lifeId, gobj->id);
+    		world->curInvAction = world->player.space ? 8192 : 0;
+				auto& gobj = world->inHandObj;
+				executeLife(gobj->invItem.lifeId, *gobj);
 			}
 
 			/*string s = "";

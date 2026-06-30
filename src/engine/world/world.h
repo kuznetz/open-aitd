@@ -249,7 +249,7 @@ namespace openAITD {
 	}
 
 	void World::setRepeatAnimation(GameObject& gobj, int animId) {
-		if (gobj.animation.bitField.uninterruptable) return;
+		if (gobj.animation.bitField.uninterruptable && !gobj.animation.animEnd) return;
 		cout << "setRepeatAnimation " << gobj.name << " " << animId << endl;
 		gobj.animation.scriptAnimId = animId;
 		gobj.animation.id = animId;
@@ -260,7 +260,7 @@ namespace openAITD {
 	}
 
 	void World::setOnceAnimation(GameObject& gobj, int animId, int nextAnimId, bool uninterrupable) {
-		if (gobj.animation.bitField.uninterruptable) return;
+		if (gobj.animation.bitField.uninterruptable && !gobj.animation.animEnd) return;
 	  cout << "setOnceAnimation " << gobj.name << " " << animId << " " << nextAnimId << endl;
 		if (animId == -1) {
 			gobj.bitField.animated = 0;
