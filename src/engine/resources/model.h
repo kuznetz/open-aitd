@@ -303,6 +303,14 @@ namespace openAITD {
             return i - 1;
         }
 
+        Vector3 getLastFrameRootMotion(int animId) {
+            const auto& mdlAnim = this->animations[animId];
+            if (mdlAnim.rootMotion.empty()) {
+                return {0, 0, 0};
+            }
+            return mdlAnim.rootMotion.back().translation;
+        }        
+
         void Render() const {
             if (!data) return;
             for (int i = 0; i < model.meshCount; i++)

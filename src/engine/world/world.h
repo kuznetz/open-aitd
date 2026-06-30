@@ -157,6 +157,10 @@ namespace openAITD {
 			auto& gobj = gobjects[i];
 			gobj.id = i;
 
+			if (objsJson[i].contains("name")) {
+				gobj.name = objsJson[i]["name"];
+			}
+
 			if (objsJson[i].contains("location")) {
 				auto& loc = gobj.location;
 				auto& locJson = objsJson[i]["location"];
@@ -246,6 +250,7 @@ namespace openAITD {
 
 	void World::setRepeatAnimation(GameObject& gobj, int animId) {
 		if (gobj.animation.bitField.uninterruptable) return;
+		cout << "setRepeatAnimation " << gobj.name << " " << animId << endl;
 		gobj.animation.scriptAnimId = animId;
 		gobj.animation.id = animId;
 		gobj.animation.nextId = -1;
@@ -256,6 +261,11 @@ namespace openAITD {
 
 	void World::setOnceAnimation(GameObject& gobj, int animId, int nextAnimId, bool uninterrupable) {
 		if (gobj.animation.bitField.uninterruptable) return;
+	  cout << "setOnceAnimation " << gobj.name << " " << animId << " " << nextAnimId << endl;
+		if (animId == -1) {
+			gobj.bitField.animated = 0;
+			return;
+		}
 		gobj.animation.scriptAnimId = animId;
 		gobj.animation.id = animId;
 		gobj.animation.nextId = nextAnimId;

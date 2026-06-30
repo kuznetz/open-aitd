@@ -31,8 +31,8 @@ namespace openAITD {
                 auto& objAni = gobj.animation;
 
                 if (!gobj.bitField.animated) {
-                    gobj.animation.animChanged = false;
-                    gobj.animation.animEnd = 0;
+                    objAni.animChanged = false;
+                    objAni.animEnd = 0;
                     objAni.keyFrameIdx = 0;
                     objAni.animFrame = 0;
                     continue;
@@ -115,6 +115,7 @@ namespace openAITD {
 			}
 
         }
+
 	};
 
 }

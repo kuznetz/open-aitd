@@ -16,6 +16,7 @@ namespace openAITD {
 
 	struct Config
 	{
+		bool fastStart = false;
 		bool showFps = false;
 		bool fulllscreen = true;
 		int screenX = 0;
@@ -31,6 +32,9 @@ namespace openAITD {
 		if (!std::filesystem::exists(configPath)) return cfg;
 		std::ifstream ifs(configPath);
 		json confJson = json::parse(ifs);
+		if (confJson.contains("fastStart")) {
+			cfg.fastStart = confJson["fastStart"];
+		}
 		if (confJson.contains("fulllscreen")) {
 			cfg.fulllscreen = confJson["fulllscreen"];
 		}
@@ -59,6 +63,7 @@ namespace openAITD {
 	void saveConfig(Config cfg) {
 		json outJson = json::object();
 
+		outJson["fastStart"] = cfg.fastStart;
 		outJson["fulllscreen"] = cfg.fulllscreen;
 		outJson["antialiasing"] = cfg.antialiasing;
 		outJson["screenW"] = cfg.screenW;

@@ -208,9 +208,10 @@ namespace openAITD {
 			lua->CreateFunction([this](int obj) -> int {
 				return this->world->gobjects[obj].animation.animEnd;
 				}, "END_ANIM");
-			lua->CreateFunction([this](int obj, int animId, int param) -> int {
-				//TODO: For climbing
-				return 0;
+			lua->CreateFunction([this](int obj, int animId, int offsetY) -> int {
+				auto& gobj = this->world->gobjects[obj];
+				bool result = canCompleteAnimation(gobj, animId, -(offsetY / 1000.));
+				return result? 1: 0;
 				}, "TEST_ZV_END_ANIM");
 
 			lua->CreateFunction([this](int obj) -> int {
@@ -623,6 +624,50 @@ namespace openAITD {
 			return true;
 		}
 
+		bool canCompleteAnimation(GameObject& gobj, int animationId, float yOffset) {			
+			if (gobj.modelId == -1) return false;
+			RModel* m = resources->models.getModel(gobj.modelId);
+			if (!m) return false;
+
+			auto& animIter = m->animsIds.find(animationId);
+			if (animIter == m->animsIds.end()) {
+				return false;
+			}
+			
+			auto& animIdx = animIter->second;
+			raylib::Vector3 rootMotion = m->model.getLastFrameRootMotion(animIdx);
+			raylib::Vector3 globalMotion = Vector3RotateByQuaternion(rootMotion, gobj.location.rotation);
+			globalMotion.y += yOffset;
+
+			// Копируем текущие границы объекта и смещаем их
+			Bounds newBounds = world->getObjectBounds(gobj);
+			newBounds.min.x += globalMotion.x;
+			newBounds.max.x += globalMotion.x;
+			newBounds.min.y += globalMotion.y + 0.01f;
+			newBounds.max.y += globalMotion.y + 0.01f;
+			newBounds.min.z += globalMotion.z;
+			newBounds.max.z += globalMotion.z;
+
+			Room& room = resources->stages[world->curStageId].rooms[gobj.location.roomId];
+			for (const auto& collider : room.colliders) {
+					if (newBounds.CollToBox(collider.bounds)) {
+							return false;
+					}
+			}
+
+			newBounds.min.y -= 0.01f;
+			newBounds.max.y -= 0.01f;
+			for (const auto& collider : room.colliders) {
+					if (collider.type == 9) {
+							if (newBounds.CollToBox(collider.bounds)) {
+									return true;
+							}
+					}
+			}
+			return false;
+			
+		}
+
 		void reloadVars() {
 			for (int i = 0; i < world->vars.size(); i++) {
 				string name = string("var_") + to_string(i);
@@ -703,70 +748,3 @@ namespace openAITD {
 	};
 
 }
-
-//LifeEnum::DO_MOVE, +
-//LifeEnum::ANIM_ONCE, +
-//LifeEnum::ANIM_ALL_ONCE, +
-//LifeEnum::SET_MODEL, +
-//LifeEnum::SET_ANIM_REPEAT,
-//LifeEnum::SET_ANIM_MOVE,
-//LifeEnum::SET_TRACKMODE,
-//LifeEnum::HIT,
-//LifeEnum::MESSAGE,
-//LifeEnum::SET_LIFE_MODE,
-//LifeEnum::START_CHRONO,
-//LifeEnum::FOUND,
-//LifeEnum::SET_LIFE,
-//LifeEnum::DELETE_OBJ,
-//LifeEnum::TAKE,
-//LifeEnum::IN_HAND,
-//LifeEnum::READ,
-//LifeEnum::SET_ANIM_SOUND,
-//LifeEnum::SPECIAL,
-//LifeEnum::DO_REAL_ZV,
-//LifeEnum::SOUND,
-//LifeEnum::SET_FLAGS,
-//LifeEnum::GAME_OVER,
-//LifeEnum::MANUAL_ROT,
-//LifeEnum::RND_FREQ,
-//LifeEnum::SET_MUSIC,
-//LifeEnum::SET_BETA,
-//LifeEnum::DO_ROT_ZV,
-//LifeEnum::CHANGE_ROOM,
-//LifeEnum::SET_INVENTORY_NAME,
-//LifeEnum::SET_INVENTORY_FLAG,
-//LifeEnum::SET_INVENTORY_LIFE,
-//LifeEnum::SET_CAMERA_TARGET,
-//LifeEnum::DROP,
-//LifeEnum::FIRE,
-//LifeEnum::TEST_COL,
-//LifeEnum::SET_INVENTORY_MODEL,
-//LifeEnum::SET_ALPHA,
-//LifeEnum::DO_MAX_ZV,
-//LifeEnum::PUT,
-//LifeEnum::SET_C,
-//LifeEnum::DO_NORMAL_ZV,
-//LifeEnum::DO_CARRE_ZV,
-//LifeEnum::SOUND_THEN,
-//LifeEnum::SET_LIGHT,
-//LifeEnum::SET_SHAKING,
-//LifeEnum::ALLOW_INVENTORY,
-//LifeEnum::SET_OBJ_WEIGHT,
-//LifeEnum::UP_COOR_Y,
-//LifeEnum::PUT_AT,
-//LifeEnum::DEF_ZV,
-//LifeEnum::HIT_OBJECT,
-//LifeEnum::GET_HARD_CLIP,
-//LifeEnum::SET_ANGLE,
-//LifeEnum::REP_SOUND,
-//LifeEnum::THROW,
-//LifeEnum::WATER,
-//LifeEnum::PICTURE,
-//LifeEnum::STOP_SOUND,
-//LifeEnum::NEXT_MUSIC,
-//LifeEnum::FADE_MUSIC,
-//LifeEnum::STOP_HIT_OBJECT,
-//LifeEnum::COPY_ANGLE,
-//LifeEnum::END_SEQUENCE,
-//LifeEnum::SOUND_THEN_REPEAT,
-//LifeEnum::WAIT_GAME_OVER

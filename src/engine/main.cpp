@@ -37,7 +37,6 @@ namespace openAITD {
     };
     AppState state = AppState::MainMenu;
     bool gameStarted = false;
-    bool fastStart = false;
     
     Resources resources;
     World world(&resources);
@@ -345,7 +344,7 @@ namespace openAITD {
 
         DisableCursor();
 
-        if (fastStart) {
+        if (resources.config.fastStart) {
           startGame();
         }
         else {

@@ -167,7 +167,7 @@ namespace openAITD {
 			return true;
 		}
 
-		bool CollToBox(Bounds& b2) {
+		bool CollToBox(const Bounds& b2) {
 			Bounds& b1 = *this;
 			if (b1.max.x < b2.min.x || b1.min.x > b2.max.x)  return false;
 			if (b1.max.y < b2.min.y || b1.min.y > b2.max.y)  return false;

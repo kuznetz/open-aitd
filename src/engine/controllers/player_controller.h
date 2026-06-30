@@ -36,7 +36,7 @@ namespace openAITD {
 			int nextAnimation = gobj.animation.id;
 
 			//if (gobj.track.mode == GOTrackMode::manual) {
-			if (!gobj.animation.bitField.repeat) {
+			if (gobj.animation.bitField.uninterruptable) {
 				isAction = true;
 			}
 
@@ -62,22 +62,7 @@ namespace openAITD {
 				//Get Move Vec
 				//gobj.physics.moveVec = { 0,0,0 };
 				float move = 0;
-				if (IsKeyDown(KEY_Z)) {
-					move = 0.25;
-					nextAnimation = 2;
-					isAction = true;
-				}
-				else if (IsKeyDown(KEY_X)) {
-					move = 0.25;
-					nextAnimation = 5;
-					isAction = true;
-				}
-				else if (IsKeyDown(KEY_C)) {
-					move = 0.25;
-					nextAnimation = 270;
-					isAction = true;
-				}
-				else if (IsKeyDown(KEY_DOWN)) {
+				if (IsKeyDown(KEY_DOWN)) {
 					move = -0.75;
 					nextAnimation = world->player.animations.walkBackw;
 				}
