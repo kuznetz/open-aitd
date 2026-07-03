@@ -10,12 +10,12 @@
 
 namespace AITDExtractor {
 
-    void extractBackground(u8* img, const char* outPng) {
+    void extractBackground(u8* img, const char* outPng, const Pallete& pallete) {
         //unsigned char* img = new unsigned char[320 * 200];
         unsigned char* data = new unsigned char[320 * 200 * 3];
         for (int i = 0; i < (320 * 200); i++) {
             u8 idx = ((u8*)img)[i];
-            auto col = getPalColor(idx);
+            auto& col = pallete[idx];
             data[i * 3 + 0] = col[0];
             data[i * 3 + 1] = col[1];
             data[i * 3 + 2] = col[2];

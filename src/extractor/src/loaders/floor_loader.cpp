@@ -5,6 +5,7 @@
 #include <iostream>
 #include <string>
 #include <list>
+#include "./loaders.h"
 
 namespace AITDExtractor {
 
@@ -278,7 +279,7 @@ namespace AITDExtractor {
         }
     }
 
-    floorStruct loadFloorPak(string filename) {
+    floorStruct ResourceLoader::loadFloor(const string filename) {
         PakFile pak(filename);
         floorStruct result;
         loadRooms(result, pak);

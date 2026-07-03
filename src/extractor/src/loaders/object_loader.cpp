@@ -5,12 +5,13 @@
 #include <string>
 #include <fstream>
 #include <iomanip>
+#include "./loaders.h"
 
 namespace AITDExtractor {
 
     using namespace std;
 
-    vector <gameObjectStruct> loadGameObjects(string from) {
+    vector<gameObjectStruct> ResourceLoader::loadGameObjects(const string from) {
         auto fHandle = fopen(from.c_str(), "rb");
         //if (!fHandle) theEnd(0, "OBJETS.ITD");
         fseek(fHandle, 0, SEEK_END);

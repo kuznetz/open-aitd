@@ -2,10 +2,11 @@
 #include "../pak/pak.h"
 #include "../structs/model.h"
 #include "../structs/int_types.h"
+#include "./loaders.h"
 
 namespace AITDExtractor {
 
-	int loadModelBones(PakModel &body, char* data) {
+	int loadModelBones(PakModel &body, u8* data) {
 		int i = 0;
 		int bonesCount = READ_LE_U16(data + 0);
 		i += 2;
@@ -36,7 +37,7 @@ namespace AITDExtractor {
 		return i;
 	}
 
-	void loadModelPrimitives(PakModel& body, char* data) {
+	void loadModelPrimitives(PakModel& body, u8* data) {
 		int i = 0;
 		int primCount = READ_LE_U16(data + 0);
 		i += 2;
@@ -150,8 +151,9 @@ namespace AITDExtractor {
 		}
 	}
 
-	PakModel loadModel(char* data, int size) {
+	PakModel ResourceLoader::loadModel(vector<u8>& vdata) {
 		//header
+		u8* data = vdata.data();
 		PakModel body;
 		body.modelFlags = READ_LE_U16(data);	
 		body.bounds.ZVX1 = READ_LE_S16(data + 2);

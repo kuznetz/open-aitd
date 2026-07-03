@@ -1,5 +1,6 @@
 ﻿#include "../structs/int_types.h"
 #include "../structs/animation.h"
+#include "./loaders.h"
 #include <vector>
 #include <string>
 #include <iomanip>
@@ -7,9 +8,9 @@
 namespace AITDExtractor {
     using namespace std;
 
-    Animation loadAnimation(int id, u8* animPtr) {
+    Animation ResourceLoader::loadAnimation(vector<u8>& vdata) {
+        u8* animPtr = vdata.data();
         Animation result;
-        result.id = id;
 
         int FramesCount = READ_LE_U16(animPtr); animPtr += 2;
         int BonesCount = READ_LE_U16(animPtr); animPtr += 2;

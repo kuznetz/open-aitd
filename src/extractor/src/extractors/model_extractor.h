@@ -36,7 +36,7 @@ namespace AITDExtractor {
         } while (lastPoly > 1);
     }
 
-    int getMaterialIdx(tinygltf::Model& m, u8 colorIdx, u8 subType = 0)
+    int getMaterialIdx(tinygltf::Model& m, u8 colorIdx, const Pallete& pallete, u8 subType = 0)
     {
         //string matName = string("mat_")+ to_string(colorIdx) + "_" + to_string(subType);
         string matName = string("mat_") + to_string(colorIdx);
@@ -49,7 +49,7 @@ namespace AITDExtractor {
         newMat.name = matName;
         newMat.doubleSided = false;
 
-        auto col = getPalColor(colorIdx);
+        auto col = pallete[colorIdx];
         newMat.pbrMetallicRoughness.baseColorFactor = { 
             (float)col[0] / 255,
             (float)col[1] / 255,
@@ -290,8 +290,8 @@ namespace AITDExtractor {
     */
 
 
-    tinygltf::Primitive createPrimitivePoly(tinygltf::Model& m, const PakModelPrimitive& prim, vector<Vector3>& modelVerts, int vertAccIdx) {
-        auto matIdx = getMaterialIdx(m, prim.colorIndex, prim.subType);
+    tinygltf::Primitive createPrimitivePoly(tinygltf::Model& m, const PakModelPrimitive& prim, vector<Vector3>& modelVerts, int vertAccIdx, const Pallete pallette) {
+        auto matIdx = getMaterialIdx(m, prim.colorIndex, pallette, prim.subType);
 
         /*
         UV:
@@ -383,7 +383,7 @@ namespace AITDExtractor {
         return m.accessors.size() - 1;
     }
 
-    void saveModelGLTF(const PakModel& model, vector<Animation*> animations, const string dirname)
+    void saveModelGLTF(const PakModel& model, vector<Animation*> animations, const Pallete& pallete, const string dirname)
     {
         const bool splitPrimitives = false;
         roomMatMdl = MatrixMultiply(MatrixRotateX(PI), MatrixRotateY(PI)); //MatrixIdentity();
@@ -486,7 +486,7 @@ namespace AITDExtractor {
             {
                 auto& prim = model.primitives[pIdx];
                 if (prim.type != 1) continue;
-                auto& prim2 = createPrimitivePoly(m, prim, modelVerts, vertAccIdx);
+                auto& prim2 = createPrimitivePoly(m, prim, modelVerts, vertAccIdx, pallete);
                 if (model.bones.size()) {
                     prim2.attributes["JOINTS_0"] = vSkin.jointsAccIdx;
                     prim2.attributes["WEIGHTS_0"] = vSkin.weightsAccIdx;
@@ -499,7 +499,7 @@ namespace AITDExtractor {
                 auto& prim = model.primitives[pIdx];
                 if (prim.type != 3) continue;
                 const int vertCount = 5;
-                auto matIdx = getMaterialIdx(m, prim.colorIndex, prim.subType);
+                auto matIdx = getMaterialIdx(m, prim.colorIndex, pallete, prim.subType);
                 auto& pos = modelVerts[prim.vertexIdxs[0] / 6];
                 float size = prim.size / 1000.0f;
                 auto& prim2 = createSpherePrim(m, size, vertCount, pos, matIdx);
@@ -521,7 +521,7 @@ namespace AITDExtractor {
                 if (prim.vertexIdxs.size() != 2) {
                     throw new exception("Line indexes not 2");
                 }
-                auto matIdx = getMaterialIdx(m, prim.colorIndex, 0);
+                auto matIdx = getMaterialIdx(m, prim.colorIndex, pallete, 0);
                 Vector3 points[2] = {
                     modelVerts[prim.vertexIdxs[0] / 6],
                     modelVerts[prim.vertexIdxs[1] / 6]
@@ -554,7 +554,7 @@ namespace AITDExtractor {
                     size = 0.1f;
                 } else continue;
 
-                auto matIdx = getMaterialIdx(m, prim.colorIndex, 0);
+                auto matIdx = getMaterialIdx(m, prim.colorIndex, pallete, 0);
                 auto& prim2 = createCubePrim(m, modelVerts[prim.vertexIdxs[0] / 6], { size,size,size }, matIdx);
                 if (model.bones.size()) {
                     vector<u8> vecBoneAffect2(8);

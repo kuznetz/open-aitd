@@ -48,6 +48,7 @@ namespace AITDExtractor {
         openAITD::NameDecoders nameDecoders;
         Matrix roomMatrix;
         vector <floorStruct> stages;
+        Pallete pallete;
         int modelCount = 0;
         int varCount = 0;
 
@@ -57,14 +58,17 @@ namespace AITDExtractor {
     };    
 
     AITDExtractor::AITDExtractor() {
-        //roomMatrix = MatrixMultiply(MatrixRotateX(PI), MatrixRotateY(PI));
         roomMatrix = MatrixRotateX(PI);
+        
         nameDecoders.load();
+        
         for (int fl = 0; fl < 8; fl++) {
-            char str[100];
-            sprintf(str, "original/ETAGE%02d.PAK", fl);
-            this->stages.push_back(loadFloorPak(str));
-        }            
+            std::ostringstream oss;
+            oss << "original/ETAGE" << std::setw(2) << std::setfill('0') << fl << ".PAK";
+            this->stages.push_back(ResourceLoader::loadFloor(oss.str()));
+        }
+
+        pallete = ResourceLoader::loadPallete();
     }
 
     void AITDExtractor::processStages() {
@@ -92,7 +96,7 @@ namespace AITDExtractor {
                 str = cameradir + "/background.png";
                 if (!std::filesystem::exists(str)) {
                     auto& data = camPak.readBlock(cam);
-                    extractBackground(data.data(), str.c_str());
+                    extractBackground(data.data(), str.c_str(), pallete);
                 }
 
                 //overlays
@@ -120,9 +124,13 @@ namespace AITDExtractor {
         vector<Animation> anims2;
         for (int i = 0; i < animPak.headers.size(); i++) {
             auto& block = animPak.readBlock(i);
-            anims.push_back(loadAnimation(i, block.data()));
+            auto& anim = ResourceLoader::loadAnimation(block);
+            anim.id = i;
+            anims.push_back(anim);
             auto& block2 = anim2Pak.readBlock(i);
-            anims2.push_back(loadAnimation(i, block2.data()));
+            auto& anim2 = ResourceLoader::loadAnimation(block2);
+            anim2.id = i;
+            anims2.push_back(anim2);
         }
 
         PakFile bodyPak("original/LISTBODY.PAK");
@@ -153,23 +161,23 @@ namespace AITDExtractor {
 
             string outDir = string("data/models/") + nameDecoders.model.getName(i);
             if (!std::filesystem::exists(outDir)) {
-                auto& model = loadModel((char*)testBody.data(), h.uncompressedSize);
+                auto& model = ResourceLoader::loadModel(testBody);
                 vector<Animation*> animations;
                 for (int j = 0; j < curAnims.size(); j++) {
                     animations.push_back(&anims[curAnims[j]]);
                 }
-                saveModelGLTF(model, animations, string(outDir));
+                saveModelGLTF(model, animations, pallete, string(outDir));
             }
 
             if (altBody) {
                 outDir = string("data/models/") + nameDecoders.model.getName(i) + "_alt";
                 if (!std::filesystem::exists(outDir)) {
-                    auto& model2 = loadModel((char*)testBody2.data(), h2.uncompressedSize);
+                    auto& model2 = ResourceLoader::loadModel(testBody2);
                     vector<Animation*> animations;
                     for (int j = 0; j < curAnims.size(); j++) {
                         animations.push_back(&anims2[curAnims[j]]);
                     }
-                    saveModelGLTF(model2, animations, string(outDir));
+                    saveModelGLTF(model2, animations, pallete, string(outDir));
                 }
             }
         }
@@ -294,7 +302,7 @@ namespace AITDExtractor {
     void AITDExtractor::processPicture(PakFile& picsPak, int id, string outPath) {
         if (!std::filesystem::exists(outPath)) {
             auto& data = picsPak.readBlock(id);
-            extractBackground(data.data(), outPath.c_str());
+            extractBackground(data.data(), outPath.c_str(), pallete);
         }
     }
 
@@ -327,7 +335,7 @@ namespace AITDExtractor {
         //dumpInstructions("instr.txt");
         this->processTexts();
 
-        this->gameObjs = loadGameObjects("original/OBJETS.ITD");
+        this->gameObjs = ResourceLoader::loadGameObjects("original/OBJETS.ITD");
         if (!std::filesystem::exists("data/objects.json")) {
             extractGameObjects(this->gameObjs, "data/objects.json", nameDecoders);
         }
