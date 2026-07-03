@@ -1,31 +1,36 @@
 ﻿#pragma once
 #include <vector>
+#include <fstream>
 #include <string>
 #include "../structs/int_types.h"
 
-using namespace std;
+namespace AITDExtractor {
 
-typedef struct pakInfoStruct
-{
-    int headerOffset;
-    int dataOffset;
-    string name;
-    //string additional;
-    s32 discSize;
-    s32 uncompressedSize;
-    char compressionFlag;
-    char info5;
-    //s16 offset;
-} pakInfoStruct;
+    using namespace std;
 
-class PakFile {
-public:
-    FILE* fileHandle = 0;
-    vector<pakInfoStruct> headers = {};
+    typedef struct pakInfoStruct
+    {
+        int headerOffset;
+        int dataOffset;
+        string name;
+        s32 discSize;
+        s32 uncompressedSize;
+        char compressionFlag;
+        char info5;
+    } pakInfoStruct;
 
-    PakFile();
-    PakFile(string fname);
-    ~PakFile();
-    void open(string fname, int blockcount = 0);
-    vector<u8> readBlock(int index);
-};
+    class PakFile {
+    public:
+        ifstream file;
+        vector<pakInfoStruct> headers = {};
+
+        PakFile();
+        PakFile(string fname);
+        void open(string fname, int blockcount = 0);
+        vector<u8> readBlock(int index);
+    private:
+        int PAK_deflate(u8* srcBuffer, u8* dstBuffer, unsigned int compressedSize, unsigned int uncompressedSize);
+        int PAK_explode(u8* srcBuffer, u8* dstBuffer, unsigned int compressedSize, unsigned int uncompressedSize, unsigned short flags);
+    };
+
+}

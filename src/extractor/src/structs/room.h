@@ -2,6 +2,16 @@
 #include "int_types.h"
 #include <vector>
 
+struct ZVStruct
+{
+	s32 ZVX1;
+	s32 ZVX2;
+	s32 ZVY1;
+	s32 ZVY2;
+	s32 ZVZ1;
+	s32 ZVZ2;
+};
+
 struct hardColStruct
 {
 	ZVStruct zv;

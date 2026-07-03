@@ -18,27 +18,18 @@ typedef signed short int s16;
 typedef signed long int s32;
 #endif
 
-#ifdef UNIX
-#define FORCEINLINE static inline
-#else
-#ifdef WIN32
-#define FORCEINLINE __forceinline
-#else
-#define FORCEINLINE inline
-#endif
-#endif
 
-FORCEINLINE u8 READ_LE_U8(void *ptr)
+inline u8 READ_LE_U8(void *ptr)
 {
     return *(u8*)ptr;
 }
 
-FORCEINLINE s8 READ_LE_S8(void *ptr)
+inline s8 READ_LE_S8(void *ptr)
 {
     return *(s8*)ptr;
 }
 
-FORCEINLINE u16 READ_LE_U16(void *ptr)
+inline u16 READ_LE_U16(void *ptr)
 {
 #ifdef MACOSX
   return (((u8*)ptr)[1]<<8)|((u8*)ptr)[0];
@@ -47,12 +38,12 @@ FORCEINLINE u16 READ_LE_U16(void *ptr)
 #endif
 }
 
-FORCEINLINE s16 READ_LE_S16(void *ptr)
+inline s16 READ_LE_S16(void *ptr)
 {
   return (s16)READ_LE_U16(ptr);
 }
 
-FORCEINLINE u16 READ_BE_U16(void *ptr)
+inline u16 READ_BE_U16(void *ptr)
 {
 #ifdef MACOSX
   return *(u16*)ptr;
@@ -61,12 +52,12 @@ FORCEINLINE u16 READ_BE_U16(void *ptr)
 #endif
 }
 
-FORCEINLINE s16 READ_BE_S16(void *ptr)
+inline s16 READ_BE_S16(void *ptr)
 {
   return (s16)READ_BE_U16(ptr);
 }
 
-FORCEINLINE u32 READ_LE_U32(void *ptr)
+inline u32 READ_LE_U32(void *ptr)
 {
 #ifdef MACOSX
   return (((u8*)ptr)[3]<<24)|(((u8*)ptr)[2]<<16)|(((u8*)ptr)[1]<<8)|((u8*)ptr)[0];
@@ -75,12 +66,12 @@ FORCEINLINE u32 READ_LE_U32(void *ptr)
 #endif
 }
 
-FORCEINLINE s32 READ_LE_S32(void *ptr)
+inline s32 READ_LE_S32(void *ptr)
 {
   return (s32)READ_LE_U32(ptr);
 }
 
-FORCEINLINE u32 READ_BE_U32(void *ptr)
+inline u32 READ_BE_U32(void *ptr)
 {
 #ifdef MACOSX
   return *(u32*)ptr;
@@ -89,17 +80,7 @@ FORCEINLINE u32 READ_BE_U32(void *ptr)
 #endif
 }
 
-FORCEINLINE s32 READ_BE_S32(void *ptr)
+inline s32 READ_BE_S32(void *ptr)
 {
   return (s32)READ_LE_U32(ptr);
 }
-
-struct ZVStruct
-{
-	s32 ZVX1;
-	s32 ZVX2;
-	s32 ZVY1;
-	s32 ZVY2;
-	s32 ZVZ1;
-	s32 ZVZ2;
-};

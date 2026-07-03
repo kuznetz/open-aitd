@@ -38,9 +38,19 @@ typedef struct ModelBone {
 	int boneIdx;
 } ModelBone;
 
+typedef struct ModelBounds
+{
+	s32 ZVX1;
+	s32 ZVX2;
+	s32 ZVY1;
+	s32 ZVY2;
+	s32 ZVZ1;
+	s32 ZVZ2;
+} ModelBounds;
+
 typedef struct PakModel {
 	u16 modelFlags;
-	ZVStruct bounds;
+	ModelBounds bounds;
 	std::vector <s16> vertices;
 	std::vector <ModelBone> bones;	
 	std::vector <PakModelPrimitive> primitives;
