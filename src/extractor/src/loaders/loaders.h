@@ -5,10 +5,10 @@
 #include "../structs/game_objects.h"
 #include "../structs/floor.h"
 #include "../structs/animation.h"
+#include "../structs/life.h"
 #include <vector>
 #include <array>
 #include <vector>
-#include <cstring>
 #include <stdexcept>
 
 namespace AITDExtractor {
@@ -39,6 +39,7 @@ namespace AITDExtractor {
     static PakModel loadModel(vector<u8>& data);
     static Animation loadAnimation(vector<u8>& data);
     static floorStruct loadFloor(const string filename);
+    static vector<LifeInstruction> loadLife(vector<u8>& data, bool floppy = false);
     static vector<gameObjectStruct> loadGameObjects(const string fileName);
   };
   

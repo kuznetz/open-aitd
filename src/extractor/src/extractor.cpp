@@ -16,14 +16,17 @@
 #include "./extractors/track_extractor.h"
 #include "./extractors/vars_extractor.hpp"
 
+#include "./life/life_writer.hpp"
+#include "./life/life_optimizer.h"
+
 #include "./music/music_extractor.h"
-#include "./life/life_extractor.h"
 
 #include <cassert>
 #include <cstdlib>
 #include <filesystem>
 #include <map>
 #include <string>
+#include <sstream>
 
 #include "../include/extractor.h"
 
@@ -190,7 +193,7 @@ namespace AITDExtractor {
         for (int i = 0; i < lifePak.headers.size(); i++)
         {
             auto& data = lifePak.readBlock(i);
-            auto& life = loadLife(data.data(), lifePak.headers[i].uncompressedSize, floppy);
+            auto& life = ResourceLoader::loadLife(data, floppy);
             allLifes.push_back(life);
         }
 
