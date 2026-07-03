@@ -11,8 +11,9 @@ namespace AITDExtractor {
 
     using namespace std;
 
-    vector<gameObjectStruct> ResourceLoader::loadGameObjects(const string from) {
-        auto fHandle = fopen(from.c_str(), "rb");
+    vector<gameObjectStruct> ResourceLoader::loadGameObjects() {
+        const string filename = dataPath + "/OBJETS.ITD";
+        auto fHandle = fopen(filename.c_str(), "rb");
         //if (!fHandle) theEnd(0, "OBJETS.ITD");
         fseek(fHandle, 0, SEEK_END);
         int objectDataSize = ftell(fHandle);

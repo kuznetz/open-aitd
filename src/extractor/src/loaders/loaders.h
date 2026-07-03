@@ -19,9 +19,14 @@ namespace AITDExtractor {
 
   class ResourceLoader {
   public:
-    static Pallete loadPallete() {
+
+    ResourceLoader(const string dataPath = "./original") {
+      this->dataPath = dataPath;
+    }
+
+    Pallete loadPallete() {
         constexpr size_t PALETTE_SIZE = 256;
-        PakFile pak("original/ITD_RESS.PAK");
+        PakFile pak(dataPath+"/ITD_RESS.PAK");
         auto data = pak.readBlock(3);
         if (data.size() < PALETTE_SIZE) {
             throw std::runtime_error("Palette data too small (wrong ITD_RESS.PAK)");
@@ -36,11 +41,14 @@ namespace AITDExtractor {
         return palette;
     };
 
-    static PakModel loadModel(vector<u8>& data);
-    static Animation loadAnimation(vector<u8>& data);
-    static floorStruct loadFloor(const string filename);
-    static vector<LifeInstruction> loadLife(vector<u8>& data, bool floppy = false);
-    static vector<gameObjectStruct> loadGameObjects(const string fileName);
+    PakModel loadModel(vector<u8>& data);
+    Animation loadAnimation(vector<u8>& data);
+    floorStruct loadFloor(const int floorNum);
+    vector<LifeInstruction> loadLife(vector<u8>& data, bool floppy = false);
+    vector<gameObjectStruct> loadGameObjects();
+
+  private:
+    string dataPath;
   };
   
 }

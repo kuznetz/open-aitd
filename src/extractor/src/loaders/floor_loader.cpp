@@ -3,8 +3,11 @@
 #include <stdexcept>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <list>
+#include <iomanip>
+
 #include "./loaders.h"
 
 namespace AITDExtractor {
@@ -279,8 +282,10 @@ namespace AITDExtractor {
         }
     }
 
-    floorStruct ResourceLoader::loadFloor(const string filename) {
-        PakFile pak(filename);
+    floorStruct ResourceLoader::loadFloor(const int floorNum) {
+        std::ostringstream oss;
+        oss << dataPath  << "/ETAGE" << std::setw(2) << std::setfill('0') << floorNum << ".PAK";
+        PakFile pak(oss.str());
         floorStruct result;
         loadRooms(result, pak);
         loadCameras(result, pak);

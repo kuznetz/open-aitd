@@ -51,6 +51,7 @@ namespace AITDExtractor {
         openAITD::NameDecoders nameDecoders;
         Matrix roomMatrix;
         vector <floorStruct> stages;
+        ResourceLoader resLoader;
         Pallete pallete;
         int modelCount = 0;
         int varCount = 0;
@@ -60,18 +61,15 @@ namespace AITDExtractor {
 
     };    
 
-    AITDExtractor::AITDExtractor() {
-        roomMatrix = MatrixRotateX(PI);
-        
+    AITDExtractor::AITDExtractor() : resLoader("./original") {
+        roomMatrix = MatrixRotateX(PI);        
         nameDecoders.load();
-        
+
         for (int fl = 0; fl < 8; fl++) {
-            std::ostringstream oss;
-            oss << "original/ETAGE" << std::setw(2) << std::setfill('0') << fl << ".PAK";
-            this->stages.push_back(ResourceLoader::loadFloor(oss.str()));
+            this->stages.push_back(resLoader.loadFloor(fl));
         }
 
-        pallete = ResourceLoader::loadPallete();
+        pallete = resLoader.loadPallete();
     }
 
     void AITDExtractor::processStages() {
@@ -127,11 +125,11 @@ namespace AITDExtractor {
         vector<Animation> anims2;
         for (int i = 0; i < animPak.headers.size(); i++) {
             auto& block = animPak.readBlock(i);
-            auto& anim = ResourceLoader::loadAnimation(block);
+            auto& anim = resLoader.loadAnimation(block);
             anim.id = i;
             anims.push_back(anim);
             auto& block2 = anim2Pak.readBlock(i);
-            auto& anim2 = ResourceLoader::loadAnimation(block2);
+            auto& anim2 = resLoader.loadAnimation(block2);
             anim2.id = i;
             anims2.push_back(anim2);
         }
@@ -164,7 +162,7 @@ namespace AITDExtractor {
 
             string outDir = string("data/models/") + nameDecoders.model.getName(i);
             if (!std::filesystem::exists(outDir)) {
-                auto& model = ResourceLoader::loadModel(testBody);
+                auto& model = resLoader.loadModel(testBody);
                 vector<Animation*> animations;
                 for (int j = 0; j < curAnims.size(); j++) {
                     animations.push_back(&anims[curAnims[j]]);
@@ -175,7 +173,7 @@ namespace AITDExtractor {
             if (altBody) {
                 outDir = string("data/models/") + nameDecoders.model.getName(i) + "_alt";
                 if (!std::filesystem::exists(outDir)) {
-                    auto& model2 = ResourceLoader::loadModel(testBody2);
+                    auto& model2 = resLoader.loadModel(testBody2);
                     vector<Animation*> animations;
                     for (int j = 0; j < curAnims.size(); j++) {
                         animations.push_back(&anims2[curAnims[j]]);
@@ -193,7 +191,7 @@ namespace AITDExtractor {
         for (int i = 0; i < lifePak.headers.size(); i++)
         {
             auto& data = lifePak.readBlock(i);
-            auto& life = ResourceLoader::loadLife(data, floppy);
+            auto& life = resLoader.loadLife(data, floppy);
             allLifes.push_back(life);
         }
 
@@ -338,7 +336,7 @@ namespace AITDExtractor {
         //dumpInstructions("instr.txt");
         this->processTexts();
 
-        this->gameObjs = ResourceLoader::loadGameObjects("original/OBJETS.ITD");
+        this->gameObjs = resLoader.loadGameObjects();
         if (!std::filesystem::exists("data/objects.json")) {
             extractGameObjects(this->gameObjs, "data/objects.json", nameDecoders);
         }
