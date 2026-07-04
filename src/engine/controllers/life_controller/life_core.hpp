@@ -26,6 +26,7 @@ namespace openAITD {
 		std::function<bool(uint32_t, const LuaObject&)> execCb;
 		GameObject* curGObj = 0;
 		float curTimeDelta = 0;
+		string curBasePath;
 
 		LifeCore(World* world) {
 			this->world = world;
@@ -46,21 +47,34 @@ namespace openAITD {
 
 			lua->CreateFunction([this](const char* message) {
 				cout << "LUA: " << message << endl;
-			  }, "LOG");
+			}, "LOG");
 
+			lua->CreateFunction([this](const char* filename) {
+				string errstr;
+				std::string fullPath = curBasePath + "/" + filename;
+				if (!lua->DoFile(fullPath.c_str(), &errstr)) {
+					cout << "Load life failed: " << errstr;
+				}
+		  }, "dofile");
 
-			string errstr;
-			if (!lua->DoFile("data/constants.lua", &errstr)) {
-				cout << "Load life failed: " << errstr;
-			}
-			if (!lua->DoFile("data/scripts.lua", &errstr)) {
-				cout << "Load life failed: " << errstr;
-			}
+			this->runLua("data/scripts");
+			this->runLua("newdata/scripts");
+			this->runLua("moddata/scripts");
+
 			for (int i = 0; i < 1000; i++) {
 				auto s = string("life_") + to_string(i);
 				auto f = new LuaFunction(lua->GetFunction(s.c_str()));
 				if (f->GetType() != LUA_TFUNCTION) continue;
 				funcs[i].func = f;
+			}
+		}
+
+		void runLua(string basePath) {
+			this->curBasePath = basePath;
+			string mainScript = basePath+"/main.lua";
+			string errstr;
+			if (!lua->DoFile(mainScript.c_str(), &errstr)) {
+				cout << "LUA DoFile failed (" << mainScript << ") : " << errstr;
 			}
 		}
 
