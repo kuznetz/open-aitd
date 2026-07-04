@@ -209,7 +209,9 @@ namespace AITDExtractor {
             lifesNodes.push_back(nodes);
         }
 
-        const char* filename_c = "data/constants.lua";
+        std::filesystem::create_directories("data/scripts");
+
+        const char* filename_c = "data/scripts/constants.lua";
         if (!std::filesystem::exists(filename_c)) {
             ofstream out(filename_c, ios::trunc | ios::out);
             LifeLUAWriter writer(out, nameDecoders);
@@ -218,10 +220,13 @@ namespace AITDExtractor {
             writer.writeConsts(lifesNodes.size(), objectCount, modelCount);		
         }
 
-        const char* filename = "data/scripts.lua";
+        const char* filename = "data/scripts/main.lua";
         if (!std::filesystem::exists(filename)) {
             ofstream out(filename, ios::trunc | ios::out);
             LifeLUAWriter writer(out, nameDecoders);
+
+            out << "dofile(\"constants.lua\")\n\n";
+
             for (int j = 0; j < lifesNodes.size(); j++)
             {
                 out << "-- " << nameDecoders.life.getName(j, true) << "\n";
