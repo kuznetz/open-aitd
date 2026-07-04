@@ -79,7 +79,7 @@ namespace openAITD {
       if (cmd == 'J') {
         JumpToRoom(tokens);
       } else if (cmd == 'T') {
-        lines[0] = "TAKE!";
+        TakeObject(tokens);
       } else if (cmd == 'O') {
         ShowObjectInfo(tokens);
       } else {
@@ -97,7 +97,7 @@ namespace openAITD {
     void ShowHelp() {
       lines[1] = "Commands: ";
       lines[2] = "J {STAGE} {ROOM} - Jump to room";
-      lines[3] = "T {OBJECT_ID} - Take item ";
+      lines[3] = "T {OBJECT_ID} - Take item";
       lines[4] = "O {OBJECT_ID} - Object info";
       //lines[4] = "[H]eal";
     }
@@ -156,15 +156,37 @@ namespace openAITD {
       }
     }
 
+    void TakeObject(const vector<string>& tokens) {
+      if (tokens.size() != 2) {
+        lines[0] = "Invalid arguments";
+        ShowHelp();
+        return;
+      }
+      try {
+        int objId = std::stoi(tokens.at(1));
+        auto& gobj = this->world->gobjects[objId];
+        if (gobj.invItem.modelId == -1) {
+          throw std::exception("This is not item");
+        }
+  			world->take(objId);
+        lines[0] = "Item in inventory!";
+      }
+      catch (const std::exception& e) {
+          lines[0] = "Invalid object ID";
+          ShowHelp();
+      }
+    }
+
     void ShowObjectInfo2(int objId) {
       curInfo = objId;
       try {
         auto& gobj = world->gobjects[objId];
         lines[0] = BuildString("Object ", objId, ":");
+        lines[1] = resources->nameDecoders.obj.getName(objId);
 
         auto& loc = gobj.location;
-        lines[1] = BuildString("Stage:", loc.stageId, " Room:", loc.roomId);
-        lines[2] = BuildString("X:", loc.position.x, 
+        lines[2] = BuildString("Stage:", loc.stageId, " Room:", loc.roomId);
+        lines[3] = BuildString("X:", loc.position.x, 
                               " Y:", loc.position.y, 
                               " Z:", loc.position.z);
         
