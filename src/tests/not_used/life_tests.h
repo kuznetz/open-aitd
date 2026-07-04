@@ -46,7 +46,7 @@ namespace AITDExtractor {
 
 		ofstream out(outFile, ios::trunc | ios::out);
 		LifeLUAWriter writer(out, nameDecs);
-		writer.writeConsts(varCount, objectCount, modelCount);		
+		writer.writeConsts(varCount, objectCount, modelCount, 0);		
 		for (int j = 0; j < lifesNodes.size(); j++)
 		{
 			out << "-- " << nameDecs.life.getName(j, true) << "\n";

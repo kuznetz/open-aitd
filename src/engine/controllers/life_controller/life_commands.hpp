@@ -139,6 +139,8 @@ namespace openAITD {
 		}
 
 		void initExpressions() {
+
+			
 			lua->CreateFunction([this](int rmax) -> int {
 				return rand() % rmax;
 				}, "RAND");

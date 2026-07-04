@@ -215,9 +215,8 @@ namespace AITDExtractor {
         if (!std::filesystem::exists(filename_c)) {
             ofstream out(filename_c, ios::trunc | ios::out);
             LifeLUAWriter writer(out, nameDecoders);
-            int objectCount = this->gameObjs.size();
-            //this->varCount
-            writer.writeConsts(lifesNodes.size(), objectCount, modelCount);		
+            int objectCount = this->gameObjs.size();            
+            writer.writeConsts(lifesNodes.size(), objectCount, modelCount, this->varCount);		
         }
 
         const char* filename = "data/scripts/main.lua";

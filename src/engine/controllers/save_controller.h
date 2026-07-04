@@ -43,9 +43,8 @@ namespace openAITD {
             outJson["inDark"] = world->inDark;
 
             outJson["vars"] = json::array();
-            auto& vars = life->dumpVars();
-            for (int i = 0; i < vars.size(); i++) {
-                outJson["vars"].push_back(vars[i]);
+            for (int i = 0; i < world->vars.size(); i++) {
+                outJson["vars"].push_back(world->vars[i]);
             }
 
             outJson["cVars"] = json::array();
@@ -123,7 +122,6 @@ namespace openAITD {
                 for (int i = 0; i < world->vars.size(); i++) {
                     world->vars[i] = inJson["vars"][i];
                 }
-                life->reloadVars();
 
                 world->cVars.resize(inJson["cVars"].size());
                 for (int i = 0; i < world->cVars.size(); i++) {

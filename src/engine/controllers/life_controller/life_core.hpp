@@ -48,6 +48,20 @@ namespace openAITD {
 			lua->CreateFunction([this](const char* message) {
 				cout << "LUA: " << message << endl;
 			}, "LOG");
+			lua->CreateFunction([this](const int var) -> int {
+				if (var < 0 || var >= this->world->vars.size()) {
+					string msg = "Invalid variable index " + to_string(var);
+					throw new exception(msg.c_str());
+				}
+				int result = this->world->vars[var];
+				return result;
+			}, "GET");
+			lua->CreateFunction([this](const int var, const int val) {
+				this->world->vars[var] = val;
+			}, "SET");
+			lua->CreateFunction([this](const int var, const int val) {
+				this->world->vars[var] += val;
+			}, "ADD");
 
 			lua->CreateFunction([this](const char* filename) {
 				string errstr;
@@ -76,22 +90,6 @@ namespace openAITD {
 			if (!lua->DoFile(mainScript.c_str(), &errstr)) {
 				cout << "LUA DoFile failed (" << mainScript << ") : " << errstr;
 			}
-		}
-
-		void reloadVars() {
-			for (int i = 0; i < world->vars.size(); i++) {
-				string name = string("var_") + to_string(i);
-				lua->CreateInteger(world->vars[i], name.c_str());
-			}
-		}
-
-		vector<short> dumpVars() {
-			vector<short> result;
-			for (int i = 0; i < world->vars.size(); i++) {
-				string name = string("var_") + to_string(i);
-				result.push_back(lua->GetNumber(name.c_str()));
-			}
-			return result;
 		}
 
 		void executeLife(int lifeId, GameObject& gobj) {

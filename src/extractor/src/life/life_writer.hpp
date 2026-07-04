@@ -54,7 +54,7 @@ namespace AITDExtractor {
 			/**
 			 * @brief Write constant definitions.
 			 */
-			void writeConsts(int varCount, int objectCount, int modelCount);
+			void writeConsts(int scriptCount, int objectCount, int modelCount, int varCount);
 
 	private:
 			std::ofstream& out;  ///< Output stream reference.
@@ -111,7 +111,8 @@ namespace AITDExtractor {
 					return;
 			}
 			if (expr.type->type == EvalEnum::GET) {
-					out << "var_" << expr.arguments[0].constVal;
+				  string varName = "Vars." + namesDecoders->var.getName(expr.arguments[0].constVal);
+					out << "GET(" << varName << ")";
 					return;
 			}
 
@@ -142,30 +143,30 @@ namespace AITDExtractor {
 	inline void LifeLUAWriter::writeLifeInstr(const LifeInstruction& instr) {
 			// Short‑hand for common arithmetic operations
 			if (instr.type->type == LifeEnum::INC) {
-					std::string v = "var_" + std::to_string(instr.arguments[0].constVal);
-					out << v << " = " << v << " + 1\n";
+				  string varName = "Vars." + namesDecoders->var.getName(instr.arguments[0].constVal);
+					out << "ADD(" << varName << ", 1)\n";
 					return;
 			} else if (instr.type->type == LifeEnum::DEC) {
-					std::string v = "var_" + std::to_string(instr.arguments[0].constVal);
-					out << v << " = " << v << " - 1\n";
+				  string varName = "Vars." + namesDecoders->var.getName(instr.arguments[0].constVal);
+					out << "ADD(" << varName << ", -1)\n";
 					return;
 			} else if (instr.type->type == LifeEnum::ADD) {
-					std::string v = "var_" + std::to_string(instr.arguments[0].constVal);
-					out << v << " = " << v << " + ";
+				  string varName = "Vars." + namesDecoders->var.getName(instr.arguments[0].constVal);
+					out << "ADD(" << varName << ", ";
 					writeLifeExpr(instr.arguments[1]);
-					out << "\n";
+					out << ")\n";				
 					return;
 			} else if (instr.type->type == LifeEnum::SUB) {
-					std::string v = "var_" + std::to_string(instr.arguments[0].constVal);
-					out << v << " = " << v << " - ";
+				  string varName = "Vars." + namesDecoders->var.getName(instr.arguments[0].constVal);
+					out << "ADD(" << varName << ", -";
 					writeLifeExpr(instr.arguments[1]);
-					out << "\n";
+					out << ")\n";				
 					return;
 			} else if (instr.type->type == LifeEnum::SET) {
-					std::string v = "var_" + std::to_string(instr.arguments[0].constVal);
-					out << v << " = ";
+				  string varName = "Vars." + namesDecoders->var.getName(instr.arguments[0].constVal);
+					out << "SET(" << varName << ", ";
 					writeLifeExpr(instr.arguments[1]);
-					out << "\n";
+					out << ")\n";
 					return;
 			}
 
@@ -228,8 +229,15 @@ namespace AITDExtractor {
 			}
 	}
 
-	inline void LifeLUAWriter::writeConsts(int scriptCount, int objectCount, int modelCount) {
-			out << "-- Game Objects table\n";
+	inline void LifeLUAWriter::writeConsts(int scriptCount, int objectCount, int modelCount, int varCount) {
+
+			out << "-- Vars table\n";
+			out << "Vars = {}\n";
+			for (int i = 0; i < varCount; ++i) {
+					out << "Vars." << namesDecoders->var.getName(i) << " = " << i << "\n";
+			}			
+
+  		out << "\n-- Game Objects table\n";
 			out << "GObj = {}\n";
 			for (int i = 0; i < objectCount; ++i) {
 					out << "GObj." << namesDecoders->obj.getName(i) << " = " << i << "\n";
@@ -246,6 +254,7 @@ namespace AITDExtractor {
 			for (int i = 0; i < scriptCount; ++i) {
 					out << "Life." << namesDecoders->life.getName(i) << " = " << i << "\n";
 			}
+
 	}
 
 	inline void LifeLUAWriter::writeIfHead(const LifeNode& ifNode) {

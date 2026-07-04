@@ -67,7 +67,6 @@ namespace openAITD {
         world.loadGObjects("data/objects.json");
         world.setCurStage(0, 0);
         world.followTarget = 0;
-        lifeContr.reloadVars();
         state = AppState::InWorld;
     }
 
