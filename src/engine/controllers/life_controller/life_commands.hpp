@@ -269,7 +269,7 @@ namespace openAITD {
 				return this->world->gobjects[obj].location.rotOrig.z;
 				}, "GAMMA");
 			lua->CreateFunction([this](int obj) -> int {
-				return floor(this->world->gobjects[obj].location.position.y * 1000);
+				return floor(this->world->gobjects[obj].location.position.y * -1000);
 				}, "ROOMY");			
 
 			lua->CreateFunction([this](int obj) -> int {
@@ -328,6 +328,7 @@ namespace openAITD {
 				auto& gobj = this->world->gobjects[obj];
 				gobj.location.roomId = -1;
 				gobj.location.stageId = -1;
+				world->delFromInventory(obj);
 				//ListWorldObjets[lifeTempVar1].flags2 |= 0x4000;
 			}, "DELETE_OBJ");
 			lua->CreateFunction([this](int obj) {
