@@ -370,7 +370,11 @@ namespace openAITD {
 				gobj.invItem.flags = newFlag;
 				}, "SET_INVENTORY_FLAG");
 			lua->CreateFunction([this](int obj) {
-				return this->world->inHandObj = &this->world->gobjects[obj];
+				if (obj != -1) {
+					return this->world->inHandObj = &this->world->gobjects[obj];
+				} else {
+					return this->world->inHandObj = nullptr;
+				}
 				}, "SET_IN_HAND");
 			lua->CreateFunction([this](int obj) {
 				world->take(obj);

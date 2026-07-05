@@ -38,8 +38,12 @@ namespace openAITD {
             auto& cVars = world->cVars;
             json outJson = json::object();
 
-            outJson["follow"] = world->followTarget->id;
-            outJson["inHand"] = world->inHandObj->id;
+            if (world->followTarget) {
+                outJson["follow"] = world->followTarget->id;
+            }
+            if (world->inHandObj) {
+                outJson["inHand"] = world->inHandObj->id;
+            }
             outJson["inDark"] = world->inDark;
 
             outJson["vars"] = json::array();
