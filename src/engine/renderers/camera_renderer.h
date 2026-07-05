@@ -155,21 +155,13 @@ namespace openAITD {
 					ord.screenMax.y = v.y;
 					continue;
 				}
-				if (i < 4 && ord.zPos > v.z) {
-					ord.zPos = v.z;
+				if (ord.zPos < v.z) {
+						ord.zPos = v.z;
 				}
-				if (ord.screenMin.x > v.x) {
-					ord.screenMin.x = v.x;
-				}
-				if (ord.screenMin.y > v.y) {
-					ord.screenMin.y = v.y;
-				}
-				if (ord.screenMax.x < v.x) {
-					ord.screenMax.x = v.x;
-				}
-				if (ord.screenMax.y < v.y) {
-					ord.screenMax.y = v.y;
-				}
+				if (ord.screenMin.x > v.x) ord.screenMin.x = v.x;
+				if (ord.screenMin.y > v.y) ord.screenMin.y = v.y;
+				if (ord.screenMax.x < v.x) ord.screenMax.x = v.x;
+				if (ord.screenMax.y < v.y) ord.screenMax.y = v.y;
 			}
 		}
 
