@@ -195,3 +195,41 @@ function life_549(obj)
     SET_LIFE(obj, Life.DEATH_MANAGER)
   end
 end
+
+-- L_E6_SCRIPT (temporary simple light)
+function life_509(obj)
+  if (ROOM(GObj.PLAYER) < 6) then
+    LOG("LIGHTMAN ACT")
+    if (GET(Vars.NOT_IN_THE_DARK_IN_E5_E6) == 1) then
+      --SET_LIGHT(0)
+      SET(Vars.NOT_IN_THE_DARK_IN_E5_E6, 0)
+      if (GET_C(12) == 0) then
+        MESSAGE(105)
+      end
+    end
+    if (STAGE(GObj.OIL_LAMP) == 6) then
+      if (ROOM(GObj.OIL_LAMP) < 6) and (GET(Vars.OIL_LAMP_LIT) == 1) then
+        --SET_C(13, 13)
+        LOG("lamp on floor")
+        SET_LIGHT(1)
+      end
+    else
+      if (IN_HAND(obj) == 13) then
+        if (GET(Vars.OIL_LAMP_LIT) == 1) then
+          --SET_C(13, 1)
+          LOG("lamp in hand")
+          SET_LIGHT(1)
+        end
+      else
+        --SET_C(13, -1)
+        LOG("no lamp")
+        SET_LIGHT(0)
+      end
+    end
+  else
+    if (GET(Vars.NOT_IN_THE_DARK_IN_E5_E6) == 0) then
+      SET(Vars.NOT_IN_THE_DARK_IN_E5_E6, 1)
+      SET_LIGHT(1)
+    end
+  end
+end
