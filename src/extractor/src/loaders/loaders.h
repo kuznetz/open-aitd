@@ -14,6 +14,7 @@
 namespace AITDExtractor {
   using namespace std;
 
+  constexpr size_t PALETTE_SIZE = 256;
   typedef std::array<u8, 3> PalleteColor;
   typedef std::array<PalleteColor, 256> Pallete;
 
@@ -24,19 +25,18 @@ namespace AITDExtractor {
       this->dataPath = dataPath;
     }
 
-    Pallete loadPallete() {
-        constexpr size_t PALETTE_SIZE = 256;
+    Pallete loadPallete() {        
         PakFile pak(dataPath+"/ITD_RESS.PAK");
         auto data = pak.readBlock(3);
-        if (data.size() < PALETTE_SIZE) {
+        if (data.size() < PALETTE_SIZE*3) {
             throw std::runtime_error("Palette data too small (wrong ITD_RESS.PAK)");
         }
 
         Pallete palette;
-        for (size_t i = 0; i < PALETTE_SIZE; i += 3) {
-            palette[i][0] = data[i];
-            palette[i][1] = data[i + 1];
-            palette[i][2] = data[i + 2];
+        for (size_t i = 0; i < PALETTE_SIZE; i++) {
+            palette[i][0] = data[i*3];
+            palette[i][1] = data[i*3 + 1];
+            palette[i][2] = data[i*3 + 2];
         }
         return palette;
     };
