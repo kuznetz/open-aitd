@@ -210,19 +210,19 @@ function life_509(obj)
     if (STAGE(GObj.OIL_LAMP) == 6) then
       if (ROOM(GObj.OIL_LAMP) < 6) and (GET(Vars.OIL_LAMP_LIT) == 1) then
         --SET_C(13, 13)
-        LOG("lamp on floor")
+        --LOG("lamp on floor")
         SET_LIGHT(1)
       end
     else
       if (IN_HAND(obj) == 13) then
         if (GET(Vars.OIL_LAMP_LIT) == 1) then
           --SET_C(13, 1)
-          LOG("lamp in hand")
+          --LOG("lamp in hand")
           SET_LIGHT(1)
         end
       else
         --SET_C(13, -1)
-        LOG("no lamp")
+        --LOG("no lamp")
         SET_LIGHT(0)
       end
     end
@@ -232,4 +232,8 @@ function life_509(obj)
       SET_LIGHT(1)
     end
   end
+end
+
+function END_SEQUENCE()
+  LOG("END_SEQUENCE");
 end

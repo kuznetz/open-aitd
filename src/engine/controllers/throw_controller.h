@@ -30,6 +30,7 @@ namespace openAITD {
             action.activeBoneId = activeBone;
             action.throwRotated = throwRotated;
             action.hitDamage = hitDamage;
+            world->delFromInventory(throwedItem->id);
         }
 
         ThrowController(World* world) {
@@ -76,7 +77,6 @@ namespace openAITD {
             item.throwing.hitDamage = action.hitDamage;
             item.throwing.active = true;
             //item.throwing.direction = Vector3RotateByQuaternion({ -1, 0, 0}, item.location.rotation);
-            world->delFromInventory(item.id);
             action.gobj = 0;
         }
 
@@ -84,7 +84,6 @@ namespace openAITD {
             action.throwedItem = 0;
 			gobj.throwing.active = false;
 			gobj.bitField.foundable = true;
-			gobj.location.position.y = 0;
             gobj.animation.prevMoveRoot = { 0,0,0 };
             gobj.animation.moveRoot = { 0,0,0 };
 		}

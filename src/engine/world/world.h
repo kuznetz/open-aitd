@@ -344,7 +344,7 @@ namespace openAITD {
 		item.location.rotation = rot;
 
 		delFromInventory(itemObjId);
-		item.bitField.foundable = 0;
+		//item.bitField.foundable = 0;
 	};
 
 }

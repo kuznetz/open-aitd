@@ -29,7 +29,7 @@ inline const vector<parseLifeInstruction> LifeParams_V1 =
 	{ LifeEnum::SET_LIFE_MODE, "SET_LIFE_MODE", { { lifeConst } }, true},
 	{ LifeEnum::SWITCH, "SWITCH", { { lifeExpr } }},
 	{ LifeEnum::CASE, "CASE", { { lifeConst }, { lifeGoto } }},
-	{ LifeEnum::CAMERA, "CAMERA", { }}, //???
+	{ LifeEnum::CAMERA, "CAMERA", { }}, //Check camera number
 	{ LifeEnum::START_CHRONO, "START_CHRONO", { }, true},
 	{ LifeEnum::MULTI_CASE, "MULTI_CASE", {}}, //Custom parser
 	{ LifeEnum::FOUND, "FOUND", { { lifeConst, varObject } }},

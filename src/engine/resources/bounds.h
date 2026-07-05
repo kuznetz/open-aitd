@@ -82,7 +82,7 @@ namespace openAITD {
 			}
 		}
 
-		Bounds getExpanded(float x) {
+		Bounds getExpanded(float x) const {
 			Bounds r(*this);
 			r.min.x -= x;
 			r.max.x += x;
