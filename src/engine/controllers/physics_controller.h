@@ -250,13 +250,13 @@ namespace openAITD {
 
 				// Check all static colliders in the room
 				for (const auto& collider : room.colliders) {
-						Bounds colB = collider.bounds.getExpanded(-0.001f);
+						Bounds colB = collider.bounds;//.getExpanded(-0.001f);
 						// Check overlap of projections on X and Z (horizontal overlap)
 						bool overlapX = (objPos.x < colB.max.x && objPos.x > colB.min.x);
 						bool overlapZ = (objPos.z < colB.max.z && objPos.z > colB.min.z);
 						if (overlapX && overlapZ) {
 								// Horizontal overlap → this collider can serve as a support
-								if (!hasColliderUnder || objPos.y > groundY) {
+								if (!hasColliderUnder || objPos.y+0.001f > groundY) {
 										groundY = colB.max.y;
 										hasColliderUnder = true;
 								}
@@ -321,6 +321,16 @@ namespace openAITD {
 
 		void process(float timeDelta) {
 			auto& curStage = resources->stages[world->curStageId];
+
+			if (world->objToPlace) {
+				GameObject& objToPlace = *world->objToPlace;
+				if (objToPlace.location.stageId == world->curStageId) {
+					if (objToPlace.bitField.fallable) {
+						placeOnGround(objToPlace);
+					}
+					world->objToPlace = nullptr;
+				}
+			}
 
 			for (int i = 0; i < world->gobjects.size(); i++) {
 				auto& gobj = world->gobjects[i];

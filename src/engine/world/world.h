@@ -78,6 +78,7 @@ namespace openAITD {
 		GameObject* takedObj = 0;
 		GameObject* curInvGObject = 0;
 		GameObject* inHandObj = 0;
+		GameObject* objToPlace = 0;
 		int curInvAction = 0;
 
 		World(Resources* res) {

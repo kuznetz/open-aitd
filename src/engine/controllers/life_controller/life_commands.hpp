@@ -4,6 +4,7 @@
 #include "../player_controller.h"
 #include "../hit_controller.h"
 #include "../throw_controller.h"
+#include "../physics_controller.h"
 #include "../screens/found_screen.h"
 
 #include <luacpp/luacpp.h>
@@ -25,18 +26,20 @@ namespace openAITD {
 		HitController* hitContr;
 		ThrowController* throwContr;
 		FoundScreen* foundScreen;
+		PhysicsController* physContr;
 
 		LuaState* lua = 0;
 
-		LifeCommands(LifeCore* lifeCore, TracksController* trackContr, PlayerController* playerContr, HitController* hitContr, ThrowController* throwContr, FoundScreen* foundScreen) {
+		LifeCommands(LifeCore* lifeCore, TracksController* trackContr, PlayerController* playerContr, HitController* hitContr, ThrowController* throwContr, PhysicsController* physContr, FoundScreen* foundScreen) {
 			this->lifeCore = lifeCore;
 			this->world = lifeCore->world;
 			this->resources = lifeCore->resources;
 			this->trackContr = trackContr;
 			this->playerContr = playerContr;
 			this->hitContr = hitContr;
+			this->physContr = physContr;
 			this->throwContr = throwContr;
-			this->foundScreen = foundScreen;
+			this->foundScreen = foundScreen;			
 			
 			lua = lifeCore->lua;
 			initExpressions();
@@ -341,6 +344,7 @@ namespace openAITD {
 				gobj.location.position.x = x / 1000.;
 				gobj.location.position.y = (-y / 1000.) + 0.001;
 				gobj.location.position.z = -z / 1000.;
+				world->objToPlace = &gobj;
 			}, "CHANGE_ROOM");
 
 			//INVENTORY
@@ -526,9 +530,6 @@ namespace openAITD {
 			lua->CreateFunction([this]() {
 				this->getCurGObject()->location.position.y += 2.001f;
 				this->getCurGObject()->physics.boundsCached = false;
-				//this->getCurGObject()->animation.moveRoot.y -= 3.0f;
-				cout << "UP_COOR_Y" << endl;
-				//TODO: UP_COOR_Y
 				}, "UP_COOR_Y");
 
       lua->CreateFunction([this](int fromObjId) {
@@ -621,7 +622,7 @@ namespace openAITD {
 			Room& room = resources->stages[world->curStageId].rooms[gobj.location.roomId];
 			for (const auto& collider : room.colliders) {
 					if (newBounds.CollToBox(collider.bounds)) {
-							cout << "Collision!" << endl;
+							//cout << "Collision!" << endl;
 							return false;
 					}
 			}
@@ -631,12 +632,12 @@ namespace openAITD {
 			for (const auto& collider : room.colliders) {
 					if (collider.type != 3) continue;
 					if (newBounds.CollToBox(collider.bounds)) {
-						  cout << "!!!collider.type " << collider.type << endl;
+						  //cout << "!!!collider.type " << collider.type << endl;
 							return true;
 					}
 			}
 
-			cout << "Collision, no floor!" << endl;
+			//cout << "Collision, no floor!" << endl;
 			return false;			
 		}
 

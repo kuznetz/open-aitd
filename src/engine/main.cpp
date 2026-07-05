@@ -53,7 +53,7 @@ namespace openAITD {
     InventoryScreen inventoryScreen(&world);
     MenuScreen mainMenu(&world);
     PictureScreen pictureScr(&world);
-    LifeController lifeContr(&world, &tracksContr, &playerContr, &hitContr, &throwContr, &foundScreen);
+    LifeController lifeContr(&world, &tracksContr, &playerContr, &hitContr, &throwContr, &physContr, &foundScreen);
     SaveController saveContr(&world, &lifeContr);
     ConsoleScreen consoleScreen(&world);
 
