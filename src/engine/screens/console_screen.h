@@ -82,6 +82,8 @@ namespace openAITD {
         TakeObject(tokens);
       } else if (cmd == 'O') {
         ShowObjectInfo(tokens);
+      } else if (cmd == 'V') {
+        SetValue(tokens);
       } else {
         ShowHelp();
       }
@@ -99,7 +101,7 @@ namespace openAITD {
       lines[2] = "J {STAGE} {ROOM} - Jump to room";
       lines[3] = "T {OBJECT_ID} - Take item";
       lines[4] = "O {OBJECT_ID} - Object info";
-      //lines[4] = "[H]eal";
+      lines[5] = "V {VAR_ID} {VALUE} - Set value";
     }
 
     template<typename... Args> std::string BuildString(Args&&... args) {
@@ -116,6 +118,7 @@ namespace openAITD {
           roomId = std::stoi(tokens.at(2));
       }
       catch (const exception& e) {
+          throw new exception("Arguments must be int");
       }
       try {
         if (stageId < 0) {
@@ -175,6 +178,25 @@ namespace openAITD {
           lines[0] = "Invalid object ID";
           ShowHelp();
       }
+    }
+
+    void SetValue(const vector<string>& tokens) {
+      if (tokens.size() != 3) {
+        lines[0] = "Invalid arguments";
+        ShowHelp();
+        return;
+      }
+      int varId = 0;
+      int value = 0;
+      try {
+          varId = std::stoi(tokens.at(1));
+          value = std::stoi(tokens.at(2));
+      }
+      catch (const exception& e) {
+          throw new exception("Arguments must be int");
+      }
+      world->vars[varId] = value;
+      lines[0] = "Variable set!";
     }
 
     void ShowObjectInfo2(int objId) {
