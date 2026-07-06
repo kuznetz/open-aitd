@@ -91,7 +91,7 @@ namespace AITDExtractor {
                 objJson["model"] = json::object();
                 objJson["model"]["id"] = obj.body;
                 objJson["model"]["animId"] = obj.anim;
-                objJson["model"]["animType"] = obj.animType;
+                objJson["model"]["animType"] = obj.animType; //Autoplay?
                 objJson["model"]["animInfo"] = obj.animInfo;
                 objJson["model"]["boundsType"] = (obj.boundsType != 0)? obj.boundsType: 2;
             }
@@ -102,7 +102,7 @@ namespace AITDExtractor {
                 objJson["invItem"]["model"] = obj.inventoryBody;
                 objJson["invItem"]["name"] = obj.inventoryName;
                 objJson["invItem"]["life"] = obj.inventoryLife;
-                objJson["invItem"]["flags"] = obj.invFlags;
+                objJson["invItem"]["flags"] = obj.invFlagsBits;
             }
 
             objJson["track"] = json::object();
@@ -114,7 +114,7 @@ namespace AITDExtractor {
             objJson["life"] = obj.life;
             objJson["stageLife"] = obj.stageLife;
 
-            objJson["flags"] = obj.flags;
+            objJson["flags"] = obj.flagsBits;
 
             outJson.push_back(objJson);
         }

@@ -4,7 +4,7 @@ struct objectFlags
 	u8 anim : 1;
 	u8 flag0x0002 : 1;
 	u8 flag0x0004 : 1;
-	u8 back : 1;
+	u8 back : 1; // always 0
 	u8 push : 1;
 	u8 coll : 1;
 	u8 trig : 1;
@@ -52,15 +52,15 @@ struct gameObjectStruct
 	short int id;
 	short int body;
 	union {
-		short int flags;
-		objectFlags bitField;
+		short int flagsBits;
+		objectFlags flags;
 	};
 	short int boundsType;
 	short int inventoryBody;
 	short int inventoryName;
 	union {
-		short int invFlags;
-		inventoryFlags invBitField;
+		short int invFlagsBits;
+		inventoryFlags invFlags;
 	};
 	short int inventoryLife;
 	short int x;
@@ -75,8 +75,8 @@ struct gameObjectStruct
 	short int life;
 	short int stageLife;
 	short int anim;
-	short int frame;
-	short int animType;
+	short int frame; //always 0
+	short int animType; //autoplay?
 	short int animInfo;
 	short int trackMode;
 	short int trackNumber;

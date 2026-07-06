@@ -29,6 +29,9 @@ namespace AITDExtractor {
 
         vector <gameObjectStruct> objects;
 
+        bool usedFlags[16] = {};
+        bool usedInvFlags[16] = {};
+
         for (int i = 0; i < maxObjects; i++)
         {
             gameObjectStruct obj;
@@ -38,8 +41,14 @@ namespace AITDExtractor {
             obj.body = READ_LE_S16(pObjectData);
             pObjectData += 2;
 
-            obj.flags = READ_LE_S16(pObjectData);
+            obj.flagsBits = READ_LE_S16(pObjectData);
             pObjectData += 2;
+
+            for (int i = 0; i < 16; ++i) {
+                if (obj.flagsBits & (1u << i)) {
+                    usedFlags[i] = true;
+                }
+            }
 
             obj.boundsType = READ_LE_S16(pObjectData);
             pObjectData += 2;
@@ -50,8 +59,14 @@ namespace AITDExtractor {
             obj.inventoryName = READ_LE_S16(pObjectData);
             pObjectData += 2;
 
-            obj.invFlags = READ_LE_S16(pObjectData);
+            obj.invFlagsBits = READ_LE_S16(pObjectData);
             pObjectData += 2;
+
+            for (int i = 0; i < 16; ++i) {
+                if (obj.invFlagsBits & (1u << i)) {
+                    usedInvFlags[i] = true;
+                }
+            }
 
             obj.inventoryLife = READ_LE_S16(pObjectData);
             pObjectData += 2;
