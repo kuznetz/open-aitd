@@ -362,7 +362,7 @@ namespace openAITD {
 					*/
 
 					BeginTextureMode(resources->screen.screenTex);
-					//BeginBlendMode(BLEND_ALPHA);
+					BeginBlendMode(BLEND_ALPHA);
 					BeginShaderMode(maskShader);
 					SetShaderValueTexture(maskShader, shTextureColorLoc, colorTex.texture);
 					SetShaderValueTexture(maskShader, shTextureMaskLoc, maskTex.texture);
@@ -372,7 +372,7 @@ namespace openAITD {
 					//DrawRectangleLinesEx(r2, 1, RED);
 
 					EndShaderMode();
-					//EndBlendMode();
+					EndBlendMode();
 					EndTextureMode();
 
 					//it->marker = s;
