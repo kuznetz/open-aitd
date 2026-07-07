@@ -203,8 +203,13 @@ namespace openAITD {
       curInfo = objId;
       try {
         auto& gobj = world->gobjects[objId];
-        lines[0] = BuildString("Object ", objId, ":");
-        lines[1] = resources->nameDecoders.obj.getName(objId);
+        lines[0] = BuildString("Object ", objId, ": ", resources->nameDecoders.obj.getName(objId));
+        string objInfo;
+        if (gobj.bitField.animated) objInfo += "Anim ";
+        if (gobj.bitField.boxify) objInfo += "Box ";
+        if (gobj.bitField.drawable) objInfo += "Draw ";
+        if (gobj.bitField.fallable) objInfo += "Grav ";
+        lines[1] = objInfo;
 
         auto& loc = gobj.location;
         lines[2] = BuildString("Stage:", loc.stageId, " Room:", loc.roomId);
@@ -212,8 +217,9 @@ namespace openAITD {
                               " Y:", loc.position.y, 
                               " Z:", loc.position.z);
         
-        string animInfo = BuildString("Model: ", gobj.modelId, 
-                                          " Anim: ", gobj.animation.animIdx);
+        string animInfo = BuildString(
+          "Model: ", gobj.modelId, 
+          " Anim: ", gobj.animation.animIdx);
         if (gobj.animation.bitField.repeat) animInfo += " Rep";
         if (gobj.animation.bitField.reset) animInfo += " Rst";
         if (gobj.animation.bitField.uninterruptable) animInfo += " UnInt";
