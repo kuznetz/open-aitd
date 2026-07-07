@@ -344,6 +344,7 @@ namespace openAITD {
 				auto& gobj = world->gobjects[i];
 				if (gobj.location.stageId != world->curStageId) continue;
 				if (gobj.modelId == -1) continue;
+				if (!world->isObjectActive(gobj)) continue;		
 
 				auto* curRoom = &curStage.rooms[gobj.location.roomId];
   			auto& moveVec = gobj.physics.moveVec;

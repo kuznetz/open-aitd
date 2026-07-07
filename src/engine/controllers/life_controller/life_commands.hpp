@@ -598,6 +598,9 @@ namespace openAITD {
 			lua->CreateFunction([this](int light) {
 				world->gameOver = true;
 				}, "GAME_OVER");
+			lua->CreateFunction([this](int light) {
+				world->gameOver = true;
+				}, "WAIT_GAME_OVER");
 		}
 
 		bool canCompleteAnimation(GameObject& gobj, int animationId, float yOffset) {			

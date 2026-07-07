@@ -88,7 +88,7 @@ namespace openAITD {
 		Vector3 prevMoveRoot;
 		Vector3 moveRoot;
 		bool animChanged = false;
-		int animEnd = 1; //0 = First cycle after changing animaton from script
+		int animEnd = 0; // 1 - last animation frame
 		int scriptAnimId = -1; //scriptAnimId stay after change to next anim
 		int animIdx;
 		int animFrame;

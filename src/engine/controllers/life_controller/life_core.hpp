@@ -108,26 +108,6 @@ namespace openAITD {
 			f->second.executed = true;
 		}
 
-		bool isObjectActive(GameObject& gobj) {
-			if (gobj.lifeId == -1) return false;
-			if (gobj.location.stageId != world->curStageId) return false;
-			if (gobj.lifeMode == GOLifeMode::none) return false;
-			if (gobj.lifeMode == GOLifeMode::room && gobj.location.roomId != world->curRoomId) return false;
-			if (gobj.lifeMode == GOLifeMode::roomInCamera) {
-				if (world->curCameraId == -1) return false;				
-				bool inCamera = false;
-				auto& cam = world->curStage->cameras[world->curCameraId];
-				for (int i = 0; i < cam.rooms.size(); i++) {
-					if (gobj.location.roomId == cam.rooms[i].roomId) {
-						inCamera = true;
-						break;
-					}
-				}
-				if (!inCamera) return false;
-			}
-			return true;
-		}    
-
 		void process(float timeDelta) {
 			curTimeDelta = timeDelta;
 
@@ -143,7 +123,7 @@ namespace openAITD {
 
 			for (int i = 0; i < world->gobjects.size(); i++) {				
 				auto& gobj = world->gobjects[i];
-				if (!isObjectActive(gobj)) continue;
+				if (!world->isObjectActive(gobj)) continue;
 				executeLife(gobj.lifeId, gobj);
 			}
 

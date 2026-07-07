@@ -24,10 +24,12 @@ namespace openAITD {
 
 		void process(float timeDelta) {
 			for (int i = 0; i < this->world->gobjects.size(); i++) {
+
 				auto& gobj = this->world->gobjects[i];
                 if (gobj.modelId == -1) continue; 
 				if (gobj.location.stageId != this->world->curStageId) continue;
-                
+                if (!world->isObjectActive(gobj)) continue;
+
                 auto& objAni = gobj.animation;
 
                 if (!gobj.bitField.animated) {

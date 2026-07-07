@@ -85,6 +85,26 @@ namespace openAITD {
 			this->resources = res;
 		}
 
+		bool isObjectActive(const GameObject& gobj) {
+			if (gobj.lifeId == -1) return false;
+			if (gobj.location.stageId != this->curStageId) return false;
+			if (gobj.lifeMode == GOLifeMode::none) return false;
+			if (gobj.lifeMode == GOLifeMode::room && gobj.location.roomId != this->curRoomId) return false;
+			if (gobj.lifeMode == GOLifeMode::roomInCamera) {
+				if (this->curCameraId == -1) return false;				
+				bool inCamera = false;
+				auto& cam = this->curStage->cameras[this->curCameraId];
+				for (int i = 0; i < cam.rooms.size(); i++) {
+					if (gobj.location.roomId == cam.rooms[i].roomId) {
+						inCamera = true;
+						break;
+					}
+				}
+				if (!inCamera) return false;
+			}
+			return true;
+		}
+
 		void setCurStage(int stageId, int roomId) {
 			nextStageId = stageId;
 			nextRoomId = roomId;
@@ -153,10 +173,18 @@ namespace openAITD {
 		ifstream ifs(path);
 		json objsJson = json::parse(ifs);
 
+		gobjects.resize(0);
 		gobjects.resize(objsJson.size());
+
 		for (int i = 0; i < objsJson.size(); i++) {
 			auto& gobj = gobjects[i];
 			gobj.id = i;
+
+			gobj.flags = objsJson[i]["flags"];
+			gobj.lifeMode = objsJson[i]["lifeMode"];
+			gobj.lifeId = objsJson[i]["life"];
+			gobj.stageLifeId = objsJson[i]["stageLife"];
+			gobj.chrono = chrono;
 
 			if (objsJson[i].contains("name")) {
 				gobj.name = objsJson[i]["name"];
@@ -179,6 +207,9 @@ namespace openAITD {
 				gobj.boundsType = mdlJson["boundsType"];
 				anim.id = mdlJson["animId"];
 				anim.flags = mdlJson["animType"];
+				if (anim.flags == 1) {
+					gobj.bitField.animated = true;
+				}
 				anim.nextId = mdlJson["animInfo"];
 			}
 
@@ -217,12 +248,6 @@ namespace openAITD {
 				gobj.invItem.lifeId = objsJson[i]["invItem"]["life"];
 				gobj.invItem.flags = objsJson[i]["invItem"]["flags"];
 			}
-
-			gobj.flags = objsJson[i]["flags"];
-			gobj.lifeMode = objsJson[i]["lifeMode"];
-			gobj.lifeId = objsJson[i]["life"];
-			gobj.stageLifeId = objsJson[i]["stageLife"];
-			gobj.chrono = chrono;
 		}
 
 	};
