@@ -20,9 +20,12 @@ namespace AITDExtractor {
     inline const Matrix roomMatObj = MatrixRotateX(PI);
 
     inline Vector3 convertRotate(int alpha, int beta, int gamma) {
+        // float a = (alpha+512) * 2*PI/1024;
+        // float b = -beta * 2*PI/1024;
+        // float c = -gamma * 2*PI/1024;
         float a = alpha * 2*PI/1024;
-        float b = -beta * 2*PI/1024;
-        float c = -gamma * 2*PI/1024;
+        float b = (512+beta) * 2*PI/1024;
+        float c = gamma * 2*PI/1024;
         return {a, b, c};
     }
 

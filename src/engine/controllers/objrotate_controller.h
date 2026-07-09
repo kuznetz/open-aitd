@@ -15,19 +15,6 @@ namespace openAITD {
             this->resources = world->resources;
         }
 
-        // Helper: convert Euler angles (radians) to Quaternion
-        Quaternion EulerToQuat(Vector3 euler) {
-            // Assuming XYZ rotation order (default for raylib)
-            Quaternion q = QuaternionFromEuler(euler.x, euler.y, euler.z);
-            return q;
-        }
-
-        // Helper: convert Quaternion to Euler angles (radians)
-        Vector3 QuatToEuler(Quaternion q) {
-            Vector3 euler = QuaternionToEuler(q);
-            return euler;
-        }
-
         void process(float timeDelta) {
             auto& curStage = resources->stages[world->curStageId];
 
@@ -43,14 +30,14 @@ namespace openAITD {
 
                 // Start of animation: set rotation to 'from' Euler vector
                 if (rot.curTime == 0.0f) {
-                    gobj.location.rotation2 = QuatToEuler(rot.from);     // rot.from is now Vector3 Euler rad
+                    gobj.location.rotation2 = rot.from;     // rot.from is now Vector3 Euler rad
                 }
 
                 rot.curTime += timeDelta;
 
                 if (rot.curTime >= rot.timeEnd) {
                     // Animation ends
-                    gobj.location.rotation2 = QuatToEuler(rot.to);       // rot.to is Vector3 Euler rad
+                    gobj.location.rotation2 = rot.to;       // rot.to is Vector3 Euler rad
                     gobj.location.rotOrig = rot.toOrig;    // assume rotOrig is also Vector3
                     rot.timeEnd = 0;
                     continue;
@@ -58,7 +45,7 @@ namespace openAITD {
                 else {
                     // Interpolate between from and to using Euler spherical interpolation
                     float t = rot.curTime / rot.timeEnd;
-                    gobj.location.rotation2 = QuatToEuler(QuaternionSlerp(rot.from, rot.to, t));
+                    gobj.location.rotation2 = Vector3Lerp(rot.from, rot.to, t);
                 }
 
                 if (gobj.boundsType == BoundsType::rotated) {

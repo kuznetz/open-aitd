@@ -129,23 +129,20 @@ namespace openAITD {
 			//auto rotTo = QuaternionFromAxisAngle({ 0,1,0 }, (toAngle + 512) * 2. * PI / 1024.);
 		}
 
-		int convertAngle2(int oldAngle, int newAngle) {
-			auto angleDif = (newAngle - oldAngle);
-			//printf("SET_BETA DIFF %d\n", angleDif);			
-			if (angleDif == 512)
-			{
-				angleDif -= 1;
-			}
-			else if (angleDif == -512)
-			{
-				angleDif += 1;
-			}
-			return oldAngle + angleDif;
+		float convertAlpha(int alpha) {
+			return (alpha+512) * 2 * PI / 1024.;
+		}
+
+		float convertBeta(int beta) {
+			return -beta * 2 * PI / 1024.;
+		}
+
+		float convertGamma(int gamma) {
+			return -gamma * 2 * PI / 1024.;
 		}
 
 		void initExpressions() {
-
-			
+		
 			lua->CreateFunction([this](int rmax) -> int {
 				return rand() % rmax;
 				}, "RAND");
@@ -322,7 +319,9 @@ namespace openAITD {
 			}, "TEST_COL");
 			//Set object rotation(angle)
 			lua->CreateFunction([this](int obj, int x, int y, int z) {
-				this->world->gobjects[obj].location.rotation2 = convertAngle(x, y, z);
+				this->world->gobjects[obj].location.rotation2 = {
+					convertAlpha(x)	, convertBeta(y), convertGamma(z)
+				};
 				this->world->gobjects[obj].physics.boundsCached = false;
 			}, "SET_ANGLE");
 			lua->CreateFunction([this](int obj, int flags) {
@@ -460,44 +459,32 @@ namespace openAITD {
 				if (gobj.rotateAnim.timeEnd > 0 && gobj.rotateAnim.toOrig.x == toAngle) return;
 				gobj.rotateAnim.curTime = 0;
 				gobj.rotateAnim.timeEnd = time / 60.;
-				auto& r = gobj.location.rotation2;
-				gobj.rotateAnim.from = QuaternionFromEuler(r.x, r.y, r.z);
+				gobj.rotateAnim.from = gobj.location.rotation2;
 
 				auto& ro = gobj.location.rotOrig;
 				auto& ro2 = gobj.rotateAnim.toOrig;
 				ro2 = ro;
 				ro2.x = toAngle;
 
-				auto& r2 = convertAngle(
-					convertAngle2(ro.x, -toAngle),
-					ro2.y,
-					ro2.z
-				);
-				gobj.rotateAnim.to = QuaternionFromEuler(r2.x, r2.y, r2.z);
-
-				}, "SET_ALPHA");
+				gobj.rotateAnim.to = gobj.location.rotation2;
+				gobj.rotateAnim.to.x = convertAlpha(toAngle);
+  		}, "SET_ALPHA");
 
 			lua->CreateFunction([this](int obj, int toAngle, int time) {
 				auto& gobj = this->world->gobjects[obj];
 				if (gobj.rotateAnim.timeEnd > 0 && gobj.rotateAnim.toOrig.y == toAngle) return;
 				gobj.rotateAnim.curTime = 0;
 				gobj.rotateAnim.timeEnd = time / 60.;
-				auto& r = gobj.location.rotation2;
-				gobj.rotateAnim.from = QuaternionFromEuler(r.x, r.y, r.z);
+				gobj.rotateAnim.from = gobj.location.rotation2;
 
 				auto& ro = gobj.location.rotOrig;
 				auto& ro2 = gobj.rotateAnim.toOrig;
 				ro2 = ro;
 				ro2.y = toAngle;
 
-				auto& r2 = convertAngle(
-					ro2.x, 
-					convertAngle2(ro.y, toAngle),
-					ro2.z
-				);
-				gobj.rotateAnim.to = QuaternionFromEuler(r2.x, r2.y, r2.z);
-
-				}, "SET_BETA");
+				gobj.rotateAnim.to = gobj.location.rotation2;
+				gobj.rotateAnim.to.y = convertBeta(toAngle);
+  		}, "SET_BETA");
 
 			//Process track
 			lua->CreateFunction([this](int objId) {

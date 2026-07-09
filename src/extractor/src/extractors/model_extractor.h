@@ -611,12 +611,12 @@ namespace AITDExtractor {
 
         json dataJson;
         dataJson["bounds"] = json::array();
-        dataJson["bounds"].push_back(v1.x);
-        dataJson["bounds"].push_back(v1.y);
-        dataJson["bounds"].push_back(v1.z);
-        dataJson["bounds"].push_back(v2.x);
-        dataJson["bounds"].push_back(v2.y);
-        dataJson["bounds"].push_back(v2.z);
+        dataJson["bounds"].push_back(round(v1.x*1000)/1000);
+        dataJson["bounds"].push_back(round(v1.y*1000)/1000);
+        dataJson["bounds"].push_back(round(v1.z*1000)/1000);
+        dataJson["bounds"].push_back(round(v2.x*1000)/1000);
+        dataJson["bounds"].push_back(round(v2.y*1000)/1000);
+        dataJson["bounds"].push_back(round(v2.z*1000)/1000);
         std::ofstream o(dirname + "/data.json");
         o << std::setw(2) << dataJson;
     }

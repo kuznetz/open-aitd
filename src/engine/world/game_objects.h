@@ -106,10 +106,10 @@ namespace openAITD {
 	};
 
 	struct GORotateAnim {
-		Quaternion from;
-		Quaternion to;
+		Vector3 from;
+		Vector3 to;
 		Vector3i toOrig;
-	    float curTime;
+	  float curTime;
 		float timeEnd = 0;
 		// for life scripts
 	};
@@ -128,7 +128,7 @@ namespace openAITD {
 
 	struct GOPhysics
 	{
-		bool boundsCached;
+		bool boundsCached = false;
 		bool falling = 0;
 		bool collidable = 1;
 		Bounds bounds;

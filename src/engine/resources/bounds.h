@@ -117,16 +117,17 @@ namespace openAITD {
 				Matrix rotation = MatrixRotateXYZ(eulerAngles);
 
 				Bounds res;
-				for (int i = 0; i < 8; i++)
+				res.min = v[0];
+				res.max = v[0];
+				for (int i = 1; i < 8; i++)
 				{
 						v[i] = Vector3Transform(v[i], rotation);
-
-						if (i == 0 || v[i].x < res.min.x) res.min.x = v[i].x;
-						if (i == 0 || v[i].x > res.max.x) res.max.x = v[i].x;
-						if (i == 0 || v[i].y < res.min.y) res.min.y = v[i].y;
-						if (i == 0 || v[i].y > res.max.y) res.max.y = v[i].y;
-						if (i == 0 || v[i].z < res.min.z) res.min.z = v[i].z;
-						if (i == 0 || v[i].z > res.max.z) res.max.z = v[i].z;
+						if (v[i].x < res.min.x) res.min.x = v[i].x;
+						if (v[i].x > res.max.x) res.max.x = v[i].x;
+						if (v[i].y < res.min.y) res.min.y = v[i].y;
+						if (v[i].y > res.max.y) res.max.y = v[i].y;
+						if (v[i].z < res.min.z) res.min.z = v[i].z;
+						if (v[i].z > res.max.z) res.max.z = v[i].z;
 				}
 				return res;
 		}
@@ -141,7 +142,7 @@ namespace openAITD {
 
 			auto& mtv = CalculateMTV_XYZ(b1, b2);
 			v.x -= mtv.x;
-			v.x -= mtv.y;
+			v.y -= mtv.y;
 			v.z -= mtv.z;
 			return true;
 		}
