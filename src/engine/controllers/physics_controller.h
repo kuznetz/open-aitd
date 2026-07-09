@@ -361,7 +361,12 @@ namespace openAITD {
 				}
 				gobj.physics.moving = ( fabs(moveVec0.x) > 0.0001 || fabs(moveVec0.z) > 0.0001 );
 				if (gobj.physics.moving) {
-        	moveVec = Vector3RotateByQuaternion(moveVec0, gobj.location.rotation);
+					auto q = QuaternionFromEuler(
+						gobj.location.rotation2.x,
+						gobj.location.rotation2.y,
+						gobj.location.rotation2.z
+					);
+        	moveVec = Vector3RotateByQuaternion(moveVec0, q);
 					if (gobj.physics.collidable) {
 						processStaticColliders(gobj, *curRoom);
 						processDynamicColliders(gobj, *curRoom);

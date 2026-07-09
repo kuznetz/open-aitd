@@ -34,34 +34,36 @@ namespace openAITD {
 		}
 
 		void rotateTo(GameObject& gobj, const Vector3& target, const float timeDelta) {
-			//gobj.physics.moveVec
-			raylib::Vector3 forw = { 0,0,-1 };
-			forw = Vector3RotateByQuaternion(forw, gobj.location.rotation);
-      raylib::Vector2 forward2D = Vector2Normalize({ forw.x, forw.z });
-			gobj.track.debug.forward2D = forward2D;
+				raylib::Vector3 euler = gobj.location.rotation2;   // pitch, yaw, roll
 
-			auto& pos = gobj.location.position;
-			raylib::Vector2 targetDir = Vector2Normalize({
-					target.x - pos.x,
-					target.z - pos.z 
-			});
-			gobj.track.debug.targetDir = targetDir;
-    
-	    float angle = Vector2Angle(forward2D, targetDir);
-  	  const float rotateSpeed = 2*PI;
-			gobj.track.debug.angle = angle;
-      
-			float rotateSpeedD = rotateSpeed * timeDelta;
-			float newAngle;
-			if (fabs(angle) > rotateSpeedD) {
-					float cw = (angle > 0) ? -1.0f : 1.0f;
-					newAngle = rotateSpeedD * cw;
-    	} else {
-				  newAngle = -angle;
-			}
+				raylib::Vector3 forward = { 0.0f, 0.0f, -1.0f };
+				raylib::Matrix mat = MatrixRotateXYZ(euler);      // повороты вокруг X, затем Y, затем Z
+				forward = Vector3Transform(forward, mat);
+				raylib::Vector2 forward2D = Vector2Normalize({ forward.x, forward.z });
+				gobj.track.debug.forward2D = forward2D;
 
-			auto q = QuaternionFromAxisAngle({ 0, 1, 0 }, newAngle);
-	    gobj.location.rotation = QuaternionMultiply(gobj.location.rotation, q);
+				auto& pos = gobj.location.position;
+				raylib::Vector2 targetDir = Vector2Normalize({
+						target.x - pos.x,
+						target.z - pos.z
+				});
+				gobj.track.debug.targetDir = targetDir;
+
+				float angle = Vector2Angle(forward2D, targetDir);
+				const float rotateSpeed = 2.0f * PI;
+				gobj.track.debug.angle = angle;
+
+				float rotateSpeedD = rotateSpeed * timeDelta;
+				float newAngle;
+				if (fabs(angle) > rotateSpeedD) {
+						float cw = (angle > 0.0f) ? -1.0f : 1.0f;
+						newAngle = rotateSpeedD * cw;
+				} else {
+						newAngle = -angle;
+				}
+
+				euler.y += newAngle;
+				gobj.location.rotation2 = euler;
 		}
 
 		bool gotoPos(GameObject& gobj, TrackItem& trackItm, const float timeDelta) {
@@ -157,7 +159,7 @@ namespace openAITD {
 			Matrix mz = MatrixRotateZ(trackItm.rot.z);
 			Matrix matRotation = MatrixMultiply(MatrixMultiply(my, mx), mz);
 			matRotation = MatrixTranspose(matRotation);
-			gobj.location.rotation = QuaternionInvert(QuaternionFromMatrix(matRotation));
+			gobj.location.rotation2 = QuaternionToEuler(QuaternionInvert(QuaternionFromMatrix(matRotation)));
 		}
 
 		void processObjTrack( GameObject& gobj, const float timeDelta ) {

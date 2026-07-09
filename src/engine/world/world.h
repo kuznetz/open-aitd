@@ -140,7 +140,7 @@ namespace openAITD {
 				objB = objB.getCubeBounds();
 			}
 			if (gobj.boundsType == BoundsType::rotated) {
-				objB = objB.getRotatedBounds(gobj.location.rotation);
+				objB = objB.getRotatedBounds(gobj.location.rotation2);
 			}
 			Vector3& p = gobj.location.position;
 			objB.min = Vector3Add(objB.min, p);
@@ -161,7 +161,7 @@ namespace openAITD {
 		void delFromInventory(int itemObjId);
 		void take(int gObjId);
 		void drop(int itemObjId, int actorObjId);
-		void put(int objId, int room, int stage, Vector3 pos, Quaternion rot);
+		void put(int objId, int room, int stage, Vector3 pos, Vector3 rot);
 		
 		Vector3 AbsolutePos(const GameObject& gobj);
 		Vector3 VectorChangeRoom(const Vector3 v, int fromRoomId, int toRoomId);
@@ -194,7 +194,7 @@ namespace openAITD {
 				auto& loc = gobj.location;
 				auto& locJson = objsJson[i]["location"];
 				loc.position = { locJson["position"][0], locJson["position"][1], locJson["position"][2] };
-				loc.rotation = { locJson["rotation"][0], locJson["rotation"][1], locJson["rotation"][2], locJson["rotation"][3] };
+				loc.rotation2 = { locJson["rotation"][0], locJson["rotation"][1], locJson["rotation"][2] };
 				loc.rotOrig = { locJson["rotOrig"][0], locJson["rotOrig"][1], locJson["rotOrig"][2] };
 				loc.stageId = locJson["stageId"];
 			    loc.roomId = locJson["roomId"];
@@ -356,18 +356,18 @@ namespace openAITD {
 		item.location.stageId = actor.location.stageId;
 		item.location.roomId = actor.location.roomId;
 		item.location.position = actor.location.position;
-		item.location.rotation = actor.location.rotation;
+		item.location.rotation2 = actor.location.rotation2;
 
 		//action?
 	};
 
-	void World::put(int itemObjId, int stage, int room, Vector3 pos, Quaternion rot)
+	void World::put(int itemObjId, int stage, int room, Vector3 pos, Vector3 rot)
 	{
 		auto& item = this->gobjects[itemObjId];
 		item.location.stageId = stage;
 		item.location.roomId = room;
 		item.location.position = pos;
-		item.location.rotation = rot;
+		item.location.rotation2 = rot;
 
 		delFromInventory(itemObjId);
 		//item.bitField.foundable = 0;

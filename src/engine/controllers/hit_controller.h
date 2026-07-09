@@ -61,7 +61,9 @@ namespace openAITD {
             mdl->model.ApplyPose(curPose.data());
             //Vector3 v = Vector3Negate(mdl->model.curPose[gobj.hit.boneIdx].translation);
             Vector3 v = mdl->model.curPose[gobj.hit.boneIdx].translation;
-            v = Vector3RotateByQuaternion(v, gobj.location.rotation);
+            auto& rot = gobj.location.rotation2;
+            auto q = QuaternionFromEuler(rot.x, rot.y,rot.z);
+            v = Vector3RotateByQuaternion(v, q);
             v = Vector3Add(v, gobj.location.position);
             //v.y = -v.y;
             //v = Vector3Add(v, roomPos);

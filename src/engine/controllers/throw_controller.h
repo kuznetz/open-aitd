@@ -47,7 +47,13 @@ namespace openAITD {
 
             mdl->model.ApplyPose(curPose.data());
             Vector3 v = mdl->model.curPose[action.activeBoneId].translation;
-            v = Vector3RotateByQuaternion(v, gobj.location.rotation);
+
+            Quaternion rotationQuat = QuaternionFromEuler(
+                gobj.location.rotation2.x,
+                gobj.location.rotation2.y,
+                gobj.location.rotation2.z
+            );
+            v = Vector3RotateByQuaternion(v, rotationQuat);            
             v = Vector3Add(v, gobj.location.position);
             return v;
         }
@@ -66,7 +72,7 @@ namespace openAITD {
             auto& item = *action.throwedItem;
             item.location.stageId = gobj.location.stageId;
             item.location.roomId = gobj.location.roomId;
-            item.location.rotation = gobj.location.rotation;
+            item.location.rotation2 = gobj.location.rotation2;
             item.location.position = getBonePos();
 
             item.physics.boundsCached = false;

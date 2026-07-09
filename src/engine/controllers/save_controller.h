@@ -70,12 +70,11 @@ namespace openAITD {
                 outObj["location"]["stageId"] = gobj.location.stageId;
                 outObj["location"]["roomId"] = gobj.location.roomId;
                 outObj["location"]["position"] = vector2json(gobj.location.position);
-                auto& r = gobj.location.rotation;
-                outObj["location"]["rotation"] = json::array();
-                outObj["location"]["rotation"].push_back(r.x);
-                outObj["location"]["rotation"].push_back(r.y);
-                outObj["location"]["rotation"].push_back(r.z);
-                outObj["location"]["rotation"].push_back(r.w);
+                auto& r = gobj.location.rotation2;
+                outObj["location"]["rotation2"] = json::array();
+                outObj["location"]["rotation2"].push_back(r.x);
+                outObj["location"]["rotation2"].push_back(r.y);
+                outObj["location"]["rotation2"].push_back(r.z);
                 auto& r2 = gobj.location.rotOrig;
                 outObj["location"]["rotOrig"] = json::array();
                 outObj["location"]["rotOrig"].push_back(r2.x);
@@ -141,8 +140,8 @@ namespace openAITD {
                     gobj.location.stageId = inObj["location"]["stageId"];
                     gobj.location.roomId = inObj["location"]["roomId"];
                     gobj.location.position = json2vector(inObj["location"]["position"]);
-                    auto& r = inObj["location"]["rotation"];
-                    gobj.location.rotation = { r[0], r[1], r[2], r[3] };
+                    auto& r = inObj["location"]["rotation2"];
+                    gobj.location.rotation2 = { r[0], r[1], r[2] };
                     auto& r2 = inObj["location"]["rotOrig"];
                     gobj.location.rotOrig = { r2[0], r2[1], r2[2] };
 

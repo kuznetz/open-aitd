@@ -24,10 +24,7 @@ namespace openAITD {
 				rotate = -1;
 			}
 			if (rotate != 0) {
-				rotate = rotate * PI * timeDelta;
-				auto q = QuaternionFromAxisAngle({ 0,1,0 }, rotate);
-				auto r = gobj.location.rotation;
-				gobj.location.rotation = QuaternionMultiply(r, q);
+				gobj.location.rotation2.y += rotate * PI * timeDelta;
 			}
 		}
 
@@ -52,10 +49,7 @@ namespace openAITD {
 					nextAnimation = world->player.animations.turnCW;
 				}
 				if (rotate != 0) {
-					rotate = rotate * PI * timeDelta;
-					auto q = QuaternionFromAxisAngle({ 0,1,0 }, rotate);
-					auto r = gobj.location.rotation;
-					gobj.location.rotation = QuaternionMultiply(r, q);
+					gobj.location.rotation2.y += rotate * PI * timeDelta;
 					isAction = true;
 				}
 

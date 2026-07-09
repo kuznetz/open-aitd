@@ -69,7 +69,9 @@ namespace openAITD {
 			Vector3& p2 = world->VectorChangeRoom(actor2->location.position, actor2->location.roomId, actor1->location.roomId);
 
 			p2rot = { p2.x - p1.x, 0, p2.z - p1.z };
-			p2rot = Vector3RotateByQuaternion(p2rot, QuaternionInvert(actor1->location.rotation)); //QuaternionInvert(actor1->location.rotation)
+			auto& r = actor1->location.rotation2;
+			auto& q = QuaternionInvert(QuaternionFromEuler(r.x, r.y, r.z));
+			p2rot = Vector3RotateByQuaternion(p2rot, q);
 			p2rot = Vector3Add(p2rot, p1);
 			RModel* m = resources->models.getModel(actor1->modelId);
 			b = m->bounds;
@@ -115,7 +117,7 @@ namespace openAITD {
 			return res;
 		}
 
-		Vector4 convertAngle(int alpha, int beta, int gamma) {
+		Vector3 convertAngle(int alpha, int beta, int gamma) {
 			auto roomMatObj = MatrixRotateX(PI);
 			Matrix mx = MatrixRotateX(alpha * 2.f * PI / 1024);
 			Matrix my = MatrixRotateY((beta + 512) * 2.f * PI / 1024);
@@ -123,7 +125,7 @@ namespace openAITD {
 			Matrix matRotation = MatrixMultiply(MatrixMultiply(my, mx), mz);
 			matRotation = MatrixTranspose(matRotation);
 			auto q = QuaternionFromMatrix(matRotation);
-			return QuaternionTransform(q, roomMatObj);
+			return QuaternionToEuler(QuaternionTransform(q, roomMatObj));
 			//auto rotTo = QuaternionFromAxisAngle({ 0,1,0 }, (toAngle + 512) * 2. * PI / 1024.);
 		}
 
@@ -320,7 +322,7 @@ namespace openAITD {
 			}, "TEST_COL");
 			//Set object rotation(angle)
 			lua->CreateFunction([this](int obj, int x, int y, int z) {
-				this->world->gobjects[obj].location.rotation = convertAngle(x, y, z);
+				this->world->gobjects[obj].location.rotation2 = convertAngle(x, y, z);
 				this->world->gobjects[obj].physics.boundsCached = false;
 			}, "SET_ANGLE");
 			lua->CreateFunction([this](int obj, int flags) {
@@ -385,7 +387,7 @@ namespace openAITD {
 			lua->CreateFunction([this](int itemObjId, int targetObjId) {
 				auto& gobj = this->world->gobjects[itemObjId];
 				auto& tobj = this->world->gobjects[targetObjId];
-				this->world->put(itemObjId, tobj.location.stageId, tobj.location.roomId, tobj.location.position, tobj.location.rotation);
+				this->world->put(itemObjId, tobj.location.stageId, tobj.location.roomId, tobj.location.position, tobj.location.rotation2);
 				gobj.bitField.foundable = 1;
 				}, "PUT_AT");
 			lua->CreateFunction([this](int itemObjId, int actorObjId) {
@@ -458,18 +460,20 @@ namespace openAITD {
 				if (gobj.rotateAnim.timeEnd > 0 && gobj.rotateAnim.toOrig.x == toAngle) return;
 				gobj.rotateAnim.curTime = 0;
 				gobj.rotateAnim.timeEnd = time / 60.;
-				gobj.rotateAnim.from = gobj.location.rotation;
+				auto& r = gobj.location.rotation2;
+				gobj.rotateAnim.from = QuaternionFromEuler(r.x, r.y, r.z);
 
 				auto& ro = gobj.location.rotOrig;
 				auto& ro2 = gobj.rotateAnim.toOrig;
 				ro2 = ro;
 				ro2.x = toAngle;
 
-				gobj.rotateAnim.to = convertAngle(
+				auto& r2 = convertAngle(
 					convertAngle2(ro.x, -toAngle),
 					ro2.y,
 					ro2.z
 				);
+				gobj.rotateAnim.to = QuaternionFromEuler(r2.x, r2.y, r2.z);
 
 				}, "SET_ALPHA");
 
@@ -478,18 +482,20 @@ namespace openAITD {
 				if (gobj.rotateAnim.timeEnd > 0 && gobj.rotateAnim.toOrig.y == toAngle) return;
 				gobj.rotateAnim.curTime = 0;
 				gobj.rotateAnim.timeEnd = time / 60.;
-				gobj.rotateAnim.from = gobj.location.rotation;
+				auto& r = gobj.location.rotation2;
+				gobj.rotateAnim.from = QuaternionFromEuler(r.x, r.y, r.z);
 
 				auto& ro = gobj.location.rotOrig;
 				auto& ro2 = gobj.rotateAnim.toOrig;
 				ro2 = ro;
 				ro2.y = toAngle;
 
-				gobj.rotateAnim.to = convertAngle(
+				auto& r2 = convertAngle(
 					ro2.x, 
 					convertAngle2(ro.y, toAngle),
 					ro2.z
 				);
+				gobj.rotateAnim.to = QuaternionFromEuler(r2.x, r2.y, r2.z);
 
 				}, "SET_BETA");
 
@@ -538,7 +544,7 @@ namespace openAITD {
 
       lua->CreateFunction([this](int fromObjId) {
 				auto& obj = this->world->gobjects[fromObjId];
-				this->getCurGObject()->location.rotation = obj.location.rotation;
+				this->getCurGObject()->location.rotation2 = obj.location.rotation2;
 				}, "COPY_ANGLE");			
 
 			//Sound & music
@@ -615,7 +621,9 @@ namespace openAITD {
 			
 			auto& animIdx = animIter->second;
 			raylib::Vector3 rootMotion = m->model.getLastFrameRootMotion(animIdx);
-			raylib::Vector3 globalMotion = Vector3RotateByQuaternion(rootMotion, gobj.location.rotation);
+			auto& r = gobj.location.rotation2;
+			Quaternion& q = QuaternionFromEuler(r.x, r.y, r.z);
+			raylib::Vector3 globalMotion = Vector3RotateByQuaternion(rootMotion, q);
 			globalMotion.y += yOffset + 0.001f;
 
 			Bounds newBounds = world->getObjectBounds(gobj);

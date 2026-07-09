@@ -17,20 +17,16 @@ namespace AITDExtractor {
     using namespace raylib;
     using json = nlohmann::json;
 
-    inline Matrix roomMatObj;
+    inline const Matrix roomMatObj = MatrixRotateX(PI);
 
-    inline Quaternion convertRotate(int alpha, int beta, int gamma) {
-        Matrix mx = MatrixRotateX(alpha * 2.f * PI / 1024);
-        Matrix my = MatrixRotateY((beta + 512) * 2.f * PI / 1024);
-        Matrix mz = MatrixRotateZ(gamma * 2.f * PI / 1024);
-        Matrix matRotation = MatrixMultiply(MatrixMultiply(my, mx), mz);
-        matRotation = MatrixTranspose(matRotation);
-        return QuaternionFromMatrix(matRotation);
+    inline Vector3 convertRotate(int alpha, int beta, int gamma) {
+        float a = alpha * 2*PI/1024;
+        float b = -beta * 2*PI/1024;
+        float c = -gamma * 2*PI/1024;
+        return {a, b, c};
     }
 
     inline void extractGameObjects(vector <gameObjectStruct> objects, string josnTo, const openAITD::NameDecoders& nameDec) {
-        roomMatObj = MatrixRotateX(PI);
-
         json outJson = json::array();
         for (int i = 0; i < objects.size(); i++)
         {
@@ -66,14 +62,13 @@ namespace AITDExtractor {
                 position.push_back(v.z);
                 loc["position"] = position;
 
-                Vector4 q = QuaternionTransform(convertRotate(
+                Vector3 q = convertRotate(
                     obj.alpha, obj.beta, obj.gamma
-                ), roomMatObj);
+                );
                 json rotation = json::array();
                 rotation.push_back(q.x);
                 rotation.push_back(q.y);
                 rotation.push_back(q.z);
-                rotation.push_back(q.w);
                 loc["rotation"] = rotation;
 
                 json rotationOrig = json::array();

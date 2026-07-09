@@ -101,41 +101,34 @@ namespace openAITD {
 			return r;
 		}
 
-		Bounds getRotatedBounds(const Quaternion& q)
+		Bounds getRotatedBounds(const Vector3& eulerAngles)
 		{
-			auto& b = *this;
-			Vector3 v[8];
-			v[0] = { b.min.x, b.min.y, b.min.z };
-			v[1] = { b.max.x, b.min.y, b.min.z };
-			v[2] = { b.min.x, b.min.y, b.max.z };
-			v[3] = { b.max.x, b.min.y, b.max.z };
-			v[4] = { b.min.x, b.max.y, b.min.z };
-			v[5] = { b.max.x, b.max.y, b.min.z };
-			v[6] = { b.min.x, b.max.y, b.max.z };
-			v[7] = { b.max.x, b.max.y, b.max.z };
-			Bounds res;
-			for (int i = 0; i < 8; i++) {
-				v[i] = Vector3RotateByQuaternion(v[i], q);
-				if (i == 0 || v[i].x < res.min.x) {
-					res.min.x = v[i].x;
+				auto& b = *this;
+				Vector3 v[8];
+				v[0] = { b.min.x, b.min.y, b.min.z };
+				v[1] = { b.max.x, b.min.y, b.min.z };
+				v[2] = { b.min.x, b.min.y, b.max.z };
+				v[3] = { b.max.x, b.min.y, b.max.z };
+				v[4] = { b.min.x, b.max.y, b.min.z };
+				v[5] = { b.max.x, b.max.y, b.min.z };
+				v[6] = { b.min.x, b.max.y, b.max.z };
+				v[7] = { b.max.x, b.max.y, b.max.z };
+
+				Matrix rotation = MatrixRotateXYZ(eulerAngles);
+
+				Bounds res;
+				for (int i = 0; i < 8; i++)
+				{
+						v[i] = Vector3Transform(v[i], rotation);
+
+						if (i == 0 || v[i].x < res.min.x) res.min.x = v[i].x;
+						if (i == 0 || v[i].x > res.max.x) res.max.x = v[i].x;
+						if (i == 0 || v[i].y < res.min.y) res.min.y = v[i].y;
+						if (i == 0 || v[i].y > res.max.y) res.max.y = v[i].y;
+						if (i == 0 || v[i].z < res.min.z) res.min.z = v[i].z;
+						if (i == 0 || v[i].z > res.max.z) res.max.z = v[i].z;
 				}
-				if (i == 0 || v[i].x > res.max.x) {
-					res.max.x = v[i].x;
-				}
-				if (i == 0 || v[i].y < res.min.y) {
-					res.min.y = v[i].y;
-				}
-				if (i == 0 || v[i].y > res.max.y) {
-					res.max.y = v[i].y;
-				}
-				if (i == 0 || v[i].z < res.min.z) {
-					res.min.z = v[i].z;
-				}
-				if (i == 0 || v[i].z > res.max.z) {
-					res.max.z = v[i].z;
-				}
-			}
-			return res;
+				return res;
 		}
 
 		bool CollToBoxV_XYZ(Vector3& v, Bounds& b2) {

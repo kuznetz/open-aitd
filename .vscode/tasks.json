@@ -19,7 +19,7 @@
         },
         {
             "label": "CMake: build open-aitd",
-            "type": "shell",
+            "type": "process",
             "command": "cmake",
             "args": [
                 "--build", "${workspaceFolder}/build",
@@ -29,6 +29,7 @@
             ],
             "group": "build",
             "presentation": {
+                "panel": "new",
                 "reveal": "always"
             },
             "problemMatcher": {
