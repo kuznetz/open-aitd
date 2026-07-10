@@ -11,10 +11,9 @@ namespace openAITD {
     EulerAngles(float x, float y, float z) : Vector3{x, y, z} {}
 
     static float NormalizeAngle(float angle) {
-        const float TWO_PI = 2.0f * PI;
-        angle = fmod(angle, TWO_PI);
-        if (angle > PI) angle -= TWO_PI;
-        if (angle < -PI) angle += TWO_PI;
+        angle = fmod(angle, 2*PI);
+        if (angle > PI) angle -= 2*PI;
+        if (angle < -PI) angle += 2*PI;
         return angle;
     }
 

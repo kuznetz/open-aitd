@@ -64,7 +64,7 @@ namespace openAITD {
 
                 // Interpolate using the shortest angular path
                 float t = rot.curTime / rot.timeEnd;
-                gobj.location.rotation2 = LerpEulerShortest(rot.from, rot.to, t);
+                gobj.location.rotation2 = LerpEulerShortest(rot.from, rot.to, t).GetNormalized();
 
                 // Invalidate cached bounds and check collisions for rotated objects
                 if (gobj.boundsType == BoundsType::rotated) {

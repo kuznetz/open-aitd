@@ -165,7 +165,7 @@ namespace openAITD {
 			Vector3 pos = gobj.location.position;
 			Vector3& roomPos = world->curStage->rooms[gobj.location.roomId].position;
 			pos = Vector3Add(roomPos, pos);
-			Matrix matTranslation = MatrixTranslate(pos.x, pos.y, pos.z);
+			const Matrix matTranslation = MatrixTranslate(pos.x, pos.y, pos.z);
 			auto& rot = gobj.location.rotation2;
 			Matrix matRotation = MatrixRotateZYX(rot);
 			Matrix matTransform = MatrixMultiply(matRotation, matTranslation);

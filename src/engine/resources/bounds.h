@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <algorithm>
 #include "../../raylib-cpp/raylib-cpp.h"
+#include "../world/euler_angles.hpp"
 
 //using namespace std;
 using namespace raylib;
@@ -101,7 +102,7 @@ namespace openAITD {
 			return r;
 		}
 
-		Bounds getRotatedBounds(const Vector3& eulerAngles)
+		Bounds getRotatedBounds(const EulerAngles& eulerAngles)
 		{
 				auto& b = *this;
 				Vector3 v[8];

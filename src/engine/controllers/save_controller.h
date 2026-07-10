@@ -70,7 +70,7 @@ namespace openAITD {
                 outObj["location"]["stageId"] = gobj.location.stageId;
                 outObj["location"]["roomId"] = gobj.location.roomId;
                 outObj["location"]["position"] = vector2json(gobj.location.position);
-                auto& r = gobj.location.rotation2;
+                const auto& r = gobj.location.rotation2;
                 outObj["location"]["rotation2"] = json::array();
                 outObj["location"]["rotation2"].push_back(r.x);
                 outObj["location"]["rotation2"].push_back(r.y);

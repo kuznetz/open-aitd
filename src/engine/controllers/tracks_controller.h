@@ -35,36 +35,45 @@ namespace openAITD {
 			}
 		}
 
-		void rotateTo(GameObject& gobj, const Vector3& target, const float timeDelta)
+		void rotateTo(GameObject& gobj, const Vector3& target, const float timeDelta, const float rotateSpeed = 0.4f * PI)
 		{
 				EulerAngles euler = gobj.location.rotation2;
-				Matrix mat = MatrixRotateZYX(euler);
-
-				Vector3 forward = { 0.0f, 0.0f, 1.0f };
-				forward = Vector3Transform(forward, mat);
-				Vector2 forward2D = Vector2Normalize({ forward.x, forward.z });
-				gobj.track.debug.forward2D = forward2D;
+				// Normalize current yaw to [-PI, PI]
+				euler.y = EulerAngles::NormalizeAngle(euler.y);
 
 				const auto& pos = gobj.location.position;
-				Vector2 targetDir = Vector2Normalize({
-						target.x - pos.x,
-						target.z - pos.z
-				});
-				gobj.track.debug.targetDir = targetDir;
+				Vector2 targetDir = { - target.x + pos.x, - target.z + pos.z };
+				float lenSq = targetDir.x * targetDir.x + targetDir.y * targetDir.y;
+				if (lenSq < 1e-10f) {
+						return; // target coincides with position – no rotation needed
+				}
+				targetDir = Vector2Normalize(targetDir);
 
-				float cross = forward2D.x * targetDir.y - forward2D.y * targetDir.x;
-				float dot   = forward2D.x * targetDir.x + forward2D.y * targetDir.y;
-				float angle = -atan2(cross, dot);
-				gobj.track.debug.angle = angle;
+				// Compute the target yaw angle (around Y axis)
+				// For a direction vector (x, z), the yaw angle is atan2(x, z)
+				float targetYaw = atan2(targetDir.x, targetDir.y); // note: .y is the Z component
 
-				const float rotateSpeed = 2.0f * PI;
+				float diff = targetYaw - euler.y;
+				diff = EulerAngles::NormalizeAngle(diff); // shortest path
+
+				// Dead zone to eliminate micro‑jitter
+				const float eps = 0.001f;
+				if (fabs(diff) < eps) {
+						return;
+				}
+
 				float maxStep = rotateSpeed * timeDelta;
 
-				float step = angle;
-				if (step >  maxStep) step =  maxStep;
-				if (step < -maxStep) step = -maxStep;
+				if (fabs(diff) <= maxStep) {
+						// Exact alignment – set directly to target
+						euler.y = targetYaw;
+				} else {
+						// Move with maximum speed
+						euler.y += (diff > 0 ? maxStep : -maxStep);
+				}
 
-				euler.y += step;
+				// Normalize the result
+				euler.y = EulerAngles::NormalizeAngle(euler.y);
 				gobj.location.rotation2 = euler;
 		}
 

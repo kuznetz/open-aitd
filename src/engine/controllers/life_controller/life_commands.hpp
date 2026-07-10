@@ -621,7 +621,7 @@ namespace openAITD {
 			
 			auto& animIdx = animIter->second;
 			raylib::Vector3 rootMotion = m->model.getLastFrameRootMotion(animIdx);
-			auto& r = gobj.location.rotation2;
+			const auto& r = gobj.location.rotation2;
 			Quaternion& q = QuaternionFromEuler(r.x, r.y, r.z);
 			raylib::Vector3 globalMotion = Vector3RotateByQuaternion(rootMotion, q);
 			globalMotion.y += yOffset + 0.001f;
