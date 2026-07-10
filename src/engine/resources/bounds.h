@@ -118,6 +118,7 @@ namespace openAITD {
 				Matrix rotation = MatrixRotateZYX(eulerAngles);
 
 				Bounds res;
+				v[0] = Vector3Transform(v[0], rotation);
 				res.min = v[0];
 				res.max = v[0];
 				for (int i = 1; i < 8; i++)

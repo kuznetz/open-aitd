@@ -195,7 +195,7 @@ namespace openAITD {
 				auto& locJson = objsJson[i]["location"];
 				loc.position = { locJson["position"][0], locJson["position"][1], locJson["position"][2] };
 				loc.rotation2 = { locJson["rotation"][0], locJson["rotation"][1], locJson["rotation"][2] };
-				//loc.rotOrig = { locJson["rotOrig"][0], locJson["rotOrig"][1], locJson["rotOrig"][2] };
+				loc.rotation2 = loc.rotation2.GetNormalized();
 				loc.stageId = locJson["stageId"];
 			    loc.roomId = locJson["roomId"];
 			}

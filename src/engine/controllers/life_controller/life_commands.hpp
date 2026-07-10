@@ -314,9 +314,9 @@ namespace openAITD {
 			}, "TEST_COL");
 			//Set object rotation(angle)
 			lua->CreateFunction([this](int obj, int x, int y, int z) {
-				this->world->gobjects[obj].location.rotation2 = {
-					convertAlpha(x)	, convertBeta(y), convertGamma(z)
-				};
+				auto& r = this->world->gobjects[obj].location.rotation2;
+				r = {	convertAlpha(x)	, convertBeta(y), convertGamma(z)	};
+				r = r.GetNormalized();
 				this->world->gobjects[obj].physics.boundsCached = false;
 			}, "SET_ANGLE");
 			lua->CreateFunction([this](int obj, int flags) {
