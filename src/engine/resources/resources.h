@@ -104,8 +104,8 @@ namespace openAITD {
 			}
 		};
 
-		bool isRoomsConnected(Stage& stage, int room1, int room2) {
-			Room& room = stage.rooms[room1];
+		bool isRoomsConnected(const Stage& stage, int room1, int room2) {
+			const Room& room = stage.rooms[room1];
 			for (int j = 0; j < room.zones.size(); j++) {
 				if (room.zones[j].type != RoomZoneType::ChangeRoom) continue;
 				if (room2 == room.zones[j].parameter) {

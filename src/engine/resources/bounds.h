@@ -114,7 +114,7 @@ namespace openAITD {
 				v[6] = { b.min.x, b.max.y, b.max.z };
 				v[7] = { b.max.x, b.max.y, b.max.z };
 
-				Matrix rotation = MatrixRotateXYZ(eulerAngles);
+				Matrix rotation = MatrixRotateZYX(eulerAngles);
 
 				Bounds res;
 				res.min = v[0];

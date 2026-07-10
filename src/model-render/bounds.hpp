@@ -148,7 +148,7 @@ namespace openAITD {
 
 			auto& mtv = CalculateMTV_XYZ(b1, b2);
 			v.x -= mtv.x;
-			v.x -= mtv.y;
+			v.y -= mtv.y;
 			v.z -= mtv.z;
 			return true;
 		}

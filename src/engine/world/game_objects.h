@@ -3,6 +3,7 @@
 #include <string>
 #include "../../raylib-cpp/raylib-cpp.h"
 #include "../resources/resources.h"
+#include "./euler_angles.hpp"
 
 using namespace std;
 namespace openAITD {
@@ -76,8 +77,8 @@ namespace openAITD {
 		int stageId = -1;
 		int roomId = -1;
 		Vector3 position;
-		Vector3 rotation2 = { 0,0,0 };
-		Vector3i rotOrig;
+		EulerAngles rotation2 = { 0,0,0 };
+		//Vector3i rotOrig;
 	};
 
 	struct GOAnimation
@@ -106,9 +107,9 @@ namespace openAITD {
 	};
 
 	struct GORotateAnim {
-		Vector3 from;
-		Vector3 to;
-		Vector3i toOrig;
+		EulerAngles from;
+		EulerAngles to;
+		//Vector3i toOrig;
 	  float curTime;
 		float timeEnd = 0;
 		// for life scripts
@@ -209,7 +210,6 @@ namespace openAITD {
 
 		BoundsType boundsType = BoundsType::simple;
 
-		GOLocation location;
 		GOAnimation animation;
 		GORotateAnim rotateAnim;
 		GOInvItem invItem;
@@ -231,6 +231,57 @@ namespace openAITD {
 		int lifeId;
 		GOLifeMode lifeMode;	
 		float chrono;
+
+		//to private:
+		GOLocation location;
+
+    void setPosition(const Vector3& newPos) {
+			location.position = newPos;
+			physics.boundsCached = false;
+		}
+
+		Vector3 getPosition() const {
+			return location.position;
+		}
+
+		void setRotation(const EulerAngles& newEuler){
+			location.rotation2 = newEuler.GetNormalized();
+			if (boundsType == BoundsType::rotated) {
+				physics.boundsCached = false;
+			}			
+		}
+
+		Vector3 getRotation() const {
+			return location.rotation2;
+		}
+
+		void setRoom( int roomId ) {
+			location.roomId = roomId;
+		}
+
+		void setStage( int stageId ) {
+  		location.stageId = stageId;
+		}
+
+		int getRoom() const {
+			return location.roomId;
+		}
+
+		int getStage() const {
+			return location.stageId;
+		}
+
+		Vector3i getIntRotation() const {
+			Vector3i result = {
+				round(location.rotation2.x * 512 / PI) + 512,
+				round(location.rotation2.y * 512 / PI) + 512,
+				round(location.rotation2.z * 512 / PI) + 512
+			};
+			if (result.y > 1024) result.y -= 1024;
+			return result;
+		}
+
+//	private:
 	};
 
 }

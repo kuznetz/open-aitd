@@ -117,28 +117,16 @@ namespace openAITD {
 			return res;
 		}
 
-		Vector3 convertAngle(int alpha, int beta, int gamma) {
-			auto roomMatObj = MatrixRotateX(PI);
-			Matrix mx = MatrixRotateX(alpha * 2.f * PI / 1024);
-			Matrix my = MatrixRotateY((beta + 512) * 2.f * PI / 1024);
-			Matrix mz = MatrixRotateZ(gamma * 2.f * PI / 1024);
-			Matrix matRotation = MatrixMultiply(MatrixMultiply(my, mx), mz);
-			matRotation = MatrixTranspose(matRotation);
-			auto q = QuaternionFromMatrix(matRotation);
-			return QuaternionToEuler(QuaternionTransform(q, roomMatObj));
-			//auto rotTo = QuaternionFromAxisAngle({ 0,1,0 }, (toAngle + 512) * 2. * PI / 1024.);
-		}
-
 		float convertAlpha(int alpha) {
-			return (alpha+512) * 2 * PI / 1024.;
+			return alpha * 2 * PI / 1024.;
 		}
 
 		float convertBeta(int beta) {
-			return -beta * 2 * PI / 1024.;
+			return (beta+512) * 2 * PI / 1024.;
 		}
 
 		float convertGamma(int gamma) {
-			return -gamma * 2 * PI / 1024.;
+			return gamma * 2 * PI / 1024.;
 		}
 
 		void initExpressions() {
@@ -262,13 +250,20 @@ namespace openAITD {
 				}, "NUM_TRACK");
 
 			lua->CreateFunction([this](int obj) -> int {
-				return this->world->gobjects[obj].location.rotOrig.x;
+				//return this->world->gobjects[obj].location.rotOrig.x;
+				auto rot = this->world->gobjects[obj].getIntRotation();
+				return rot.x;
 				}, "ALPHA");
 			lua->CreateFunction([this](int obj) -> int {
-				return this->world->gobjects[obj].location.rotOrig.y;
+				//return this->world->gobjects[obj].location.rotOrig.y;
+				auto rot = this->world->gobjects[obj].getIntRotation();
+				cout << "BETA " << obj << " " << rot.y << endl;
+				return rot.y;
 				}, "BETA");
 			lua->CreateFunction([this](int obj) -> int {
-				return this->world->gobjects[obj].location.rotOrig.z;
+				//return this->world->gobjects[obj].location.rotOrig.z;
+				auto rot = this->world->gobjects[obj].getIntRotation();
+				return rot.z;
 				}, "GAMMA");
 			lua->CreateFunction([this](int obj) -> int {
 				return floor(this->world->gobjects[obj].location.position.y * -1000);
@@ -381,7 +376,10 @@ namespace openAITD {
 				world->take(obj);
 				}, "TAKE");
 			lua->CreateFunction([this](int itemObjId, int x, int y, int z, int room, int stage, int alpha, int beta, int gamma) {
-				this->world->put(itemObjId, stage, room, { x / 1000.f, -y / 1000.f, -z / 1000.f }, convertAngle(alpha, beta, gamma));
+				this->world->put(itemObjId, stage, room, 
+					{ x / 1000.f, -y / 1000.f, -z / 1000.f },
+					{ convertAlpha(alpha), convertBeta(beta), convertGamma(gamma) }
+				);
 				}, "PUT");
 			lua->CreateFunction([this](int itemObjId, int targetObjId) {
 				auto& gobj = this->world->gobjects[itemObjId];
@@ -456,15 +454,16 @@ namespace openAITD {
 
 			lua->CreateFunction([this](int obj, int toAngle, int time) {
 				auto& gobj = this->world->gobjects[obj];
-				if (gobj.rotateAnim.timeEnd > 0 && gobj.rotateAnim.toOrig.x == toAngle) return;
+				//if (gobj.rotateAnim.timeEnd > 0 && gobj.rotateAnim.toOrig.x == toAngle) return;
+				if (gobj.rotateAnim.timeEnd > 0) return;
 				gobj.rotateAnim.curTime = 0;
 				gobj.rotateAnim.timeEnd = time / 60.;
 				gobj.rotateAnim.from = gobj.location.rotation2;
 
-				auto& ro = gobj.location.rotOrig;
-				auto& ro2 = gobj.rotateAnim.toOrig;
-				ro2 = ro;
-				ro2.x = toAngle;
+				//auto& ro = gobj.location.rotOrig;
+				//auto& ro2 = gobj.rotateAnim.toOrig;
+				//ro2 = ro;
+				//ro2.x = toAngle;
 
 				gobj.rotateAnim.to = gobj.location.rotation2;
 				gobj.rotateAnim.to.x = convertAlpha(toAngle);
@@ -472,18 +471,32 @@ namespace openAITD {
 
 			lua->CreateFunction([this](int obj, int toAngle, int time) {
 				auto& gobj = this->world->gobjects[obj];
-				if (gobj.rotateAnim.timeEnd > 0 && gobj.rotateAnim.toOrig.y == toAngle) return;
+				EulerAngles toA = gobj.location.rotation2;
+				toA.y = convertBeta(toAngle);
+				toA = toA.GetNormalized();
+
+
+
+				//if (gobj.rotateAnim.timeEnd > 0 && gobj.rotateAnim.toOrig.y == toAngle) return;
+				if ( gobj.rotateAnim.timeEnd > 0 && gobj.rotateAnim.to.IsNearlyEqual(toA) ) return;
 				gobj.rotateAnim.curTime = 0;
 				gobj.rotateAnim.timeEnd = time / 60.;
+
 				gobj.rotateAnim.from = gobj.location.rotation2;
+				gobj.rotateAnim.to = toA;
 
-				auto& ro = gobj.location.rotOrig;
-				auto& ro2 = gobj.rotateAnim.toOrig;
-				ro2 = ro;
-				ro2.y = toAngle;
+				//extr float b = (512+beta) * 2*PI/1024;
+				//(beta+512) * 2 * PI / 1024.;
+				int test = round(toA.y * 512 / PI) + 512;
+				if (test > 1024) test -= 1024;
 
-				gobj.rotateAnim.to = gobj.location.rotation2;
-				gobj.rotateAnim.to.y = convertBeta(toAngle);
+				cout << "SET_BETA " << obj << " " << toAngle << " ->" << test << endl;
+
+				//auto& ro = gobj.location.rotOrig;
+				//auto& ro2 = gobj.rotateAnim.toOrig;
+				//ro2 = ro;
+				//ro2.y = toAngle;
+
   		}, "SET_BETA");
 
 			//Process track

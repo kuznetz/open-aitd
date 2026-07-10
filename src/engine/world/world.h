@@ -161,7 +161,7 @@ namespace openAITD {
 		void delFromInventory(int itemObjId);
 		void take(int gObjId);
 		void drop(int itemObjId, int actorObjId);
-		void put(int objId, int room, int stage, Vector3 pos, Vector3 rot);
+		void put(int objId, int room, int stage, Vector3 pos, EulerAngles rot);
 		
 		Vector3 AbsolutePos(const GameObject& gobj);
 		Vector3 VectorChangeRoom(const Vector3 v, int fromRoomId, int toRoomId);
@@ -195,7 +195,7 @@ namespace openAITD {
 				auto& locJson = objsJson[i]["location"];
 				loc.position = { locJson["position"][0], locJson["position"][1], locJson["position"][2] };
 				loc.rotation2 = { locJson["rotation"][0], locJson["rotation"][1], locJson["rotation"][2] };
-				loc.rotOrig = { locJson["rotOrig"][0], locJson["rotOrig"][1], locJson["rotOrig"][2] };
+				//loc.rotOrig = { locJson["rotOrig"][0], locJson["rotOrig"][1], locJson["rotOrig"][2] };
 				loc.stageId = locJson["stageId"];
 			    loc.roomId = locJson["roomId"];
 			}
@@ -254,7 +254,8 @@ namespace openAITD {
 
 	Vector3 World::AbsolutePos(const GameObject& gobj) {
 		auto& room = curStage->rooms[gobj.location.roomId];
-		return Vector3Add(gobj.location.position, room.position);
+		const auto pos = gobj.getPosition();
+		return Vector3Add(pos, room.position);
 	}
 
 	Vector3 World::VectorChangeRoom(const Vector3 v, int fromRoomId, int toRoomId) {
@@ -361,7 +362,7 @@ namespace openAITD {
 		//action?
 	};
 
-	void World::put(int itemObjId, int stage, int room, Vector3 pos, Vector3 rot)
+	void World::put(int itemObjId, int stage, int room, Vector3 pos, EulerAngles rot)
 	{
 		auto& item = this->gobjects[itemObjId];
 		item.location.stageId = stage;

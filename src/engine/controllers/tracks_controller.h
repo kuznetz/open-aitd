@@ -3,8 +3,10 @@
 #include "../world/world.h"
 #include <iostream>
 
-using namespace std;
 namespace openAITD {
+
+  using namespace std;
+	using namespace raylib;
 
 	class TracksController {
 	public:
@@ -33,36 +35,36 @@ namespace openAITD {
 			}
 		}
 
-		void rotateTo(GameObject& gobj, const Vector3& target, const float timeDelta) {
-				raylib::Vector3 euler = gobj.location.rotation2;   // pitch, yaw, roll
+		void rotateTo(GameObject& gobj, const Vector3& target, const float timeDelta)
+		{
+				EulerAngles euler = gobj.location.rotation2;
+				Matrix mat = MatrixRotateZYX(euler);
 
-				raylib::Vector3 forward = { 0.0f, 0.0f, -1.0f };
-				raylib::Matrix mat = MatrixRotateXYZ(euler);      // повороты вокруг X, затем Y, затем Z
+				Vector3 forward = { 0.0f, 0.0f, 1.0f };
 				forward = Vector3Transform(forward, mat);
-				raylib::Vector2 forward2D = Vector2Normalize({ forward.x, forward.z });
+				Vector2 forward2D = Vector2Normalize({ forward.x, forward.z });
 				gobj.track.debug.forward2D = forward2D;
 
-				auto& pos = gobj.location.position;
-				raylib::Vector2 targetDir = Vector2Normalize({
+				const auto& pos = gobj.location.position;
+				Vector2 targetDir = Vector2Normalize({
 						target.x - pos.x,
 						target.z - pos.z
 				});
 				gobj.track.debug.targetDir = targetDir;
 
-				float angle = Vector2Angle(forward2D, targetDir);
-				const float rotateSpeed = 2.0f * PI;
+				float cross = forward2D.x * targetDir.y - forward2D.y * targetDir.x;
+				float dot   = forward2D.x * targetDir.x + forward2D.y * targetDir.y;
+				float angle = -atan2(cross, dot);
 				gobj.track.debug.angle = angle;
 
-				float rotateSpeedD = rotateSpeed * timeDelta;
-				float newAngle;
-				if (fabs(angle) > rotateSpeedD) {
-						float cw = (angle > 0.0f) ? -1.0f : 1.0f;
-						newAngle = rotateSpeedD * cw;
-				} else {
-						newAngle = -angle;
-				}
+				const float rotateSpeed = 2.0f * PI;
+				float maxStep = rotateSpeed * timeDelta;
 
-				euler.y += newAngle;
+				float step = angle;
+				if (step >  maxStep) step =  maxStep;
+				if (step < -maxStep) step = -maxStep;
+
+				euler.y += step;
 				gobj.location.rotation2 = euler;
 		}
 
@@ -154,12 +156,10 @@ namespace openAITD {
 		}
 
 		void rotateXYZ(GameObject& gobj, TrackItem& trackItm) {
-			Matrix mx = MatrixRotateX(trackItm.rot.x);
-			Matrix my = MatrixRotateY(trackItm.rot.y + PI); // + PI
-			Matrix mz = MatrixRotateZ(trackItm.rot.z);
-			Matrix matRotation = MatrixMultiply(MatrixMultiply(my, mx), mz);
-			matRotation = MatrixTranspose(matRotation);
-			gobj.location.rotation2 = QuaternionToEuler(QuaternionInvert(QuaternionFromMatrix(matRotation)));
+			auto& r = gobj.location.rotation2;
+      r.x = trackItm.rot.x;
+			r.y = trackItm.rot.y + PI;
+			r.z = trackItm.rot.z;
 		}
 
 		void processObjTrack( GameObject& gobj, const float timeDelta ) {
@@ -240,12 +240,7 @@ namespace openAITD {
 			auto& gobj2 = world->gobjects[gobj.track.id];
 			if (gobj.location.stageId != gobj2.location.stageId) return;
 			auto pos2 = world->VectorChangeRoom(gobj2.location.position, gobj2.location.roomId, gobj.location.roomId);
-			//Vector3 v1 = Vector3RotateByQuaternion({0,0,1}, gobj.location.rotation);
 			Vector3 v2 = Vector3Subtract(pos2, gobj.location.position);
-			//auto qDiff = QuaternionFromVector3ToVector3(v1, v2);
-			//gobj.location.rotation = QuaternionMultiply(gobj.location.rotation, qDiff);
-			//auto qDiff = QuaternionFromVector3ToVector3({0,0,1}, v2);
-			//gobj.location.rotation = qDiff;
 
 			rotateTo(gobj, pos2, timeDelta);
 		}

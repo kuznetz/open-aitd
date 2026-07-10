@@ -106,6 +106,7 @@ namespace openAITD {
 
     template<typename... Args> std::string BuildString(Args&&... args) {
         std::ostringstream ss;
+        ss << std::fixed << std::setprecision(3); 
         (ss << ... << std::forward<Args>(args));
         return ss.str();
     }
@@ -213,9 +214,6 @@ namespace openAITD {
 
         auto& loc = gobj.location;
         lines[2] = BuildString("Stage:", loc.stageId, " Room:", loc.roomId);
-        lines[3] = BuildString("X:", loc.position.x, 
-                              " Y:", loc.position.y, 
-                              " Z:", loc.position.z);
         
         string animInfo = BuildString(
           "Model: ", gobj.modelId, 
@@ -226,6 +224,13 @@ namespace openAITD {
         lines[3] = animInfo;
         
         lines[4] = BuildString("Life: ", (int)gobj.lifeMode, " ", gobj.lifeId);
+
+        lines[5] = BuildString("Pos X:", loc.position.x, 
+                              " Y:", loc.position.y, 
+                              " Z:", loc.position.z);
+        lines[6] = BuildString("Rot: X:", loc.rotation2.x / PI * 180, 
+                              " Y:", loc.rotation2.y / PI * 180, 
+                              " Z:", loc.rotation2.z / PI * 180);        
 
       } catch (exception e) {
         lines[0] = "Invalid object ID";

@@ -75,11 +75,11 @@ namespace openAITD {
                 outObj["location"]["rotation2"].push_back(r.x);
                 outObj["location"]["rotation2"].push_back(r.y);
                 outObj["location"]["rotation2"].push_back(r.z);
-                auto& r2 = gobj.location.rotOrig;
-                outObj["location"]["rotOrig"] = json::array();
-                outObj["location"]["rotOrig"].push_back(r2.x);
-                outObj["location"]["rotOrig"].push_back(r2.y);
-                outObj["location"]["rotOrig"].push_back(r2.z);
+                // auto& r2 = gobj.location.rotOrig;
+                // outObj["location"]["rotOrig"] = json::array();
+                // outObj["location"]["rotOrig"].push_back(r2.x);
+                // outObj["location"]["rotOrig"].push_back(r2.y);
+                // outObj["location"]["rotOrig"].push_back(r2.z);
 
                 outObj["animation"] = json::object();
                 outObj["animation"]["id"] = gobj.animation.id;
@@ -142,8 +142,8 @@ namespace openAITD {
                     gobj.location.position = json2vector(inObj["location"]["position"]);
                     auto& r = inObj["location"]["rotation2"];
                     gobj.location.rotation2 = { r[0], r[1], r[2] };
-                    auto& r2 = inObj["location"]["rotOrig"];
-                    gobj.location.rotOrig = { r2[0], r2[1], r2[2] };
+                    // auto& r2 = inObj["location"]["rotOrig"];
+                    // gobj.location.rotOrig = { r2[0], r2[1], r2[2] };
 
                     gobj.animation.id = inObj["animation"]["id"];
                     gobj.animation.nextId = inObj["animation"]["nextId"];

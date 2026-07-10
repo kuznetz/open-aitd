@@ -153,7 +153,9 @@ namespace openAITD {
 
 			DrawCube(pos, 0.1, 0.1, 0.1, RED);
 
-			string debugStr = this->resources->nameDecoders.obj.getName(gobj.id);
+			string debugStr = 
+			  this->resources->nameDecoders.obj.getName(gobj.id) +
+				" ("+to_string(gobj.id)+")";
   		renderDebugText3D(Vector3Add(roomPos, pos), debugStr, RED);
 
 			if (gobj.physics.boundsCached) {
