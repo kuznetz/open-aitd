@@ -78,7 +78,6 @@ namespace openAITD {
 		GameObject* takedObj = 0;
 		GameObject* curInvGObject = 0;
 		GameObject* inHandObj = 0;
-		GameObject* objToPlace = 0;
 		int curInvAction = 0;
 
 		World(Resources* res) {
@@ -137,8 +136,7 @@ namespace openAITD {
 
 			if (gobj.boundsType == BoundsType::cube) {
 				objB = objB.getCubeBounds();
-			}
-			if (gobj.boundsType == BoundsType::rotated) {
+			} else if (gobj.boundsType == BoundsType::rotated) {
 				objB = objB.getRotatedBounds(gobj.location.rotation2);
 			}
 			Vector3& p = gobj.location.position;

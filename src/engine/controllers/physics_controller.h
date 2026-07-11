@@ -322,16 +322,6 @@ namespace openAITD {
 		void process(float timeDelta) {
 			auto& curStage = resources->stages[world->curStageId];
 
-			if (world->objToPlace) {
-				GameObject& objToPlace = *world->objToPlace;
-				if (objToPlace.location.stageId == world->curStageId) {
-					if (objToPlace.bitField.fallable) {
-						placeOnGround(objToPlace);
-					}
-					world->objToPlace = nullptr;
-				}
-			}
-
 			for (int i = 0; i < world->gobjects.size(); i++) {
 				auto& gobj = world->gobjects[i];
 				if (gobj.location.stageId != world->curStageId) continue;
@@ -344,7 +334,14 @@ namespace openAITD {
 				auto& gobj = world->gobjects[i];
 				if (gobj.location.stageId != world->curStageId) continue;
 				if (gobj.modelId == -1) continue;
-				if (!world->isObjectActive(gobj)) continue;		
+				if (!world->isObjectActive(gobj)) continue;
+
+				if (gobj.location.changingStage) {
+					if (gobj.bitField.fallable) {
+						placeOnGround(gobj);
+					}
+					gobj.location.changingStage = false;
+				}
 
 				auto* curRoom = &curStage.rooms[gobj.location.roomId];
   			auto& moveVec = gobj.physics.moveVec;

@@ -1,4 +1,4 @@
--- L_PLAYER_NORMAL
+-- L_PLAYER_NORMAL - climb fix
 function life_549(obj)
   if (GET(Vars.PLAYER_HITPOINTS) > 0) then
     if (SPACE() == 0) then
@@ -233,6 +233,36 @@ function life_509(obj)
     end
   end
 end
+
+-- L_CTHONIAN_INITIATOR - fix collision
+function life_458(obj)
+  sw_1 = GET(Vars.CTHONIAN_STATE)
+  if sw_1 == 1 then
+    SET_TRACKMODE(obj, 3, 19)
+    SET_ANIM_REPEAT(obj, 194)
+    SET_LIFE(obj, Life.CTHONIAN_IF_YOU_CAME_FROM_E4)
+    TEST_COL(obj, 0)
+    SET(Vars.CTHONIAN_STATE, 3)
+  elseif sw_1 == 2 then
+    SET_ANIM_REPEAT(obj, 193)
+    SET_LIFE(obj, Life.CTHONIAN_BEFORE_STARTING_TO_MOVE_IF_YOU_CAME_FROM_E5R1)
+	TEST_COL(obj, 0) -- fix
+    SET(Vars.CTHONIAN_STATE, 3)
+  end
+end
+
+-- L_CTHONIAN_BEFORE_STARTING_TO_MOVE_IF_YOU_CAME_FROM_E5R1
+function life_460(obj)
+  if (ROOM(GObj.PLAYER) == 4) then
+    DEF_ZV(obj, -950, 950, -1500, 0, -500, 3500) -- fix
+	TEST_COL(obj, 1) -- fix
+    SET_TRACKMODE(obj, 3, 20)
+    SET_ANIM_REPEAT(obj, 194)
+    SET_LIFE(obj, Life.CTHONIAN_AFTER_STARTING_TO_MOVE_IF_YOU_CAME_FROM_E5R1)
+	SET_LIFE_MODE(obj, 0) -- fix
+  end
+end
+
 
 function END_SEQUENCE()
   LOG("END_SEQUENCE");

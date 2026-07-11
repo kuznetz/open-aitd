@@ -340,7 +340,7 @@ namespace openAITD {
 				gobj.location.position.x = x / 1000.;
 				gobj.location.position.y = (-y / 1000.) + 0.001;
 				gobj.location.position.z = -z / 1000.;
-				world->objToPlace = &gobj;
+				gobj.location.changingStage = true;
 			}, "CHANGE_ROOM");
 
 			//INVENTORY

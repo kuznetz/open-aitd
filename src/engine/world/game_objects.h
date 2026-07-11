@@ -74,6 +74,7 @@ namespace openAITD {
 
 	struct GOLocation
 	{
+		bool changingStage = false;
 		int stageId = -1;
 		int roomId = -1;
 		Vector3 position;
