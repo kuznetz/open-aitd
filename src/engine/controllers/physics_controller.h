@@ -83,7 +83,7 @@ namespace openAITD {
 							if (gobj.throwing.active) {
     					  throwContr->throwStop(gobj);
 								this->throwDamage(gobjStat, gobj);
-								this->placeOnGround(gobj);
+								this->placeOnSurface(gobj);
 								gobjStat.physics.collidedBy = gobj.id;
 							}
 						}
@@ -96,7 +96,7 @@ namespace openAITD {
 			if (collided) {
 				if (gobj.throwing.active) {
 					throwContr->throwStop(gobj);
-					this->placeOnGround(gobj);
+					this->placeOnSurface(gobj);
 				}
 			}
 			if (gobj.physics.collidable) {
@@ -160,7 +160,7 @@ namespace openAITD {
 				if (c2) {
 					if (gobj.throwing.active) {
 						throwContr->throwStop(gobj);
-						this->placeOnGround(gobj);
+						this->placeOnSurface(gobj);
 						throwDamage(gobj2, gobj);
 					}
 					if (gobj.physics.hitObjectDamage) {
@@ -212,7 +212,7 @@ namespace openAITD {
 					}
 					if (gobj.throwing.active) {
 						throwContr->throwStop(gobj);
-						this->placeOnGround(gobj);
+						this->placeOnSurface(gobj);
 						throwDamage(gobj2, gobj);
 					}
 					if (gobj.physics.hitObjectDamage) {
@@ -281,45 +281,58 @@ namespace openAITD {
 			}
 		}
 
-		void placeOnGround(GameObject& gobj) {
-			  if (gobj.location.stageId != world->curStageId) {
-					throw std::runtime_error("Object is not in the current stage");
+		// Helper: finds the highest surface (max Y) of any static collider that
+		// horizontally overlaps the object in XZ plane.
+		// Returns -1.0f if no supporting collider is found.
+		static float findGroundHeight(const GameObject& gobj, const World* world) {
+				if (gobj.location.stageId != world->curStageId) {
+						throw std::runtime_error("Object is not in the current stage");
 				}
 				auto& room = world->curStage->rooms[gobj.location.roomId];
+				const auto& objPos = gobj.location.position;
 
-				// Get current bounds of the object
-				//Bounds objB = world->getObjectBounds(gobj);
-				//Bounds objBS = objB.getExpanded(-0.002f);
-				auto& objPos = gobj.location.position;
-
-				// Variable to store the top Y of the highest collider 
-				//that overlaps horizontally with the object (XZ)
-				float groundY;
+				float groundY = 0.0f;
 				bool hasColliderUnder = false;
 
-				// Check all static colliders in the room
 				for (const auto& collider : room.colliders) {
-						Bounds colB = collider.bounds;//.getExpanded(-0.001f);
-						// Check overlap of projections on X and Z (horizontal overlap)
+						const Bounds& colB = collider.bounds;
 						bool overlapX = (objPos.x < colB.max.x && objPos.x > colB.min.x);
 						bool overlapZ = (objPos.z < colB.max.z && objPos.z > colB.min.z);
 						if (overlapX && overlapZ) {
-								// Horizontal overlap → this collider can serve as a support
-								if (!hasColliderUnder || objPos.y+0.001f > groundY) {
+								if (!hasColliderUnder || objPos.y + 0.001f > groundY) {
 										groundY = colB.max.y;
 										hasColliderUnder = true;
 								}
 						}
 				}
 
-				if (hasColliderUnder) {
-						// Found the highest surface under the object (or overlapping it in XZ)
-						// Target Y position: bottom face of object should be slightly above this surface
-						// small gap to avoid z-fighting
-						gobj.location.position.y = groundY + 0.001f; 
+				return hasColliderUnder ? groundY : -1.0f;   // -1 means no support
+		}
+
+    // Lift a stuck object.
+		void raiseStuckObject(GameObject& gobj) {
+				float groundY = findGroundHeight(gobj, world);
+				if (groundY < 0.0f) {
+						// No surface below – do nothing (or leave as is)
+						return;
+				}
+				if (gobj.location.position.y < groundY) {
+						gobj.location.position.y = groundY + 0.001f;
 						gobj.physics.boundsCached = false;
-				} else {
+				}
+		}
+
+		// If the object is above the found surface, drop it down onto that surface.
+		// If no surface exists, reset Y to 0
+		void placeOnSurface(GameObject& gobj) {
+				float groundY = findGroundHeight(gobj, world);
+				if (groundY < 0.0f) {
 						gobj.location.position.y = 0.0f;
+						gobj.physics.boundsCached = false;
+						return;
+				}
+				if (gobj.location.position.y > groundY) {
+						gobj.location.position.y = groundY + 0.001f;
 						gobj.physics.boundsCached = false;
 				}
 		}
@@ -383,11 +396,11 @@ namespace openAITD {
 				auto& gobj = world->gobjects[i];
 				if (gobj.location.stageId != world->curStageId) continue;
 				if (gobj.modelId == -1) continue;
-				if (!world->isObjectActive(gobj)) continue;
+				if (!world->isObjectActive(gobj) && !gobj.throwing.active) continue;
 
 				if (gobj.location.changingStage) {
 					if (gobj.bitField.fallable) {
-						placeOnGround(gobj);
+						raiseStuckObject(gobj);
 					}
 					gobj.location.changingStage = false;
 				}
