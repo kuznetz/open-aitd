@@ -38,6 +38,8 @@ namespace AITDExtractor {
             objJson["id"] = i; //obj.id
             objJson["name"] = nameDec.obj.getName(i);
 
+            bool hasAngle = obj.alpha || obj.beta || obj.gamma;
+
             if (obj.boundsType == 4) {
                 //static object
                 objJson["static"] = json::object();
@@ -49,7 +51,7 @@ namespace AITDExtractor {
                 if (obj.body != -1) throw new exception("Static has body");
                 if (obj.inventoryBody != -1) throw new exception("Static has inventoryBody");
             }
-            else if (obj.stageId != -1) {
+            else if (obj.stageId != -1 || hasAngle) {
                 //location                       
                 objJson["location"] = json::object();
                 auto& loc = objJson["location"];
@@ -65,13 +67,13 @@ namespace AITDExtractor {
                 position.push_back(v.z);
                 loc["position"] = position;
 
-                Vector3 q = convertRotate(
+                Vector3 rot = convertRotate(
                     obj.alpha, obj.beta, obj.gamma
                 );
                 json rotation = json::array();
-                rotation.push_back(q.x);
-                rotation.push_back(q.y);
-                rotation.push_back(q.z);
+                rotation.push_back(rot.x);
+                rotation.push_back(rot.y);
+                rotation.push_back(rot.z);
                 loc["rotation"] = rotation;
 
                 json rotationOrig = json::array();

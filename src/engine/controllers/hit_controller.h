@@ -15,7 +15,7 @@ namespace openAITD {
 
     class HitController {
     public:
-        static const int AnimActionsCount = 50;
+        static const int AnimActionsCount = 10;
         World* world;
         Resources* resources;
         HitAction actions[AnimActionsCount];
@@ -62,11 +62,9 @@ namespace openAITD {
             //Vector3 v = Vector3Negate(mdl->model.curPose[gobj.hit.boneIdx].translation);
             Vector3 v = mdl->model.curPose[gobj.hit.boneIdx].translation;
             const auto& rot = gobj.location.rotation2;
-            auto q = QuaternionFromEuler(rot.x, rot.y,rot.z);
-            v = Vector3RotateByQuaternion(v, q);
+            auto m = MatrixRotateZYX(rot);
+            v = Vector3Transform(v, m);
             v = Vector3Add(v, gobj.location.position);
-            //v.y = -v.y;
-            //v = Vector3Add(v, roomPos);
             auto& r = gobj.hit.range;
 
             gobj.hit.bounds = { { v.x - r, v.y - r, v.z - r }, { v.x + r, v.y + r, v.z + r } };
@@ -83,6 +81,11 @@ namespace openAITD {
             for (int i = 0; i < AnimActionsCount; i++) {
                 HitAction* act = &actions[i];
                 if (act->gobj == 0) continue;
+
+                if (act->gobj->location.stageId != world->curStageId) {
+                    act->gobj->hit.active = false;
+                    break;
+                }                
 
                 if (act->gobj->animation.id != act->animId) {
                     act->gobj->hit.active = false;
@@ -109,10 +112,6 @@ namespace openAITD {
                     if (gobj.location.stageId != world->curStageId) continue;
                     if (gobj.modelId == -1) continue;
                     if (gobj.id == act->gobj->id) continue;
-                    if (act->gobj->location.stageId != world->curStageId) {
-                        act->gobj->hit.active = false;
-                        break;
-                    }
 
                     auto& objB = world->BoundsChangeRoom(world->getObjectBounds(gobj), gobj.location.roomId, act->gobj->location.roomId);
                     if (!act->gobj->hit.bounds.CollToBox(objB)) continue;
@@ -120,8 +119,12 @@ namespace openAITD {
                     gobj.damage.hitBy = act->gobj;
                     gobj.damage.damage = act->gobj->hit.hitDamage;
                     act->gobj->hit.hitTo = &gobj;
-                    act->gobj->hit.active = false;
-                    break;
+
+                    if (gobj.bitField.animated) {
+                        printf("HIT BREAK");
+                        act->gobj->hit.active = false;
+                        break;
+                    }
                 }
                 
             }

@@ -35,7 +35,7 @@ namespace openAITD {
 			}
 		}
 
-		void rotateTo(GameObject& gobj, const Vector3& target, const float timeDelta, const float rotateSpeed = 0.4f * PI)
+		void rotateTo(GameObject& gobj, const Vector3& target, const float timeDelta, const float rotateSpeed = 0.5f * PI)
 		{
 				EulerAngles euler = gobj.location.rotation2;
 				// Normalize current yaw to [-PI, PI]
@@ -82,8 +82,10 @@ namespace openAITD {
 			targetPos = { trackItm.pos.x, gobj.location.position.y, trackItm.pos.z };
 			if (trackItm.room != gobj.location.roomId)
 			{
-				targetPos.x += world->curStage->rooms[trackItm.room].position.x - world->curStage->rooms[gobj.location.roomId].position.x;
-				targetPos.z += world->curStage->rooms[trackItm.room].position.z - world->curStage->rooms[gobj.location.roomId].position.z;
+				const auto& objRoomPos = world->curStage->rooms[gobj.location.roomId].position;
+				const auto& trackItmRoomPos = world->curStage->rooms[trackItm.room].position;
+				targetPos.x += trackItmRoomPos.x - objRoomPos.x;
+				targetPos.z += trackItmRoomPos.z - objRoomPos.z;
 			}
 			//targetPos.z = -targetPos.z;
 			gobj.track.targetPos = targetPos;			

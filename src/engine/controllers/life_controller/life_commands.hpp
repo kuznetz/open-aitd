@@ -523,7 +523,7 @@ namespace openAITD {
 				}, "DO_ROT_ZV");
 			//recalc bounds?
 			lua->CreateFunction([this]() {
-				//TODO: DEF_ZV
+				//TODO: DEF_ZV - override object bounds
 				}, "DEF_ZV");
 			lua->CreateFunction([this]() {
 				//TODO: DO_MAX_ZV
