@@ -173,6 +173,55 @@ namespace openAITD {
 			}			
 		}
 
+		void processSCollidersNoColl(GameObject& gobj, Room& room) {
+			Bounds& objB = world->getObjectBounds(gobj);
+			gobj.physics.staticColl = -1;
+			for (int i = 0; i < room.colliders.size(); i++) {
+				Bounds& colB = room.colliders[i].bounds;
+				if (objB.CollToBox(colB)) {
+  				gobj.physics.staticColl = 1;
+					break;
+				}
+			}
+		}
+
+		void processDCollidersNoColl(GameObject& gobj, Room& room) {
+			Bounds& objB = world->getObjectBounds(gobj);
+			for (int i = 0; i < world->gobjects.size(); i++) {
+				auto& gobj2 = world->gobjects[i];
+				if (&gobj == &gobj2) continue;
+				if (!gobj2.physics.collidable) continue;
+				if (gobj2.modelId == -1) continue;
+				if (gobj2.location.stageId != gobj.location.stageId) continue;
+				if (gobj.throwing.active && gobj.throwing.throwedBy == &gobj2) continue;
+
+				Bounds objB2 = world->getObjectBounds(gobj2);
+				if (gobj2.location.roomId != gobj.location.roomId) {
+					if (resources->isRoomsConnected(*world->curStage, gobj.location.roomId, gobj2.location.roomId)) {
+						objB2 = world->BoundsChangeRoom(objB2, gobj2.location.roomId, gobj.location.roomId);
+					}
+					else {
+						continue;
+					}
+				}
+
+				if (objB.CollToBox(objB2)) {
+					gobj.physics.objectColl = gobj2.id;
+					if (gobj2.physics.collidedBy == -1) {
+						gobj2.physics.collidedBy = gobj.id;
+					}
+					if (gobj.throwing.active) {
+						throwContr->throwStop(gobj);
+						this->placeOnGround(gobj);
+						throwDamage(gobj2, gobj);
+					}
+					if (gobj.physics.hitObjectDamage) {
+						hitObjDamage(gobj2, gobj);
+					}
+				}
+			}	
+		}
+
 		void pushObject(GameObject& gobj, Room& room, Vector3& v) {
 			gobj.physics.moveVec = v;
 			gobj.physics.moving = true;
@@ -367,6 +416,9 @@ namespace openAITD {
 					if (gobj.physics.collidable) {
 						processStaticColliders(gobj, *curRoom);
 						processDynamicColliders(gobj, *curRoom);
+					} else {
+						processSCollidersNoColl(gobj, *curRoom);
+						processDCollidersNoColl(gobj, *curRoom);
 					}
 					gobj.physics.boundsCached = false;
 					gobj.location.position = Vector3Add(gobj.location.position, moveVec);
