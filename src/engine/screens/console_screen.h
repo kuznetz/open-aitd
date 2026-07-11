@@ -182,6 +182,12 @@ namespace openAITD {
     }
 
     void SetValue(const vector<string>& tokens) {
+      if (tokens.size() == 2) {
+        int varId = std::stoi(tokens.at(1));
+        auto varName = resources->nameDecoders.var.getName(varId);
+        lines[0] = BuildString(varName, " =  ", world->vars[varId]);
+        return;
+      }
       if (tokens.size() != 3) {
         lines[0] = "Invalid arguments";
         ShowHelp();

@@ -140,6 +140,8 @@ namespace openAITD {
 		int objectColl = -1;
 		int zoneTriggered = -1;
 		int hitObjectDamage = 0;
+		bool boundsOverload = false;
+		Bounds overloadBounds;
 	};
 
 	enum class GOLifeMode {

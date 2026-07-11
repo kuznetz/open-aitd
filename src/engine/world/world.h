@@ -133,8 +133,7 @@ namespace openAITD {
 				return gobj.physics.bounds;
 			}
 			auto& m = *resources->models.getModel(gobj.modelId);
-			Bounds objB = m.bounds;
-			objB.correctBounds();
+			Bounds objB = (gobj.physics.boundsOverload) ? gobj.physics.overloadBounds : m.bounds;
 
 			if (gobj.boundsType == BoundsType::cube) {
 				objB = objB.getCubeBounds();

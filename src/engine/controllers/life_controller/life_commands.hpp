@@ -522,8 +522,17 @@ namespace openAITD {
 				//Not needed
 				}, "DO_ROT_ZV");
 			//recalc bounds?
-			lua->CreateFunction([this]() {
-				//TODO: DEF_ZV - override object bounds
+			lua->CreateFunction([this](int objId, int x1, int x2, int y1, int y2, int z1, int z2) {
+				//overload object bounds
+				auto& obj = this->world->gobjects[objId];
+				Bounds& b = obj.physics.overloadBounds;
+				b = {
+					{ x1 / 1000.f, -y1 / 1000.f, -z1 / 1000.f },
+					{ x2 / 1000.f, -y2 / 1000.f, -z2 / 1000.f },
+				};
+				b.correctBounds();
+				obj.physics.boundsOverload = true;
+				obj.physics.boundsCached = false;
 				}, "DEF_ZV");
 			lua->CreateFunction([this]() {
 				//TODO: DO_MAX_ZV

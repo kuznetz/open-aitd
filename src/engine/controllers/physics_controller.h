@@ -353,7 +353,7 @@ namespace openAITD {
 				if (gobj.throwing.active) {
 					moveVec0.z += -3 * timeDelta;
 				}
-				if (gobj.bitField.animated) {
+				if (gobj.bitField.animated || gobj.throwing.active) {
 					moveVec0 = Vector3Add(
 						moveVec0,
 						Vector3Subtract(gobj.animation.moveRoot, gobj.animation.prevMoveRoot)
