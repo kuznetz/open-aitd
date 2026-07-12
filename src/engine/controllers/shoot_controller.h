@@ -66,13 +66,11 @@ namespace openAITD {
             for (int i = 0; i < ShootActionsCount; i++) {
                 ShootAction* act = &actions[i];
                 if (act->gobj == nullptr) continue;
-
                 // Remove action if object is on a different stage
                 if (act->gobj->location.stageId != world->curStageId) {
                     act->gobj = nullptr;
                     continue;
                 }
-
                 // Remove action if the animation changed
                 if (act->gobj->animation.id != act->animId) {
                     act->gobj = nullptr;
