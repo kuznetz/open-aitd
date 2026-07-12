@@ -183,7 +183,8 @@ namespace openAITD {
 
                 auto foll = world->followTarget;
                 world->setCurStage(foll->location.stageId, foll->location.roomId);
-                //followCameraProcess
+                
+                world->resources->backgrounds.setIsAltBackgrounds(!!world->cVars[12]);
 
             } catch(exception e) {
                 string message = "Error loading : " + path;

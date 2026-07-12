@@ -283,11 +283,16 @@ namespace openAITD {
 		void initInstructions() {
 			lua->CreateFunction([this](int i, int val) {
 				world->cVars[i] = val;
-				}, "SET_C");
+				if (i == 12) {
+          world->resources->backgrounds.setIsAltBackgrounds(!!world->cVars[12]);
+			  }
+			}, "SET_C");
+			
 			lua->CreateFunction([this](int messId) {
 				this->world->messageText = resources->texts[messId];
 				this->world->messageTime = 5;
-				}, "MESSAGE");
+			}, "MESSAGE");
+
 			lua->CreateFunction([this](int obj, int a1, int a2, int a3, int a4, int a5, int a6, int a7) {
 				auto& a = this->world->player.animations;
 				a.idle = a1;
@@ -297,7 +302,7 @@ namespace openAITD {
 				a.walkBackw = a5;
 				a.turnCW = a6;
 				a.turnCCW = a7;
-				}, "SET_ANIM_MOVE");
+			}, "SET_ANIM_MOVE");
 
 			//Basic
 			lua->CreateFunction([this](int obj, int modelId) {

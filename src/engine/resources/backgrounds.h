@@ -8,6 +8,10 @@
 #include "stages.h"
 #include "data_path.h"
 
+#define NLOHMANN_JSON_NAMESPACE_NO_VERSION 1
+#include <nlohmann/json.hpp>
+using namespace nlohmann;
+
 using namespace std;
 using namespace raylib;
 namespace openAITD {
@@ -24,6 +28,12 @@ namespace openAITD {
 		vector<vector<BackgroundOverlay>> overlays;
 	};
 
+	struct AltBackground {
+		int stageId;
+		int cameraId;
+		int imageId;
+	};
+
 	struct IntRect {
 		int x;
 		int y;
@@ -37,10 +47,14 @@ namespace openAITD {
 		Config* config = 0;
 		vector<Stage>* stages = 0;
 		vector<Background> items;
+		vector<AltBackground> altBackgrounds;
 
 		int curPictureId = -1;
+		bool isAltBackgrounds = false;
+
 		string picturesDir = "data/pictures";
 		string newPicturesDir = "newdata/pictures";
+		string altBackgroundsDir = "alt_bg";
 		raylib::Texture2D picture = { 0 };
 
 		Backgrounds() {
@@ -90,22 +104,64 @@ namespace openAITD {
 			return path;
 		}
 
+		void loadAltBackgrounds() {
+			const string path = "newdata/alt_bg.json";
+			if (!std::filesystem::exists(path)) return;
+			std::ifstream ifs(path);
+			auto objsJson = json::parse(ifs);
+			altBackgrounds.resize(objsJson.size());
+			for (int i = 0; i < objsJson.size(); i++) {
+				altBackgrounds[i].cameraId = objsJson[i]["cameraId"];
+				altBackgrounds[i].stageId = objsJson[i]["stageId"];				
+				altBackgrounds[i].imageId = objsJson[i]["imageId"];
+			}
+		}
+
 		void loadStage(int newStageId)
 		{
 			if (newStageId == curStageId) return;
 			clear();
 			auto curStage = &(*this->stages)[newStageId];
 			for (int camId = 0; camId < curStage->cameras.size(); camId++) {
-				auto cameraDir = to_string(newStageId) + "/camera_" + to_string(camId);
-				auto path = getImgStagePath(cameraDir + "/background.png");
-
 				auto& bg = items.emplace_back();
+				loadBackground(bg, curStage, newStageId, camId);
+			}
+			curStageId = newStageId;
+		}
+
+		void setIsAltBackgrounds(bool newVal) {
+			if (isAltBackgrounds == newVal || curStageId == -1) return;
+			auto curStage = &(*this->stages)[curStageId];
+			for (int camId = 0; camId < curStage->cameras.size(); camId++) {
+				AltBackground* altBg = getAltBg(curStageId, camId);
+				if (altBg) {
+					UnloadTexture(items[camId].texture);
+					for (int j = 0; j < items[camId].overlays.size(); j++) {
+						for (int k = 0; k < items[camId].overlays[j].size(); k++) {
+							UnloadTexture(items[camId].overlays[j][k].texture);
+						}
+					}					
+					loadBackground(items[camId], curStage, curStageId, camId);
+				}
+			}			
+		}
+
+		void loadBackground(Background& bg, Stage* curStage, int newStageId, int cameraId) {
+			  AltBackground* altBg = getAltBg(newStageId, cameraId);
+				string cameraDir = to_string(newStageId) + "/camera_" + to_string(cameraId);
+				string path;
+				if (altBg) {
+					path = DataPath::GetFile(altBackgroundsDir + "/" + to_string(altBg->imageId) + ".png");
+				} else {
+					path = getImgStagePath(cameraDir + "/background.png");
+				}
+
 				auto bgImg = raylib::LoadImage(path.c_str());
 				auto& fullBgImg = resizeImg(bgImg, config->screenW, config->screenH);
 				UnloadImage(bgImg);
 				bg.texture = LoadTextureFromImage(fullBgImg);
 
-				auto& camRooms = curStage->cameras[camId].rooms;
+				auto& camRooms = curStage->cameras[cameraId].rooms;
 				bg.overlays.resize(camRooms.size());
 				for (int cr = 0; cr < camRooms.size(); cr++) {
 					bg.overlays[cr].resize(camRooms[cr].overlays.size());
@@ -118,8 +174,6 @@ namespace openAITD {
 				}
 
 				UnloadImage(fullBgImg);
-			}
-			curStageId = newStageId;
 		}
 
 		Background* get(int stageId, int roomId) {
@@ -129,6 +183,19 @@ namespace openAITD {
 
 	private:
 		int curStageId  = -1;
+
+		AltBackground* getAltBg(int newStageId, int cameraId) {
+			  AltBackground* altBg = nullptr;
+				if (isAltBackgrounds) {
+					for (auto i : altBackgrounds) {
+						if ( i.stageId == newStageId && i.cameraId == cameraId ) {
+							altBg = &i;
+							break;
+						}
+					}
+				}
+				return altBg;
+		}
 
 		Image resizeImg(Image& src, int w, int h) {
 			Image res = { 0, w, h, 1, src.format };
@@ -179,8 +246,6 @@ namespace openAITD {
 						((uint8_t*)maskImageScaled.data)[oriIdx * 2 + 1];
 				}
 			}
-
-			
 
 			Texture2D result = LoadTextureFromImage(resImg);
 			UnloadImage(maskImageScaled);

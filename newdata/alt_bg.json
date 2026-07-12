@@ -1,0 +1,27 @@
+[
+	{
+	  "stageId": 7,
+	  "cameraId": 0,
+	  "imageId": 15
+	},
+	{
+	  "stageId": 7,
+	  "cameraId": 1,
+	  "imageId": 16
+	},
+	{
+	  "stageId": 6,
+	  "cameraId": 0,
+	  "imageId": 17
+	},
+	{
+	  "stageId": 6,
+	  "cameraId": 5,
+	  "imageId": 18
+	},
+	{
+	  "stageId": 6,
+	  "cameraId": 8,
+	  "imageId": 19
+	}
+]

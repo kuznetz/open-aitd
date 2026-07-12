@@ -31,6 +31,7 @@ namespace openAITD {
 
 		Resources() {
 			nameDecoders.load();
+			backgrounds.loadAltBackgrounds();
 			models.config = &config;
 			backgrounds.config = &config;
 			backgrounds.stages = &stages;

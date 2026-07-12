@@ -208,7 +208,7 @@ enum parseArgVarType {
 	varObject,
 	varModel,
 	varLifeScript,
-	varAnimation,
+	varAnimation
 };
 
 struct parseArg {

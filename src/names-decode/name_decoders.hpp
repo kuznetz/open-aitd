@@ -11,6 +11,7 @@ namespace openAITD {
         NameCollection life = NameCollection("L_");
         NameCollection model = NameCollection("M_");
         NameCollection obj = NameCollection("O_");
+        NameCollection cVar = NameCollection("C_");
 
         NameDecoders() {          
         }
@@ -20,6 +21,7 @@ namespace openAITD {
             life.load("newdata/names/lifes.json");
             model.load("newdata/names/models.json");
             obj.load("newdata/names/objects.json");
+            cVar.load("newdata/names/cvars.json");
         }
     };
 

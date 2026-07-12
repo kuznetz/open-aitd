@@ -114,8 +114,11 @@ namespace AITDExtractor {
 				  string varName = "Vars." + namesDecoders->var.getName(expr.arguments[0].constVal);
 					out << "GET(" << varName << ")";
 					return;
+			} else if (expr.type->type == EvalEnum::GET_C) {
+				  string varName = "CVars." + namesDecoders->cVar.getName(expr.arguments[0].constVal);
+					out << "GET_C(" << varName << ")";
+					return;
 			}
-
 			out << expr.type->typeStr;
 			out << "(";
 
@@ -165,6 +168,12 @@ namespace AITDExtractor {
 			} else if (instr.type->type == LifeEnum::SET) {
 				  string varName = "Vars." + namesDecoders->var.getName(instr.arguments[0].constVal);
 					out << "SET(" << varName << ", ";
+					writeLifeExpr(instr.arguments[1]);
+					out << ")\n";
+					return;
+			} else if (instr.type->type == LifeEnum::SET_C) {
+				  string varName = "CVars." + namesDecoders->cVar.getName(instr.arguments[0].constVal);
+					out << "SET_C(" << varName << ", ";
 					writeLifeExpr(instr.arguments[1]);
 					out << ")\n";
 					return;
@@ -254,6 +263,12 @@ namespace AITDExtractor {
 			for (int i = 0; i < scriptCount; ++i) {
 					out << "Life." << namesDecoders->life.getName(i) << " = " << i << "\n";
 			}
+
+			out << "\n-- Engine Variables\n";
+			out << "CVars = {}\n";
+			for (int i = 0; i < 16; ++i) {
+					out << "CVars." << namesDecoders->cVar.getName(i) << " = " << i << "\n";
+			}			
 
 	}
 

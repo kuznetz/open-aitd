@@ -327,7 +327,7 @@ namespace AITDExtractor {
         processPicture(picsPak, 10, dir + "/0.png");
         processPicture(picsPak, 14, dir + "/1.png");
 
-        dir = "data/add_bg";
+        dir = "data/alt_bg";
         std::filesystem::create_directories(dir);
         processPicture(picsPak, 15, dir + "/15.png");
         processPicture(picsPak, 16, dir + "/16.png");
