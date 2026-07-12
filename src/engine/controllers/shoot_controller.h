@@ -6,34 +6,111 @@ using namespace std;
 
 namespace openAITD {
 
-    /**
-     * ShootController handles rifle shooting via raycast.
-     */
+    // Structure describing a single shoot action triggered by an animation keyframe
+    struct ShootAction {
+        GameObject* gobj = nullptr;   // shooter object
+        int animId;                   // animation ID that triggers the shot
+        int keyFrameIdx;              // keyframe index at which the shot occurs
+        int boneIdx;                  // armature bone index from which the shot occurs
+        bool triggered;               // ensures single execution per keyframe
+        int damage;                   // damage dealt on hit
+        float range;                  // maximum ray distance
+    };
+
     class ShootController {
     public:
+        static const int ShootActionsCount = 10;
         World* world;
         Resources* resources;
+        ShootAction actions[ShootActionsCount];
 
         ShootController(World* world)
             : world(world)
             , resources(world->resources) {
         }
 
-        /**
-         * Performs a shot from the given origin in the given direction.
-         * @param shooter   The GameObject that fires the shot (player or enemy).
-         * @param origin    Start point of the ray (in shooter's room coordinates).
-         * @param direction Direction of the ray (will be normalized internally).
-         * @param range     Maximum distance of the shot.
-         * @param damage    Damage dealt on hit.
-         */
-        void shoot(GameObject* shooter, const Vector3& origin, const Vector3& direction, int damage, float range = 1000) {
-            if (!shooter) return;
+        // Find an existing action by object, animation and keyframe
+        ShootAction* getAction(GameObject* gobj, int animId, int keyFrameIdx) {
+            for (int i = 0; i < ShootActionsCount; i++) {
+                if (actions[i].gobj != gobj) continue;
+                if (actions[i].animId != animId) continue;
+                if (actions[i].keyFrameIdx != keyFrameIdx) continue;
+                return &actions[i];
+            }
+            return nullptr;
+        }
 
-            Vector3 dir = Vector3Normalize(direction);
+        // Add a new shoot action or return an existing one
+        ShootAction* addAction(GameObject* gobj, int animId, int keyFrameIdx, int boneIdx, int damage, float range = 10000.) {
+            ShootAction* act = getAction(gobj, animId, keyFrameIdx);
+            if (!act) {
+                for (int i = 0; i < ShootActionsCount; i++) {
+                    if (actions[i].gobj != nullptr) continue;
+                    act = &actions[i];
+                    act->gobj = gobj;
+                    act->animId = animId;
+                    act->keyFrameIdx = keyFrameIdx;
+                    act->boneIdx = boneIdx;
+                    act->damage = damage;
+                    act->range = range;
+                    act->triggered = false;
+                    break;
+                }
+                if (!act) throw new exception("ShootAction full");
+            }
+            return act;
+        }
+
+        // Main update loop: checks animations and fires shots when keyframe is reached
+        void process() {
+            for (int i = 0; i < ShootActionsCount; i++) {
+                ShootAction* act = &actions[i];
+                if (act->gobj == nullptr) continue;
+
+                // Remove action if object is on a different stage
+                if (act->gobj->location.stageId != world->curStageId) {
+                    act->gobj = nullptr;
+                    continue;
+                }
+
+                // Remove action if the animation changed
+                if (act->gobj->animation.id != act->animId) {
+                    act->gobj = nullptr;
+                    continue;
+                }
+
+                // One‑shot trigger logic
+                if (!act->triggered) {
+                    if (act->gobj->animation.keyFrameIdx >= act->keyFrameIdx) {
+                        // Execute the shot
+                        shootInternal(act);
+                        act->triggered = true;
+                    }
+                } else {
+                    // Reset trigger when keyframe goes backwards (allows re‑fire)
+                    if (act->gobj->animation.keyFrameIdx < act->keyFrameIdx) {
+                        act->triggered = false;
+                    }
+                }
+            }
+        }
+
+    private:
+        // Internal raycast shot implementation
+        void shootInternal(const ShootAction* act) {
+            GameObject* shooter = act->gobj;
+            Room room = resources->stages[world->curStageId].rooms[shooter->location.roomId];
+            Vector3 origin = shooter->location.position;
+            //TODO: calc bone position
+
+            Matrix rotMatrix = MatrixRotateZYX(shooter->location.rotation2);
+            Vector3 dir = Vector3Transform({ 0, 0, 1 }, rotMatrix);
+            float range = act->range;
+            int damage = act->damage;
+
             float minDist = range;
             GameObject* hitTarget = nullptr;
-            bool hitStatic = false;   // true if the closest hit is a static collider
+            bool hitStatic = false;
 
             // Check dynamic objects
             for (auto& gobj : world->gobjects) {
@@ -42,7 +119,6 @@ namespace openAITD {
                 if (gobj.modelId == -1 || !gobj.physics.collidable) continue;
 
                 Bounds bounds = world->getObjectBounds(gobj);
-                // Transform bounds if the object is in a different room
                 bounds = world->BoundsChangeRoom(bounds, gobj.location.roomId, shooter->location.roomId);
 
                 float t;
@@ -56,14 +132,13 @@ namespace openAITD {
             }
 
             // Check static colliders in the shooter's current room
-            Room& room = resources->stages[world->curStageId].rooms[shooter->location.roomId];
             for (const auto& collider : room.colliders) {
                 const Bounds& colB = collider.bounds;
                 float t;
                 if (colB.RayIntersect(origin, dir, t)) {
                     if (t > 0.0f && t < minDist) {
                         minDist = t;
-                        hitTarget = nullptr;        // static collider is not a GameObject
+                        hitTarget = nullptr;
                         hitStatic = true;
                     }
                 }
@@ -72,22 +147,19 @@ namespace openAITD {
             world->debugShootFrom = origin;
             Vector3 hitPoint;
             if (hitTarget || hitStatic) {
-                // Compute hit point along the ray
                 hitPoint = Vector3Add(origin, Vector3Scale(dir, minDist));
                 world->debugShootTo = hitPoint;
-
                 if (hitTarget) {
-                    // Apply damage and track hit
+                    // Uncomment to apply damage
                     // hitTarget->damage.hitBy = shooter;
                     // hitTarget->damage.damage = damage;
                     // shooter->hit.hitTo = hitTarget;
                 }
+
             } else {
-                // No hit – ray ends at maximum range
-                hitPoint = origin + dir * range;
+                hitPoint = Vector3Add(origin, Vector3Scale(dir, range));
                 world->debugShootTo = hitPoint;
             }
-
         }
     };
 

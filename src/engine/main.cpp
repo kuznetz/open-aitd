@@ -156,6 +156,7 @@ namespace openAITD {
                 lifeContr.process(partDelta);
                 animContr.process(partDelta);
                 hitContr.process(partDelta);
+                shootContr.process();
                 throwContr.process(partDelta);
                 physContr.process(partDelta);
                 objrotContr.process(partDelta);

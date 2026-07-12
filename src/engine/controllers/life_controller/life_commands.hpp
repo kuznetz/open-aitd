@@ -432,7 +432,9 @@ namespace openAITD {
 				gobj->hit.hitDamage = damage;
 				}, "HIT");
 			lua->CreateFunction([this](int obj, int fireAnim, int shootFrame, int emitPoint, int zvSize, int damage, int nextAnim) {
+				auto gobj = &this->world->gobjects[obj];
 				this->world->setOnceAnimation(this->world->gobjects[obj], fireAnim, nextAnim);
+				this->shootContr->addAction(gobj, fireAnim, shootFrame, emitPoint, damage);
 				}, "FIRE");
 			lua->CreateFunction([this](int obj, int flags, int damage) {
 				auto gobj = &this->world->gobjects[obj];
