@@ -96,15 +96,27 @@ namespace openAITD {
         }
 
     private:
+
+        Vector3 getBonePosition(GameObject* gobj, int boneIdx) {
+            auto mdl = resources->models.getModel(gobj->modelId);
+            if (!mdl) throw std::runtime_error("Invalid model");
+            auto& curAnim = mdl->model.animations[gobj->animation.animIdx];
+            auto& curPose = curAnim.bakedPoses[gobj->animation.animFrame];
+            mdl->model.ApplyPose(curPose.data());
+            Vector3 bonePos = mdl->model.curPose[boneIdx].translation;
+            Matrix rotM = MatrixRotateZYX(gobj->location.rotation2);
+            bonePos = Vector3Transform(bonePos, rotM);
+            return Vector3Add(bonePos, gobj->location.position);
+        }
+
         // Internal raycast shot implementation
         void shootInternal(const ShootAction* act) {
             GameObject* shooter = act->gobj;
             Room room = resources->stages[world->curStageId].rooms[shooter->location.roomId];
-            Vector3 origin = shooter->location.position;
-            //TODO: calc bone position
+            Vector3 origin = getBonePosition(shooter, act->boneIdx);
 
             Matrix rotMatrix = MatrixRotateZYX(shooter->location.rotation2);
-            Vector3 dir = Vector3Transform({ 0, 0, 1 }, rotMatrix);
+            Vector3 dir = Vector3Transform({ 0, 0, -1 }, rotMatrix);
             float range = act->range;
             int damage = act->damage;
 
@@ -150,10 +162,9 @@ namespace openAITD {
                 hitPoint = Vector3Add(origin, Vector3Scale(dir, minDist));
                 world->debugShootTo = hitPoint;
                 if (hitTarget) {
-                    // Uncomment to apply damage
-                    // hitTarget->damage.hitBy = shooter;
-                    // hitTarget->damage.damage = damage;
-                    // shooter->hit.hitTo = hitTarget;
+                    hitTarget->damage.hitBy = shooter;
+                    hitTarget->damage.damage = damage;
+                    shooter->hit.hitTo = hitTarget;
                 }
 
             } else {

@@ -202,10 +202,14 @@ namespace openAITD {
 			for (int i = 0; i < track.size(); i++) {
 				if (track[i].type == TrackItemType::GOTO_POS) {
 					to = Vector3Add(track[i].pos, world->curStage->rooms[track[i].room].position);
-					DrawLine3D(from, to, ORANGE);
+					DrawLine3D(from, to, PINK);
 					from = to;
 				}
 			}
+		}
+
+		void renderShoot() {
+			DrawLine3D(world->debugShootFrom, world->debugShootTo, ORANGE);
 		}
 
 		void process() {
@@ -275,6 +279,7 @@ namespace openAITD {
 				renderBounds();
 				renderZones();
 				renderCameraZones();
+				renderShoot();
 				//renderOvlBounds();
 				//renderTrack();
 			EndMode3D();
