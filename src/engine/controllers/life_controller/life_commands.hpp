@@ -3,6 +3,7 @@
 #include "../tracks_controller.h"
 #include "../player_controller.h"
 #include "../hit_controller.h"
+#include "../shoot_controller.h"
 #include "../throw_controller.h"
 #include "../physics_controller.h"
 #include "../screens/found_screen.h"
@@ -24,19 +25,21 @@ namespace openAITD {
 		TracksController* trackContr;
 		PlayerController* playerContr;
 		HitController* hitContr;
+		ShootController* shootContr;
 		ThrowController* throwContr;
 		FoundScreen* foundScreen;
 		PhysicsController* physContr;
 
 		LuaState* lua = 0;
 
-		LifeCommands(LifeCore* lifeCore, TracksController* trackContr, PlayerController* playerContr, HitController* hitContr, ThrowController* throwContr, PhysicsController* physContr, FoundScreen* foundScreen) {
+		LifeCommands(LifeCore* lifeCore, TracksController* trackContr, PlayerController* playerContr, HitController* hitContr, ThrowController* throwContr, PhysicsController* physContr, FoundScreen* foundScreen, ShootController* shootContr) {
 			this->lifeCore = lifeCore;
 			this->world = lifeCore->world;
 			this->resources = lifeCore->resources;
 			this->trackContr = trackContr;
 			this->playerContr = playerContr;
 			this->hitContr = hitContr;
+			this->shootContr = shootContr;
 			this->physContr = physContr;
 			this->throwContr = throwContr;
 			this->foundScreen = foundScreen;			

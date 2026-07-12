@@ -10,6 +10,7 @@
 #include "./controllers/objrotate_controller.h"
 #include "./controllers/animation_controller.h"
 #include "./controllers/hit_controller.h"
+#include "./controllers/shoot_controller.h"
 #include "./controllers/throw_controller.h"
 #include "./controllers/life_controller.h"
 #include "./controllers/tracks_controller.h"
@@ -48,12 +49,13 @@ namespace openAITD {
     ObjRotateController objrotContr(&world);
     AnimationController animContr(&resources, &world);
     HitController hitContr(&world);
+    ShootController shootContr(&world);
     PlayerController playerContr(&world);
     TracksController tracksContr(&world);
     InventoryScreen inventoryScreen(&world);
     MenuScreen mainMenu(&world);
     PictureScreen pictureScr(&world);
-    LifeController lifeContr(&world, &tracksContr, &playerContr, &hitContr, &throwContr, &physContr, &foundScreen);
+    LifeController lifeContr(&world, &tracksContr, &playerContr, &hitContr, &throwContr, &physContr, &foundScreen, &shootContr);
     SaveController saveContr(&world, &lifeContr);
     ConsoleScreen consoleScreen(&world);
 

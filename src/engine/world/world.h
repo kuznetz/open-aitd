@@ -80,6 +80,9 @@ namespace openAITD {
 		GameObject* inHandObj = 0;
 		int curInvAction = 0;
 
+		Vector3 debugShootFrom;
+		Vector3 debugShootTo;
+
 		World(Resources* res) {
 			this->resources = res;
 		}

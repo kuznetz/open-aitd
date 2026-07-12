@@ -1,11 +1,6 @@
 ﻿#pragma once
 #include "../resources/resources.h"
 #include "../world/world.h"
-#include "./tracks_controller.h"
-#include "./player_controller.h"
-#include "./hit_controller.h"
-#include "./throw_controller.h"
-#include "../screens/found_screen.h"
 
 #include "./life_controller/life_core.hpp"
 #include "./life_controller/life_commands.hpp"
@@ -24,9 +19,9 @@ namespace openAITD {
 
 	  LifeCommands commands;
 
-		LifeController(World* world, TracksController* trackContr, PlayerController* playerContr, HitController* hitContr, ThrowController* throwContr, PhysicsController* physContr, FoundScreen* foundScreen):
+		LifeController(World* world, TracksController* trackContr, PlayerController* playerContr, HitController* hitContr, ThrowController* throwContr, PhysicsController* physContr, FoundScreen* foundScreen, ShootController* shootContr):
 			LifeCore(world),
-			commands(this, trackContr, playerContr, hitContr, throwContr, physContr, foundScreen)
+			commands(this, trackContr, playerContr, hitContr, throwContr, physContr, foundScreen, shootContr)
 		{
 		}
 

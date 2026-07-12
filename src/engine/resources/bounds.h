@@ -171,6 +171,68 @@ namespace openAITD {
 			return true;
 		}
 
+		/**
+		 * Ray vs AABB intersection test (Slab method).
+		 * @param origin    Ray origin.
+		 * @param direction Ray direction (should be normalized).
+		 * @param t         Output parameter: distance from origin to intersection point.
+		 * @return true if the ray intersects the AABB, false otherwise.
+		 */
+		bool RayIntersect(const Vector3& origin, const Vector3& direction, float& t) const {
+				// Slab method for AABB
+				float tMin = 0.0f;
+				float tMax = 1e30f; // Infinity
+
+				// For each axis
+				for (int i = 0; i < 3; ++i) {
+					float minVal, maxVal;
+					switch (i) {
+							case 0: minVal = min.x; maxVal = max.x; break;
+							case 1: minVal = min.y; maxVal = max.y; break;
+							case 2: minVal = min.z; maxVal = max.z; break;
+					}
+					const float& dirComp = (i == 0) ? direction.x : (i == 1 ? direction.y : direction.z);
+					const float& origComp = (i == 0) ? origin.x : (i == 1 ? origin.y : origin.z);
+
+					// If direction component is near zero, ray is parallel to slab
+					if (fabs(dirComp) < 1e-6f) {
+							// Ray is parallel to slab, check if origin is inside the slab
+							if (origComp < minVal || origComp > maxVal) {
+									return false; // No intersection
+							}
+							// Otherwise, continue to next axis
+							continue;
+					}
+
+					// Compute intersection distances for this slab
+					float t1 = (minVal - origComp) / dirComp;
+					float t2 = (maxVal - origComp) / dirComp;
+
+					// Ensure t1 is the near and t2 the far
+					if (t1 > t2) {
+							std::swap(t1, t2);
+					}
+
+					// Update global tMin and tMax
+					tMin = std::max(tMin, t1);
+					tMax = std::min(tMax, t2);
+
+					// If the slab interval is empty, no intersection
+					if (tMin > tMax) {
+							return false;
+					}
+			}
+
+			// Check if intersection is behind the ray origin (t < 0)
+			if (tMax < 0.0f) {
+					return false;
+			}
+
+			// The intersection distance is tMin (the closest positive intersection)
+			t = (tMin < 0.0f) ? 0.0f : tMin; // If origin inside, t=0
+			return true;
+		}
+
 	};
 
 }
