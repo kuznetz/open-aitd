@@ -28,6 +28,7 @@ namespace openAITD {
 		RenderOrder* renderIterPrev = 0;
 		int renderQueueCount = 0;
 
+		bool curAltBg = false;
 		Background* curBackground = 0;
 
 		Shader maskShader = { 0 };
@@ -229,7 +230,13 @@ namespace openAITD {
 				return;
 			}
 
-    		if (world->curStageId == -1 || world->curCameraId == -1) return;
+    	if (world->curStageId == -1 || world->curCameraId == -1) return;
+
+			if (curAltBg != resources->backgrounds.isAltBackgrounds) {
+					curAltBg = resources->backgrounds.isAltBackgrounds;
+					curCameraId = -1;
+			}			
+
 			if (world->curStageId != curStageId || world->curCameraId != curCameraId) {
 				curStageId = world->curStageId;
 				loadCamera(world->curCameraId);

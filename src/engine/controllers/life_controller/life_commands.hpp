@@ -343,12 +343,14 @@ namespace openAITD {
 			}, "SET_CAMERA_TARGET");
 			lua->CreateFunction([this](int obj, int stage, int room, int x, int y, int z) {
 				auto& gobj = this->world->gobjects[obj];
+				if (gobj.location.stageId != -1 && gobj.location.stageId != stage) {
+					gobj.location.changingStage = true;
+				}
 				gobj.location.stageId = stage;
 				gobj.location.roomId = room;
 				gobj.location.position.x = x / 1000.;
 				gobj.location.position.y = (-y / 1000.) + 0.001;
 				gobj.location.position.z = -z / 1000.;
-				gobj.location.changingStage = true;
 			}, "CHANGE_ROOM");
 
 			//INVENTORY
