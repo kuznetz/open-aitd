@@ -401,6 +401,7 @@ namespace openAITD {
 				if (gobj.location.changingStage) {
 					if (gobj.bitField.fallable) {
 						raiseStuckObject(gobj);
+						placeOnSurface(gobj);
 					}
 					gobj.location.changingStage = false;
 				}
