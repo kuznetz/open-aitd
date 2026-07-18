@@ -86,7 +86,7 @@ namespace openAITD {
 				imgS = picturesDir + "/" + to_string(pictureId) + ".png";
 			}
 			if (!filesystem::exists(imgS)) {
-				throw new exception((imgS+" not exists").c_str());
+				throw std::runtime_error((imgS+" not exists").c_str());
 			}			
 			
 			auto bgImg = raylib::LoadImage(imgS.c_str());
@@ -100,7 +100,7 @@ namespace openAITD {
 		string getImgStagePath(string tail) {
 			string path = string("stages/") + tail;
 			path = DataPath::GetFile(path);
-			if (path == "")	throw new exception((path + " not exists").c_str());
+			if (path == "")	throw std::runtime_error((path + " not exists").c_str());
 			return path;
 		}
 
@@ -131,6 +131,7 @@ namespace openAITD {
 
 		void setIsAltBackgrounds(bool newVal) {
 			if (isAltBackgrounds == newVal || curStageId == -1) return;
+			isAltBackgrounds = newVal;
 			auto curStage = &(*this->stages)[curStageId];
 			for (int camId = 0; camId < curStage->cameras.size(); camId++) {
 				AltBackground* altBg = getAltBg(curStageId, camId);
@@ -143,37 +144,44 @@ namespace openAITD {
 					}					
 					loadBackground(items[camId], curStage, curStageId, camId);
 				}
-			}			
+			}
 		}
 
 		void loadBackground(Background& bg, Stage* curStage, int newStageId, int cameraId) {
-			  AltBackground* altBg = getAltBg(newStageId, cameraId);
-				string cameraDir = to_string(newStageId) + "/camera_" + to_string(cameraId);
-				string path;
-				if (altBg) {
-					path = DataPath::GetFile(altBackgroundsDir + "/" + to_string(altBg->imageId) + ".png");
-				} else {
-					path = getImgStagePath(cameraDir + "/background.png");
+			AltBackground* altBg = nullptr;	
+			if (isAltBackgrounds) {
+				altBg = getAltBg(newStageId, cameraId);
+			}
+			string cameraDir = to_string(newStageId) + "/camera_" + to_string(cameraId);
+			string path;
+			if (altBg != nullptr) {
+				path = DataPath::GetFile(altBackgroundsDir + "/" + to_string(altBg->imageId) + ".png");
+			} else {
+				path = getImgStagePath(cameraDir + "/background.png");
+			}
+
+			if (path == "" || !DataPath::FileExists(path)) {
+				throw runtime_error("Could not find background image: " + path);
+			}
+
+			auto bgImg = raylib::LoadImage(path.c_str());
+			auto& fullBgImg = resizeImg(bgImg, config->screenW, config->screenH);
+			UnloadImage(bgImg);
+			bg.texture = LoadTextureFromImage(fullBgImg);
+
+			auto& camRooms = curStage->cameras[cameraId].rooms;
+			bg.overlays.resize(camRooms.size());
+			for (int cr = 0; cr < camRooms.size(); cr++) {
+				bg.overlays[cr].resize(camRooms[cr].overlays.size());
+				for (int ovlId = 0; ovlId < camRooms[cr].overlays.size(); ovlId++) {
+					path = getImgStagePath(cameraDir + "/mask_" + to_string(cr) + "_" + to_string(ovlId) + ".png");
+					auto mskImg = raylib::LoadImage(path.c_str());
+					bg.overlays[cr][ovlId] = generateOverlayMask(fullBgImg, mskImg);
+					UnloadImage(mskImg);
 				}
+			}
 
-				auto bgImg = raylib::LoadImage(path.c_str());
-				auto& fullBgImg = resizeImg(bgImg, config->screenW, config->screenH);
-				UnloadImage(bgImg);
-				bg.texture = LoadTextureFromImage(fullBgImg);
-
-				auto& camRooms = curStage->cameras[cameraId].rooms;
-				bg.overlays.resize(camRooms.size());
-				for (int cr = 0; cr < camRooms.size(); cr++) {
-					bg.overlays[cr].resize(camRooms[cr].overlays.size());
-					for (int ovlId = 0; ovlId < camRooms[cr].overlays.size(); ovlId++) {
-						path = getImgStagePath(cameraDir + "/mask_" + to_string(cr) + "_" + to_string(ovlId) + ".png");
-						auto mskImg = raylib::LoadImage(path.c_str());
-						bg.overlays[cr][ovlId] = generateOverlayMask(fullBgImg, mskImg);
-						UnloadImage(mskImg);
-					}
-				}
-
-				UnloadImage(fullBgImg);
+			UnloadImage(fullBgImg);
 		}
 
 		Background* get(int stageId, int roomId) {
@@ -185,16 +193,12 @@ namespace openAITD {
 		int curStageId  = -1;
 
 		AltBackground* getAltBg(int newStageId, int cameraId) {
-			  AltBackground* altBg = nullptr;
-				if (isAltBackgrounds) {
-					for (auto i : altBackgrounds) {
-						if ( i.stageId == newStageId && i.cameraId == cameraId ) {
-							altBg = &i;
-							break;
-						}
-					}
+			for (auto& i : altBackgrounds) {
+				if (i.stageId == newStageId && i.cameraId == cameraId) {
+					return &i;
 				}
-				return altBg;
+			}
+			return nullptr;
 		}
 
 		Image resizeImg(Image& src, int w, int h) {
