@@ -5,6 +5,7 @@
 #include "../../names-decode/name_decoders.hpp"
 
 #include "./extractor_path.h"
+#include "./extractors/text_extractor.hpp"
 #include "./extractors/background_extractor.h"
 #include "./extractors/object_extractor.h"
 //#include "extractors/floor_extractor.h"
@@ -42,7 +43,7 @@ namespace AITDExtractor {
         void processTracks();
         void processSounds();
         void processAdlibMusic();
-        void processTexts();
+        void processTexts(const string lang);
         void processPictures();
         void extractAllData(bool floppy);
 
@@ -285,22 +286,19 @@ namespace AITDExtractor {
         }
     }
 
-    void AITDExtractor::processTexts() {
-        string dirname = "data/texts";
+    void AITDExtractor::processTexts(const string lang) {
+        string dirname = "data/texts/"+lang;
         if (!std::filesystem::exists(dirname)) {
-            std::filesystem::create_directories(dirname);
+            std::filesystem::create_directories(dirname);            
+            string originalPak = "original/"+lang+".PAK";
+            PakFile textsPak(originalPak);
             
-            PakFile textsPak("original/ENGLISH.PAK");
             auto& data = textsPak.readBlock(0);
-            //data.resize(data.size() + 1);
-            data[data.size() - 1] = '\0';
-            for (int i = 0; i < data.size(); i++) {
-                if (data[i] == 13) data[i] = 10;
+            extractText(data, dirname+"/main.txt", cp1252_table);
+            for (int i=1; i<textsPak.headers.size()-1; i++) {
+                auto& data = textsPak.readBlock(i);
+                extractText(data, dirname+"/"+to_string(i)+".txt", cp1252_table);
             }
-            string filename = dirname + "/english.txt";
-            ofstream out(filename.c_str(), ios::trunc | ios::out);
-            out << (char*)data.data() << endl;
-            out.close();
         }
     }
 
@@ -314,11 +312,14 @@ namespace AITDExtractor {
     void AITDExtractor::processPictures() {
         PakFile picsPak("original/ITD_RESS.PAK");
 
-        string dir = "data/pictures";
+        string dir = "data/books";
         std::filesystem::create_directories(dir);
-        processPicture(picsPak, 6, dir + "/6.png");
-        processPicture(picsPak, 7, dir + "/7.png");
-        processPicture(picsPak, 8, dir + "/8.png");
+        processPicture(picsPak, 6, dir + "/0.png");
+        processPicture(picsPak, 7, dir + "/1.png");
+        processPicture(picsPak, 8, dir + "/2.png");
+
+        dir = "data/pictures";
+        std::filesystem::create_directories(dir);
         processPicture(picsPak, 11, dir + "/11.png");
         processPicture(picsPak, 12, dir + "/12.png");
 
@@ -338,7 +339,7 @@ namespace AITDExtractor {
 
     void AITDExtractor::extractAllData(bool floppy) {
         //dumpInstructions("instr.txt");
-        this->processTexts();
+        this->processTexts("ENGLISH");
 
         this->gameObjs = resLoader.loadGameObjects();
         if (!std::filesystem::exists("data/objects.json")) {

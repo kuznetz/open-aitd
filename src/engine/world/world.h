@@ -39,6 +39,12 @@ namespace openAITD {
 		float delay;
 	};
 
+	struct ReadData {
+		int readBackground;
+		int readText = -1;
+		int readAudio;
+	};
+
 	//Store all dynamic data in game
 	class World {
 	public:
@@ -79,6 +85,8 @@ namespace openAITD {
 		GameObject* curInvGObject = 0;
 		GameObject* inHandObj = 0;
 		int curInvAction = 0;
+
+		ReadData readData;
 
 		Vector3 debugShootFrom;
 		Vector3 debugShootTo;

@@ -15,7 +15,7 @@ namespace AITDExtractor {
         virtual void processTracks() = 0;
         virtual void processSounds() = 0;
         virtual void processAdlibMusic() = 0;
-        virtual void processTexts() = 0;
+        virtual void processTexts(const string lang) = 0;
         virtual void processPictures() = 0;
         virtual void extractAllData(bool floppy) = 0;
    };

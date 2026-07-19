@@ -413,9 +413,12 @@ namespace openAITD {
 			lua->CreateFunction([this](int objId, int weight) {
 				//Weight not realising
 				}, "SET_OBJ_WEIGHT");
-			lua->CreateFunction([this]() {
-				//TODO: Read
-				}, "READ");			
+			lua->CreateFunction([this](int a, int b) {
+				this->world->readData = { a, b, -1 };
+			}, "READ");	
+			lua->CreateFunction([this](int a, int b, int c) {
+				this->world->readData = { a, b, c };
+  		}, "READ_CD");
 
 			//Animations, tracks, rotations
 			lua->CreateFunction([this](int obj, int animId, int nextAnimId) {

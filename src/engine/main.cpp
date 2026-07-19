@@ -335,7 +335,7 @@ namespace openAITD {
         SetTargetFPS(resources.config.targetFps);
         SetExitKey(KEY_F10);
 
-        resources.loadTexts("data/texts/english.txt");
+        resources.loadTexts("data/texts/ENGLISH/main.txt");
         resources.screen.init();
 
         resources.stages.resize(8);
