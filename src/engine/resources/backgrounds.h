@@ -52,8 +52,7 @@ namespace openAITD {
 		int curPictureId = -1;
 		bool isAltBackgrounds = false;
 
-		string picturesDir = "data/pictures";
-		string newPicturesDir = "newdata/pictures";
+		string picturesDir = "pictures";
 		string altBackgroundsDir = "alt_bg";
 		raylib::Texture2D picture = { 0 };
 
@@ -81,19 +80,21 @@ namespace openAITD {
 			if (curPictureId == pictureId) return picture;
 			UnloadTexture(picture);
 			
-			auto imgS = newPicturesDir + "/" + to_string(pictureId) + ".png";
-			if (!filesystem::exists(imgS)) {
-				imgS = picturesDir + "/" + to_string(pictureId) + ".png";
+			string path = DataPath::GetFile(picturesDir + "/" + to_string(pictureId) + ".png");
+			if (path == "") {
+				throw std::runtime_error(("Picture " + to_string(pictureId) +" not exists").c_str());
 			}
-			if (!filesystem::exists(imgS)) {
-				throw std::runtime_error((imgS+" not exists").c_str());
-			}			
-			
-			auto bgImg = raylib::LoadImage(imgS.c_str());
+
+			picture = this->loadImageResized(path);
+			curPictureId = pictureId;
+			return picture;
+		}
+
+		Texture2D loadImageResized(const string path) {
+			auto bgImg = raylib::LoadImage(path.c_str());
 			auto& fullBgImg = resizeImg(bgImg, config->screenW, config->screenH);
 			UnloadImage(bgImg);
-			picture = LoadTextureFromImage(fullBgImg);
-			curPictureId = pictureId;
+			picture = raylib::LoadTextureFromImage(fullBgImg);
 			return picture;
 		}
 
@@ -164,10 +165,7 @@ namespace openAITD {
 				throw runtime_error("Could not find background image: " + path);
 			}
 
-			auto bgImg = raylib::LoadImage(path.c_str());
-			auto& fullBgImg = resizeImg(bgImg, config->screenW, config->screenH);
-			UnloadImage(bgImg);
-			bg.texture = LoadTextureFromImage(fullBgImg);
+			bg.texture = this->loadImageResized(path);
 
 			auto& camRooms = curStage->cameras[cameraId].rooms;
 			bg.overlays.resize(camRooms.size());
@@ -176,12 +174,10 @@ namespace openAITD {
 				for (int ovlId = 0; ovlId < camRooms[cr].overlays.size(); ovlId++) {
 					path = getImgStagePath(cameraDir + "/mask_" + to_string(cr) + "_" + to_string(ovlId) + ".png");
 					auto mskImg = raylib::LoadImage(path.c_str());
-					bg.overlays[cr][ovlId] = generateOverlayMask(fullBgImg, mskImg);
+					bg.overlays[cr][ovlId] = this->generateOverlayMask(mskImg);
 					UnloadImage(mskImg);
 				}
 			}
-
-			UnloadImage(fullBgImg);
 		}
 
 		Background* get(int stageId, int roomId) {
@@ -234,7 +230,7 @@ namespace openAITD {
 			return { left, top, (right - left), (bottom - top) };
 		}
 
-		BackgroundOverlay generateOverlayMask(Image& fullBg, Image& mask) {
+		BackgroundOverlay generateOverlayMask(Image& mask) {
 			Image maskImageScaled = resizeImg(mask, config->screenW, config->screenH);
 			IntRect rect = findImageBounds(maskImageScaled);
 

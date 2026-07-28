@@ -312,14 +312,21 @@ namespace AITDExtractor {
     void AITDExtractor::processPictures() {
         PakFile picsPak("original/ITD_RESS.PAK");
 
+        /*
         string dir = "data/books";
         std::filesystem::create_directories(dir);
         processPicture(picsPak, 6, dir + "/0.png");
         processPicture(picsPak, 7, dir + "/1.png");
         processPicture(picsPak, 8, dir + "/2.png");
+        */
 
-        dir = "data/pictures";
+        string dir = "data/pictures";
         std::filesystem::create_directories(dir);
+        //Books
+        processPicture(picsPak, 6, dir + "/6.png");
+        processPicture(picsPak, 7, dir + "/7.png");
+        processPicture(picsPak, 8, dir + "/8.png");
+        //Pictures
         processPicture(picsPak, 11, dir + "/11.png");
         processPicture(picsPak, 12, dir + "/12.png");
 

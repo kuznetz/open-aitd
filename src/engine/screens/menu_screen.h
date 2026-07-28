@@ -4,182 +4,176 @@
 #include "../../raylib-cpp/raylib-cpp.h"
 #include "../world/world.h"
 #include "../resources/resources.h"
-#include "./base_menu.h"
 #include "./options_screen.h"
+#include "./widgets/vertical_menu.hpp"
 
 using namespace std;
 using namespace raylib;
+
 namespace openAITD {
 
-	enum class MenuScreenResult {
-		none,
-		resume,
-		newGame,
-		saveGame,
-		loadGame,
-		exit
-	};
+    enum class MenuScreenResult {
+        none,
+        resume,
+        newGame,
+        saveGame,
+        loadGame,
+        exit
+    };
 
-	enum class MenuScreenState {
-		main,
-		save,
-		load,
-		options
-	};
+    enum class MenuScreenState {
+        main,
+        save,
+        load,
+        options
+    };
 
-	class MenuScreen {
-	public:
-		World* world;
-		Resources* resources;
-		BaseMenu menu;
-		BaseMenu savesMenu;
-		OptionsScreen options;
-		bool firstFrame = true;
+    class MenuScreen {
+    public:
+        World& world;
+        Resources& resources;
+        VerticalMenuWidget mainMenu;
+        VerticalMenuWidget savesMenu;
+        OptionsScreen options;
+        bool firstFrame = true;
 
-		MenuScreenState state = MenuScreenState::main;
-		MenuScreenResult result = MenuScreenResult::none;
-		int saveSlot = -1;
+        MenuScreenState state = MenuScreenState::main;
+        MenuScreenResult result = MenuScreenResult::none;
+        int saveSlot = -1;
 
-		MenuScreen(World* world) : options(world) {
-			this->world = world;
-			this->resources = world->resources;
-			menu.resources = this->resources;
-			savesMenu.resources = this->resources;
+        MenuScreen(World& world) :
+					world(world),
+					resources(*world.resources),
+					options(world),
+					mainMenu(resources.screen.mainFont, raylib::Rectangle{0,0,1,1}, 10),
+					savesMenu(resources.screen.mainFont, raylib::Rectangle{0,0,1,1}, 10)
+        {}
 
-			menu.maxRenderItems = 8;
-			savesMenu.maxRenderItems = 8;
-			for (int i = 0; i < 6; i++) {
-				savesMenu.items.push_back({ i+1, string("Slot ") + to_string(i+1) });
-			}
-		}
+        ~MenuScreen() = default;
 
-		~MenuScreen() {
-		}
+        void reload() {
+            state = MenuScreenState::main;
+            result = MenuScreenResult::none;
+            firstFrame = true;
 
-		void reload() {
-			state = MenuScreenState::main;
-			result = MenuScreenResult::none;
-			firstFrame = true;
+            mainMenu.bounds = { 0, 0, (float)resources.config.screenW, (float)resources.config.screenH };
+            savesMenu.bounds = { 0, resources.config.screenH * 0.1f,
+                                 (float)resources.config.screenW, (float)resources.config.screenH };
 
-			menu.middle = 1;
-			menu.rect = { 0, 0, (float)resources->config.screenW, (float)resources->config.screenH };
-			menu.items.clear();
-			if (!world->gameOver) {
-				menu.items.push_back({ 0, "Resume to Game" });
-			}
-			menu.items.push_back({ 1, "New Game" });
-			if (!world->gameOver) {
-				menu.items.push_back({ 2, "Save Game" });
-			}
-			menu.items.push_back({ 3, "Load Game" });
-			menu.items.push_back({ 4, "Options" });
-			menu.items.push_back({ 5, "Quit" });
-			menu.reset();
+            vector<string> mainItems;
+            if (!world.gameOver) {
+                mainItems.push_back("Resume to Game");
+            }
+            mainItems.push_back("New Game");
+            if (!world.gameOver) {
+                mainItems.push_back("Save Game");
+            }
+            mainItems.push_back("Load Game");
+            mainItems.push_back("Options");
+            mainItems.push_back("Quit");
+            mainMenu.setItems(mainItems);
 
-			savesMenu.middle = 1;
-			savesMenu.rect = { 0, resources->config.screenH * 0.1f, (float)resources->config.screenW, (float)resources->config.screenH };
-			savesMenu.reset();
-		}
+            vector<string> saveItems;
+            for (int i = 0; i < 6; ++i) {
+                saveItems.push_back("Slot " + to_string(i + 1));
+            }
+            savesMenu.setItems(saveItems);
 
-		void submitMain() {
- 			switch (menu.curItemId)
-			{
-			case 0:
-				result = MenuScreenResult::resume;
-				break;
-			case 1:
-				result = MenuScreenResult::newGame;
-				break;
-			case 2:
-				state = MenuScreenState::save;
-				break;
-			case 3:
-				state = MenuScreenState::load;
-				break;
-			case 4:
-				state = MenuScreenState::options;
-				options.reload();
-				break;
-			case 5:
-				result = MenuScreenResult::exit;
-				break;
-			}
-		}
+            mainMenu.setSelectedIndex(0);
+            savesMenu.setSelectedIndex(0);
+        }
 
-		void processKeys() {
-			if (IsKeyPressed(KEY_ESCAPE)) {
-				if (state != MenuScreenState::main) {
-					state = MenuScreenState::main;
-				}
-				else if (!world->gameOver) {
-					result = MenuScreenResult::resume;
-				}
-			}
+        void submitMain() {
+            int idx = mainMenu.getSelectedIndex();
+            if (!world.gameOver) {
+                switch (idx) {
+                    case 0: result = MenuScreenResult::resume; break;
+                    case 1: result = MenuScreenResult::newGame; break;
+                    case 2: state = MenuScreenState::save; break;
+                    case 3: state = MenuScreenState::load; break;
+                    case 4: state = MenuScreenState::options; options.reload(); break;
+                    case 5: result = MenuScreenResult::exit; break;
+                }
+            } else {
+                switch (idx) {
+                    case 0: result = MenuScreenResult::newGame; break;
+                    case 1: state = MenuScreenState::load; break;
+                    case 2: state = MenuScreenState::options; options.reload(); break;
+                    case 3: result = MenuScreenResult::exit; break;
+                }
+            }
+        }
 
-			if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
-				switch (state) {
-				case MenuScreenState::main:
-					submitMain();
-					break;
-				case MenuScreenState::save:
-					saveSlot = savesMenu.curItemId;
-					result = MenuScreenResult::saveGame;
-					break;
-				case MenuScreenState::load:
-					saveSlot = savesMenu.curItemId;
-					result = MenuScreenResult::loadGame;
-					break;
-				}
-			}
+        void processKeys() {
+            if (IsKeyPressed(KEY_ESCAPE)) {
+                if (state != MenuScreenState::main) {
+                    state = MenuScreenState::main;
+                } else if (!world.gameOver) {
+                    result = MenuScreenResult::resume;
+                }
+            }
 
-			switch (state) {
-			case MenuScreenState::main:
-				menu.processKeys();
-				break;
-			case MenuScreenState::save:
-				savesMenu.processKeys();
-				break;
-			case MenuScreenState::load:
-				savesMenu.processKeys();
-				break;
-			case MenuScreenState::options:
-				options.processKeys();
-				break;
-			}
-		}
+            if (state == MenuScreenState::main) {
+                if (IsKeyPressed(KEY_UP)) mainMenu.moveUp();
+                else if (IsKeyPressed(KEY_DOWN)) mainMenu.moveDown();
 
-		void process(float timeDelta) {
-			if (!firstFrame) {
-				processKeys();
-			}
-			firstFrame = false;
-		}
+                if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
+                    submitMain();
+                }
+            }
+            else if (state == MenuScreenState::save || state == MenuScreenState::load) {
+                if (IsKeyPressed(KEY_UP)) savesMenu.moveUp();
+                else if (IsKeyPressed(KEY_DOWN)) savesMenu.moveDown();
 
-		void render() {
-			switch (state) {
-			case MenuScreenState::main:
-				menu.render();
-				break;
-			case MenuScreenState::save:
-				resources->screen.drawCentered("Save Game", {
-					0, resources->config.screenH * 0.05f,
-					(float)resources->config.screenW, 0
-					}, WHITE);
-				savesMenu.render();
-				break;
-			case MenuScreenState::load:
-				resources->screen.drawCentered("Load Game", {
-					0, resources->config.screenH * 0.05f,
-					(float)resources->config.screenW, 0
-					}, WHITE);
-				savesMenu.render();
-				break;
-			case MenuScreenState::options:
-				options.render();
-				break;
-			}
-		}
+                if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
+                    saveSlot = savesMenu.getSelectedIndex() + 1;   // слоты нумеруются с 1
+                    result = (state == MenuScreenState::save)
+                                ? MenuScreenResult::saveGame
+                                : MenuScreenResult::loadGame;
+                }
+            }
+            else if (state == MenuScreenState::options) {
+                options.processKeys();
+            }
+        }
 
-	};
+        void process(float timeDelta) {
+            if (!firstFrame) {
+                processKeys();
+            }
+            firstFrame = false;
 
-}
+            mainMenu.process(timeDelta);
+            savesMenu.process(timeDelta);
+            if (state == MenuScreenState::options) {
+                options.process(timeDelta);
+            }
+        }
+
+        void render() {
+            switch (state) {
+                case MenuScreenState::main:
+                    mainMenu.draw();
+                    break;
+                case MenuScreenState::save:
+                    resources.screen.drawCentered("Save Game", {
+                        0, resources.config.screenH * 0.05f,
+                        (float)resources.config.screenW, 0
+                    }, WHITE);
+                    savesMenu.draw();
+                    break;
+                case MenuScreenState::load:
+                    resources.screen.drawCentered("Load Game", {
+                        0, resources.config.screenH * 0.05f,
+                        (float)resources.config.screenW, 0
+                    }, WHITE);
+                    savesMenu.draw();
+                    break;
+                case MenuScreenState::options:
+                    options.render();
+                    break;
+            }
+        }
+    };
+
+} // namespace openAITD
