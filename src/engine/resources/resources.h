@@ -69,7 +69,7 @@ namespace openAITD {
 		}
 
 		string loadBookText(int textId) {
-			string path = "data/texts/ENGLISH/" + to_string(textId) + ".txt";
+			string path = "data/texts/ENGLISH/" + to_string(textId+1) + ".txt";
 			std::ifstream file(path);
 			if (!file.is_open()) {
 					throw std::runtime_error( "Read error: " + path );
