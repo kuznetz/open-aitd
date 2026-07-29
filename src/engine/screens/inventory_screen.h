@@ -198,7 +198,7 @@ public:
         }
 
         if (exitting) {
-            animProgress -= timeDelta * animSpeed;
+            animProgress -= timeDelta * animSpeed * 2;
             if (animProgress < 0.0f) {
                 animProgress = 0.0f;
                 exit = true;

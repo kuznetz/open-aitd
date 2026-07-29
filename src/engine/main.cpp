@@ -215,6 +215,8 @@ namespace openAITD {
                 timeDelta -= maxDelta;
                 if (timeDelta < 0) break;
             }
+        } else if (!freeLook) {
+            world.brightnessTrg = 0.5;
         }
         if (freeLook) {
             world.brightnessTrg = 1;
