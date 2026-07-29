@@ -142,6 +142,7 @@ public:
                 selAction = true;
                 itemsMenu->active = false;
                 actionsMenu->active = true;
+                actionsMenu->setSelectedIndex(0);
                 reloadActions();
             } else {
                 submit();

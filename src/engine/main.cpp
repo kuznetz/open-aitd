@@ -163,11 +163,6 @@ namespace openAITD {
             pictureScr.process(timeDelta);
             return;
         }
-        if (world.bookData.readText != -1) {
-            world.brightnessTrg = 1;
-            bookScreen.process(timeDelta);
-            return;
-        }        
         if (world.curStageId != world.nextStageId) {
             if (world.brightnessCur > 0) {
                 world.brightnessTrg = 0;
@@ -286,7 +281,11 @@ namespace openAITD {
             }
         }
         else if (state == AppState::InWorld) {
-            if (world.player.allowInventory && IsKeyPressed(KEY_ENTER)) {
+            if (world.bookData.readText != -1) {
+                world.brightnessTrg = 1;
+                bookScreen.process(timeDelta);
+            }            
+            else if (world.player.allowInventory && IsKeyPressed(KEY_ENTER)) {
                 inventoryScreen.reload();
                 state = AppState::Inventory;
             }
