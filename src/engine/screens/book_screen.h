@@ -9,36 +9,66 @@ using namespace std;
 using namespace raylib;
 namespace openAITD {
 
+	struct BookType {
+		int pictureId;
+	};
+
+	inline const std::array<BookType, 3> bookTypes = {{
+			{6},
+			{7},
+			{8}
+	}};
+
 	class BookScreen {
 	public:
-		World* world;
-		Resources* resources;
+		World& world;
+		Resources& resources;
+		BookData& bookData;
+		int lastBookText = -1;
 		
-		BookScreen(World* world) {
-			this->world = world;
-			this->resources = world->resources;
-		}
+		BookScreen(World& world) :
+		  world(world),
+			resources(*world.resources),
+			bookData(world.bookData)
+			{}
 
 		~BookScreen() {
 		}
 
+		void reload() {
+			string text = resources.loadBookText(bookData.readText);			
+			lastBookText = bookData.readText;
+		}
+
 		void process(float timeDelta) {
-			auto& pic = this->world->picture;
-			pic.curTime += timeDelta;
-			if (pic.curTime > pic.delay) {
-				pic.id = -1;
+			if (lastBookText != bookData.readText) {
+				reload();
 			}
+			processKeys();
+		}
+
+    void processKeys() {
+        // ESC: close the screen
+        if (IsKeyPressed(KEY_ESCAPE)) {
+					exit();
+        }
+        // ENTER / SPACE: next page
+        if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
+					exit();
+        }
+    }
+
+		void exit() {
+			bookData.readText = -1;
 		}
 
 		void render() {
-			float screenW = this->resources->config.screenW;
-			float screenH = this->resources->config.screenH;
-			auto& pic = this->world->picture;
-			auto& texture = this->resources->backgrounds.loadPicture(pic.id);
+			auto& texture = this->resources.backgrounds.loadPicture(bookTypes[bookData.bookType].pictureId);
+			auto& c = resources.config;
 			DrawTexturePro(
 				texture,
-				{ 0, 0, screenW, screenH },
-				{ 0, 0, screenW, screenH },
+				{ 0, 0, (float)c.screenW, (float)c.screenH },
+				{ 0, 0, (float)c.screenW, (float)c.screenH },
 				{ 0, 0 }, 0, WHITE
 			);
 		}

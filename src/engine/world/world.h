@@ -39,10 +39,10 @@ namespace openAITD {
 		float delay;
 	};
 
-	struct ReadData {
-		int readBackground;
+	struct BookData {
+		int bookType;
 		int readText = -1;
-		int readAudio;
+		int readAudio = -1;
 	};
 
 	//Store all dynamic data in game
@@ -86,7 +86,7 @@ namespace openAITD {
 		GameObject* inHandObj = 0;
 		int curInvAction = 0;
 
-		ReadData readData;
+		BookData bookData;
 
 		Vector3 debugShootFrom;
 		Vector3 debugShootTo;

@@ -3,6 +3,9 @@
 #include <map>
 #include <string>
 #include <filesystem>
+#include <fstream>
+#include <sstream>
+#include <iostream>
 #include "config.h"
 #include "stages.h"
 #include "tracks.h"
@@ -65,6 +68,16 @@ namespace openAITD {
 			}
 		}
 
+		string loadBookText(int textId) {
+			string path = "data/texts/ENGLISH/" + to_string(textId) + ".txt";
+			std::ifstream file(path);
+			if (!file.is_open()) {
+					throw std::runtime_error( "Read error: " + path );
+			}
+			std::ostringstream buffer;
+			buffer << file.rdbuf();
+			return buffer.str();
+		}
 
 		void loadTracks(string dataPath, string newDataPath) {
 			int i = 0;

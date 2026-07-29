@@ -20,6 +20,7 @@
 #include "./screens/inventory_screen.h"
 #include "./screens/menu_screen.h"
 #include "./screens/picture_screen.h"
+#include "./screens/book_screen.h"
 #include "./screens/console_screen.h"
 
 #include "../extractor/include/extractor.h"
@@ -55,6 +56,7 @@ namespace openAITD {
     PlayerController playerContr(&world);
     TracksController tracksContr(&world);
     InventoryScreen inventoryScreen(&world);
+    BookScreen bookScreen(world);
     MenuScreen mainMenu(world);
     PictureScreen pictureScr(&world);
     LifeController lifeContr(&world, &tracksContr, &playerContr, &hitContr, &throwContr, &physContr, &foundScreen, &shootContr);
@@ -256,7 +258,6 @@ namespace openAITD {
     }
 
     bool process(float timeDelta) {
-        processBrightness(timeDelta);        
         if (state == AppState::MainMenu) {
             world.brightnessTrg = world.inDark ? inDarkBrightness : 0.1f;
             if (!processMenu(timeDelta)) return false;
@@ -271,7 +272,11 @@ namespace openAITD {
             }
         }
         else if (state == AppState::InWorld) {
-            if (world.player.allowInventory && IsKeyPressed(KEY_ENTER)) {
+            if (world.bookData.readText != -1) {
+                world.brightnessTrg = 1;
+                bookScreen.process(timeDelta);
+            }
+            else if (world.player.allowInventory && IsKeyPressed(KEY_ENTER)) {
                 inventoryScreen.reload();
                 state = AppState::Inventory;
             }
@@ -305,7 +310,6 @@ namespace openAITD {
                 world.player.space = IsKeyDown(KEY_SPACE);
                 processWorld(timeDelta);
             }
-
         }
         else if (state == AppState::Inventory) {
             world.brightnessTrg = world.inDark ? inDarkBrightness : 0.15f;
@@ -314,6 +318,7 @@ namespace openAITD {
                 state = AppState::InWorld;
             }
         }
+        processBrightness(timeDelta);        
         return true;
     }
 
@@ -324,6 +329,11 @@ namespace openAITD {
             mainMenu.render();
             resources.screen.end();
         }
+        else if (world.bookData.readText != -1) {
+            resources.screen.begin();
+            bookScreen.render();
+            resources.screen.end();
+        }        
         else if (state == AppState::Intro) {
             renderWorld();
         }
