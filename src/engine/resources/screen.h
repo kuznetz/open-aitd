@@ -96,6 +96,16 @@ namespace openAITD {
             DrawTextEx(f, text, v, f.baseSize, 0, color);
         }
 
+				void saveScreenshot(const string& path, int outWidth = 0, int outHeight = 0) {
+						Image img = LoadImageFromTexture(sceneTex.texture);
+						ImageFlipVertical(&img);
+						if (outWidth > 0 && outHeight > 0) {
+								ImageResize(&img, outWidth, outHeight);
+						}
+						ExportImage(img, path.c_str());
+						UnloadImage(img);
+				}
+
     private:
     };
 }

@@ -5,6 +5,7 @@
 #include "../world/world.h"
 #include "../resources/resources.h"
 #include "./options_screen.h"
+#include "./saves_screen.h"
 #include "./widgets/vertical_menu.hpp"
 
 using namespace std;
@@ -33,20 +34,19 @@ namespace openAITD {
         World& world;
         Resources& resources;
         VerticalMenuWidget mainMenu;
-        VerticalMenuWidget savesMenu;
+        SavesScreen savesScreen;
         OptionsScreen options;
         bool firstFrame = true;
 
         MenuScreenState state = MenuScreenState::main;
         MenuScreenResult result = MenuScreenResult::none;
-        int saveSlot = -1;
 
-        MenuScreen(World& world) :
-					world(world),
-					resources(*world.resources),
-					options(world),
-					mainMenu(resources.screen.mainFont, raylib::Rectangle{0,0,1,1}, 10),
-					savesMenu(resources.screen.mainFont, raylib::Rectangle{0,0,1,1}, 10)
+        MenuScreen(World& world, SaveController& saveContr)
+            : world(world),
+            resources(*world.resources),
+            options(world),
+            mainMenu(resources.screen.mainFont, raylib::Rectangle{0,0,1,1}, 10),
+            savesScreen(resources, saveContr)
         {}
 
         ~MenuScreen() = default;
@@ -57,8 +57,6 @@ namespace openAITD {
             firstFrame = true;
 
             mainMenu.bounds = { 0, 0, (float)resources.config.screenW, (float)resources.config.screenH };
-            savesMenu.bounds = { 0, resources.config.screenH * 0.1f,
-                                 (float)resources.config.screenW, (float)resources.config.screenH };
 
             vector<string> mainItems;
             if (!world.gameOver) {
@@ -72,15 +70,7 @@ namespace openAITD {
             mainItems.push_back("Options");
             mainItems.push_back("Quit");
             mainMenu.setItems(mainItems);
-
-            vector<string> saveItems;
-            for (int i = 0; i < 6; ++i) {
-                saveItems.push_back("Slot " + to_string(i + 1));
-            }
-            savesMenu.setItems(saveItems);
-
             mainMenu.setSelectedIndex(0);
-            savesMenu.setSelectedIndex(0);
         }
 
         void submitMain() {
@@ -89,15 +79,15 @@ namespace openAITD {
                 switch (idx) {
                     case 0: result = MenuScreenResult::resume; break;
                     case 1: result = MenuScreenResult::newGame; break;
-                    case 2: state = MenuScreenState::save; break;
-                    case 3: state = MenuScreenState::load; break;
+                    case 2: state = MenuScreenState::save; savesScreen.reload(SavesScreen::Mode::Save); break;
+                    case 3: state = MenuScreenState::load; savesScreen.reload(SavesScreen::Mode::Load); break;
                     case 4: state = MenuScreenState::options; options.reload(); break;
                     case 5: result = MenuScreenResult::exit; break;
                 }
             } else {
                 switch (idx) {
                     case 0: result = MenuScreenResult::newGame; break;
-                    case 1: state = MenuScreenState::load; break;
+                    case 1: state = MenuScreenState::load; savesScreen.reload(SavesScreen::Mode::Load); break;
                     case 2: state = MenuScreenState::options; options.reload(); break;
                     case 3: result = MenuScreenResult::exit; break;
                 }
@@ -106,7 +96,7 @@ namespace openAITD {
 
         void processKeys() {
             if (IsKeyPressed(KEY_ESCAPE)) {
-                if (state != MenuScreenState::main) {
+                if (state == MenuScreenState::save || state == MenuScreenState::load || state == MenuScreenState::options) {
                     state = MenuScreenState::main;
                 } else if (!world.gameOver) {
                     result = MenuScreenResult::resume;
@@ -122,14 +112,18 @@ namespace openAITD {
                 }
             }
             else if (state == MenuScreenState::save || state == MenuScreenState::load) {
-                if (IsKeyPressed(KEY_UP)) savesMenu.moveUp();
-                else if (IsKeyPressed(KEY_DOWN)) savesMenu.moveDown();
-
-                if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
-                    saveSlot = savesMenu.getSelectedIndex() + 1;   // слоты нумеруются с 1
-                    result = (state == MenuScreenState::save)
-                                ? MenuScreenResult::saveGame
-                                : MenuScreenResult::loadGame;
+                savesScreen.processKeys();
+                if (savesScreen.isComplete()) {
+                    int slot = savesScreen.getSelectedSlot();
+                    if (slot != -1) {
+                        if (state == MenuScreenState::save)
+                            result = MenuScreenResult::saveGame;
+                        else
+                            result = MenuScreenResult::loadGame;
+                        saveSlot = slot;
+                    }
+                    state = MenuScreenState::main;
+                    savesScreen.resetComplete();
                 }
             }
             else if (state == MenuScreenState::options) {
@@ -144,8 +138,9 @@ namespace openAITD {
             firstFrame = false;
 
             mainMenu.process(timeDelta);
-            savesMenu.process(timeDelta);
-            if (state == MenuScreenState::options) {
+            if (state == MenuScreenState::save || state == MenuScreenState::load) {
+                savesScreen.process(timeDelta);
+            } else if (state == MenuScreenState::options) {
                 options.process(timeDelta);
             }
         }
@@ -156,24 +151,16 @@ namespace openAITD {
                     mainMenu.draw();
                     break;
                 case MenuScreenState::save:
-                    resources.screen.drawCentered("Save Game", {
-                        0, resources.config.screenH * 0.05f,
-                        (float)resources.config.screenW, 0
-                    }, WHITE);
-                    savesMenu.draw();
-                    break;
                 case MenuScreenState::load:
-                    resources.screen.drawCentered("Load Game", {
-                        0, resources.config.screenH * 0.05f,
-                        (float)resources.config.screenW, 0
-                    }, WHITE);
-                    savesMenu.draw();
+                    savesScreen.render();
                     break;
                 case MenuScreenState::options:
                     options.render();
                     break;
             }
         }
+
+        int saveSlot = -1;
     };
 
 } // namespace openAITD
