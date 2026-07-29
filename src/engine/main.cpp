@@ -320,7 +320,11 @@ namespace openAITD {
             }
         }
         else if (state == AppState::Inventory) {
-            world.brightnessTrg = world.inDark ? inDarkBrightness : 0.2f;
+            if (!inventoryScreen.exitting) {
+                world.brightnessTrg = world.inDark ? inDarkBrightness : 0.2f;
+            } else {
+                world.brightnessTrg = world.inDark ? inDarkBrightness : 1.0f;
+            }
             inventoryScreen.process(timeDelta);
             if (inventoryScreen.exit) {
                 state = AppState::InWorld;

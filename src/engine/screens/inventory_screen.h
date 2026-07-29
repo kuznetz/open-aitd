@@ -13,40 +13,38 @@ using namespace raylib;
 
 namespace openAITD {
 
-/**
- * @class InventoryScreen
- * @brief Handles the inventory UI: displays items, allows selection,
- *        shows possible actions for the selected item, and renders a 3D preview.
- */
 class InventoryScreen {
 public:
-    // --- Public members ---
-    World* world;               ///< Pointer to the game world (contains inventory, variables, etc.)
-    Resources* resources;       ///< Pointer to resource manager (fonts, models, texts, config)
-    bool exit = false;          ///< Flag to signal that the screen should close
+    World* world;
+    Resources* resources;    
+    bool exitting = false;
+    bool exit = false;
 
     std::unique_ptr<VerticalMenuWidget> itemsMenu;
     std::unique_ptr<VerticalMenuWidget> actionsMenu;
 
-    bool selAction = false;     ///< True when the user has selected an item and is choosing an action
+    bool selAction = false;
+    vector<int> curActions;
 
-    vector<int> curActions;     ///< List of action text IDs for the currently selected item
-
-    // --- 3D model preview camera ---
     Camera3D modelCamera = {
-        { 0, 2.5f, -5.f },   // Position
-        { 0, 0, 0 },         // Target (look-at)
-        { 0, 1, 0 },         // Up vector
-        50.0f,               // Field of view (Y)
-        CAMERA_PERSPECTIVE   // Projection type
+        { 0, 2.5f, -5.f },
+        { 0, 0, 0 },
+        { 0, 1, 0 },
+        50.0f,
+        CAMERA_PERSPECTIVE
     };
-    float modelRotate = 0;      ///< Rotation angle for the 3D model preview
-    bool firstFrame = true;     ///< Used to skip rotation on the first frame
+    float modelRotate = 0;
+    bool firstFrame = true;
 
-    /**
-     * @brief Constructor. Initialises the two menus based on screen dimensions.
-     * @param world Pointer to the game world.
-     */
+    // ---------- animation ----------
+    static constexpr float animSpeed = 4.0f;   // 0.25 sec to fully appear
+    bool starting = false;
+    float animProgress = 0.0f;
+    float targetItemsY = 0.0f;
+    float targetActionsY = 0.0f;
+    float targetModelY = 0.0f;
+    // -------------------------------
+
     InventoryScreen(World* world)
         : world(world)
         , resources(world->resources)
@@ -54,31 +52,24 @@ public:
         float W = static_cast<float>(resources->config.screenW);
         float H = static_cast<float>(resources->config.screenH);
 
-        // Items menu occupies the top half, full width
         itemsMenu = std::make_unique<VerticalMenuWidget>(
             resources->screen.mainFont,
             raylib::Rectangle{ 0, 0.05f * H, W, 0.45f * H },
             5
         );
 
-        // Actions menu occupies the bottom-right quadrant (right half of bottom half)
         actionsMenu = std::make_unique<VerticalMenuWidget>(
             resources->screen.mainFont,
             raylib::Rectangle{ W / 2, H / 2, W / 2, H / 2 },
             5
         );
 
-        reload(); // Fill the items list
+        reload();   // will also start the appear animation
     }
 
     ~InventoryScreen() = default;
 
-    /**
-     * @brief Reloads the inventory item list from the world and resets the action selection state.
-     */
     void reload() {
-        // Collect names of all inventory items using their nameId
-
         vector<string> itemNames;
         itemNames.reserve(world->inventory.size());
         for (auto& gobjPtr : world->inventory) {
@@ -88,39 +79,45 @@ public:
             }
         }
         itemsMenu->setItems(itemNames);
-        selAction = false;      // Start with item selection mode
+        selAction = false;
         itemsMenu->active = true;
         actionsMenu->active = false;
 
+        exitting = false;
         exit = false;
-        firstFrame = true;      // Reset rotation for next time
+        firstFrame = true;
 
         float W = static_cast<float>(resources->config.screenW);
         float H = static_cast<float>(resources->config.screenH);
-        itemsMenu->bounds = raylib::Rectangle{ 0, 0.05f * H, W, 0.45f * H };
-        actionsMenu->bounds = raylib::Rectangle{ W / 2, H / 2, W / 2, H / 2 };
 
-        reloadActions();        // Update actions for the currently selected item
+        // remember final positions
+        targetItemsY   = 0.05f * H;
+        targetActionsY = H / 2.0f;
+        targetModelY   = 0;
+
+        // set initial animated positions
+        itemsMenu->bounds   = raylib::Rectangle{ 0, -0.45f * H, W, 0.45f * H };   // completely above screen
+        actionsMenu->bounds = raylib::Rectangle{ W / 2, H, W / 2, H / 2 };        // completely below
+
+        // start the appear animation
+        animProgress = 0.0f;
+        starting = true;
+
+        reloadActions();
     }
 
-    /**
-     * @brief Refreshes the actions menu based on the currently selected inventory item.
-     *        It checks the item's flags and maps each set bit to a text ID (starting at 23).
-     */
     void reloadActions() {
         curActions.clear();
         int idx = itemsMenu->getSelectedIndex();
         if (idx >= 0 && idx < static_cast<int>(world->inventory.size())) {
             auto& gobj = *world->inventory[idx];
-            // Check flags 0..10 (only these are considered valid action bits)
             for (int i = 0; i < 11; ++i) {
                 if (gobj.invItem.flags & (1 << i)) {
-                    curActions.push_back(i + 23);  // Map bit index to text resource ID (23 + i)
+                    curActions.push_back(i + 23);
                 }
             }
         }
 
-        // Build the action menu from the collected text IDs
         vector<string> actionNames;
         actionNames.reserve(curActions.size());
         for (int actionId : curActions) {
@@ -129,39 +126,33 @@ public:
         actionsMenu->setItems(actionNames);
     }
 
-    /**
-     * @brief Handles keyboard input (navigation, selection, exit).
-     */
     void processKeys() {
-        // ESC: go back one step or close the screen
         if (IsKeyPressed(KEY_ESCAPE)) {
             if (selAction) {
-                selAction = false;          // Return to item selection
+                selAction = false;
                 itemsMenu->active = true;
                 actionsMenu->active = false;
             } else {
-                exit = true;                // Close the inventory screen
+                exitting = true;
             }
         }
 
-        // ENTER / SPACE: confirm selection
         if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
             if (!selAction) {
-                selAction = true;           // Switch to action selection
+                selAction = true;
                 itemsMenu->active = false;
                 actionsMenu->active = true;
-                reloadActions();            // Refresh actions (in case the selected item changed)
+                reloadActions();
             } else {
-                submit();                   // Execute the chosen action
-                exit = true;                // Close the screen after submission
+                submit();
+                exitting = true;
             }
         }
 
-        // UP / DOWN: navigate the active menu
         if (IsKeyPressed(KEY_UP)) {
             if (!selAction) {
                 itemsMenu->moveUp();
-                reloadActions();            // Update actions for new item
+                reloadActions();
             } else {
                 actionsMenu->moveUp();
             }
@@ -177,11 +168,6 @@ public:
         }
     }
 
-    /**
-     * @brief Commits the selected action on the selected item.
-     *        Stores the action flag in world->curInvAction and the item in world->curInvGObject
-     *        for later processing by the game logic.
-     */
     void submit() {
         int itemIdx = itemsMenu->getSelectedIndex();
         int actionIdx = actionsMenu->getSelectedIndex();
@@ -189,52 +175,78 @@ public:
         if (actionIdx < 0 || actionIdx >= static_cast<int>(curActions.size())) return;
 
         world->curInvGObject = world->inventory[itemIdx];
-        // Convert the action text ID back to a flag bit (1 << (id - 23))
         world->curInvAction = 1 << (curActions[actionIdx] - 23);
     }
 
-    /**
-     * @brief Main render function: draws the menus, separator lines, and the 3D preview.
-     */
     void render() {
-        drawLines();       // Draw the dividing lines between quadrants
+        drawLines();
         itemsMenu->draw();
         actionsMenu->draw();
-        drawModel();       // Draw the 3D preview of the selected item
+        drawModel();
         resources->screen.resetViewport();
-        drawVariable();   // Draw additional info (e.g., a variable value) below the model
+        drawVariable();
     }
 
-    /**
-     * @brief Updates the screen state each frame.
-     * @param timeDelta Time elapsed since the last frame (used for rotation).
-     */
     void process(float timeDelta) {
+        // animation update (runs even on the very first frame)
+        if (starting) {
+            animProgress += timeDelta * animSpeed;
+            if (animProgress > 1.0f) {
+                animProgress = 1.0f;
+                starting = false;
+            }
+        }
+
+        if (exitting) {
+            animProgress -= timeDelta * animSpeed;
+            if (animProgress < 0.0f) {
+                animProgress = 0.0f;
+                exit = true;
+            }
+        }
+
+        if (starting || exitting) {
+            float H = static_cast<float>(resources->config.screenH);
+            // lerp helper
+            auto lerp = [](float a, float b, float t) { return a + (b - a) * t; };
+            itemsMenu->bounds.y   = lerp(-0.45f * H, targetItemsY, animProgress);
+            actionsMenu->bounds.y = lerp(H, targetActionsY, animProgress);
+        }
+
+        // skip rotation on the very first frame (keeps original behaviour)
         if (!firstFrame) {
-            modelRotate += timeDelta * 180.f;   // Rotate model at a constant speed
-            processKeys();                      // Handle input
+            modelRotate += timeDelta * 180.f;
         }
         firstFrame = false;
-				itemsMenu->process(timeDelta);
-				actionsMenu->process(timeDelta);
+
+        processKeys();
+        itemsMenu->process(timeDelta);
+        actionsMenu->process(timeDelta);
     }
 
-    // --- Private drawing helpers (though they are public in this class) ---
-
-    /**
-     * @brief Draws the two separator lines that divide the screen into four quadrants.
-     */
     void drawLines() {
         auto& w = resources->config.screenW;
         auto& h = resources->config.screenH;
-        DrawLineEx({ 0, (float)(h / 2) }, { (float)w, (float)(h / 2) }, 2, GRAY);
-        DrawLineEx({ (float)(w / 2), (float)(h / 2) }, { (float)(w / 2), (float)h }, 2, GRAY);
+
+        const raylib::Color clr = GRAY;
+
+        raylib::Vector2 L1From { 0, (float)(h / 2) };
+        raylib::Vector2 L2From { w, (float)(h / 2) };
+        raylib::Vector2 L3From { (float)(w / 2), (float)h };
+        
+        raylib::Vector2 L1To { (float)(w / 2), (float)(h / 2) };
+        raylib::Vector2 L2To { (float)(w / 2), (float)(h / 2) };
+        raylib::Vector2 L3To { (float)(w / 2), (float)(h / 2) };
+
+        L1To = Vector2Lerp(L1From, L1To, animProgress);
+        L2To = Vector2Lerp(L2From, L2To, animProgress);
+        L3To = Vector2Lerp(L3From, L3To, animProgress);
+
+        DrawLineEx(L1From, L1To, 2, clr);
+        DrawLineEx(L2From, L2To, 2, clr);
+        DrawLineEx(L3From, L3To, 2, clr);
     }
 
-    /**
-     * @brief Renders the 3D model of the selected item in the top‑right quadrant.
-     *        The model rotates around the Y axis.
-     */
     void drawModel() {
         if (world->inventory.empty()) return;
         int idx = itemsMenu->getSelectedIndex();
@@ -244,13 +256,17 @@ public:
         RModel* rmodel = resources->models.getModel(gobj.invItem.modelId);
         if (!rmodel) return;
 
-        BeginMode3D(modelCamera);
-        
         auto& c = resources->config;
-        rlViewport(c.screenX, c.screenY, c.screenW / 2, c.screenH / 2);
-        float aspect = (float) c.screenW / c.screenH;
+        // calculate animated Y for the model viewport (slides up from bottom)
+        auto lerp = [](float a, float b, float t) { return a + (b - a) * t; };
+        float startY = static_cast<float>(-c.screenH / 2.f);   // below screen
+        float currentModelY = lerp(startY, targetModelY, animProgress);
 
-        Matrix proj = MatrixPerspective(modelCamera.fovy * DEG2RAD, aspect, 0.01, 100.0);
+        BeginMode3D(modelCamera);
+        rlViewport(c.screenX, static_cast<int>(currentModelY), c.screenW / 2, c.screenH / 2);
+        float aspect = static_cast<float>(c.screenW) / c.screenH;
+
+        Matrix proj = MatrixPerspective(modelCamera.fovy * DEG2RAD, aspect, 0.01f, 100.0);
         rlMatrixMode(RL_PROJECTION);
         rlSetMatrixProjection(proj);
 
@@ -260,19 +276,15 @@ public:
         rlRotatef(modelRotate, 0, 1, 0);
 
         rmodel->model.Render();
-
-        EndMode3D();   
+        EndMode3D();
     }
 
-    /**
-     * @brief Displays a variable value (if any) associated with the selected item.
-     *        The variable ID is stored in gobj.stageLifeId.
-     */
     void drawVariable() {
+        if (animProgress < 1.0f) return;
         int idx = itemsMenu->getSelectedIndex();
         if (idx < 0 || idx >= static_cast<int>(world->inventory.size())) return;
         auto& gobj = *world->inventory[idx];
-        if (gobj.stageLifeId == -1) return;   // No variable to show
+        if (gobj.stageLifeId == -1) return;
 
         string valStr = std::to_string(world->vars[gobj.stageLifeId]);
         raylib::Rectangle r = {
