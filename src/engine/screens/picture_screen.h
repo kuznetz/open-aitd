@@ -35,12 +35,14 @@ namespace openAITD {
 			float screenH = this->resources->config.screenH;
 			auto& pic = this->world->picture;
 			auto& texture = this->resources->backgrounds.loadPicture(pic.id);
+			BeginTextureMode(resources->screen.sceneTex);
 			DrawTexturePro(
 				texture,
 				{ 0, 0, screenW, screenH },
 				{ 0, 0, screenW, screenH },
 				{ 0, 0 }, 0, WHITE
 			);
+			EndTextureMode();			
 		}
 
 	};

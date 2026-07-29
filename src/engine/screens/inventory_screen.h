@@ -100,6 +100,8 @@ public:
         itemsMenu->bounds = raylib::Rectangle{ 0, 0.05f * H, W, 0.45f * H };
         actionsMenu->bounds = raylib::Rectangle{ W / 2, H / 2, W / 2, H / 2 };
 
+        world->brightnessTrg = 0.15;
+
         reloadActions();        // Update actions for the currently selected item
     }
 
@@ -197,7 +199,6 @@ public:
      * @brief Main render function: draws the menus, separator lines, and the 3D preview.
      */
     void render() {
-        resources->screen.resetViewport();
         drawLines();       // Draw the dividing lines between quadrants
         itemsMenu->draw();
         actionsMenu->draw();

@@ -127,7 +127,21 @@ namespace openAITD {
         return true;
     }
 
+    void processBrightness(float timeDelta) {
+        if (world.brightnessTrg != world.brightnessCur) {
+            float diff = world.brightnessTrg - world.brightnessCur;
+            float step = timeDelta * 4;
+            if (fabs(diff) <= step) {
+                world.brightnessCur = world.brightnessTrg;
+            } else {
+                world.brightnessCur += (diff > 0.0f ? step : -step);
+            }
+        }        
+    }
+
     void processWorld(float timeDelta) {
+        world.brightnessTrg = 1;
+
         if (world.picture.id != -1) {
             pictureScr.process(timeDelta);
             return;
@@ -175,7 +189,6 @@ namespace openAITD {
     }
 
     void renderWorld() {
-        resources.screen.begin();
         if (freeLook) {
             flRenderer.render();
         } else if (world.picture.id != -1) {
@@ -183,7 +196,8 @@ namespace openAITD {
         } else {
             renderer.render();
         }
-        resources.screen.renderScene();
+        resources.screen.begin();
+        resources.screen.renderScene(world.brightnessCur);
         resources.screen.end();
     }
 
@@ -220,6 +234,7 @@ namespace openAITD {
     }
 
     bool process(float timeDelta) {
+        processBrightness(timeDelta);        
         if (state == AppState::MainMenu) {
             if (!processMenu(timeDelta)) return false;
         }
@@ -281,6 +296,7 @@ namespace openAITD {
     void render() {
         if (state == AppState::MainMenu) {
             resources.screen.begin();
+            resources.screen.renderScene(world.brightnessCur);
             mainMenu.render();
             resources.screen.end();
         }
@@ -292,6 +308,7 @@ namespace openAITD {
         }
         else if (state == AppState::Inventory) {
             resources.screen.begin();
+            resources.screen.renderScene(world.brightnessCur);
             inventoryScreen.render();
             resources.screen.end();
         }

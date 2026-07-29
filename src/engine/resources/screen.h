@@ -18,6 +18,10 @@ namespace openAITD {
         Font mainFont = { 0 };
         RenderTexture sceneTex;
 
+				Vector3 brightnessFactor = { 1.0f, 1.0f, 1.0f };
+				Shader brightnessShader = { 0 };
+				int shUniformLoc = 0;
+				
         Screen(Config& config):
 				 config(config)
 				 {}
@@ -29,11 +33,29 @@ namespace openAITD {
         void init() {
             mainFont = LoadFontEx(fontPath.c_str(), 16 * config.screenH / 200, 0, 95);
 						sceneTex = LoadRenderTexture(config.screenW, config.screenH);
+
+						brightnessShader = LoadShader(
+							"newdata/shaders/glsl330/brightness.vs",
+							"newdata/shaders/glsl330/brightness.fs"
+						);
+					  shUniformLoc = GetShaderLocation(brightnessShader, "brightness");
+            SetShaderValue(brightnessShader, shUniformLoc, &brightnessFactor, SHADER_UNIFORM_VEC3);
         }
 
-        void renderScene() {
+        void renderScene(float brightness = 1) {
 						auto& c = config;
-						DrawTextureRec(sceneTex.texture, { 0, 0, (float)c.screenW, (float)-c.screenH }, { (float)c.screenX, (float)c.screenY }, WHITE);					
+					  if (brightness != 1) {
+							BeginShaderMode(brightnessShader);
+							brightnessFactor = {brightness,brightness,brightness};
+							SetShaderValue(brightnessShader, shUniformLoc, &brightnessFactor, SHADER_UNIFORM_VEC3);
+							DrawTextureRec(sceneTex.texture,
+														{ 0, 0, (float)c.screenW, (float)-c.screenH },
+														{ 0, 0 },
+														WHITE);
+							EndShaderMode();
+						} else {
+							DrawTextureRec(sceneTex.texture, { 0, 0, (float)c.screenW, (float)-c.screenH }, { 0,0 }, WHITE);
+						}
         }
 
 				void begin() {
@@ -55,7 +77,7 @@ namespace openAITD {
 
 				void end() {
 						if (config.showFps) {
-								DrawFPS(config.screenX + 10, 10);
+								DrawFPS(10, 10);
 						}
 						EndDrawing();
 				}

@@ -91,6 +91,9 @@ namespace openAITD {
 		Vector3 debugShootFrom;
 		Vector3 debugShootTo;
 
+    float brightnessCur = 1;
+    float brightnessTrg = 1;
+
 		World(Resources* res) {
 			this->resources = res;
 		}

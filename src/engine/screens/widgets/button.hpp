@@ -55,7 +55,7 @@ private:
     raylib::Color selectedColor2 = raylib::YELLOW;
 
     mutable float blinkTimer = 0.0f;
-    static constexpr float blinkPeriod = 2.0f;
+    static constexpr float blinkPeriod = 1.0f;
 
     void resetBlink() {
         blinkTimer = 0.0f;
