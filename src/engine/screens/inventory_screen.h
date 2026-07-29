@@ -95,6 +95,11 @@ public:
         exit = false;
         firstFrame = true;      // Reset rotation for next time
 
+        float W = static_cast<float>(resources->config.screenW);
+        float H = static_cast<float>(resources->config.screenH);
+        itemsMenu->bounds = raylib::Rectangle{ 0, 0.05f * H, W, 0.45f * H };
+        actionsMenu->bounds = raylib::Rectangle{ W / 2, H / 2, W / 2, H / 2 };
+
         reloadActions();        // Update actions for the currently selected item
     }
 
@@ -192,10 +197,13 @@ public:
      * @brief Main render function: draws the menus, separator lines, and the 3D preview.
      */
     void render() {
+        resources->screen.resetViewport();
         drawLines();       // Draw the dividing lines between quadrants
         itemsMenu->draw();
         actionsMenu->draw();
         drawModel();       // Draw the 3D preview of the selected item
+        resources->screen.resetViewport();
+        drawVariable();   // Draw additional info (e.g., a variable value) below the model
     }
 
     /**
@@ -238,15 +246,23 @@ public:
         if (!rmodel) return;
 
         BeginMode3D(modelCamera);
-        // Restrict rendering to the top‑right quadrant (half width, half height)
-        rlViewport(0, 0, resources->config.screenW / 2, resources->config.screenH / 2);
-        rlMatrixMode(RL_MODELVIEW);
-        rlRotatef(modelRotate, 0, 1, 0);   // Apply rotation
-        rmodel->model.Render();
-        rlViewport(0, 0, resources->config.screenW, resources->config.screenH); // Restore full viewport
-        EndMode3D();
+        
+        auto& c = resources->config;
+        rlViewport(c.screenX, c.screenY, c.screenW / 2, c.screenH / 2);
+        float aspect = (float) c.screenW / c.screenH;
 
-        drawVariable();   // Draw additional info (e.g., a variable value) below the model
+        Matrix proj = MatrixPerspective(modelCamera.fovy * DEG2RAD, aspect, 0.01, 100.0);
+        rlMatrixMode(RL_PROJECTION);
+        rlSetMatrixProjection(proj);
+
+        rlMatrixMode(RL_MODELVIEW);
+        Matrix view = MatrixLookAt(modelCamera.position, modelCamera.target, modelCamera.up);
+        rlSetMatrixModelview(view);
+        rlRotatef(modelRotate, 0, 1, 0);
+
+        rmodel->model.Render();
+
+        EndMode3D();   
     }
 
     /**

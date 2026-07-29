@@ -224,9 +224,9 @@ namespace openAITD {
 			}
 
 			if (world->inDark) {
-				resources->screen.begin();
+				BeginTextureMode(resources->screen.sceneTex);
 				renderMessage();
-				resources->screen.end();
+				EndTextureMode();
 				return;
 			}
 
@@ -319,7 +319,7 @@ namespace openAITD {
 
 			}
 
-			BeginTextureMode(resources->screen.screenTex);
+			BeginTextureMode(resources->screen.sceneTex);
 			ClearBackground(BLACK);
 
 			DrawTexturePro(
@@ -368,7 +368,7 @@ namespace openAITD {
 					UnloadImage(testImg);
 					*/
 
-					BeginTextureMode(resources->screen.screenTex);
+					BeginTextureMode(resources->screen.sceneTex);
 					BeginBlendMode(BLEND_ALPHA);
 					BeginShaderMode(maskShader);
 					SetShaderValueTexture(maskShader, shTextureColorLoc, colorTex.texture);
@@ -389,10 +389,9 @@ namespace openAITD {
 				}
 			}
 
-			BeginTextureMode(resources->screen.screenTex);
+			BeginTextureMode(resources->screen.sceneTex);
 			renderMessage();
 			EndTextureMode();
-			resources->screen.finalRender(resources->screen.screenTex.texture);
 
 			//for (auto it = renderQueue.begin(); it != renderQueue.end(); it++) {
 			//	DrawLine(it->screenMin.x, it->screenMin.y, it->screenMax.x, it->screenMin.y, RED);

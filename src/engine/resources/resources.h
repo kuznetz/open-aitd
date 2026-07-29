@@ -29,13 +29,14 @@ namespace openAITD {
 		Screen screen;
 		Audio audio;
 
-		Resources() {
+		Resources():
+		 screen(config)
+		 {
 			nameDecoders.load();
 			backgrounds.loadAltBackgrounds();
 			models.config = &config;
 			backgrounds.config = &config;
 			backgrounds.stages = &stages;
-			screen.config = &config;
 			models.nameDecoders = &nameDecoders;
 		}
 

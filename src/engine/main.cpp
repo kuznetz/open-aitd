@@ -175,19 +175,16 @@ namespace openAITD {
     }
 
     void renderWorld() {
+        resources.screen.begin();
         if (freeLook) {
-            resources.screen.begin();
             flRenderer.render();
-            resources.screen.end();
-            return;
-        }
-        if (world.picture.id != -1) {
-            resources.screen.begin();
+        } else if (world.picture.id != -1) {
             pictureScr.render();
-            resources.screen.end();
-            return;
+        } else {
+            renderer.render();
         }
-        renderer.render();
+        resources.screen.renderScene();
+        resources.screen.end();
     }
 
     void startMenu() {

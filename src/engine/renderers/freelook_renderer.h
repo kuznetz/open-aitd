@@ -219,6 +219,9 @@ namespace openAITD {
 		}
 
 		void render() {
+			BeginTextureMode(resources->screen.sceneTex);
+			ClearBackground(BLACK);
+
 			if (world->curStageId == -1 || world->curCameraId == -1) return;
 			if (world->curStageId != curStageId || world->curCameraId != curCameraId) {
 				curStageId = world->curStageId;
@@ -291,6 +294,8 @@ namespace openAITD {
 			}
 
 			renderCamPos();
+
+			EndTextureMode();
 		}
 
 	};
