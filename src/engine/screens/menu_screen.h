@@ -81,7 +81,6 @@ namespace openAITD {
 
             mainMenu.setSelectedIndex(0);
             savesMenu.setSelectedIndex(0);
-            world.brightnessTrg = 0.1;
         }
 
         void submitMain() {

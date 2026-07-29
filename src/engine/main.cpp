@@ -27,6 +27,8 @@
 using namespace std;
 namespace openAITD {
 
+    const float inDarkBrightness = 0.02f;
+
     enum class AppState {
         Loading,
         Intro,
@@ -139,9 +141,21 @@ namespace openAITD {
         }        
     }
 
-    void processWorld(float timeDelta) {
-        world.brightnessTrg = 1;
+    void renderMessage() {
+        if (world.messageTime > 0) {
+            auto& scr = resources.screen;
+            const char* m = world.messageText.c_str();
+            int& fontH = resources.screen.mainFont.baseSize;
+            scr.drawCentered(m, { 
+                0,
+                (float)(scr.config.screenH - (fontH * 2)),
+                (float)scr.config.screenW,
+                (float)fontH
+            }, WHITE);
+        }
+    }
 
+    void processWorld(float timeDelta) {
         if (world.picture.id != -1) {
             pictureScr.process(timeDelta);
             return;
@@ -163,6 +177,12 @@ namespace openAITD {
             timeDelta *= 8;
         }
         if (!pause) {
+            if (world.inDark) {
+                world.brightnessTrg = inDarkBrightness;
+            } else {
+                world.brightnessTrg = 1;
+            }
+
             while (true) {
 
                 float partDelta = min(timeDelta, maxDelta);
@@ -183,6 +203,7 @@ namespace openAITD {
             }
         }
         if (freeLook) {
+            world.brightnessTrg = 1;
             flRenderer.freeLook = pause;
             flRenderer.process();
         }
@@ -198,6 +219,7 @@ namespace openAITD {
         }
         resources.screen.begin();
         resources.screen.renderScene(world.brightnessCur);
+        renderMessage();
         resources.screen.end();
     }
 
@@ -236,6 +258,7 @@ namespace openAITD {
     bool process(float timeDelta) {
         processBrightness(timeDelta);        
         if (state == AppState::MainMenu) {
+            world.brightnessTrg = world.inDark ? inDarkBrightness : 0.1f;
             if (!processMenu(timeDelta)) return false;
         }
         else if (state == AppState::Intro) {
@@ -285,6 +308,7 @@ namespace openAITD {
 
         }
         else if (state == AppState::Inventory) {
+            world.brightnessTrg = world.inDark ? inDarkBrightness : 0.15f;
             inventoryScreen.process(timeDelta);
             if (inventoryScreen.exit) {
                 state = AppState::InWorld;

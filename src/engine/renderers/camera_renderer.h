@@ -223,12 +223,12 @@ namespace openAITD {
 				initShaders();
 			}
 
-			if (world->inDark) {
+			/*if (world->inDark) {
 				BeginTextureMode(resources->screen.sceneTex);
 				renderMessage();
 				EndTextureMode();
 				return;
-			}
+			}*/
 
     	if (world->curStageId == -1 || world->curCameraId == -1) return;
 
@@ -390,7 +390,6 @@ namespace openAITD {
 			}
 
 			BeginTextureMode(resources->screen.sceneTex);
-			renderMessage();
 			EndTextureMode();
 
 			//for (auto it = renderQueue.begin(); it != renderQueue.end(); it++) {

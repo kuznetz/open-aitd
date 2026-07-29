@@ -177,17 +177,6 @@ namespace openAITD {
 			rlSetMatrixModelview(m);
 		}
 
-
-		void renderMessage() {
-			if (world->messageTime > 0) {
-				auto& f = resources->screen.mainFont;
-				const char* m = world->messageText.c_str();
-				auto mt = MeasureTextEx(f, m, f.baseSize, 0);
-				Vector2 v = { (int)(getScreenW() - mt.x) / 2, getScreenH() - (f.baseSize * 2) };
-				DrawTextEx(f, m, v, f.baseSize, 0, WHITE);
-			}
-		}
-
 	};
 
 }
