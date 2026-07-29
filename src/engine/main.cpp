@@ -159,11 +159,23 @@ namespace openAITD {
 
     void processWorld(float timeDelta) {
         if (world.picture.id != -1) {
+            world.brightnessTrg = 1;
             pictureScr.process(timeDelta);
             return;
         }
-
-        loadStage();
+        if (world.bookData.readText != -1) {
+            world.brightnessTrg = 1;
+            bookScreen.process(timeDelta);
+            return;
+        }        
+        if (world.curStageId != world.nextStageId) {
+            if (world.brightnessCur > 0) {
+                world.brightnessTrg = 0;
+                return;
+            } else {
+                loadStage();
+            }
+        }
         world.setCurRoom(world.nextRoomId);
         
         if (IsKeyPressed(KEY_O)) {
@@ -272,11 +284,7 @@ namespace openAITD {
             }
         }
         else if (state == AppState::InWorld) {
-            if (world.bookData.readText != -1) {
-                world.brightnessTrg = 1;
-                bookScreen.process(timeDelta);
-            }
-            else if (world.player.allowInventory && IsKeyPressed(KEY_ENTER)) {
+            if (world.player.allowInventory && IsKeyPressed(KEY_ENTER)) {
                 inventoryScreen.reload();
                 state = AppState::Inventory;
             }
@@ -312,7 +320,7 @@ namespace openAITD {
             }
         }
         else if (state == AppState::Inventory) {
-            world.brightnessTrg = world.inDark ? inDarkBrightness : 0.15f;
+            world.brightnessTrg = world.inDark ? inDarkBrightness : 0.2f;
             inventoryScreen.process(timeDelta);
             if (inventoryScreen.exit) {
                 state = AppState::InWorld;
