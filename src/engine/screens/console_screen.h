@@ -122,12 +122,12 @@ namespace openAITD {
           throw new exception("Arguments must be int");
       }
       try {
-        if (stageId < 0) {
+        if (stageId < 0 || stageId >= world->resources->stages.size()) {
             lines[0] = BuildString("Stage count: ", world->resources->stages.size());
             return;
         }
         auto& stage = world->resources->stages[stageId];
-        if (roomId < 0) {
+        if (roomId < 0 || roomId >= stage.rooms.size()) {
             lines[0] = BuildString("Room count in ",stageId,": ", stage.rooms.size());
             return;
         }
