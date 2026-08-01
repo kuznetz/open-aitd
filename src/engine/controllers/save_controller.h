@@ -88,10 +88,10 @@ namespace openAITD {
                 auto outObj = json::object();
 
                 outObj["location"] = json::object();
-                outObj["location"]["stageId"] = gobj.location.stageId;
-                outObj["location"]["roomId"] = gobj.location.roomId;
-                outObj["location"]["position"] = vector2json(gobj.location.position);
-                const auto& r = gobj.location.rotation2;
+                outObj["location"]["stageId"] = gobj.getStageId();
+                outObj["location"]["roomId"] = gobj.getRoomId();
+                outObj["location"]["position"] = vector2json(gobj.getPosition());
+                const auto& r = gobj.getOrigRotation();
                 outObj["location"]["rotation2"] = json::array();
                 outObj["location"]["rotation2"].push_back(r.x);
                 outObj["location"]["rotation2"].push_back(r.y);
@@ -163,17 +163,20 @@ namespace openAITD {
                     world->cVars[i] = inJson["cVars"][i];
                 }
 
-                world->gobjects.resize(inJson["objects"].size());
+                world->gobjects.clear();
+                world->gobjects.reserve(inJson["objects"].size());
                 for (int i = 0; i < world->gobjects.size(); i++) {
                     auto& inObj = inJson["objects"][i];
-                    auto& gobj = world->gobjects[i];
+                    auto& gobj = world->gobjects.emplace_back(*resources);
                     gobj.id = i;
                     
-                    gobj.location.stageId = inObj["location"]["stageId"];
-                    gobj.location.roomId = inObj["location"]["roomId"];
-                    gobj.location.position = json2vector(inObj["location"]["position"]);
+                    gobj.setStage(
+                        inObj["location"]["stageId"],
+                        inObj["location"]["roomId"],
+                        json2vector(inObj["location"]["position"])
+                    );
                     auto& r = inObj["location"]["rotation2"];
-                    gobj.location.rotation2 = { r[0], r[1], r[2] };
+                    gobj.setOrigRotation({ r[0], r[1], r[2] });
                     // auto& r2 = inObj["location"]["rotOrig"];
                     // gobj.location.rotOrig = { r2[0], r2[1], r2[2] };
 
@@ -198,8 +201,6 @@ namespace openAITD {
                     gobj.lifeMode = inObj["lifeMode"];
                     gobj.chrono = world->chrono + inObj["chrono"];
                     gobj.physics.hitObjectDamage = inObj["hitObjectDamage"];
-
-                    gobj.physics.boundsCached = false;
                 }
 
                 world->inventory.resize(inJson["inventory"].size());
@@ -214,7 +215,7 @@ namespace openAITD {
                 world->inDark = inJson["inDark"];
 
                 auto foll = world->followTarget;
-                world->setCurStage(foll->location.stageId, foll->location.roomId);
+                world->setCurStage(foll->getStageId(), foll->getRoomId());
                 
                 world->resources->backgrounds.setIsAltBackgrounds(!!world->cVars[12]);
 

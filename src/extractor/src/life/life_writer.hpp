@@ -7,7 +7,7 @@
 #include <iomanip>
 #include <vector>
 #include <stdexcept>
-#include "../../names-decode/name_decoders.hpp"
+#include "../../common/name_decoders.hpp"
 #include "../structs/life.h"
 
 

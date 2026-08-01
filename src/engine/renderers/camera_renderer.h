@@ -68,7 +68,7 @@ namespace openAITD {
 		}
 
 		bool checkOverlay(GCameraOverlay& ovl, GameObject& gobj) {
-			Vector3 pos = gobj.location.position;
+			Vector3 pos = gobj.getPosition();
 			for (int i = 0; i < ovl.bounds.size(); i++) {
 				auto& b = ovl.bounds[i].getExpanded(-0.01);
 				//if (CheckCollisionBoxes(objBnd, ovl.bounds[i])) {
@@ -84,7 +84,7 @@ namespace openAITD {
 			ClearBackground(BLACK);
 			BeginBlendMode(BLEND_ADDITIVE);
 			for (int camRoomIdx = 0; camRoomIdx < curCamera->rooms.size(); camRoomIdx++) {
-				if (renderIter->gobj->location.roomId != curCamera->rooms[camRoomIdx].roomId) continue;
+				if (renderIter->gobj->getRoomId() != curCamera->rooms[camRoomIdx].roomId) continue;
 				for (int ovlIdx = 0; ovlIdx < curCamera->rooms[camRoomIdx].overlays.size(); ovlIdx++) {
 					auto& ovl = curCamera->rooms[camRoomIdx].overlays[ovlIdx];
 					if (checkOverlay(ovl, *renderIter->gobj)) {
@@ -117,10 +117,10 @@ namespace openAITD {
 			ord.gobj = &gobj;
 
 			//Calc matrix
-			Vector3& roomPos = world->curStage->rooms[gobj.location.roomId].position;
-			auto pos = Vector3Add(roomPos, gobj.location.position);
+			Vector3& roomPos = world->curStage->rooms[gobj.getRoomId()].origPosition;
+			auto pos = Vector3Add(roomPos, gobj.getPosition());
 			Matrix matTranslation = MatrixTranslate(pos.x, pos.y, pos.z);
-			const auto& rot = gobj.location.rotation2;
+			const auto& rot = gobj.getOrigRotation();
 			Matrix matRotation = MatrixRotateXYZ(rot);
 			Matrix matScale = MatrixScale(1, 1, 1);
 			Matrix matTransform = MatrixMultiply(MatrixMultiply(matScale, matRotation), matTranslation);
@@ -246,7 +246,7 @@ namespace openAITD {
 			for (int i = 0; i < this->world->gobjects.size(); i++) {
 				auto& gobj = this->world->gobjects[i];
 				if (gobj.model.id == -1) continue;
-				if (gobj.location.stageId != curStageId) continue;
+				if (gobj.getStageId() != curStageId) continue;
 				renderObject(gobj, WHITE);
 			}
 			*/
@@ -257,19 +257,19 @@ namespace openAITD {
 			for (int i = 0; i < this->world->gobjects.size(); i++) {
 				auto& gobj = this->world->gobjects[i];
 				if (gobj.modelId == -1) continue;
-				if (gobj.location.stageId != curStageId) continue;
+				if (gobj.getStageId() != curStageId) continue;
 				
 				int curCamRoom = -1;
 				for (int j = 0; j < curCamera->rooms.size(); j++) {
-					if (gobj.location.roomId == curCamera->rooms[j].roomId) {
+					if (gobj.getRoomId() == curCamera->rooms[j].roomId) {
 						curCamRoom = j;
 						break;
 					}
 				}
 				if (curCamRoom == -1) continue;
 
-				Vector3 pos = gobj.location.position;
-				Vector3& roomPos = world->curStage->rooms[gobj.location.roomId].position;
+				Vector3 pos = gobj.getPosition();
+				Vector3& roomPos = world->curStage->rooms[gobj.getRoomId()].origPosition;
 				pos = Vector3Add(roomPos, pos);
 
 				if (gobj.modelId != -1) {
@@ -335,7 +335,7 @@ namespace openAITD {
 				int num = 1;
 				renderIter = renderStart;
 				while (true) {
-					//auto s = to_string(num)+" R" + to_string(it->obj->location.roomId);
+					//auto s = to_string(num)+" R" + to_string(it->obj->getRoomId());
 					//auto s = to_string(it->obj->);
 
 					raylib::Rectangle r = {

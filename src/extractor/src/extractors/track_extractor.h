@@ -1,4 +1,5 @@
 ﻿#include "../../../raylib-cpp/raylib-cpp.h"
+#include "../../../common/metrics.hpp"
 #include "../structs/track.h"
 #define NLOHMANN_JSON_NAMESPACE_NO_VERSION 1
 #include <nlohmann/json.hpp>
@@ -77,6 +78,7 @@ namespace AITDExtractor {
 						objJson["type"] = tr.type->type;
 
 				Vector3 v;
+				openAITD::EulerAngles r;
 				switch (tr.type->type)
 				{
 				case TrackEnum::WARP:
@@ -102,10 +104,11 @@ namespace AITDExtractor {
 					break;
 
 				case TrackEnum::ROTATE_Y:
+				  r = openAITD::Metrics::fromRotate(0, tr.arguments[0], 0);
 					objJson["rot"] = json::array();
-					objJson["rot"][0] = 0;
-					objJson["rot"][1] = tr.arguments[0] * 2. * PI / 1024;
-					objJson["rot"][2] = 0;
+					objJson["rot"][0] = r.x;
+					objJson["rot"][1] = r.y;
+					objJson["rot"][2] = r.z;
 					break;
 
 				case TrackEnum::GOTO_3D:
@@ -130,9 +133,10 @@ namespace AITDExtractor {
 
 				case TrackEnum::ROTATE_XYZ:
 					objJson["rot"] = json::array();
-					objJson["rot"][0] = tr.arguments[0] * 2. * PI / 1024;
-					objJson["rot"][1] = tr.arguments[1] * 2. * PI / 1024;
-					objJson["rot"][2] = tr.arguments[2] * 2. * PI / 1024;
+					r = openAITD::Metrics::fromRotate(tr.arguments[0],tr.arguments[1],tr.arguments[2]);
+					objJson["rot"][0] = r.x;
+					objJson["rot"][1] = r.y;
+					objJson["rot"][2] = r.z;
 					break;
 				}
 						outJson.push_back(objJson);

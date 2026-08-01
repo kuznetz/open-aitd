@@ -4,6 +4,7 @@
 #include "../world/world.h"
 
 using namespace std;
+using namespace raylib;
 
 namespace openAITD {
 
@@ -27,7 +28,7 @@ namespace openAITD {
 
 				auto& gobj = this->world->gobjects[i];
                 if (gobj.modelId == -1) continue; 
-				if (gobj.location.stageId != this->world->curStageId) continue;
+				if (gobj.getStageId() != this->world->curStageId) continue;
                 if (!world->isObjectActive(gobj)) continue;
 
                 auto& objAni = gobj.animation;
@@ -111,6 +112,9 @@ namespace openAITD {
                 else {
                     objAni.moveRoot = { 0,0,0 };
                 }
+
+                objAni.moveRoot = Vector3Transform(objAni.moveRoot, MatrixRotateY(PI));
+                objAni.moveRoot.x = -objAni.moveRoot.x;
 
                 gobj.prevModelId = gobj.modelId;
                 objAni.prevId = objAni.id;

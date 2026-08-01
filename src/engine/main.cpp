@@ -113,7 +113,7 @@ namespace openAITD {
         for (int i = 0; i < world.gobjects.size(); i++) {
             auto& gobj = world.gobjects[i];
             if (gobj.modelId == -1) continue;
-            if (gobj.location.stageId != world.curStageId) continue;
+            if (gobj.getStageId() != world.curStageId) continue;
             resources.models.getModel(gobj.modelId);
         }
 

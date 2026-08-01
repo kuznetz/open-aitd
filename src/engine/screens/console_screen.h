@@ -133,9 +133,7 @@ namespace openAITD {
         }
         auto& room = stage.rooms[roomId];
         auto& player = world->gobjects[1];
-				player.location.stageId = stageId;
-				player.location.roomId = roomId;
-				player.location.position = { 0,0,0 };
+        player.setStage(stageId, roomId, { 0,0,0 });
         exit = true;
 
       } catch (const exception& e) {
@@ -218,8 +216,7 @@ namespace openAITD {
         if (gobj.bitField.fallable) objInfo += "Grav ";
         lines[1] = objInfo;
 
-        auto& loc = gobj.location;
-        lines[2] = BuildString("Stage:", loc.stageId, " Room:", loc.roomId);
+        lines[2] = BuildString("Stage:", gobj.getStageId(), " Room:", gobj.getRoomId());
         
         string animInfo = BuildString(
           "Model: ", gobj.modelId, 
@@ -231,12 +228,14 @@ namespace openAITD {
         
         lines[4] = BuildString("Life: ", (int)gobj.lifeMode, " ", gobj.lifeId);
 
-        lines[5] = BuildString("Pos X:", loc.position.x, 
-                              " Y:", loc.position.y, 
-                              " Z:", loc.position.z);
-        lines[6] = BuildString("Rot: X:", loc.rotation2.x / PI * 180, 
-                              " Y:", loc.rotation2.y / PI * 180, 
-                              " Z:", loc.rotation2.z / PI * 180);        
+        auto pos = gobj.getPosition();
+        lines[5] = BuildString("Pos X:", pos.x, " Y:", pos.y, " Z:", pos.z);
+        auto rot = gobj.getOrigRotation();
+        lines[6] = BuildString(
+          "Rot: X:", rot.x / PI * 180, 
+          " Y:", rot.y / PI * 180, 
+          " Z:", rot.z / PI * 180
+        );
 
       } catch (exception e) {
         lines[0] = "Invalid object ID";

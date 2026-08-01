@@ -2,8 +2,9 @@
 #include <vector>
 #include <string>
 #include "../../raylib-cpp/raylib-cpp.h"
+#include "../../common/metrics.hpp"
 #include "../resources/resources.h"
-#include "./euler_angles.hpp"
+#include "../../common/euler_angles.hpp"
 
 using namespace std;
 namespace openAITD {
@@ -68,20 +69,6 @@ namespace openAITD {
 		rotated = 3
 	};
 
-	struct Vector3i {
-		int x, y, z;
-	};
-
-	struct GOLocation
-	{
-		bool changingStage = false;
-		int stageId = -1;
-		int roomId = -1;
-		Vector3 position;
-		EulerAngles rotation2 = { 0,0,0 };
-		//Vector3i rotOrig;
-	};
-
 	struct GOAnimation
 	{
 		int prevId = -1;
@@ -130,10 +117,8 @@ namespace openAITD {
 
 	struct GOPhysics
 	{
-		bool boundsCached = false;
 		bool falling = 0;
 		bool collidable = 1;
-		Bounds bounds;
 		bool moving;
 		Vector3 moveVec;
 		int collidedBy = -1;
@@ -180,7 +165,7 @@ namespace openAITD {
 	struct GODamage
 	{
 		int damage;
-		GameObject* hitBy;
+		GameObject* hitBy = nullptr;
 	};
 
 	struct GOHit
@@ -190,7 +175,7 @@ namespace openAITD {
 		int boneIdx;
 		int hitDamage;
 		Bounds bounds;
-		GameObject* hitTo;
+		GameObject* hitTo = nullptr;
 	};
 
 	struct GOThrowing
@@ -207,7 +192,6 @@ namespace openAITD {
 		int id = -1;
 		string name;
 
-		//openAITD::Model* model;
 		int prevModelId = -1;
 		int modelId = -1;
 
@@ -235,56 +219,120 @@ namespace openAITD {
 		GOLifeMode lifeMode;	
 		float chrono;
 
-		//to private:
-		GOLocation location;
+		GameObject(Resources& resources) :
+		 resources(resources)
+		 {}
 
     void setPosition(const Vector3& newPos) {
-			location.position = newPos;
-			physics.boundsCached = false;
+			position = newPos;
+			boundsCached = false;
 		}
 
 		Vector3 getPosition() const {
-			return location.position;
+			return position;
 		}
 
-		void setRotation(const EulerAngles& newEuler){
-			location.rotation2 = newEuler.GetNormalized();
+		void setOrigRotation(const EulerAngles& newEuler){
+			origRotation = newEuler.GetNormalized();
+			rotMatrixCached = false;
 			if (boundsType == BoundsType::rotated) {
-				physics.boundsCached = false;
+				boundsCached = false;
 			}			
 		}
 
-		Vector3 getRotation() const {
-			return location.rotation2;
-		}
-
-		void setRoom( int roomId ) {
-			location.roomId = roomId;
-		}
-
-		void setStage( int stageId ) {
-  		location.stageId = stageId;
-		}
-
-		int getRoom() const {
-			return location.roomId;
-		}
-
-		int getStage() const {
-			return location.stageId;
-		}
-
 		Vector3i getIntRotation() const {
-			Vector3i result = {
-				round(location.rotation2.x * 512 / PI) + 512,
-				round(location.rotation2.y * 512 / PI) + 512,
-				round(location.rotation2.z * 512 / PI) + 512
-			};
-			if (result.y > 1024) result.y -= 1024;
-			return result;
+			//Reverse format for scripts			
+			return Metrics::toRotate(origRotation);
+		}		
+
+		EulerAngles getOrigRotation() const {
+			return origRotation;
 		}
 
-//	private:
+		Matrix getRotMatrix() {
+			if (rotMatrixCached) {
+				return rotMatrix;
+			}
+			EulerAngles rot = origRotation;
+			rotMatrix = MatrixMultiply( MatrixRotateYZX(rot), Metrics::roomMatrix );
+			rotMatrixCached = true;
+			return rotMatrix;
+		}
+
+		Bounds getBounds() {
+			if (this->boundsCached) {
+				return this->bounds;
+			}
+			RModel* m = resources.models.getModel(this->modelId);
+			if (!m) return {{0,0,0},{0,0,0}};
+			Bounds objB = (this->physics.boundsOverload) ? this->physics.overloadBounds : m->bounds;
+
+			if (this->boundsType == BoundsType::cube) {
+				objB = objB.getCubeBounds();
+			} else if (this->boundsType == BoundsType::rotated) {
+				objB = objB.getRotatedBounds(this->getRotMatrix());
+			}
+			
+			Vector3& p = this->position;
+			objB.min = Vector3Add(objB.min, p);
+			objB.max = Vector3Add(objB.max, p);
+			objB.correctBounds();
+
+			this->bounds = objB;
+			this->boundsCached = true;
+			return objB;
+		}
+
+		void setStage( const int stageId, const int roomId, const Vector3 position ) {
+  		this->stageId = stageId;
+			this->roomId = roomId;
+			setPosition(position);
+		}
+
+		int getStageId() const {
+			return stageId;
+		}
+
+  	void changeRoom( const int toRoomId ) {			
+			auto& curStage = resources.stages[stageId];
+			auto& roomFrom = curStage.rooms[roomId].origPosition;
+			auto& roomTo = curStage.rooms[toRoomId].origPosition;
+			position = Vector3Subtract(Vector3Add(position, roomFrom), roomTo);
+			this->roomId = toRoomId;
+		}
+
+		int getRoomId() const {
+			return roomId;
+		}
+
+		Bounds getBoundsInRoom(int toRoomId) {
+			if (roomId == toRoomId) return getBounds();
+			auto& curStage = resources.stages[stageId];
+			auto& roomFrom = curStage.rooms[roomId].origPosition;
+			auto& roomTo = curStage.rooms[toRoomId].origPosition;
+			auto& b = getBounds();
+			return {
+				Vector3Subtract(Vector3Add(b.min, roomFrom), roomTo),
+				Vector3Subtract(Vector3Add(b.max, roomFrom), roomTo)
+			};
+		}		
+
+		bool changingStage = false;
+
+	private:
+	  Resources resources;
+	  //Position
+	  Vector3 position;
+		// Original rotation values YZX, need for scripts
+		EulerAngles origRotation = { 0,0,0 };
+		// Readonly - Current rotation matrix for physics and rendering
+		raylib::Matrix rotMatrix;
+		bool rotMatrixCached = false;
+		Bounds bounds;
+		bool boundsCached = false;
+		//Stage
+		int stageId = -1;
+		int roomId = -1;
 	};
 
 }

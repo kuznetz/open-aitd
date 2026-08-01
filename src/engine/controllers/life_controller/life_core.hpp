@@ -112,8 +112,8 @@ namespace openAITD {
 			curTimeDelta = timeDelta;
 
 			/*auto foll = world->followTarget;
-			if (foll && (foll->location.stageId != -1) && (foll->location.stageId != world->curStageId || foll->location.roomId != world->curRoomId)) {
-				world->setCurRoom(foll->location.stageId, foll->location.roomId);
+			if (foll && (foll->getStageId() != -1) && (foll->getStageId() != world->curStageId || foll->getRoomId() != world->curRoomId)) {
+				world->setCurRoom(foll->getStageId(), foll->getRoomId());
 			}*/
 
 			for (auto it = funcs.begin(); it != funcs.end(); it++)

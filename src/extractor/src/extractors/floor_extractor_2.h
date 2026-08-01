@@ -14,8 +14,6 @@ namespace AITDExtractor {
     using namespace std;
 
 
-    inline Matrix roomMat;
-
     void addCamera(tinygltf::Model& m, int camIdx, cameraStruct& cam) {
         /* 20 335.4 0 */
         //Matrix my = MatrixInvert(MatrixRotateY(((float)cam.beta * 2 * PI / 1024)));
@@ -65,12 +63,12 @@ namespace AITDExtractor {
             coll.zv.ZVX1 / 1000.f ,
             coll.zv.ZVY1 / 1000.f ,
             coll.zv.ZVZ1 / 1000.f
-        }, roomMat);
+        }, openAITD::Metrics::roomMatrix);
         Vector3 v2 = Vector3Transform({
             coll.zv.ZVX2 / 1000.f ,
             coll.zv.ZVY2 / 1000.f ,
             coll.zv.ZVZ2 / 1000.f
-        }, roomMat);
+        }, openAITD::Metrics::roomMatrix);
         Vector3 size = Vector3Subtract(v2, v1);
 
         collN.translation = {
@@ -96,9 +94,6 @@ namespace AITDExtractor {
         m.asset.version = "2.0";
         m.asset.generator = "open-AITD";
         
-        //Rotate every in room by x 180 deg by room center
-        roomMat = MatrixRotateX(PI);
-
         createCubeMesh(m);
 
         vector<tinygltf::Node> roomNodes(floor->rooms.size());
@@ -221,12 +216,12 @@ namespace AITDExtractor {
                             ovlZ.zoneX1 / 100.f,
                             0.1f,
                             ovlZ.zoneZ1 / 100.f
-                        }, roomMat);
+                        }, openAITD::Metrics::roomMatrix);
                         Vector3 v2 = Vector3Transform({
                             ovlZ.zoneX2 / 100.f,
                             0.0f,
                             ovlZ.zoneZ2 / 100.f
-                        }, roomMat);
+                        }, openAITD::Metrics::roomMatrix);
                         Vector3 size = Vector3Subtract(v2, v1);
 
                         ovlZN.translation = { v1.x, v1.y, v1.z };
@@ -244,7 +239,7 @@ namespace AITDExtractor {
                     vector<float> flzone(camZone.pointTable.size() * 3);
                     for (int pIdx = 0; pIdx < camZone.pointTable.size(); pIdx++) {
                         auto& p = camZone.pointTable[pIdx];
-                        Vector3 v = Vector3Transform({ p.x / 100.f, 0.0f, p.y / 100.f }, roomMat);
+                        Vector3 v = Vector3Transform({ p.x / 100.f, 0.0f, p.y / 100.f }, openAITD::Metrics::roomMatrix);
                         flzone[pIdx * 3 + 0] = v.x;
                         flzone[pIdx * 3 + 1] = v.y;
                         flzone[pIdx * 3 + 2] = v.z;

@@ -16,7 +16,7 @@ namespace AITDExtractor {
     using namespace raylib;
     using nlohmann::json;
 
-    inline Matrix roomMatMdl;
+    inline const Matrix modelMatrix  = MatrixMultiply(MatrixRotateX(PI), MatrixRotateY(PI)); //MatrixIdentity();
 
     void ComputeUV(vector<Vector3>& allVertices, vector<int>& polyVertices, Vector3& forward, Vector3& left)
     {
@@ -196,7 +196,7 @@ namespace AITDExtractor {
                     //eb.translates[i] = { b.delta[0] / 1000.0f, b.delta[1] / 1000.0f, b.delta[2] / 1000.0f };
                     eb.translates[i+1] = Vector3Add(bonePos[j], Vector3Transform(
                         { b.delta[0] / 1000.0f, b.delta[1] / 1000.0f, b.delta[2] / 1000.0f },
-                        roomMatMdl));
+                        modelMatrix));
                     break;
                 case 2:
                     eb.scales[i+1] = { b.delta[0] / 256.0f + 1.0f, b.delta[1] / 256.0f + 1.0f, b.delta[2] / 256.0f + 1.0f };
@@ -219,7 +219,7 @@ namespace AITDExtractor {
             auto& f = anim.frames[i];
             pos = Vector3Add(pos,Vector3Transform(
                 { f.offset[0] / 1000.0f, f.offset[1] / 1000.0f, f.offset[2] / 1000.0f },
-                roomMatMdl
+                modelMatrix
             ));
             t[i + 1] = pos;
         }
@@ -386,7 +386,6 @@ namespace AITDExtractor {
     void saveModelGLTF(const PakModel& model, vector<Animation*> animations, const Pallete& pallete, const string dirname)
     {
         const bool splitPrimitives = false;
-        roomMatMdl = MatrixMultiply(MatrixRotateX(PI), MatrixRotateY(PI)); //MatrixIdentity();
         tinygltf::Model m;
         m.asset.version = "2.0";
         m.asset.generator = "open-AITD";
@@ -398,7 +397,7 @@ namespace AITDExtractor {
                 model.vertices[i * 3 + 0] / 1000.f,
                 model.vertices[i * 3 + 1] / 1000.f,
                 model.vertices[i * 3 + 2] / 1000.f
-                }, roomMatMdl);
+                }, modelMatrix);
         }
 
         tinygltf::Skin skin;
@@ -602,12 +601,12 @@ namespace AITDExtractor {
             model.bounds.ZVX1 / 1000.f ,
             model.bounds.ZVY1 / 1000.f ,
             model.bounds.ZVZ1 / 1000.f
-            }, roomMatMdl);
+            }, modelMatrix);
         Vector3 v2 = Vector3Transform({
             model.bounds.ZVX2 / 1000.f ,
             model.bounds.ZVY2 / 1000.f ,
             model.bounds.ZVZ2 / 1000.f
-            }, roomMatMdl);
+            }, modelMatrix);
 
         json dataJson;
         dataJson["bounds"] = json::array();

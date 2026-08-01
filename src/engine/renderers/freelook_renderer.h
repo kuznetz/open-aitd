@@ -37,12 +37,12 @@ namespace openAITD {
 				auto& room = world->curStage->rooms[r];
 				int curRoomId = -1;
 				if (world->followTarget) {
-					curRoomId = world->followTarget->location.roomId;
+					curRoomId = world->followTarget->getRoomId();
 				}
 				Color c = (r == curRoomId) ? WHITE : DARKBLUE;
-				DrawCube(room.position, 0.1, 0.1, 0.1, c);
+				DrawCube(room.origPosition, 0.1, 0.1, 0.1, c);
 				rlPushMatrix();
-				rlTranslatef(room.position.x, room.position.y, room.position.z);
+				rlTranslatef(room.origPosition.x, room.origPosition.y, room.origPosition.z);
 				for (int collId = 0; collId < room.colliders.size(); collId++) {
 					c = DARKBLUE;
 					if (r == curRoomId) {
@@ -60,16 +60,16 @@ namespace openAITD {
 		void renderZones() {
 			if (!world->followTarget) return;
 			if (world->curStageId != world->nextStageId) return;
-			int curRoomId = world->followTarget->location.roomId;
+			int curRoomId = world->followTarget->getRoomId();
 			if (curRoomId == -1) return;
 			auto& room = world->curStage->rooms[curRoomId];
 			rlPushMatrix();
-			rlTranslatef(room.position.x, room.position.y, room.position.z);
+			rlTranslatef(room.origPosition.x, room.origPosition.y, room.origPosition.z);
 			for (int z = 0; z < room.zones.size(); z++) {
 				auto& zone = room.zones[z];
 				if (zone.type == RoomZoneType::ChangeStage) {
 					DrawBounds(zone.bounds, YELLOW);
-					renderDebugText3D(Vector3Add(room.position, zone.bounds.min), to_string(zone.parameter), YELLOW);
+					renderDebugText3D(Vector3Add(room.origPosition, zone.bounds.min), to_string(zone.parameter), YELLOW);
 					
 				} else {
 					DrawBounds(zone.bounds, MAGENTA);
@@ -147,8 +147,8 @@ namespace openAITD {
 			}
 
 			rlPushMatrix();
-  		Vector3& pos = gobj.location.position;			
-			Vector3& roomPos = world->curStage->rooms[gobj.location.roomId].position;
+  		Vector3& pos = gobj.getPosition();			
+			Vector3& roomPos = world->curStage->rooms[gobj.getRoomId()].origPosition;
 			rlMultMatrixf(MatrixToFloat(MatrixTranslate(roomPos.x,roomPos.y,roomPos.z)));
 
 			DrawCube(pos, 0.1, 0.1, 0.1, RED);
@@ -158,30 +158,18 @@ namespace openAITD {
 				" ("+to_string(gobj.id)+")";
   		renderDebugText3D(Vector3Add(roomPos, pos), debugStr, RED);
 
-			if (gobj.physics.boundsCached) {
-				DrawBounds(gobj.physics.bounds, RED);
-			}
+			DrawBounds(gobj.getBounds(), RED);
 			if (gobj.hit.active) {
 				DrawBounds(gobj.hit.bounds, RED);
 			}
-
-			//rlMultMatrixf(MatrixToFloat(MatrixTranslate(pos.x, pos.y, pos.z)));
-			//auto m = rmodel;
-			//Vector3 mMin = Vector3RotateByQuaternion(m->bounds.min, gobj.location.rotation);
-			//Vector3 mMax = Vector3RotateByQuaternion(m->bounds.max, gobj.location.rotation);
-			//DrawCube(mMin, 0.1, 0.1, 0.1, YELLOW);
-			//DrawCube(mMax, 0.1, 0.1, 0.1, MAGENTA);
+			Matrix mat = gobj.getRotMatrix();
+			Vector3 forw = Vector3Transform({0.0f, 0.0f, 1.0f}, mat);
+			forw = Vector3Add(pos, forw);
+			DrawLine3D(pos, forw, RED);
 
 			if (gobj.track.mode == GOTrackMode::track) {
 
 				DrawLine3D(pos, gobj.track.targetPos, ORANGE);
-				
-				/*Vector3 forw = { 
-					pos.x + gobj.track.debug.forward2D.x,
-					pos.y,
-					pos.z + gobj.track.debug.forward2D.y
-				};				
-				DrawCube(forw, 0.1, 0.1, 0.1, PINK);*/
 				Vector3 targDir = { 
 					pos.x + gobj.track.debug.targetDir.x,
 					pos.y,
@@ -189,19 +177,51 @@ namespace openAITD {
 				};				
 				DrawCube(targDir, 0.1, 0.1, 0.1, BROWN);
 				renderDebugText3D(Vector3Add(roomPos, targDir), to_string(gobj.track.debug.angle), PINK);
+			
+			} else if (gobj.track.mode == GOTrackMode::follow) {
+
+				auto& gobj2 = world->gobjects[gobj.track.id];
+				if (gobj.getStageId() == gobj2.getStageId()) {
+					Vector3 targetPos = world->curStage->VectorChangeRoom(
+						gobj2.getPosition(), 
+						gobj2.getRoomId(), 
+						gobj.getRoomId()
+					);
+					DrawLine3D(pos, targetPos, BROWN);
+					//DrawCube(targetPos, 0.15, 0.15, 0.15, BLUE);
+					// renderDebugText3D(Vector3Add(roomPos, targetPos), 
+					// 	"Follow: " + to_string(gobj.track.id), 
+					// 	BLUE
+					// );
+				}
+
 			}
 
 			rlPopMatrix();
 		}
 
-		void renderTrack()
+		// void renderTrack()
+		// {
+		// 	auto& track = resources->tracks[29];
+		// 	Vector3 from = { 0,0,0 };
+		// 	Vector3 to;
+		// 	for (int i = 0; i < track.size(); i++) {
+		// 		if (track[i].type == TrackItemType::GOTO_POS) {
+		// 			to = Vector3Add(track[i].pos, world->curStage->rooms[track[i].room].position);
+		// 			DrawLine3D(from, to, PINK);
+		// 			from = to;
+		// 		}
+		// 	}
+		// }
+
+		void renderFollow()
 		{
 			auto& track = resources->tracks[29];
 			Vector3 from = { 0,0,0 };
 			Vector3 to;
 			for (int i = 0; i < track.size(); i++) {
 				if (track[i].type == TrackItemType::GOTO_POS) {
-					to = Vector3Add(track[i].pos, world->curStage->rooms[track[i].room].position);
+					to = Vector3Add(track[i].pos, world->curStage->rooms[track[i].room].origPosition);
 					DrawLine3D(from, to, PINK);
 					from = to;
 				}
@@ -234,7 +254,7 @@ namespace openAITD {
 			for (int i = 0; i < this->world->gobjects.size(); i++) {
 				auto& gobj = this->world->gobjects[i];
 				if (gobj.model.id == -1) continue;
-				if (gobj.location.stageId != curStageId) continue;
+				if (gobj.getStageId() != curStageId) continue;
 				renderObjectEx(gobj, WHITE);
 			}
 			*/
@@ -243,10 +263,10 @@ namespace openAITD {
 			//list<RenderOrder> renderQueue;
 			for (int i = 0; i < this->world->gobjects.size(); i++) {
 				auto& gobj = this->world->gobjects[i];
-				if (gobj.location.stageId != curStageId) continue;
+				if (gobj.getStageId() != curStageId) continue;
 				
-				Vector3 pos = gobj.location.position;
-				Vector3& roomPos = world->curStage->rooms[gobj.location.roomId].position;
+				Vector3 pos = gobj.getPosition();
+				Vector3& roomPos = world->curStage->rooms[gobj.getRoomId()].origPosition;
 
 				//auto& screenPos = GetWorldToScreenZ(pos);
 				//if (screenPos.z < 0) continue;
@@ -269,7 +289,7 @@ namespace openAITD {
 			//		renderObject(*it->obj, WHITE);
 			//	EndMode3D();
 
-			//	//auto s = to_string(num)+" R" + to_string(it->obj->location.roomId);
+			//	//auto s = to_string(num)+" R" + to_string(it->obj->getRoomId());
 			//	//auto s = to_string(it->obj->);
 			//	//it->marker = s;
 			//	num++;

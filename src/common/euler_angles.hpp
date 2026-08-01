@@ -1,5 +1,5 @@
 #pragma once
-#include "../../raylib-cpp/raylib-cpp.h"
+#include "../raylib-cpp/raylib-cpp.h"
 
 namespace openAITD {
 
@@ -9,6 +9,7 @@ namespace openAITD {
 
     EulerAngles() : Vector3{0, 0, 0} {}
     EulerAngles(float x, float y, float z) : Vector3{x, y, z} {}
+    EulerAngles(const Vector3& v) : Vector3(v) {}
 
     static float NormalizeAngle(float angle) {
         angle = fmod(angle, 2*PI);

@@ -49,12 +49,12 @@ namespace openAITD {
             Vector3 v = mdl->model.curPose[action.activeBoneId].translation;
 
             Quaternion rotationQuat = QuaternionFromEuler(
-                gobj.location.rotation2.x,
-                gobj.location.rotation2.y,
-                gobj.location.rotation2.z
+                gobj.getOrigRotation().x,
+                gobj.getOrigRotation().y,
+                gobj.getOrigRotation().z
             );
             v = Vector3RotateByQuaternion(v, rotationQuat);            
-            v = Vector3Add(v, gobj.location.position);
+            v = Vector3Add(v, gobj.getPosition());
             return v;
         }
 
@@ -70,12 +70,9 @@ namespace openAITD {
             }
             //printf("THROW\n");
             auto& item = *action.throwedItem;
-            item.location.stageId = gobj.location.stageId;
-            item.location.roomId = gobj.location.roomId;
-            item.location.rotation2 = gobj.location.rotation2;
-            item.location.position = getBonePos();
-
-            item.physics.boundsCached = false;
+            
+            item.setStage(gobj.getStageId(),gobj.getRoomId(),getBonePos());
+            item.setOrigRotation(gobj.getOrigRotation());
             item.boundsType = BoundsType::rotated;
             
             item.bitField.foundable = false;

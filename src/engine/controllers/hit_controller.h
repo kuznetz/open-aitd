@@ -61,10 +61,10 @@ namespace openAITD {
             mdl->model.ApplyPose(curPose.data());
             //Vector3 v = Vector3Negate(mdl->model.curPose[gobj.hit.boneIdx].translation);
             Vector3 v = mdl->model.curPose[gobj.hit.boneIdx].translation;
-            const auto& rot = gobj.location.rotation2;
-            auto m = MatrixRotateZYX(rot);
+            const auto& rot = gobj.getOrigRotation();
+            auto m = MatrixRotateYZX(rot);
             v = Vector3Transform(v, m);
-            v = Vector3Add(v, gobj.location.position);
+            v = Vector3Add(v, gobj.getPosition());
             auto& r = gobj.hit.range;
 
             gobj.hit.bounds = { { v.x - r, v.y - r, v.z - r }, { v.x + r, v.y + r, v.z + r } };
@@ -73,8 +73,8 @@ namespace openAITD {
         void process(float timeDelta) {
             for (int j = 0; j < world->gobjects.size(); j++) {
                 auto& gobj = world->gobjects[j];
-                gobj.hit.hitTo = 0;
-                gobj.damage.hitBy = 0;
+                gobj.hit.hitTo = nullptr;
+                gobj.damage.hitBy = nullptr;
                 //gobj.damage.damage = 0; //don't clear
             }
 
@@ -82,7 +82,7 @@ namespace openAITD {
                 HitAction* act = &actions[i];
                 if (act->gobj == 0) continue;
 
-                if (act->gobj->location.stageId != world->curStageId) {
+                if (act->gobj->getStageId() != world->curStageId) {
                     act->gobj->hit.active = false;
                     break;
                 }                
@@ -109,11 +109,11 @@ namespace openAITD {
                 for (int j = 0; j < world->gobjects.size(); j++) {
                     //if (j == 6) printf("6");
                     auto& gobj = world->gobjects[j];
-                    if (gobj.location.stageId != world->curStageId) continue;
+                    if (gobj.getStageId() != world->curStageId) continue;
                     if (gobj.modelId == -1) continue;
                     if (gobj.id == act->gobj->id) continue;
 
-                    auto& objB = world->BoundsChangeRoom(world->getObjectBounds(gobj), gobj.location.roomId, act->gobj->location.roomId);
+                    auto& objB = world->curStage->BoundsChangeRoom(gobj.getBounds(), gobj.getRoomId(), act->gobj->getRoomId());
                     if (!act->gobj->hit.bounds.CollToBox(objB)) continue;
                     printf("HIT %d->%d\n", act->gobj->id, gobj.id);
                     gobj.damage.hitBy = act->gobj;

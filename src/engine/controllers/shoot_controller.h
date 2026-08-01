@@ -67,7 +67,7 @@ namespace openAITD {
                 ShootAction* act = &actions[i];
                 if (act->gobj == nullptr) continue;
                 // Remove action if object is on a different stage
-                if (act->gobj->location.stageId != world->curStageId) {
+                if (act->gobj->getStageId() != world->curStageId) {
                     act->gobj = nullptr;
                     continue;
                 }
@@ -102,18 +102,18 @@ namespace openAITD {
             auto& curPose = curAnim.bakedPoses[gobj->animation.animFrame];
             mdl->model.ApplyPose(curPose.data());
             Vector3 bonePos = mdl->model.curPose[boneIdx].translation;
-            Matrix rotM = MatrixRotateZYX(gobj->location.rotation2);
+            Matrix rotM = MatrixRotateYZX(gobj->getOrigRotation());
             bonePos = Vector3Transform(bonePos, rotM);
-            return Vector3Add(bonePos, gobj->location.position);
+            return Vector3Add(bonePos, gobj->getPosition());
         }
 
         // Internal raycast shot implementation
         void shootInternal(const ShootAction* act) {
             GameObject* shooter = act->gobj;
-            Room room = resources->stages[world->curStageId].rooms[shooter->location.roomId];
+            Room room = resources->stages[world->curStageId].rooms[shooter->getRoomId()];
             Vector3 origin = getBonePosition(shooter, act->boneIdx);
 
-            Matrix rotMatrix = MatrixRotateZYX(shooter->location.rotation2);
+            Matrix rotMatrix = MatrixRotateYZX(shooter->getOrigRotation());
             Vector3 dir = Vector3Transform({ 0, 0, -1 }, rotMatrix);
             float range = act->range;
             int damage = act->damage;
@@ -125,11 +125,11 @@ namespace openAITD {
             // Check dynamic objects
             for (auto& gobj : world->gobjects) {
                 if (gobj.id == shooter->id) continue;
-                if (gobj.location.stageId != world->curStageId) continue;
+                if (gobj.getStageId() != world->curStageId) continue;
                 if (gobj.modelId == -1 || !gobj.physics.collidable) continue;
 
-                Bounds bounds = world->getObjectBounds(gobj);
-                bounds = world->BoundsChangeRoom(bounds, gobj.location.roomId, shooter->location.roomId);
+                Bounds bounds = gobj.getBounds();
+                bounds = world->curStage->BoundsChangeRoom(bounds, gobj.getRoomId(), shooter->getRoomId());
 
                 float t;
                 if (bounds.RayIntersect(origin, dir, t)) {

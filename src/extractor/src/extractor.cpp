@@ -2,7 +2,7 @@
 
 #include "pak/pak.h"
 #include "loaders/loaders.h"
-#include "../../names-decode/name_decoders.hpp"
+#include "../../common/name_decoders.hpp"
 
 #include "./extractor_path.h"
 #include "./extractors/text_extractor.hpp"
@@ -50,7 +50,6 @@ namespace AITDExtractor {
     private:
         vector<gameObjectStruct> gameObjs;
         openAITD::NameDecoders nameDecoders;
-        Matrix roomMatrix;
         vector <floorStruct> stages;
         ResourceLoader resLoader;
         Pallete pallete;
@@ -63,7 +62,6 @@ namespace AITDExtractor {
     };    
 
     AITDExtractor::AITDExtractor() : resLoader("./original") {
-        roomMatrix = MatrixRotateX(PI);        
         nameDecoders.load();
 
         for (int fl = 0; fl < 8; fl++) {
@@ -100,6 +98,13 @@ namespace AITDExtractor {
                     auto& data = camPak.readBlock(cam);
                     extractBackground(data.data(), str.c_str(), pallete);
                 }
+
+                //background_2 - export in one dir
+                /*str = "bg_export/s_"+to_string(fl)+"_"+to_string(cam)+".png";
+                if (!std::filesystem::exists(str)) {
+                    auto& data = camPak.readBlock(cam);
+                    extractBackground(data.data(), str.c_str(), pallete);
+                }*/
 
                 //overlays
                 for (int vw = 0; vw < curFloor.cameras[cam].viewedRoomTable.size(); vw++) {
@@ -250,7 +255,7 @@ namespace AITDExtractor {
             auto& track = loadTrack(data.data(), trackPak.headers[i].uncompressedSize);
             auto s = dir + "/" + to_string(i) + ".json";
             if (std::filesystem::exists(s)) continue;
-            extractTrack(track, s, this->roomMatrix);
+            extractTrack(track, s, openAITD::Metrics::roomMatrix);
             //allTracks.push_back(track);
         }
     }

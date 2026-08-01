@@ -1,11 +1,13 @@
 ﻿#pragma once
 #include "../structs/int_types.h"
 #include "../structs/game_objects.h"
-#include "../../../names-decode/name_decoders.hpp"
+#include "../../../common/name_decoders.hpp"
+#include "../../../common/metrics.hpp"
 #include "../../../raylib-cpp/raylib-cpp.h"
 #include <stdio.h>
 #include <string>
 #include <fstream>
+#include <cmath>
 #include <iomanip>
 
 #define NLOHMANN_JSON_NAMESPACE_NO_VERSION 1
@@ -18,16 +20,6 @@ namespace AITDExtractor {
     using json = nlohmann::json;
 
     inline const Matrix roomMatObj = MatrixRotateX(PI);
-
-    inline Vector3 convertRotate(int alpha, int beta, int gamma) {
-        // float a = (alpha+512) * 2*PI/1024;
-        // float b = -beta * 2*PI/1024;
-        // float c = -gamma * 2*PI/1024;
-        float a = alpha * 2*PI/1024;
-        float b = (512+beta) * 2*PI/1024;
-        float c = gamma * 2*PI/1024;
-        return {a, b, c};
-    }
 
     inline void extractGameObjects(vector <gameObjectStruct> objects, string josnTo, const openAITD::NameDecoders& nameDec) {
         json outJson = json::array();
@@ -56,20 +48,19 @@ namespace AITDExtractor {
                 objJson["location"] = json::object();
                 auto& loc = objJson["location"];
 
-                Vector3 v = Vector3Transform({
-                    obj.x / 1000.f,
-                    obj.y / 1000.f,
-                    obj.z / 1000.f,
-                    }, roomMatObj);
+
+                Vector3 v = { obj.x / 1000.f, obj.y / 1000.f, obj.z / 1000.f };                
+                v = Vector3Transform( v, roomMatObj);
                 json position = json::array();
                 position.push_back(v.x);
                 position.push_back(v.y);
                 position.push_back(v.z);
                 loc["position"] = position;
 
-                Vector3 rot = convertRotate(
+                Vector3 rot = openAITD::Metrics::fromRotate(
                     obj.alpha, obj.beta, obj.gamma
                 );
+                //don't transform rotation
                 json rotation = json::array();
                 rotation.push_back(rot.x);
                 rotation.push_back(rot.y);

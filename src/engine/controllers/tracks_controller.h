@@ -16,87 +16,96 @@ namespace openAITD {
 			this->world = world;
 		}
 
-		int calcRotateDirection(const Vector2& from, const Vector2& to) {
-			float cross = from.x * to.y - from.y * to.x;
-			float dot = from.x * to.x + from.y * to.y;
-			float eps = 1e-9;			
-			if (cross > eps) {
-					return 2; //COUNTERCLOCKWISE;
-			} else if (cross < -eps) {
-					return 1; //CLOCKWISE;
-			} else {
-					if (dot > eps) {
-							return 0; // COLLINEAR;
-					} else if (dot < -eps) {
-							return 3; // OPPOSITE
-					} else {
-							return 0; //Zero Vec
-					}
-			}
-		}
-
 		void rotateTo(GameObject& gobj, const Vector3& target, const float timeDelta, const float rotateSpeed = 0.5f * PI)
 		{
-				EulerAngles euler = gobj.location.rotation2;
-				// Normalize current yaw to [-PI, PI]
+				EulerAngles euler = gobj.getOrigRotation();
 				euler.y = EulerAngles::NormalizeAngle(euler.y);
 
-				const auto& pos = gobj.location.position;
-				Vector2 targetDir = { - target.x + pos.x, - target.z + pos.z };
+				const auto& pos = gobj.getPosition();
+				Vector2 targetDir = { target.x - pos.x, pos.z - target.z };
 				float lenSq = targetDir.x * targetDir.x + targetDir.y * targetDir.y;
-				if (lenSq < 1e-10f) {
-						return; // target coincides with position – no rotation needed
-				}
+				if (lenSq < 1e-10f) return;
 				targetDir = Vector2Normalize(targetDir);
 
-				// Compute the target yaw angle (around Y axis)
-				// For a direction vector (x, z), the yaw angle is atan2(x, z)
-				float targetYaw = atan2(targetDir.x, targetDir.y); // note: .y is the Z component
+				float targetYaw = atan2(-targetDir.x, -targetDir.y);
+				float diff = EulerAngles::NormalizeAngle(targetYaw - euler.y);
 
-				float diff = targetYaw - euler.y;
-				diff = EulerAngles::NormalizeAngle(diff); // shortest path
-
-				// Dead zone to eliminate micro‑jitter
 				const float eps = 0.001f;
 				if (fabs(diff) < eps) {
-						return;
+  			  //printf("Forw \n");
+					euler.y = targetYaw;
+					return;
 				}
 
 				float maxStep = rotateSpeed * timeDelta;
-
 				if (fabs(diff) <= maxStep) {
-						// Exact alignment – set directly to target
+					  //printf("Forw+ \n");
 						euler.y = targetYaw;
 				} else {
-						// Move with maximum speed
+					  //printf("Rotate %d\n", diff > 0);
 						euler.y += (diff > 0 ? maxStep : -maxStep);
 				}
-
-				// Normalize the result
 				euler.y = EulerAngles::NormalizeAngle(euler.y);
-				gobj.location.rotation2 = euler;
+				gobj.getOrigRotation() = euler;
 		}
+
+		//Without hacks
+		void rotateTo2(GameObject& gobj, const Vector3& target, const float timeDelta, const float rotateSpeed = 0.5f * PI)
+		{
+			Matrix rotMatrix = gobj.getRotMatrix();
+			//Z+ forward
+			Vector3 forward = { rotMatrix.m8, rotMatrix.m9, rotMatrix.m10 };
+
+			const auto& pos = gobj.getPosition();
+			Vector2 targetDir = { target.x - pos.x, target.z - pos.z };
+			float lenSq = targetDir.x * targetDir.x + targetDir.y * targetDir.y;
+			if (lenSq < 1e-10f) return;
+			targetDir = Vector2Normalize(targetDir);
+
+    float targetYaw = atan2(targetDir.x, targetDir.y);
+    float currentYaw = atan2(forward.x, forward.z);
+    float diff = EulerAngles::NormalizeAngle(targetYaw - currentYaw);
+
+			EulerAngles euler = gobj.getOrigRotation();
+			const float eps = 0.001f;
+			if (fabs(diff) < eps) {
+				  printf("forw\n");
+					euler.y = -targetYaw;
+					gobj.setOrigRotation(euler);
+					return;
+			}
+			float maxStep = rotateSpeed * timeDelta;
+			if (fabs(diff) <= maxStep) {
+				  printf("forw+\n");
+					euler.y = -targetYaw;
+			} else {
+				  printf((string("rot ") + (diff > 0?"+":"-") + "\n").c_str());
+					euler.y += (diff > 0 ? -maxStep : maxStep);
+			}
+			euler.y = EulerAngles::NormalizeAngle(euler.y);
+			gobj.setOrigRotation(euler);
+		}
+
 
 		bool gotoPos(GameObject& gobj, TrackItem& trackItm, const float timeDelta) {
 			Vector3 targetPos = trackItm.pos;
-			targetPos = { trackItm.pos.x, gobj.location.position.y, trackItm.pos.z };
-			if (trackItm.room != gobj.location.roomId)
+			targetPos = { trackItm.pos.x, gobj.getPosition().y, trackItm.pos.z };
+			if (trackItm.room != gobj.getRoomId())
 			{
-				const auto& objRoomPos = world->curStage->rooms[gobj.location.roomId].position;
-				const auto& trackItmRoomPos = world->curStage->rooms[trackItm.room].position;
+				const auto& objRoomPos = world->curStage->rooms[gobj.getRoomId()].origPosition;
+				const auto& trackItmRoomPos = world->curStage->rooms[trackItm.room].origPosition;
 				targetPos.x += trackItmRoomPos.x - objRoomPos.x;
 				targetPos.z += trackItmRoomPos.z - objRoomPos.z;
 			}
-			//targetPos.z = -targetPos.z;
 			gobj.track.targetPos = targetPos;			
-			rotateTo(gobj, gobj.track.targetPos, timeDelta);
+			rotateTo2(gobj, gobj.track.targetPos, timeDelta);
 
-			//gobj.track.direction = Vector3Normalize(Vector3Subtract(gobj.track.target, gobj.location.position));
-		    //float nextDistanceToPoint = Vector3DistanceSqr(Vector3Add(gobj.location.position, gobj.track.direction), gobj.track.target);
+			//gobj.track.direction = Vector3Normalize(Vector3Subtract(gobj.track.target, gobj.getPosition()));
+		    //float nextDistanceToPoint = Vector3DistanceSqr(Vector3Add(gobj.getPosition(), gobj.track.direction), gobj.track.target);
 			//DISTANCE_TO_POINT_TRESSHOLD = 0.1m
 			//TODO: change code 4 distance reach
 
-			float distanceToPoint = Vector3DistanceSqr(gobj.location.position, gobj.track.targetPos);
+			float distanceToPoint = Vector3DistanceSqr(gobj.getPosition(), gobj.track.targetPos);
 			if (distanceToPoint >= 0.1 || gobj.rotateAnim.timeEnd > 0) // || distanceToPoint >= nextDistanceToPoint
 			{
 				// not yet at position
@@ -105,71 +114,73 @@ namespace openAITD {
 			}
 			else // reached position
 			{
-				//gobj.location.position = gobj.track.target;
+				//gobj.getPosition() = gobj.track.target;
 				return true;
 			}
 		}
 
 		bool gotoPos3D(GameObject& gobj, TrackItem& trackItm) {
 			Vector3 targetPos = trackItm.pos;
-			gobj.track.startPos = gobj.location.position;
+			gobj.track.startPos = gobj.getPosition();
 			gobj.track.targetPos = targetPos;
 			//trackItm.time -= deltaTime;
 			//rotateTo(gobj, gobj.track.target);
 			
-			raylib::Vector2 objPos2D = { gobj.location.position.x, gobj.location.position.z };
+			raylib::Vector2 objPos2D = { gobj.getPosition().x, gobj.getPosition().z };
 			raylib::Vector2 targetPos2D = { targetPos.x, targetPos.z };
 			if ( Vector2DistanceSqr(objPos2D, targetPos2D) > (0.1*0.1) )
-			//if (Vector3DistanceSqr(gobj.location.position, gobj.track.targetPos) > (0.05*0.05) )
+			//if (Vector3DistanceSqr(gobj.getPosition(), gobj.track.targetPos) > (0.05*0.05) )
 			{				
 				gobj.track.posStarted = true;
 				return false;
 			}
 			else // reached position
 			{
-				gobj.location.position = gobj.track.targetPos;
+				gobj.getPosition() = gobj.track.targetPos;
 				return true;
 			}
 		}
 
 		bool gotoStairs(GameObject& gobj, TrackItem& trackItm, bool zCoord, const float timeDelta) {
-			if (!gobj.track.posStarted) {
-				gobj.track.startPos = gobj.location.position;
-				float distY = trackItm.pos.y - gobj.location.position.y;
-				float distX = (zCoord)? 
-					abs(trackItm.pos.z - gobj.location.position.z):
-					abs(trackItm.pos.x - gobj.location.position.x);
-				gobj.track.direction.y = distY / distX;
-			}
+				Vector3 pos = gobj.getPosition();
+				if (!gobj.track.posStarted) {
+						gobj.track.startPos = pos;
+						float distY = trackItm.pos.y - pos.y;
+						float distX = (zCoord) ? 
+								abs(trackItm.pos.z - pos.z) :
+								abs(trackItm.pos.x - pos.x);
+						gobj.track.direction.y = distY / distX;
+				}
 
-			Vector3 target = trackItm.pos;
-			target.y = gobj.location.position.y;
-			rotateTo(gobj, target, timeDelta);
+				Vector3 target = trackItm.pos;
+				target.y = pos.y;
+				rotateTo(gobj, target, timeDelta);
 
-			float diff = (zCoord) ?
-				(gobj.track.startPos.z - gobj.location.position.z):
-				(gobj.track.startPos.x - gobj.location.position.x);
-			gobj.location.position.y = gobj.track.startPos.y + (gobj.track.direction.y * abs(diff));
+				float diff = (zCoord) ?
+						(gobj.track.startPos.z - pos.z) :
+						(gobj.track.startPos.x - pos.x);
+				
+				pos.y = gobj.track.startPos.y + (gobj.track.direction.y * abs(diff));
+				gobj.setPosition(pos);
 
-			if ( 
-				(gobj.track.direction.y > 0 && gobj.location.position.y < trackItm.pos.y) ||
-				(gobj.track.direction.y < 0 && gobj.location.position.y > trackItm.pos.y)
-			) {
-				// not yet at position
-				gobj.track.posStarted = true;
-				return false;
-			}
-			else // reached position
-			{
-				gobj.location.position = trackItm.pos;
-				return true;
-			}
+				if ( 
+						(gobj.track.direction.y > 0 && pos.y < trackItm.pos.y) ||
+						(gobj.track.direction.y < 0 && pos.y > trackItm.pos.y)
+				) {
+						gobj.track.posStarted = true;
+						return false;
+				}
+				else
+				{
+						gobj.setPosition(trackItm.pos);
+						return true;
+				}
 		}
 
 		void rotateXYZ(GameObject& gobj, TrackItem& trackItm) {
-			auto& r = gobj.location.rotation2;
+			auto& r = gobj.getOrigRotation();
       r.x = trackItm.rot.x;
-			r.y = trackItm.rot.y + PI;
+			r.y = trackItm.rot.y;
 			r.z = trackItm.rot.z;
 		}
 
@@ -234,8 +245,8 @@ namespace openAITD {
 				gobj.bitField.trigger = 1;
 				break;
 			case TrackItemType::WARP:
-				gobj.location.roomId = trackItm.room;
-				gobj.location.position = trackItm.pos;
+			  gobj.changeRoom(trackItm.room);
+				gobj.setPosition(trackItm.pos);
 				break;
 			default:
 				cout << "unkn TrackItemType " << to_string((int)trackItm.type) << endl;
@@ -249,11 +260,14 @@ namespace openAITD {
 		void processObjFollow(GameObject& gobj, const float timeDelta) {
 			if (gobj.track.id == -1) return;
 			auto& gobj2 = world->gobjects[gobj.track.id];
-			if (gobj.location.stageId != gobj2.location.stageId) return;
-			auto pos2 = world->VectorChangeRoom(gobj2.location.position, gobj2.location.roomId, gobj.location.roomId);
-			Vector3 v2 = Vector3Subtract(pos2, gobj.location.position);
+			if (gobj.getStageId() != gobj2.getStageId()) return;
+			auto pos2 = world->curStage->VectorChangeRoom(gobj2.getPosition(), gobj2.getRoomId(), gobj.getRoomId());
+			
+			Vector3 v2 = Vector3Subtract(pos2, gobj.getPosition());
+			//printf("Rooms %d %d\n", gobj.getRoomId(), gobj2.getRoomId());
+			//printf("VectorChangeRoom %f %f\n", v2.x, v2.z);
 
-			rotateTo(gobj, pos2, timeDelta);
+			rotateTo2(gobj, pos2, timeDelta);
 		}
 
 

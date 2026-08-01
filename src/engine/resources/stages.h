@@ -11,113 +11,13 @@
 #include <tiny_gltf.h>
 
 #include "../../raylib-cpp/raylib-cpp.h"
+#include "../../common/metrics.hpp"
 #include "bounds.h"
 
 using nlohmann::json;
 using namespace raylib;
 using namespace std;
 namespace openAITD {
-
-	/*inline int isInPoly(int x1, int x2, int z1, int z2, cameraViewedRoomStruct* pCameraZoneDef)
-	{
-		int xMid = (x1 + x2) / 2;
-		int zMid = (z1 + z2) / 2;
-
-		int i;
-
-		for (i = 0; i < pCameraZoneDef->numCoverZones; i++)
-		{
-			int j;
-			int flag = 0;
-
-			for (j = 0; j < pCameraZoneDef->coverZones[i].numPoints; j++)
-			{
-				int zoneX1;
-				int zoneZ1;
-				int zoneX2;
-				int zoneZ2;
-
-				zoneX1 = pCameraZoneDef->coverZones[i].pointTable[j].x;
-				zoneZ1 = pCameraZoneDef->coverZones[i].pointTable[j].y;
-				zoneX2 = pCameraZoneDef->coverZones[i].pointTable[j + 1].x;
-				zoneZ2 = pCameraZoneDef->coverZones[i].pointTable[j + 1].y;
-
-				if (testCrossProduct(xMid, zMid, xMid - 10000, zMid, zoneX1, zoneZ1, zoneX2, zoneZ2))
-				{
-					flag |= 1;
-				}
-
-				if (testCrossProduct(xMid, zMid, xMid + 10000, zMid, zoneX1, zoneZ1, zoneX2, zoneZ2))
-				{
-					flag |= 2;
-				}
-			}
-
-			if (flag == 3)
-			{
-				return(1);
-			}
-		}
-
-		return(0);
-	}*/
-
-	/*
-	Not works
-	inline bool isPointInPoly(const Vector2 p, const vector<Vector2>& polygon)
-	{
-		float minX = polygon[0].x;
-		float maxX = polygon[0].x;
-		float minY = polygon[0].y;
-		float maxY = polygon[0].y;
-		for (int i = 1; i < polygon.size(); i++)
-		{
-			auto& q = polygon[i];
-			minX = min(q.x, minX);
-			maxX = max(q.x, maxX);
-			minY = min(q.y, minY);
-			maxY = max(q.y, maxY);
-		}
-
-		if (p.x < minX || p.x > maxX || p.y < minY || p.y > maxY)
-		{
-			return false;
-		}
-
-		// https://wrf.ecse.rpi.edu/Research/Short_Notes/pnpoly.html
-		bool inside = false;
-		int j = polygon.size() - 1;
-		for (int i = 0; i < polygon.size(); i++)
-		{
-			if ((polygon[i].y > p.y) != (polygon[j].y > p.y) &&
-				p.x < (polygon[j].x - polygon[i].x) * (p.y - polygon[i].y) / (polygon[j].y - polygon[i].y) + polygon[i].x)
-			{
-				inside = !inside;
-			}
-			j = i;
-		}
-
-		return inside;
-	}
-	*/
-
-	/*
-	inline bool isPointInPoly(const Vector2 p, const vector<Vector2>& polygon)
-	{
-		char flag;
-		Vector2 p1;
-		Vector2 p2 = polygon[polygon.size() - 1];
-		for (int j = 0; j < polygon.size(); j++) {
-			p1 = p2;
-			p2 = polygon[j];
-		}
-		if (flag == 3)
-		{
-			return true;
-		}
-		return false;
-	}
-	*/
 
 	inline bool isPointInPoly(const Vector2 p, const vector<Vector2>& polygon) {
 		size_t n = polygon.size();
@@ -197,7 +97,7 @@ namespace openAITD {
 	};
 
 	struct Room {
-		Vector3 position;
+		Vector3 origPosition;
 		vector<RoomCollider> colliders;
 		vector<RoomZone> zones;
 	};
@@ -256,6 +156,9 @@ namespace openAITD {
 		bool pointInCamera(const Vector2 p, WCamera& camera);
 		int closestCamera(Vector3 p);
 		//int centredCamera(Vector3 p);
+
+		Vector3 VectorChangeRoom(const Vector3 v, int fromRoomId, int toRoomId);
+		Bounds BoundsChangeRoom(const Bounds b, int fromRoomId, int toRoomId);
 	};
 
 	void Stage::load(string stageDir) {
@@ -280,7 +183,7 @@ namespace openAITD {
 			tinygltf::Node* roomN = findNode(model, string("room_") + to_string(roomId));
 			if (!roomN) break;
 			auto& room = rooms.emplace_back();
-			room.position = { (float)roomN->translation[0], (float)roomN->translation[1], (float)roomN->translation[2] };
+			room.origPosition = { (float)roomN->translation[0], (float)roomN->translation[1], (float)roomN->translation[2] };
 
 			int collId = 0;
 			while (true) {
@@ -377,7 +280,7 @@ namespace openAITD {
 					int lineAccIdx = model.meshes[coverZoneN->mesh].primitives[0].attributes["POSITION"];
 					auto zone = loadLineAcc2d(model, lineAccIdx);
 					for (int z = 0; z < zone.size(); z++) {
-						zone[z] += {room.position.x, room.position.z};
+						zone[z] += {room.origPosition.x, room.origPosition.z};
 					}
 					cam.coverZones.push_back(zone);
 					coverZoneId++;
@@ -422,5 +325,22 @@ namespace openAITD {
 		}
 		return result;
 	}
+
+	Vector3 Stage::VectorChangeRoom(const Vector3 v, int fromRoomId, int toRoomId) {
+		if (fromRoomId == toRoomId) return v;
+		auto& roomFrom = rooms[fromRoomId];
+		auto& roomTo   = rooms[toRoomId];
+		return Vector3Subtract( Vector3Add(v, roomFrom.origPosition), roomTo.origPosition);
+	}
+
+	Bounds Stage::BoundsChangeRoom(const Bounds b, int fromRoomId, int toRoomId) {
+		if (fromRoomId == toRoomId) return b;
+		auto& roomFrom = rooms[fromRoomId].origPosition;
+		auto& roomTo = rooms[toRoomId].origPosition;
+		return {
+			Vector3Subtract(Vector3Add(b.min, roomFrom), roomTo),
+			Vector3Subtract(Vector3Add(b.max, roomFrom), roomTo)
+		};
+	}	
 
 }

@@ -49,7 +49,7 @@ namespace openAITD {
 
             for (int i = 0; i < world->gobjects.size(); i++) {
                 auto& gobj = world->gobjects[i];
-                if (gobj.getStage() != world->curStageId) continue;
+                if (gobj.getStageId() != world->curStageId) continue;
                 if (gobj.rotateAnim.timeEnd <= 0) continue;
 
                 auto& rot = gobj.rotateAnim;
@@ -57,18 +57,17 @@ namespace openAITD {
 
                 if (rot.curTime >= rot.timeEnd) {
                     // Animation finished: set final rotation (already normalized)
-                    gobj.location.rotation2 = rot.to;
+                    gobj.setOrigRotation(rot.to);
                     rot.timeEnd = 0;
                     continue;
                 }
 
                 // Interpolate using the shortest angular path
                 float t = rot.curTime / rot.timeEnd;
-                gobj.location.rotation2 = LerpEulerShortest(rot.from, rot.to, t).GetNormalized();
+                gobj.setOrigRotation( LerpEulerShortest(rot.from, rot.to, t).GetNormalized() );
 
                 // Invalidate cached bounds and check collisions for rotated objects
                 if (gobj.boundsType == BoundsType::rotated) {
-                    gobj.physics.boundsCached = false;
                     checkCollisions(gobj, curStage);
                 }
             }
@@ -78,20 +77,20 @@ namespace openAITD {
         // Helper method to perform collision detection for a rotated object
         void checkCollisions(GameObject& gobj, const Stage& curStage) {
             // Get bounds of the current object once
-            Bounds objB = world->getObjectBounds(gobj);
+            Bounds objB = gobj.getBounds();
 
             for (int j = 0; j < world->gobjects.size(); j++) {
                 auto& gobj2 = world->gobjects[j];
                 if (&gobj == &gobj2) continue;
                 if (gobj2.modelId == -1) continue;
-                if (gobj2.location.stageId != gobj.location.stageId) continue;
+                if (gobj2.getStageId() != gobj.getStageId()) continue;
 
-                Bounds objB2 = world->getObjectBounds(gobj2);
+                Bounds objB2 = gobj2.getBounds();
 
                 // If objects are in different rooms, check connectivity and adjust bounds
-                if (gobj2.location.roomId != gobj.location.roomId) {
-                    if (resources->isRoomsConnected(curStage, gobj.location.roomId, gobj2.location.roomId)) {
-                        objB2 = world->BoundsChangeRoom(objB2, gobj2.location.roomId, gobj.location.roomId);
+                if (gobj2.getRoomId() != gobj.getRoomId()) {
+                    if (resources->isRoomsConnected(curStage, gobj.getRoomId(), gobj2.getRoomId())) {
+                        objB2 = world->curStage->BoundsChangeRoom(objB2, gobj2.getRoomId(), gobj.getRoomId());
                     }
                     else {
                         continue;

@@ -62,74 +62,57 @@ namespace openAITD {
 
 		int getPosRel(GameObject* actor1, GameObject* actor2)
 		{
-			if (actor1->staticCollider != 0) {
-				return getPosRelStatic(actor1, actor2);
-			}
+				if (actor1->staticCollider != 0) {
+						return getPosRelStatic(actor1, actor2);
+				}
+				Vector3 p1 = actor1->getPosition();
+				Vector3 p2 = world->curStage->VectorChangeRoom(actor2->getPosition(), 
+																						actor2->getRoomId(), 
+																						actor1->getRoomId());
 
-			Vector3 p2rot;
-			Bounds b;
-			Vector3& p1 = actor1->location.position;
-			Vector3& p2 = world->VectorChangeRoom(actor2->location.position, actor2->location.roomId, actor1->location.roomId);
+				Vector3 p2rot = { p2.x - p1.x, 0, p2.z - p1.z };
+				Vector3 rot = actor1->getOrigRotation(); 
+				Quaternion q = QuaternionInvert(QuaternionFromEuler(rot.x, rot.y, rot.z));
+				
+				p2rot = Vector3RotateByQuaternion(p2rot, q);
+				p2rot = Vector3Add(p2rot, p1);
 
-			p2rot = { p2.x - p1.x, 0, p2.z - p1.z };
-			auto& r = actor1->location.rotation2;
-			auto& q = QuaternionInvert(QuaternionFromEuler(r.x, r.y, r.z));
-			p2rot = Vector3RotateByQuaternion(p2rot, q);
-			p2rot = Vector3Add(p2rot, p1);
-			RModel* m = resources->models.getModel(actor1->modelId);
-			b = m->bounds;
-			b.min = Vector3Add(b.min, p1);
-			b.max = Vector3Add(b.max, p1);
-			
-			int res = 0;
-			if (p2rot.z < b.min.z) {
-				res = 2;
-			}
-			else if (p2rot.z > b.max.z) {
-				res = 1;
-			}
-			else if (p2rot.x < b.min.x) {
-				res = 8;
-			}
-			else if (p2rot.x > b.max.x) {
-				res = 4;
-			}
-			//cout << "POSREL=" << to_string(res) << endl;
-			return res;
+				RModel* m = resources->models.getModel(actor1->modelId);
+				Bounds b = m->bounds;
+				b.min = Vector3Add(b.min, p1);
+				b.max = Vector3Add(b.max, p1);
+
+				int res = 0;
+				if (p2rot.z < b.min.z) {
+						res = 2;
+				} else if (p2rot.z > b.max.z) {
+						res = 1;
+				} else if (p2rot.x < b.min.x) {
+						res = 8;
+				} else if (p2rot.x > b.max.x) {
+						res = 4;
+				}
+				return res;
 		}
 
 		int getPosRelStatic(GameObject* actor1, GameObject* actor2)
 		{
-			auto& b = actor1->staticCollider->bounds;
-			Vector3& p2 = world->VectorChangeRoom(actor2->location.position, actor2->location.roomId, actor1->location.roomId);
+				const Bounds& b = actor1->staticCollider->bounds;
+				Vector3 p2 = world->curStage->VectorChangeRoom(
+					actor2->getPosition(), actor2->getRoomId(), actor1->getRoomId()
+				);
 
-			int res = 0;
-			if (p2.z < b.min.z) {
-				res = 1;
-			}
-			else if (p2.z > b.max.z) {
-				res = 2;
-			}
-			else if (p2.x < b.min.x) {
-				res = 8;
-			}
-			else if (p2.x > b.max.x) {
-				res = 4;
-			}
-			//cout << "POSREL_S=" << to_string(res);
-			return res;
-		}
-
-		float convertAlpha(int alpha) {
-			return alpha * 2 * PI / 1024.;
-		}
-
-		float convertBeta(int beta) {
-			return (beta+512) * 2 * PI / 1024.;
-		}
-
-		float convertGamma(int gamma) {
-			return gamma * 2 * PI / 1024.;
+				int res = 0;
+				if (p2.z < b.min.z) {
+						res = 1;
+				} else if (p2.z > b.max.z) {
+						res = 2;
+				} else if (p2.x < b.min.x) {
+						res = 8;
+				} else if (p2.x > b.max.x) {
+						res = 4;
+				}
+				return res;
 		}
 
 		void initExpressions() {
@@ -158,10 +141,10 @@ namespace openAITD {
 				}, "MUSIC");
 
 			lua->CreateFunction([this](int obj) -> int {
-				return this->world->gobjects[obj].location.stageId;
+				return this->world->gobjects[obj].getStageId();
 				}, "STAGE");
 			lua->CreateFunction([this](int obj) -> int {
-				return this->world->gobjects[obj].location.roomId;
+				return this->world->gobjects[obj].getRoomId();
 				}, "ROOM");
 			lua->CreateFunction([this](int obj) -> int {
 				return this->world->gobjects[obj].modelId;
@@ -192,8 +175,8 @@ namespace openAITD {
 				}, "TRIGGER_COLLIDER");
 
 			lua->CreateFunction([this](int obj) -> int {
-				auto hb = this->world->gobjects[obj].damage.hitBy;
-				return hb ? hb->id : -1;
+				GameObject* hb = this->world->gobjects[obj].damage.hitBy;
+				return hb != nullptr ? hb->id : -1;
 				}, "HIT_BY");
 			lua->CreateFunction([this](int obj) -> int {
 				auto ht = this->world->gobjects[obj].hit.hitTo;
@@ -223,8 +206,8 @@ namespace openAITD {
 				return getPosRel(&this->world->gobjects[obj], &this->world->gobjects[obj2]);
 				}, "POSREL");
 			lua->CreateFunction([this](int obj1, int obj2) -> int {
-				auto& gobj1 = this->world->gobjects[obj1].location.position;
-				auto& gobj2 = this->world->gobjects[obj2].location.position;
+				auto& gobj1 = this->world->gobjects[obj1].getPosition();
+				auto& gobj2 = this->world->gobjects[obj2].getPosition();
 				int x = abs(gobj1.x - gobj2.x) * 1000.;
 				int y = abs(gobj1.y - gobj2.y) * 1000.;
 				int z = abs(gobj1.z - gobj2.z) * 1000.;
@@ -269,7 +252,7 @@ namespace openAITD {
 				return rot.z;
 				}, "GAMMA");
 			lua->CreateFunction([this](int obj) -> int {
-				return floor(this->world->gobjects[obj].location.position.y * -1000);
+				return floor(this->world->gobjects[obj].getPosition().y * -1000);
 				}, "ROOMY");			
 
 			lua->CreateFunction([this](int obj) -> int {
@@ -322,10 +305,9 @@ namespace openAITD {
 			}, "TEST_COL");
 			//Set object rotation(angle)
 			lua->CreateFunction([this](int obj, int x, int y, int z) {
-				auto& r = this->world->gobjects[obj].location.rotation2;
-				r = {	convertAlpha(x)	, convertBeta(y), convertGamma(z)	};
-				r = r.GetNormalized();
-				this->world->gobjects[obj].physics.boundsCached = false;
+				auto& gobj = this->world->gobjects[obj];
+				auto r = Metrics::fromRotate(x,y,z);
+				gobj.setOrigRotation(r);
 			}, "SET_ANGLE");
 			lua->CreateFunction([this](int obj, int flags) {
 				auto& gobj = this->world->gobjects[obj];
@@ -333,8 +315,7 @@ namespace openAITD {
 			}, "SET_FLAGS");
 			lua->CreateFunction([this](int obj) {
 				auto& gobj = this->world->gobjects[obj];
-				gobj.location.roomId = -1;
-				gobj.location.stageId = -1;
+				gobj.setStage(-1, -1, {0,0,0});
 				world->delFromInventory(obj);
 				//ListWorldObjets[lifeTempVar1].flags2 |= 0x4000;
 			}, "DELETE_OBJ");
@@ -343,14 +324,16 @@ namespace openAITD {
 			}, "SET_CAMERA_TARGET");
 			lua->CreateFunction([this](int obj, int stage, int room, int x, int y, int z) {
 				auto& gobj = this->world->gobjects[obj];
-				if (gobj.location.stageId != -1 && gobj.location.stageId != stage) {
-					gobj.location.changingStage = true;
+				if (gobj.getStageId() != -1 && gobj.getStageId() != stage) {
+					gobj.changingStage = true;
 				}
-				gobj.location.stageId = stage;
-				gobj.location.roomId = room;
-				gobj.location.position.x = x / 1000.;
-				gobj.location.position.y = (-y / 1000.) + 0.001;
-				gobj.location.position.z = -z / 1000.;
+				// + 0.001 fix spawn in 3d stages
+				Vector3 pos = {
+					x / 1000., 
+					(-y / 1000.) + 0.001,
+					-z / 1000.
+				};
+				gobj.setStage(stage, room, pos);
 			}, "CHANGE_ROOM");
 
 			//INVENTORY
@@ -388,13 +371,13 @@ namespace openAITD {
 			lua->CreateFunction([this](int itemObjId, int x, int y, int z, int room, int stage, int alpha, int beta, int gamma) {
 				this->world->put(itemObjId, stage, room, 
 					{ x / 1000.f, -y / 1000.f, -z / 1000.f },
-					{ convertAlpha(alpha), convertBeta(beta), convertGamma(gamma) }
+					Metrics::fromRotate(alpha, beta, gamma)
 				);
 				}, "PUT");
 			lua->CreateFunction([this](int itemObjId, int targetObjId) {
 				auto& gobj = this->world->gobjects[itemObjId];
 				auto& tobj = this->world->gobjects[targetObjId];
-				this->world->put(itemObjId, tobj.location.stageId, tobj.location.roomId, tobj.location.position, tobj.location.rotation2);
+				this->world->put(itemObjId, tobj.getStageId(), tobj.getRoomId(), tobj.getPosition(), tobj.getOrigRotation());
 				gobj.bitField.foundable = 1;
 				}, "PUT_AT");
 			lua->CreateFunction([this](int itemObjId, int actorObjId) {
@@ -473,44 +456,28 @@ namespace openAITD {
 				if (gobj.rotateAnim.timeEnd > 0) return;
 				gobj.rotateAnim.curTime = 0;
 				gobj.rotateAnim.timeEnd = time / 60.;
-				gobj.rotateAnim.from = gobj.location.rotation2;
+				gobj.rotateAnim.from = gobj.getOrigRotation();
 
-				//auto& ro = gobj.location.rotOrig;
-				//auto& ro2 = gobj.rotateAnim.toOrig;
-				//ro2 = ro;
-				//ro2.x = toAngle;
-
-				gobj.rotateAnim.to = gobj.location.rotation2;
-				gobj.rotateAnim.to.x = convertAlpha(toAngle);
+				auto toOld = Metrics::toRotate(gobj.getOrigRotation());
+				toOld.x = toAngle;
+				gobj.rotateAnim.to = Metrics::fromRotate(toOld);
   		}, "SET_ALPHA");
 
 			lua->CreateFunction([this](int obj, int toAngle, int time) {
 				auto& gobj = this->world->gobjects[obj];
-				EulerAngles toA = gobj.location.rotation2;
-				toA.y = convertBeta(toAngle);
-				toA = toA.GetNormalized();
 
-
-
-				//if (gobj.rotateAnim.timeEnd > 0 && gobj.rotateAnim.toOrig.y == toAngle) return;
+				auto toOld = Metrics::toRotate(gobj.getOrigRotation());
+				int curY = toOld.y;
+				toOld.y = toAngle;
+				auto toA = Metrics::fromRotate(toOld);
 				if ( gobj.rotateAnim.timeEnd > 0 && gobj.rotateAnim.to.IsNearlyEqual(toA) ) return;
+
 				gobj.rotateAnim.curTime = 0;
 				gobj.rotateAnim.timeEnd = time / 60.;
-
-				gobj.rotateAnim.from = gobj.location.rotation2;
+				gobj.rotateAnim.from = gobj.getOrigRotation();
 				gobj.rotateAnim.to = toA;
 
-				//extr float b = (512+beta) * 2*PI/1024;
-				//(beta+512) * 2 * PI / 1024.;
-				int test = round(toA.y * 512 / PI) + 512;
-				if (test > 1024) test -= 1024;
-
-				cout << "SET_BETA " << obj << " " << toAngle << " ->" << test << endl;
-
-				//auto& ro = gobj.location.rotOrig;
-				//auto& ro2 = gobj.rotateAnim.toOrig;
-				//ro2 = ro;
-				//ro2.y = toAngle;
+				cout << "SET_BETA " << obj << " " << curY << " ->" << toAngle << endl;
 
   		}, "SET_BETA");
 
@@ -547,7 +514,6 @@ namespace openAITD {
 				};
 				b.correctBounds();
 				obj.physics.boundsOverload = true;
-				obj.physics.boundsCached = false;
 				}, "DEF_ZV");
 			lua->CreateFunction([this]() {
 				//TODO: DO_MAX_ZV
@@ -562,13 +528,15 @@ namespace openAITD {
 				//Do nothing?
 				}, "GET_HARD_CLIP");
 			lua->CreateFunction([this]() {
-				this->getCurGObject()->location.position.y += 2.001f;
-				this->getCurGObject()->physics.boundsCached = false;
+				auto& gobj = *this->getCurGObject();
+				Vector3 pos = gobj.getPosition();
+				pos.y += 2.001f;
+				gobj.setPosition(pos);
 				}, "UP_COOR_Y");
 
       lua->CreateFunction([this](int fromObjId) {
 				auto& obj = this->world->gobjects[fromObjId];
-				this->getCurGObject()->location.rotation2 = obj.location.rotation2;
+				this->getCurGObject()->getOrigRotation() = obj.getOrigRotation();
 				}, "COPY_ANGLE");			
 
 			//Sound & music
@@ -645,12 +613,12 @@ namespace openAITD {
 			
 			auto& animIdx = animIter->second;
 			raylib::Vector3 rootMotion = m->model.getLastFrameRootMotion(animIdx);
-			const auto& r = gobj.location.rotation2;
+			const auto& r = gobj.getOrigRotation();
 			Quaternion& q = QuaternionFromEuler(r.x, r.y, r.z);
 			raylib::Vector3 globalMotion = Vector3RotateByQuaternion(rootMotion, q);
 			globalMotion.y += yOffset + 0.001f;
 
-			Bounds newBounds = world->getObjectBounds(gobj);
+			Bounds newBounds = gobj.getBounds();
 			newBounds.min.x += globalMotion.x;
 			newBounds.max.x += globalMotion.x;
 			newBounds.min.y += globalMotion.y;
@@ -658,7 +626,7 @@ namespace openAITD {
 			newBounds.min.z += globalMotion.z;
 			newBounds.max.z += globalMotion.z;
 
-			Room& room = resources->stages[world->curStageId].rooms[gobj.location.roomId];
+			Room& room = resources->stages[world->curStageId].rooms[gobj.getRoomId()];
 			for (const auto& collider : room.colliders) {
 					if (newBounds.CollToBox(collider.bounds)) {
 							//cout << "Collision!" << endl;

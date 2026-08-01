@@ -100,15 +100,15 @@ namespace openAITD {
 
 		bool isObjectActive(const GameObject& gobj) {
 			if (gobj.lifeId == -1) return false;
-			if (gobj.location.stageId != this->curStageId) return false;
+			if (gobj.getStageId() != this->curStageId) return false;
 			if (gobj.lifeMode == GOLifeMode::none) return false;
-			if (gobj.lifeMode == GOLifeMode::room && gobj.location.roomId != this->curRoomId) return false;
+			if (gobj.lifeMode == GOLifeMode::room && gobj.getRoomId() != this->curRoomId) return false;
 			if (gobj.lifeMode == GOLifeMode::roomInCamera) {
 				if (this->curCameraId == -1) return false;				
 				bool inCamera = false;
 				auto& cam = this->curStage->cameras[this->curCameraId];
 				for (int i = 0; i < cam.rooms.size(); i++) {
-					if (gobj.location.roomId == cam.rooms[i].roomId) {
+					if (gobj.getRoomId() == cam.rooms[i].roomId) {
 						inCamera = true;
 						break;
 					}
@@ -141,28 +141,6 @@ namespace openAITD {
 			}
 		}
 
-		Bounds getObjectBounds(GameObject& gobj) {
-			if (gobj.physics.boundsCached) {
-				return gobj.physics.bounds;
-			}
-			auto& m = *resources->models.getModel(gobj.modelId);
-			Bounds objB = (gobj.physics.boundsOverload) ? gobj.physics.overloadBounds : m.bounds;
-
-			if (gobj.boundsType == BoundsType::cube) {
-				objB = objB.getCubeBounds();
-			} else if (gobj.boundsType == BoundsType::rotated) {
-				objB = objB.getRotatedBounds(gobj.location.rotation2);
-			}
-			Vector3& p = gobj.location.position;
-			objB.min = Vector3Add(objB.min, p);
-			objB.max = Vector3Add(objB.max, p);
-			objB.correctBounds();
-
-			gobj.physics.bounds = objB;
-			gobj.physics.boundsCached = true;
-			return objB;
-		}
-
 		void loadGObjects(string path);
 		void loadVars(string path);
 		void setCharacter(bool alt) {}
@@ -175,8 +153,6 @@ namespace openAITD {
 		void put(int objId, int room, int stage, Vector3 pos, EulerAngles rot);
 		
 		Vector3 AbsolutePos(const GameObject& gobj);
-		Vector3 VectorChangeRoom(const Vector3 v, int fromRoomId, int toRoomId);
-		Bounds BoundsChangeRoom(const Bounds v, int fromRoomId, int toRoomId);
 	};
 
 	void World::loadGObjects(string path)
@@ -184,8 +160,11 @@ namespace openAITD {
 		ifstream ifs(path);
 		json objsJson = json::parse(ifs);
 
-		gobjects.resize(0);
-		gobjects.resize(objsJson.size());
+		gobjects.clear();
+		gobjects.reserve(objsJson.size());
+		for (int i=0; i<objsJson.size(); i++) {
+				gobjects.emplace_back(*resources);
+		}
 
 		for (int i = 0; i < objsJson.size(); i++) {
 			auto& gobj = gobjects[i];
@@ -202,13 +181,10 @@ namespace openAITD {
 			}
 
 			if (objsJson[i].contains("location")) {
-				auto& loc = gobj.location;
 				auto& locJson = objsJson[i]["location"];
-				loc.position = { locJson["position"][0], locJson["position"][1], locJson["position"][2] };
-				loc.rotation2 = { locJson["rotation"][0], locJson["rotation"][1], locJson["rotation"][2] };
-				loc.rotation2 = loc.rotation2.GetNormalized();
-				loc.stageId = locJson["stageId"];
-			    loc.roomId = locJson["roomId"];
+				gobj.setOrigRotation({ locJson["rotation"][0], locJson["rotation"][1], locJson["rotation"][2] });
+				Vector3 pos = { locJson["position"][0], locJson["position"][1], locJson["position"][2] };
+				gobj.setStage(locJson["stageId"], locJson["roomId"], pos);
 			}
 
 			if (objsJson[i].contains("model")) {
@@ -231,10 +207,13 @@ namespace openAITD {
 			}
 
 			if (objsJson[i].contains("static")) {
-				gobj.location.stageId = objsJson[i]["static"]["stageId"];
-				gobj.location.roomId = objsJson[i]["static"]["roomId"];
+				gobj.setStage(
+					objsJson[i]["static"]["stageId"],
+					objsJson[i]["static"]["roomId"],
+					{}
+				);
 				gobj.staticColliderId = objsJson[i]["static"]["staticIdx"];
-				auto& cols = resources->stages[gobj.location.stageId].rooms[gobj.location.roomId].colliders;
+				auto& cols = resources->stages[gobj.getStageId()].rooms[gobj.getRoomId()].colliders;
 				for (int j = 0; j < cols.size(); j++) {
 					if (cols[j].type != 9) continue;
 					if (cols[j].parameter == gobj.staticColliderId) {
@@ -245,11 +224,11 @@ namespace openAITD {
 				}
 				auto& colB = gobj.staticCollider->bounds;
 				if (gobj.staticCollider) {
-					gobj.location.position = {
+					gobj.setPosition({
 						(colB.max.x + colB.min.x) / 2,
 						(colB.max.y + colB.min.y) / 2,
 						(colB.max.z + colB.min.z) / 2,
-					};
+					});
 				}
 			}
 
@@ -264,26 +243,9 @@ namespace openAITD {
 	};
 
 	Vector3 World::AbsolutePos(const GameObject& gobj) {
-		auto& room = curStage->rooms[gobj.location.roomId];
+		auto& room = curStage->rooms[gobj.getRoomId()];
 		const auto pos = gobj.getPosition();
-		return Vector3Add(pos, room.position);
-	}
-
-	Vector3 World::VectorChangeRoom(const Vector3 v, int fromRoomId, int toRoomId) {
-		if (fromRoomId == toRoomId) return v;
-		auto& roomFrom = curStage->rooms[fromRoomId];
-		auto& roomTo   = curStage->rooms[toRoomId];
-		return Vector3Subtract( Vector3Add(v, roomFrom.position), roomTo.position);
-	}
-
-	Bounds World::BoundsChangeRoom(const Bounds b, int fromRoomId, int toRoomId) {
-		if (fromRoomId == toRoomId) return b;
-		auto& roomFrom = curStage->rooms[fromRoomId].position;
-		auto& roomTo = curStage->rooms[toRoomId].position;
-		return {
-			Vector3Subtract(Vector3Add(b.min, roomFrom), roomTo),
-			Vector3Subtract(Vector3Add(b.max, roomFrom), roomTo)
-		};
+		return Vector3Add(pos, room.origPosition);
 	}
 
 	void World::setRepeatAnimation(GameObject& gobj, int animId) {
@@ -335,7 +297,7 @@ namespace openAITD {
 	void World::take(int gobjId)
 	{
 		auto& gobj = this->gobjects[gobjId];
-		gobj.location.stageId = -1;
+		gobj.setStage(-1, -1, {0,0,0});
 		gobj.invItem.bitField.in_inventory = 1;
 		gobj.bitField.foundable = 1;
 		inventory.push_back(&gobj);
@@ -362,25 +324,17 @@ namespace openAITD {
 		item.invItem.bitField.dropped = 1;
 		item.bitField.foundable = 1;
 		item.invItem.foundTimeout = chrono + 10;
-		
 		item.boundsType = BoundsType::rotated;
-		item.physics.boundsCached = false;
-		item.location.stageId = actor.location.stageId;
-		item.location.roomId = actor.location.roomId;
-		item.location.position = actor.location.position;
-		item.location.rotation2 = actor.location.rotation2;
-
+		item.setStage(actor.getStageId(), actor.getRoomId(), actor.getPosition());
+		item.setOrigRotation(actor.getOrigRotation());
 		//action?
 	};
 
 	void World::put(int itemObjId, int stage, int room, Vector3 pos, EulerAngles rot)
 	{
 		auto& item = this->gobjects[itemObjId];
-		item.location.stageId = stage;
-		item.location.roomId = room;
-		item.location.position = pos;
-		item.location.rotation2 = rot;
-
+		item.setStage(stage, room, pos);
+		item.setOrigRotation(rot);
 		delFromInventory(itemObjId);
 		//item.bitField.foundable = 0;
 	};
