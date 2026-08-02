@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <algorithm>
-#include "../raylib-cpp/raylib-cpp.h"
+#include "../common/raylib_cpp.hpp"
 
 //using namespace std;
 using namespace raylib;

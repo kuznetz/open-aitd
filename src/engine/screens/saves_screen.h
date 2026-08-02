@@ -2,7 +2,7 @@
 #include <vector>
 #include <string>
 #include <algorithm>   // для std::min
-#include "../../raylib-cpp/raylib-cpp.h"
+#include "../../common/raylib_cpp.hpp"
 #include "../world/world.h"
 #include "../resources/resources.h"
 #include "./options_screen.h"

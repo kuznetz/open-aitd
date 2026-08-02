@@ -5,7 +5,7 @@
 #include "../utils/TriangulatePolygon.h"
 #include "../loaders/loaders.h"
 #include "../utils/my_gltf.h"
-#include "../../../raylib-cpp/raylib-cpp.h"
+#include "../../../common/raylib_cpp.hpp"
 
 #define NLOHMANN_JSON_NAMESPACE_NO_VERSION 1
 #include <nlohmann/json.hpp>

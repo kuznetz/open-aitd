@@ -7,7 +7,7 @@
 #include <tiny_gltf.h>
 #include <vector>
 #include <cstring>
-#include "../../../raylib-cpp/raylib-cpp.h"
+#include "../../../common/raylib_cpp.hpp"
 
 namespace AITDExtractor {
 

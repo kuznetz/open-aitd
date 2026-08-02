@@ -3,7 +3,7 @@
 #include <vector>
 #include <string>
 #include <cstring>
-#include "../raylib-cpp/raylib-cpp.h"
+#include "../common/raylib_cpp.hpp"
 #include "./bounds.hpp"
 
 using namespace raylib;

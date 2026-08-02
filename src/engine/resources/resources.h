@@ -13,7 +13,7 @@
 #include "backgrounds.h"
 #include "screen.h"
 #include "audio.h"
-#include "../../raylib-cpp/raylib-cpp.h"
+#include "../../common/raylib_cpp.hpp"
 #include "../../common/name_decoders.hpp"
 
 using namespace std;

@@ -3,7 +3,7 @@
 #include "../structs/game_objects.h"
 #include "../../../common/name_decoders.hpp"
 #include "../../../common/metrics.hpp"
-#include "../../../raylib-cpp/raylib-cpp.h"
+#include "../../../common/raylib_cpp.hpp"
 #include <stdio.h>
 #include <string>
 #include <fstream>

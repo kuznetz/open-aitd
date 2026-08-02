@@ -3,7 +3,7 @@
 #include <string>
 #include "../world/world.h"
 #include "../resources/resources.h"
-#include "../../raylib-cpp/raylib-cpp.h"
+#include "../../common/raylib_cpp.hpp"
 #include "./base_renderer.h"
 
 using namespace std;

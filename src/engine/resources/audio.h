@@ -2,7 +2,7 @@
 #include <map>
 #include <string>
 #include <stdexcept>
-#include "../../raylib-cpp/raylib-cpp.h"
+#include "../../common/raylib_cpp.hpp"
 #include "data_path.h"
 
 namespace openAITD {

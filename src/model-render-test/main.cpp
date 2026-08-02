@@ -2,7 +2,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
-#include "../raylib-cpp/raylib-cpp.h"
+#include "../common/raylib_cpp.hpp"
 #include "../model-render/model_instance.hpp"
 
 namespace openAITD {

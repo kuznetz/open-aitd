@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include "../../../raylib-cpp/raylib-cpp.h"
+#include "../../../common/raylib_cpp.hpp"
 
 namespace openAITD {
 

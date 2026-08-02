@@ -3,7 +3,7 @@
 #include <map>
 #include <string>
 
-#include "../../raylib-cpp/raylib-cpp.h"
+#include "../../common/raylib_cpp.hpp"
 #include "config.h"
 
 using namespace std;
@@ -52,7 +52,7 @@ namespace openAITD {
 														{ 0, 0, (float)c.screenW, (float)-c.screenH },
 														{ 0, 0 },
 														WHITE);
-							EndShaderMode();
+							EndShaderMode();							
 						} else {
 							DrawTextureRec(sceneTex.texture, { 0, 0, (float)c.screenW, (float)-c.screenH }, { 0,0 }, WHITE);
 						}

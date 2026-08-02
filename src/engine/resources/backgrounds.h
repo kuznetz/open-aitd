@@ -3,7 +3,7 @@
 #include <map>
 #include <string>
 
-#include "../../raylib-cpp/raylib-cpp.h"
+#include "../../common/raylib_cpp.hpp"
 #include "config.h"
 #include "stages.h"
 #include "data_path.h"

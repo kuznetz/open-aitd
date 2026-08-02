@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <vector>
 #include <string>
-#include "../../raylib-cpp/raylib-cpp.h"
+#include "../../common/raylib_cpp.hpp"
 #include "../../common/metrics.hpp"
 #include "../resources/resources.h"
 #include "../../common/euler_angles.hpp"
@@ -79,8 +79,8 @@ namespace openAITD {
 		bool animChanged = false;
 		int animEnd = 0; // 1 - last animation frame
 		int scriptAnimId = -1; //scriptAnimId stay after change to next anim
-		int animIdx;
-		int animFrame;
+		int animIdx = -1;
+		int animFrame = -1;
 		int keyFrameIdx;
 		int keyFrameSoundIdx;
 		float animTime;
@@ -182,7 +182,7 @@ namespace openAITD {
 	{
 		bool active = false;
 		Vector3 direction;
-		GameObject* throwedBy;
+		GameObject* throwedBy = nullptr;
 		int hitDamage;
 	};
 
@@ -254,7 +254,8 @@ namespace openAITD {
 				return rotMatrix;
 			}
 			EulerAngles rot = origRotation;
-			rotMatrix = MatrixMultiply( MatrixRotateYZX(rot), Metrics::roomMatrix );
+			//rotMatrix = MatrixMultiply( MatrixRotateYZX(rot), Metrics::roomMatrix );
+			rotMatrix = MatrixRotateYZX(rot);
 			rotMatrixCached = true;
 			return rotMatrix;
 		}

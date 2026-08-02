@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <algorithm>
-#include "../../raylib-cpp/raylib-cpp.h"
+#include "../../common/raylib_cpp.hpp"
 #include "../../common/euler_angles.hpp"
 
 //using namespace std;
@@ -107,14 +107,13 @@ namespace openAITD {
 				Vector3 corners[8] = {
 						{ min.x, min.y, min.z },
 						{ max.x, min.y, min.z },
-						{ min.x, min.y, max.z },
-						{ max.x, min.y, max.z },
 						{ min.x, max.y, min.z },
 						{ max.x, max.y, min.z },
+						{ min.x, min.y, max.z },
+						{ max.x, min.y, max.z },
 						{ min.x, max.y, max.z },
 						{ max.x, max.y, max.z }
 				};
-
 				corners[0] = Vector3Transform(corners[0], rotMatrix);
 				Bounds result;
 				result.min = corners[0];
@@ -122,12 +121,12 @@ namespace openAITD {
 				for (int i = 1; i < 8; ++i)
 				{
 						corners[i] = Vector3Transform(corners[i], rotMatrix);
-						result.min.x = std::min(result.min.x, corners[i].x);
-						result.min.y = std::min(result.min.y, corners[i].y);
-						result.min.z = std::min(result.min.z, corners[i].z);
-						result.max.x = std::max(result.max.x, corners[i].x);
-						result.max.y = std::max(result.max.y, corners[i].y);
-						result.max.z = std::max(result.max.z, corners[i].z);
+						if (corners[i].x < result.min.x) result.min.x = corners[i].x;
+						if (corners[i].y < result.min.y) result.min.y = corners[i].y;
+						if (corners[i].z < result.min.z) result.min.z = corners[i].z;
+						if (corners[i].x > result.max.x) result.max.x = corners[i].x;
+						if (corners[i].y > result.max.y) result.max.y = corners[i].y;
+						if (corners[i].z > result.max.z) result.max.z = corners[i].z;
 				}
 				return result;
 		}

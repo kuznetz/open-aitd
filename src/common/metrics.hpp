@@ -1,5 +1,5 @@
 #pragma once
-#include "../raylib-cpp/raylib-cpp.h"
+#include "../common/raylib_cpp.hpp"
 #include "./euler_angles.hpp"
 
 using namespace raylib;

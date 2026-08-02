@@ -5,7 +5,7 @@
 #include <sstream>
 #include "../world/world.h"
 #include "../resources/resources.h"
-#include "../../raylib-cpp/raylib-cpp.h"
+#include "../../common/raylib_cpp.hpp"
 
 namespace openAITD {
   using namespace std;
