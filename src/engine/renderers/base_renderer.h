@@ -105,6 +105,7 @@ namespace openAITD {
 		void ProcessPose(GameObject& gobj, Model& model)
 		{
 			if (!model.skin || gobj.animation.id == -1) return;
+			if (gobj.animation.animIdx < 0) return;
 
 			int bonesSize = model.skin->joints_count;
 			if (bonesSize != gobj.animation.curPose.size()) {

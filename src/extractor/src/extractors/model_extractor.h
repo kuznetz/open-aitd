@@ -597,16 +597,20 @@ namespace AITDExtractor {
         false  // binary (glb)
         );
 
-        Vector3 v1 = Vector3Transform({
-            model.bounds.ZVX1 / 1000.f ,
-            model.bounds.ZVY1 / 1000.f ,
-            model.bounds.ZVZ1 / 1000.f
-            }, modelMatrix);
-        Vector3 v2 = Vector3Transform({
-            model.bounds.ZVX2 / 1000.f ,
-            model.bounds.ZVY2 / 1000.f ,
-            model.bounds.ZVZ2 / 1000.f
-            }, modelMatrix);
+        
+        Vector3 v1 = {
+          model.bounds.ZVX1 / 1000.f ,
+          model.bounds.ZVY1 / 1000.f ,
+          model.bounds.ZVZ1 / 1000.f
+        };
+        Vector3 v2 = {
+          model.bounds.ZVX2 / 1000.f ,
+          model.bounds.ZVY2 / 1000.f ,
+          model.bounds.ZVZ2 / 1000.f
+        };
+        
+        // v1 = Vector3Transform(v1, modelMatrix);
+        // v2 = Vector3Transform(v2, modelMatrix);            
 
         json dataJson;
         dataJson["bounds"] = json::array();
