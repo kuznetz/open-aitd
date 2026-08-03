@@ -150,12 +150,19 @@ namespace openAITD {
             auto& scr = resources.screen;
             const char* m = world.messageText.c_str();
             int& fontH = resources.screen.mainFont.baseSize;
-            scr.drawCentered(m, { 
+            raylib::Rectangle messageRect = { 
                 0,
                 (float)(scr.config.screenH - (fontH * 2)),
                 (float)scr.config.screenW,
                 (float)fontH
-            }, WHITE);
+            };
+            messageRect.x += 2;
+            messageRect.y += 2;
+            scr.drawCentered(m, messageRect, BLACK);
+            messageRect.x -= 2;
+            messageRect.y -= 2;
+            scr.drawCentered(m, messageRect, WHITE);
+
         }
     }
 

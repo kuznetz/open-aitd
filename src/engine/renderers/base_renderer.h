@@ -169,8 +169,9 @@ namespace openAITD {
 			const Vector3 pos = gobj.getPosition();
   		const Vector3 roomPos = world->curStage->rooms[gobj.getRoomId()].origPosition;
 
-			Matrix matr = MatrixTranslate(pos.x, pos.y, pos.z);
+			Matrix matr = MatrixIdentity();
 			matr = MatrixMultiply(MatrixTranslate(roomPos.x, roomPos.y, roomPos.z), matr);
+			matr = MatrixMultiply(MatrixTranslate(pos.x, pos.y, pos.z), matr);
 			matr = MatrixMultiply(gobj.getRotMatrix(), matr);
 			matr = MatrixMultiply(MatrixRotateY(PI), matr);
 			

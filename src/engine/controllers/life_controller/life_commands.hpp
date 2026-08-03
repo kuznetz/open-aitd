@@ -65,33 +65,33 @@ namespace openAITD {
 				if (actor1->staticCollider != 0) {
 						return getPosRelStatic(actor1, actor2);
 				}
+
 				Vector3 p1 = actor1->getPosition();
-				Vector3 p2 = world->curStage->VectorChangeRoom(actor2->getPosition(), 
-																						actor2->getRoomId(), 
-																						actor1->getRoomId());
+				Vector3 p2 = world->curStage->VectorChangeRoom(actor2->getPosition(),
+																												actor2->getRoomId(),
+																												actor1->getRoomId());
 
-				Vector3 p2rot = { p2.x - p1.x, 0, p2.z - p1.z };
-				Vector3 rot = actor1->getOrigRotation(); 
-				Quaternion q = QuaternionInvert(QuaternionFromEuler(rot.x, rot.y, rot.z));
-				
-				p2rot = Vector3RotateByQuaternion(p2rot, q);
-				p2rot = Vector3Add(p2rot, p1);
+				Vector3 localVec = { p2.x - p1.x, 0.0f, p2.z - p1.z };
 
-				RModel* m = resources->models.getModel(actor1->modelId);
-				Bounds b = m->bounds;
-				b.min = Vector3Add(b.min, p1);
-				b.max = Vector3Add(b.max, p1);
+				Matrix rotMatrix = actor1->getRotMatrix();
+				Matrix invRotMatrix = MatrixInvert(rotMatrix);  // or MatrixTranspose?
+				localVec = Vector3Transform(localVec, invRotMatrix);
+
+				RModel* mdl = resources->models.getModel(actor1->modelId);
+				Bounds b = mdl->bounds;
 
 				int res = 0;
-				if (p2rot.z < b.min.z) {
-						res = 2;
-				} else if (p2rot.z > b.max.z) {
-						res = 1;
-				} else if (p2rot.x < b.min.x) {
-						res = 8;
-				} else if (p2rot.x > b.max.x) {
-						res = 4;
+				if (localVec.z < b.min.z) {
+						res = 1; //back
+				} else if (localVec.z > b.max.z) {
+						res = 2; //front
+				} else if (localVec.x < b.min.x) {
+						res = 4; //left
+				} else if (localVec.x > b.max.x) {
+						res = 8; //right
 				}
+
+				printf("get_dir: %d\n", res);
 				return res;
 		}
 

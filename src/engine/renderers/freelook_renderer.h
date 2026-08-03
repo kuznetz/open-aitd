@@ -162,6 +162,7 @@ namespace openAITD {
 			if (gobj.hit.active) {
 				DrawBounds(gobj.hit.bounds, RED);
 			}
+			//Z+ forward
 			Matrix mat = gobj.getRotMatrix();
 			Vector3 forw = Vector3Transform({0.0f, 0.0f, 1.0f}, mat);
 			forw = Vector3Add(pos, forw);
