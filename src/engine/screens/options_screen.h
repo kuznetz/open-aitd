@@ -70,7 +70,7 @@ public:
 
         sstream.str("");
         sstream << std::fixed << std::setprecision(2) << newConfig.antialiasing;
-        string antialiasing = string("Antialiasing: ") + sstream.str();
+        string antialiasing = string("3D Scale: ") + sstream.str();
         menuItems.push_back({4, antialiasing});
 
         string showFps = string("Show fps: ") + (newConfig.showFps ? "yes" : "no");

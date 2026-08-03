@@ -18,40 +18,6 @@ namespace openAITD {
 
 		void rotateTo(GameObject& gobj, const Vector3& target, const float timeDelta, const float rotateSpeed = 0.5f * PI)
 		{
-				EulerAngles euler = gobj.getOrigRotation();
-				euler.y = EulerAngles::NormalizeAngle(euler.y);
-
-				const auto& pos = gobj.getPosition();
-				Vector2 targetDir = { target.x - pos.x, pos.z - target.z };
-				float lenSq = targetDir.x * targetDir.x + targetDir.y * targetDir.y;
-				if (lenSq < 1e-10f) return;
-				targetDir = Vector2Normalize(targetDir);
-
-				float targetYaw = atan2(-targetDir.x, -targetDir.y);
-				float diff = EulerAngles::NormalizeAngle(targetYaw - euler.y);
-
-				const float eps = 0.001f;
-				if (fabs(diff) < eps) {
-  			  //printf("Forw \n");
-					euler.y = targetYaw;
-					return;
-				}
-
-				float maxStep = rotateSpeed * timeDelta;
-				if (fabs(diff) <= maxStep) {
-					  //printf("Forw+ \n");
-						euler.y = targetYaw;
-				} else {
-					  //printf("Rotate %d\n", diff > 0);
-						euler.y += (diff > 0 ? maxStep : -maxStep);
-				}
-				euler.y = EulerAngles::NormalizeAngle(euler.y);
-				gobj.getOrigRotation() = euler;
-		}
-
-		//Without hacks
-		void rotateTo2(GameObject& gobj, const Vector3& target, const float timeDelta, const float rotateSpeed = 0.5f * PI)
-		{
 			Matrix rotMatrix = gobj.getRotMatrix();
 			//Z+ forward
 			Vector3 forward = { rotMatrix.m8, rotMatrix.m9, rotMatrix.m10 };
@@ -70,17 +36,17 @@ namespace openAITD {
 			const float eps = 0.001f;
 			if (fabs(diff) < eps) {
 				  printf("forw\n");
-					euler.y = -targetYaw;
+					euler.y = targetYaw;
 					gobj.setOrigRotation(euler);
 					return;
 			}
 			float maxStep = rotateSpeed * timeDelta;
 			if (fabs(diff) <= maxStep) {
 				  printf("forw+\n");
-					euler.y = -targetYaw;
+					euler.y = targetYaw;
 			} else {
 				  printf((string("rot ") + (diff > 0?"+":"-") + "\n").c_str());
-					euler.y += (diff > 0 ? -maxStep : maxStep);
+					euler.y += (diff > 0 ? maxStep : -maxStep);
 			}
 			euler.y = EulerAngles::NormalizeAngle(euler.y);
 			gobj.setOrigRotation(euler);
@@ -98,7 +64,7 @@ namespace openAITD {
 				targetPos.z += trackItmRoomPos.z - objRoomPos.z;
 			}
 			gobj.track.targetPos = targetPos;			
-			rotateTo2(gobj, gobj.track.targetPos, timeDelta);
+			rotateTo(gobj, gobj.track.targetPos, timeDelta);
 
 			//gobj.track.direction = Vector3Normalize(Vector3Subtract(gobj.track.target, gobj.getPosition()));
 		    //float nextDistanceToPoint = Vector3DistanceSqr(Vector3Add(gobj.getPosition(), gobj.track.direction), gobj.track.target);
@@ -267,7 +233,7 @@ namespace openAITD {
 			//printf("Rooms %d %d\n", gobj.getRoomId(), gobj2.getRoomId());
 			//printf("VectorChangeRoom %f %f\n", v2.x, v2.z);
 
-			rotateTo2(gobj, pos2, timeDelta);
+			rotateTo(gobj, pos2, timeDelta);
 		}
 
 
