@@ -21,8 +21,8 @@ namespace openAITD {
 		bool fulllscreen = true;
 		int screenX = 0;
 		int screenY = 0;
-		int screenW = 1280;
-		int screenH = 960;
+		int screenW = 640;
+		int screenH = 480;
 		int targetFps = 60;
 		float antialiasing = 2.0f;
 	};
@@ -42,17 +42,11 @@ namespace openAITD {
 			cfg.antialiasing = confJson["antialiasing"];
 		}
 		if (!cfg.fulllscreen) {
-			cfg.screenW = 320;
-			cfg.screenH = 240;
 			try {
 				cfg.screenW = confJson["screenW"];
 				cfg.screenH = confJson["screenH"];
 			} catch (std::exception e) {
 			}
-		}
-		else {
-			cfg.screenW = 1280;
-			cfg.screenH = 960;
 		}
 
 		cfg.showFps = confJson["showFps"] || false;

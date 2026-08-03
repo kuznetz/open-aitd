@@ -17,6 +17,7 @@ namespace openAITD {
         Config& config;
         Font mainFont;
         RenderTexture sceneTex;
+				bool fullscreen = false;
 				bool initialized = false;
 
 				Vector3 brightnessFactor = { 1.0f, 1.0f, 1.0f };
@@ -36,7 +37,30 @@ namespace openAITD {
         }
 
         void init() {
-            mainFont = LoadFontEx(fontPath.c_str(), 16 * config.screenH / 200, 0, 95);
+						InitWindow(config.screenW, config.screenH, "Open-AITD");
+						int m = GetCurrentMonitor();
+						int monitorW = GetMonitorWidth(m);
+						int monitorH = GetMonitorHeight(m);
+						fullscreen = config.fulllscreen;
+						if (fullscreen) {
+								config.screenW = monitorH * 4 / 3;
+								config.screenH = monitorH;
+								config.screenX = (monitorW - config.screenW) / 2;
+								config.screenY = 0;
+								ToggleBorderlessWindowed();
+								SetWindowSize(monitorW, monitorH);
+						}
+						else {
+							SetWindowPosition(
+									(monitorW - config.screenW) / 2,
+									(monitorH - config.screenH) / 2
+							);
+						}
+						config.targetFps = GetMonitorRefreshRate(m);
+						SetWindowState(FLAG_VSYNC_HINT);
+						SetTargetFPS(config.targetFps);					
+
+            mainFont = LoadFontEx(fontPath.c_str(), config.screenH * 16 / 200, 0, 95);
 						sceneTex = LoadRenderTexture(config.screenW, config.screenH);
 
 						brightnessShader = LoadShader(
@@ -48,6 +72,39 @@ namespace openAITD {
 						
 						initialized = true;
         }
+
+				void reinit() {
+						if (!initialized) {
+								init();
+								return;
+						}
+
+						int m = GetCurrentMonitor();
+						int monitorW = GetMonitorWidth(m);
+						int monitorH = GetMonitorHeight(m);
+
+						if (config.fulllscreen) {
+								if (!fullscreen) ToggleBorderlessWindowed();
+								config.screenW = monitorH * 4 / 3;
+								config.screenH = monitorH;
+								config.screenX = (monitorW - config.screenW) / 2;
+								config.screenY = 0;
+								SetWindowSize(monitorW, monitorH);
+								SetWindowPosition(0, 0);
+						} else {
+								if (fullscreen) ToggleBorderlessWindowed();
+								config.screenX = (monitorW - config.screenW) / 2;
+								config.screenY = (monitorH - config.screenH) / 2;
+								SetWindowSize(config.screenW, config.screenH);
+								SetWindowPosition(config.screenX, config.screenY);
+						}
+
+						UnloadFont(mainFont);
+						mainFont = LoadFontEx(fontPath.c_str(), config.screenH * 16 / 200, 0, 95);
+
+						UnloadRenderTexture(sceneTex);
+						sceneTex = LoadRenderTexture(config.screenW, config.screenH);
+				}				
 
         void renderScene(float brightness = 1) {
 						auto& c = config;

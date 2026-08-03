@@ -378,36 +378,10 @@ namespace openAITD {
 
         auto extractor =  AITDExtractor::createAITDExtractor();
         extractor->extractAllData(false);
-
-        int m;
-        if (resources.config.fulllscreen) {
-            //SetConfigFlags(FLAG_BORDERLESS_WINDOWED_MODE);
-            InitWindow(0, 0, "Open-AITD");
-            m = GetCurrentMonitor();
-            int w = GetMonitorWidth(m);
-            int h = GetMonitorHeight(m);
-            resources.config.screenW = h * 4 / 3;
-            resources.config.screenH = h;
-            resources.config.screenX = (w - resources.config.screenW) / 2;
-            resources.config.screenY = 0;
-            ToggleBorderlessWindowed();
-            SetWindowSize(w, h);
-            //SetWindowPosition(0, 0);
-        }
-        else {
-            InitWindow(resources.config.screenW, resources.config.screenH, "Open-AITD");
-            m = GetCurrentMonitor();
-            //SetWindowPosition((w - resources.config.screenW) / 2 , (h - resources.config.screenH) / 2);
-            //SetWindowSize(resources.config.screenW, resources.config.screenH);
-        }
-        resources.config.targetFps = GetMonitorRefreshRate(m);
-
-        SetWindowState(FLAG_VSYNC_HINT);
-        SetTargetFPS(resources.config.targetFps);
+        resources.screen.init();
         SetExitKey(KEY_F10);
 
         resources.loadTexts("data/texts/ENGLISH/main.txt");
-        resources.screen.init();
 
         resources.stages.resize(8);
         for (int i = 0; i < 8; i++) {
