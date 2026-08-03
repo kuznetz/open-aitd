@@ -15,8 +15,9 @@ namespace openAITD {
     public:
         string fontPath = "newdata/font.ttf";
         Config& config;
-        Font mainFont = { 0 };
+        Font mainFont;
         RenderTexture sceneTex;
+				bool initialized = false;
 
 				Vector3 brightnessFactor = { 1.0f, 1.0f, 1.0f };
 				Shader brightnessShader = { 0 };
@@ -24,10 +25,14 @@ namespace openAITD {
 				
         Screen(Config& config):
 				 config(config)
-				 {}
+				{
+				}
 
         ~Screen() {
+            if (!initialized) return;
             UnloadFont(mainFont);
+            UnloadRenderTexture(sceneTex);
+            UnloadShader(brightnessShader);
         }
 
         void init() {
@@ -40,6 +45,8 @@ namespace openAITD {
 						);
 					  shUniformLoc = GetShaderLocation(brightnessShader, "brightness");
             SetShaderValue(brightnessShader, shUniformLoc, &brightnessFactor, SHADER_UNIFORM_VEC3);
+						
+						initialized = true;
         }
 
         void renderScene(float brightness = 1) {

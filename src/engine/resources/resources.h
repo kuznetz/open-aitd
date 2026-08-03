@@ -44,6 +44,7 @@ namespace openAITD {
 		}
 
 		~Resources() {
+			printf("Deleting resources\n");
 		}
 
 		void loadTexts(string textsPath) {

@@ -254,7 +254,7 @@ namespace openAITD {
 				return rotMatrix;
 			}
 			EulerAngles rot = origRotation;
-			//rotMatrix = MatrixMultiply( MatrixRotateYZX(rot), Metrics::roomMatrix );
+			rot = { -rot.x, -rot.y, -rot.z };
 			rotMatrix = MatrixRotateYZX(rot);
 			rotMatrixCached = true;
 			return rotMatrix;
@@ -321,7 +321,7 @@ namespace openAITD {
 		bool changingStage = false;
 
 	private:
-	  Resources resources;
+	  Resources& resources;
 	  //Position
 	  Vector3 position;
 		// Original rotation values YZX, need for scripts

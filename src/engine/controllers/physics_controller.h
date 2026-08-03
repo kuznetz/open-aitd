@@ -367,20 +367,6 @@ namespace openAITD {
 			}
 		}
 
-		void followCameraProcess() {
-			if (!world->followTarget) return;
-			auto& folObj = *world->followTarget;
-			if (folObj.getStageId() == -1) return;
-			world->setCurStage(folObj.getStageId(), folObj.getRoomId());
-			//Select Camera
-			if (world->curStageId != folObj.getStageId()) return;
-			Vector3 pos = Vector3Add(folObj.getPosition(), world->curRoom->origPosition);
-			auto camId = world->curStage->closestCamera(pos);
-			if (camId != -1) {
-				world->curCameraId = camId;
-			}
-		}
-
 		void process(float timeDelta) {
 			auto& curStage = resources->stages[world->curStageId];
 
@@ -435,8 +421,6 @@ namespace openAITD {
 				processGravity(gobj, *curRoom, timeDelta);
 				processZones(gobj, curRoom);
 			}
-
-			followCameraProcess();
 		}
 	};
 
