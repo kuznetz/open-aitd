@@ -165,7 +165,7 @@ namespace openAITD {
 
                 world->gobjects.clear();
                 world->gobjects.reserve(inJson["objects"].size());
-                for (int i = 0; i < world->gobjects.size(); i++) {
+                for (int i = 0; i < inJson["objects"].size(); i++) {
                     auto& inObj = inJson["objects"][i];
                     auto& gobj = world->gobjects.emplace_back(*resources);
                     gobj.id = i;
@@ -205,7 +205,9 @@ namespace openAITD {
 
                 world->inventory.resize(inJson["inventory"].size());
                 for (int i = 0; i < world->inventory.size(); i++) {
-                    world->inventory[i] = &world->gobjects[inJson["inventory"][i]];
+                    int objId = inJson["inventory"][i];
+                    auto obj  = &world->gobjects[objId];
+                    world->inventory[i] = obj;
                 }
 
                 int inHand = inJson["inHand"].get<int>();
