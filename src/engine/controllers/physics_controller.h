@@ -84,7 +84,7 @@ namespace openAITD {
 			}
 		}
 
-		void processDynamicColliders(GameObject& gobj, Room& room) {
+		void processDynamicColliders(GameObject& gobj, Room& room, int ignoredId = -1) {
 			Bounds& objB = gobj.getBounds();
 			Vector3 v = gobj.physics.moveVec;
 			bool collided = false;
@@ -92,6 +92,7 @@ namespace openAITD {
 			for (int i = 0; i < world->gobjects.size(); i++) {
 				auto& gobj2 = world->gobjects[i];
 				if (&gobj == &gobj2) continue;
+				if (gobj2.id == ignoredId) continue;
 				if (!gobj2.physics.collidable) continue;
 				if (gobj2.modelId == -1) continue;
 				if (gobj2.getStageId() != gobj.getStageId()) continue;
@@ -113,10 +114,10 @@ namespace openAITD {
 					Bounds objB2S = objB2.getExpanded(-0.001f);
 					if (gobj.physics.moving && !gobj2.bitField.foundable) {
 						if (gobj2.bitField.movable) {
-							auto v2 = v;
+							auto v2 = v; //v2 for not modify v
 							c2 = objB.CollToBoxV_XZ(v2, objB2S);
 							if (c2) {
-								pushObject(gobj2, room, v);
+								v = pushObject(gobj2, room, v, gobj.id);
 							}
 						}
 						else {
@@ -190,14 +191,15 @@ namespace openAITD {
 			}	
 		}
 
-		void pushObject(GameObject& gobj, Room& room, Vector3& v) {
+		Vector3 pushObject(GameObject& gobj, Room& room, Vector3 v, int ignoredId = -1) {
 			gobj.physics.moveVec = v;
 			gobj.physics.moving = true;
 			processStaticColliders(gobj, room);
-			processDynamicColliders(gobj, room);
-			v = gobj.physics.moveVec;
-			gobj.getPosition() = Vector3Add(gobj.getPosition(), v);
+			processDynamicColliders(gobj, room, ignoredId);
+			Vector3 result = gobj.physics.moveVec;
+			gobj.setPosition(Vector3Add(gobj.getPosition(), result));
 			gobj.physics.moving = false;
+			return result;
 		}
 
 		void processGravity(GameObject& gobj, Room& room, float timeDelta) {
