@@ -61,9 +61,9 @@ namespace openAITD {
             mdl->model.ApplyPose(curPose.data());
             //Vector3 v = Vector3Negate(mdl->model.curPose[gobj.hit.boneIdx].translation);
             Vector3 v = mdl->model.curPose[gobj.hit.boneIdx].translation;
-            const auto& rot = gobj.getOrigRotation();
-            auto m = MatrixRotateYZX(rot);
-            v = Vector3Transform(v, m);
+            v = Vector3Transform(v, MatrixRotateY(PI));
+            const auto& rotM = gobj.getRotMatrix();
+            v = Vector3Transform(v, rotM);
             v = Vector3Add(v, gobj.getPosition());
             auto& r = gobj.hit.range;
 

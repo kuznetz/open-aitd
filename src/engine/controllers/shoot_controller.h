@@ -113,8 +113,8 @@ namespace openAITD {
             Room room = resources->stages[world->curStageId].rooms[shooter->getRoomId()];
             Vector3 origin = getBonePosition(shooter, act->boneIdx);
 
-            Matrix rotMatrix = MatrixRotateYZX(shooter->getOrigRotation());
-            Vector3 dir = Vector3Transform({ 0, 0, -1 }, rotMatrix);
+            Matrix& rotMatrix = shooter->getRotMatrix();
+            Vector3 dir = Vector3Transform({ 0, 0, 1 }, rotMatrix);
             float range = act->range;
             int damage = act->damage;
 
