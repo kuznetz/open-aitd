@@ -72,10 +72,14 @@ namespace openAITD {
                     objAni.animEnd = 0;
                     objAni.animChanged = true;
                     if (!objAni.bitField.repeat) {
-                        objAni.id = objAni.nextId;
-                        objAni.animTime = 0;
-                        objAni.flags = 0;
-                        objAni.bitField.repeat = 1;
+                        if (objAni.nextId == -1) {
+                            gobj.bitField.animated = 0;
+                        } else {
+                            objAni.id = objAni.nextId;
+                            objAni.animTime = 0;
+                            objAni.flags = 0;
+                            objAni.bitField.repeat = 1;
+                        }
                     }
                     else if (mdlAnim.duration > 0) {
                         while (objAni.animTime >= mdlAnim.duration) {

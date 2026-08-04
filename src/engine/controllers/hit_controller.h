@@ -3,6 +3,7 @@
 #include "../world/world.h"
 
 using namespace std;
+using namespace raylib;
 
 namespace openAITD {
 

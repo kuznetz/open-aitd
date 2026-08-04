@@ -2,7 +2,6 @@
 #include "../resources/resources.h"
 #include "../world/world.h"
 #include "../screens/found_screen.h"
-#include "./throw_controller.h"
 
 using namespace std;
 namespace openAITD {
@@ -12,12 +11,10 @@ namespace openAITD {
 		World* world;
 		Resources* resources;
 		FoundScreen* foundScreen;
-		ThrowController* throwContr;
 
-		PhysicsController(Resources* res, World* world, FoundScreen* found, ThrowController* throwContr) {
+		PhysicsController(Resources* res, World* world, FoundScreen* found) {
 			this->resources = res;
 			this->world = world;
-			this->throwContr = throwContr;
 			foundScreen = found;
 		}
 
@@ -57,11 +54,6 @@ namespace openAITD {
 			gobj.damage.damage = damager.physics.hitObjectDamage;
 		}
 
-		void throwDamage(GameObject& gobj, GameObject& throwed) {
-			gobj.damage.hitBy = &throwed;
-			gobj.damage.damage = throwed.throwing.hitDamage;
-		}
-
 		void processStaticColliders(GameObject& gobj, Room& room) {
 			Bounds& objB = gobj.getBounds();
 			Vector3 v = gobj.physics.moveVec;
@@ -80,23 +72,11 @@ namespace openAITD {
 						int gobjStatId = room.colliders[i].linkedObjectId;
 						if (gobjStatId >= 0 ) {
 							GameObject& gobjStat = world->gobjects[gobjStatId];
-							if (gobj.throwing.active) {
-    					  throwContr->throwStop(gobj);
-								this->throwDamage(gobjStat, gobj);
-								this->placeOnSurface(gobj);
-								gobjStat.physics.collidedBy = gobj.id;
-							}
 						}
 					}
 					else if (room.colliders[i].type == 3) {
 						gobj.physics.staticColl = 255;
 					}
-				}
-			}
-			if (collided) {
-				if (gobj.throwing.active) {
-					throwContr->throwStop(gobj);
-					this->placeOnSurface(gobj);
 				}
 			}
 			if (gobj.physics.collidable) {
@@ -115,7 +95,6 @@ namespace openAITD {
 				if (!gobj2.physics.collidable) continue;
 				if (gobj2.modelId == -1) continue;
 				if (gobj2.getStageId() != gobj.getStageId()) continue;
-				if (gobj.throwing.active && gobj.throwing.throwedBy == &gobj2) continue;
 
 				Bounds objB2 = gobj2.getBounds();
 				if (gobj2.getRoomId() != gobj.getRoomId()) {
@@ -158,11 +137,6 @@ namespace openAITD {
 					}
 				}
 				if (c2) {
-					if (gobj.throwing.active) {
-						throwContr->throwStop(gobj);
-						this->placeOnSurface(gobj);
-						throwDamage(gobj2, gobj);
-					}
 					if (gobj.physics.hitObjectDamage) {
 						hitObjDamage(gobj2, gobj);
 					}
@@ -193,7 +167,6 @@ namespace openAITD {
 				if (!gobj2.physics.collidable) continue;
 				if (gobj2.modelId == -1) continue;
 				if (gobj2.getStageId() != gobj.getStageId()) continue;
-				if (gobj.throwing.active && gobj.throwing.throwedBy == &gobj2) continue;
 
 				Bounds objB2 = gobj2.getBounds();
 				if (gobj2.getRoomId() != gobj.getRoomId()) {
@@ -209,11 +182,6 @@ namespace openAITD {
 					gobj.physics.objectColl = gobj2.id;
 					if (gobj2.physics.collidedBy == -1) {
 						gobj2.physics.collidedBy = gobj.id;
-					}
-					if (gobj.throwing.active) {
-						throwContr->throwStop(gobj);
-						this->placeOnSurface(gobj);
-						throwDamage(gobj2, gobj);
 					}
 					if (gobj.physics.hitObjectDamage) {
 						hitObjDamage(gobj2, gobj);
@@ -265,7 +233,6 @@ namespace openAITD {
 				if (!gobj2.physics.collidable) continue;
 				if (gobj2.modelId == -1) continue;
 				if (gobj2.getStageId() != gobj.getStageId()) continue;
-				if (gobj.throwing.active && gobj.throwing.throwedBy == &gobj2) continue;
 				if (gobj2.getRoomId() != gobj.getRoomId()) {
 					continue;
 				}				
@@ -332,8 +299,7 @@ namespace openAITD {
 				Vector3 pos = gobj.getPosition();
 				if (groundY < 0.0f) {
 						pos.y = 0.0f;
-				}
-				if (pos.y > groundY) {
+				} else if (pos.y > groundY) {
 						pos.y = groundY + 0.001f;
 				}
 				gobj.setPosition(pos);
@@ -382,7 +348,7 @@ namespace openAITD {
 				auto& gobj = world->gobjects[i];
 				if (gobj.getStageId() != world->curStageId) continue;
 				if (gobj.modelId == -1) continue;
-				if (!world->isObjectActive(gobj) && !gobj.throwing.active) continue;
+				if (!world->isObjectActive(gobj)) continue;
 
 				if (gobj.changingStage) {
 					if (gobj.bitField.fallable) {
@@ -396,10 +362,7 @@ namespace openAITD {
   			auto& moveVec = gobj.physics.moveVec;
 				moveVec = { 0,0,0 };
 				Vector3 moveVec0 = { 0,0,0 };
-				if (gobj.throwing.active) {
-					moveVec0.z += -3 * timeDelta;
-				}
-				if (gobj.bitField.animated || gobj.throwing.active) {
+				if (gobj.bitField.animated) {
 					moveVec0 = Vector3Add(
 						moveVec0,
 						Vector3Subtract(gobj.animation.moveRoot, gobj.animation.prevMoveRoot)

@@ -49,7 +49,7 @@ namespace openAITD {
     CameraRenderer renderer(&world);
     FreelookRenderer flRenderer(&world);
     ThrowController throwContr(&world);
-    PhysicsController physContr(&resources, &world, &foundScreen, &throwContr);
+    PhysicsController physContr(&resources, &world, &foundScreen);
     CameraController camContr(world);
     ObjRotateController objrotContr(&world);
     AnimationController animContr(&resources, &world);
