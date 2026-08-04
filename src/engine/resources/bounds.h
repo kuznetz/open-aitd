@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <algorithm>
+#include <array>
 #include "../../common/raylib_cpp.hpp"
 #include "../../common/euler_angles.hpp"
 
@@ -102,9 +103,8 @@ namespace openAITD {
 			return r;
 		}
 
-		Bounds getRotatedBounds(const Matrix& rotMatrix) const
-		{
-				Vector3 corners[8] = {
+		std::array<Vector3, 8> getCorners() const {
+				return { {
 						{ min.x, min.y, min.z },
 						{ max.x, min.y, min.z },
 						{ min.x, max.y, min.z },
@@ -113,7 +113,12 @@ namespace openAITD {
 						{ max.x, min.y, max.z },
 						{ min.x, max.y, max.z },
 						{ max.x, max.y, max.z }
-				};
+				} };
+		}		
+
+		Bounds getRotatedBounds(const Matrix& rotMatrix) const
+		{
+				auto corners = getCorners();
 				corners[0] = Vector3Transform(corners[0], rotMatrix);
 				Bounds result;
 				result.min = corners[0];
@@ -133,34 +138,7 @@ namespace openAITD {
 
 		Bounds getRotatedBounds(const EulerAngles& eulerAngles)
 		{
-				auto& b = *this;
-				Vector3 v[8];
-				v[0] = { b.min.x, b.min.y, b.min.z };
-				v[1] = { b.max.x, b.min.y, b.min.z };
-				v[2] = { b.min.x, b.min.y, b.max.z };
-				v[3] = { b.max.x, b.min.y, b.max.z };
-				v[4] = { b.min.x, b.max.y, b.min.z };
-				v[5] = { b.max.x, b.max.y, b.min.z };
-				v[6] = { b.min.x, b.max.y, b.max.z };
-				v[7] = { b.max.x, b.max.y, b.max.z };
-
-				Matrix rotation = MatrixRotateYZX(eulerAngles);
-
-				Bounds res;
-				v[0] = Vector3Transform(v[0], rotation);
-				res.min = v[0];
-				res.max = v[0];
-				for (int i = 1; i < 8; i++)
-				{
-						v[i] = Vector3Transform(v[i], rotation);
-						if (v[i].x < res.min.x) res.min.x = v[i].x;
-						if (v[i].x > res.max.x) res.max.x = v[i].x;
-						if (v[i].y < res.min.y) res.min.y = v[i].y;
-						if (v[i].y > res.max.y) res.max.y = v[i].y;
-						if (v[i].z < res.min.z) res.min.z = v[i].z;
-						if (v[i].z > res.max.z) res.max.z = v[i].z;
-				}
-				return res;
+			  return getRotatedBounds(MatrixRotateYZX(eulerAngles));
 		}
 
 		bool CollToBoxV_XYZ(Vector3& v, Bounds& b2) {

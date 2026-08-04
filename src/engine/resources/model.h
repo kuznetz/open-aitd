@@ -207,40 +207,55 @@ namespace openAITD {
         }
 
         void CalcBounds() {
-            Bounds& result = bounds;
             if (model.meshCount == 0) return;
+            bool initialized = false;
 
-            Vector3& minVertex = result.min;
-            Vector3& maxVertex = result.max;
-            Bounds meshBounds;
-            Mesh* mesh;
-            bool first = true;
-
-            for (int i = 0; i < model.meshCount; i++) {
-                mesh = &model.meshes[i];
-                if (mesh->vertices == NULL) continue;
-                
-                /*auto b = GetMeshBoundingBox(*mesh);
-                meshBounds.min = b.min;
-                meshBounds.max = b.max;*/
-                GetMeshBounds(meshBounds, *mesh);
-
-                if (first) {
-                    result = meshBounds;
-                    first = false;
+            Bounds localBounds;
+            for (int i = 0; i < model.meshCount; ++i) {
+                Mesh& mesh = model.meshes[i];
+                if (mesh.vertices == nullptr || mesh.vertexCount == 0)
                     continue;
+                Bounds meshBounds;
+                GetMeshBounds(meshBounds, mesh);
+                if (!initialized) {
+                    localBounds = meshBounds;
+                    initialized = true;
+                } else {
+                    localBounds.min.x = std::min(localBounds.min.x, meshBounds.min.x);
+                    localBounds.min.y = std::min(localBounds.min.y, meshBounds.min.y);
+                    localBounds.min.z = std::min(localBounds.min.z, meshBounds.min.z);
+                    localBounds.max.x = std::max(localBounds.max.x, meshBounds.max.x);
+                    localBounds.max.y = std::max(localBounds.max.y, meshBounds.max.y);
+                    localBounds.max.z = std::max(localBounds.max.z, meshBounds.max.z);
                 }
-
-                minVertex.x = std::min(minVertex.x, meshBounds.min.x);
-                minVertex.y = std::min(minVertex.y, meshBounds.min.y);
-                minVertex.z = std::min(minVertex.z, meshBounds.min.z);
-                maxVertex.x = std::max(maxVertex.x, meshBounds.max.x);
-                maxVertex.y = std::max(maxVertex.y, meshBounds.max.y);
-                maxVertex.z = std::max(maxVertex.z, meshBounds.max.z);
             }
 
-            Vector3TransformRef(minVertex, model.transform);
-            Vector3TransformRef(maxVertex, model.transform);
+            if (!initialized) {
+                return;
+            }
+
+            Vector3 corners[8];
+            corners[0] = {localBounds.min.x, localBounds.min.y, localBounds.min.z};
+            corners[1] = {localBounds.max.x, localBounds.min.y, localBounds.min.z};
+            corners[2] = {localBounds.min.x, localBounds.max.y, localBounds.min.z};
+            corners[3] = {localBounds.max.x, localBounds.max.y, localBounds.min.z};
+            corners[4] = {localBounds.min.x, localBounds.min.y, localBounds.max.z};
+            corners[5] = {localBounds.max.x, localBounds.min.y, localBounds.max.z};
+            corners[6] = {localBounds.min.x, localBounds.max.y, localBounds.max.z};
+            corners[7] = {localBounds.max.x, localBounds.max.y, localBounds.max.z};
+
+            // Инициализируем result первым преобразованным углом
+            bounds.min = bounds.max = corners[0];
+            for (int i = 1; i < 8; ++i) {
+                bounds.min.x = std::min(bounds.min.x, corners[i].x);
+                bounds.min.y = std::min(bounds.min.y, corners[i].y);
+                bounds.min.z = std::min(bounds.min.z, corners[i].z);
+                bounds.max.x = std::max(bounds.max.x, corners[i].x);
+                bounds.max.y = std::max(bounds.max.y, corners[i].y);
+                bounds.max.z = std::max(bounds.max.z, corners[i].z);
+            }
+            Vector3TransformRef(bounds.min, model.transform);
+            Vector3TransformRef(bounds.max, model.transform);
         }
 
         void bakePoses(int fps) {

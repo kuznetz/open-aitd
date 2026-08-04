@@ -111,29 +111,7 @@ namespace openAITD {
 			*/
 		}
 
-		void fillRenderOrder(RenderOrder& ord, GameObject& gobj)
-		{
-			ord.next = 0;
-			ord.gobj = &gobj;
-
-			//Calc matrix
-			Vector3& roomPos = world->curStage->rooms[gobj.getRoomId()].origPosition;
-			auto pos = Vector3Add(roomPos, gobj.getPosition());
-			Matrix matTranslation = MatrixTranslate(pos.x, pos.y, pos.z);
-			const auto& rot = gobj.getOrigRotation();
-			Matrix matRotation = MatrixRotateXYZ(rot);
-			Matrix matScale = MatrixScale(1, 1, 1);
-			Matrix matTransform = MatrixMultiply(MatrixMultiply(matScale, matRotation), matTranslation);
-
-			auto rmodel = resources->models.getModel(gobj.modelId);
-
-			rmodel->model.CalcBounds();
-			auto& bb = ord.bb;
-			bb = rmodel->model.bounds;
-			bb = bb.getRotatedBounds(rot);
-			Vector3TransformRef(bb.min, matTranslation);
-			Vector3TransformRef(bb.max, matTranslation);
-			
+		void boundsToScreen(RenderOrder &ord, const Bounds& bb) {
 			Vector3 vecs[8];
 			//Bottom
 			vecs[0] = { bb.min.x, bb.min.y, bb.max.z }; // Front left
@@ -164,6 +142,30 @@ namespace openAITD {
 				if (ord.screenMax.x < v.x) ord.screenMax.x = v.x;
 				if (ord.screenMax.y < v.y) ord.screenMax.y = v.y;
 			}
+		}
+
+		void fillRenderOrder(RenderOrder& ord, GameObject& gobj)
+		{
+			ord.next = 0;
+			ord.gobj = &gobj;
+			auto rmodel = resources->models.getModel(gobj.modelId);
+			ProcessPose(gobj, rmodel->model);
+			ord.bb = gobj.getRenderBounds();
+
+			//Calc matrix
+			/*Vector3& roomPos = world->curStage->rooms[gobj.getRoomId()].origPosition;
+			auto pos = Vector3Add(roomPos, gobj.getPosition());
+			Matrix matTranslation = MatrixTranslate(pos.x, pos.y, pos.z);
+			const Matrix& matRotation = gobj.getRotMatrix();
+
+			auto rmodel = resources->models.getModel(gobj.modelId);
+			rmodel->model.CalcBounds();
+			ord.bb = rmodel->model.bounds;
+			ord.bb = ord.bb.getRotatedBounds(matRotation);
+			Vector3TransformRef(ord.bb.min, matTranslation);
+			Vector3TransformRef(ord.bb.max, matTranslation);*/
+
+			boundsToScreen(ord, ord.bb);
 		}
 
 		void renderMasked(const Texture2D tex, const raylib::Rectangle& r) {
@@ -272,10 +274,10 @@ namespace openAITD {
 				Vector3& roomPos = world->curStage->rooms[gobj.getRoomId()].origPosition;
 				pos = Vector3Add(roomPos, pos);
 
-				if (gobj.modelId != -1) {
-					auto rmodel = resources->models.getModel(gobj.modelId);
-					ProcessPose(gobj, rmodel->model);
-				}
+				// if (gobj.modelId != -1) {
+				// 	auto rmodel = resources->models.getModel(gobj.modelId);
+				// 	ProcessPose(gobj, rmodel->model);
+				// }
 
 				//auto& screenPos = GetWorldToScreenZ(pos);
 				//if (screenPos.z < 0) continue;
@@ -344,12 +346,12 @@ namespace openAITD {
 						(renderIter->screenMax.x - renderIter->screenMin.x) + 1,
 						(renderIter->screenMax.y - renderIter->screenMin.y) + 1
 					};
-					raylib::Rectangle r2 = {
-						renderIter->screenMin.x,
-						GetScreenHeight() - renderIter->screenMin.y,
-						(renderIter->screenMax.x - renderIter->screenMin.x) + 1,
-						- (renderIter->screenMax.y - renderIter->screenMin.y) - 1
-					};
+					// raylib::Rectangle r2 = {
+					// 	renderIter->screenMin.x,
+					// 	GetScreenHeight() - renderIter->screenMin.y,
+					// 	(renderIter->screenMax.x - renderIter->screenMin.x) + 1,
+					// 	- (renderIter->screenMax.y - renderIter->screenMin.y) - 1
+					// };
 					renderMask(r);
 					
 					BeginTextureMode(colorTex);
@@ -376,11 +378,14 @@ namespace openAITD {
 					
 					//DrawTextureRec(colorTex.texture, { 0, 0, (float)colorTex.texture.width, ((float)-colorTex.texture.height) / 2 }, { 0, 0 }, WHITE);
 					renderMasked(colorTex.texture, r);
-					//DrawRectangleLinesEx(r2, 1, RED);
 
 					EndShaderMode();
 					EndBlendMode();
+
+				  //DrawRectangleLinesEx(r, 1, WHITE);
+
 					EndTextureMode();
+
 
 					//it->marker = s;
 					num++;

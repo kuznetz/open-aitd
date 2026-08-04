@@ -284,6 +284,27 @@ namespace openAITD {
 			return objB;
 		}
 
+		Bounds getRenderBounds() {
+			RModel* m = resources.models.getModel(this->modelId);
+			if (!m) return {{0,0,0},{0,0,0}};
+		  m->model.CalcBounds();
+			Bounds objB = m->model.bounds;
+
+			Matrix matr = MatrixIdentity();
+			matr = MatrixMultiply(MatrixRotateY(PI), matr);
+			matr = MatrixMultiply(getRotMatrix(), matr);			
+			objB = objB.getRotatedBounds(matr);
+
+			Vector3 pos = this->position;
+			const Vector3& roomPos = resources.stages[stageId].rooms[roomId].origPosition;
+			pos = Vector3Add(pos, roomPos);
+			objB.min = Vector3Add(objB.min, pos);
+			objB.max = Vector3Add(objB.max, pos);
+			objB.correctBounds();
+
+			return objB;
+		}		
+
 		void setStage( const int stageId, const int roomId, const Vector3 position ) {
   		this->stageId = stageId;
 			this->roomId = roomId;
