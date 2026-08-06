@@ -88,7 +88,7 @@ namespace openAITD {
 		bool hasPose = false;
 		vector<Transform> fromPose;
 		vector<Transform> transitionPose;
-		Transform* curPose;
+		Transform* curPose = nullptr;
 		union {
 			unsigned short int flags;
 			AnimationFlags bitField;

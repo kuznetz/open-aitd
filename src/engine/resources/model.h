@@ -117,6 +117,43 @@ namespace openAITD {
             }
         }
 
+        void CalcPoseFirstFrame(Transform* pose, int animationId) const {
+            auto boneChannels = animations[animationId].boneChannels.data();
+            for (int k = 0; k < skin->joints_count; k++)
+            {
+                Vector3 translation = { skin->joints[k]->translation[0], skin->joints[k]->translation[1], skin->joints[k]->translation[2] };
+                Quaternion rotation = { skin->joints[k]->rotation[0], skin->joints[k]->rotation[1], skin->joints[k]->rotation[2], skin->joints[k]->rotation[3] };
+                Vector3 scale = { skin->joints[k]->scale[0], skin->joints[k]->scale[1], skin->joints[k]->scale[2] };
+
+                if (boneChannels[k].translate)
+                {
+                    if (!GetFirstKeyframePoseGLTF(boneChannels[k].interpolationType, boneChannels[k].translate->sampler->output, &translation))
+                    {
+                        TRACELOG(LOG_INFO, "MODEL: [%s] Failed to load translate pose data for bone %s", fileName, animations[i].bones[k].name);
+                    }
+                }
+                if (boneChannels[k].rotate)
+                {
+                    if (!GetFirstKeyframePoseGLTF(boneChannels[k].interpolationType, boneChannels[k].rotate->sampler->output, &rotation))
+                    {
+                        TRACELOG(LOG_INFO, "MODEL: [%s] Failed to load rotate pose data for bone %s", fileName, animations[i].bones[k].name);
+                    }
+                }
+                if (boneChannels[k].scale)
+                {
+                    if (!GetFirstKeyframePoseGLTF(boneChannels[k].interpolationType, boneChannels[k].scale->sampler->output, &scale))
+                    {
+                        TRACELOG(LOG_INFO, "MODEL: [%s] Failed to load scale pose data for bone %s", fileName, animations[i].bones[k].name);
+                    }
+                }
+                pose[k] = {
+                    translation,
+                    rotation,
+                    scale
+                };
+            }
+        }        
+
         static void GetMeshBounds(Bounds& box, const Mesh& mesh)
         {
             auto& verts = mesh.animVertices; //mesh.vertices
@@ -198,11 +235,19 @@ namespace openAITD {
             for (int i = 0; i < animations.size(); i++) {
                 auto& anim = animations[i];
                 int frameCount = ceil(anim.duration * fps);
-                if (frameCount <= 0) {
+
+                if (frameCount == 0) {
                     frameCount = 1;
+                    anim.bakedPoses.resize(1);
+                    anim.bakedPoses[0].resize(bones.size());
+                    anim.rootMotion.resize(1);
+                    CalcPoseFirstFrame(anim.bakedPoses[0].data(), i);
+                    anim.rootMotion[0] = anim.bakedPoses[0][0];
+                    anim.bakedPoses[0][0].translation = { 0,0,0 };
+                    continue;
                 }
+
                 anim.bakedPoses.resize(frameCount);
-                //anim.bakedBounds.resize(frameCount);
                 anim.rootMotion.resize(frameCount);
                 float t = 0;
                 for (int j = 0; j < frameCount; j++) {
@@ -446,6 +491,40 @@ namespace openAITD {
         {
             UnloadFileData((unsigned char*)data);
         }
+
+        static bool GetFirstKeyframePoseGLTF(cgltf_interpolation_type interpolationType,
+                                            cgltf_accessor* output,
+                                            void* data)
+        {
+            if (output->count == 0) return false;
+            if (output->component_type != cgltf_component_type_r_32f) return false;
+            cgltf_size index = 0;
+            if (interpolationType == cgltf_interpolation_type_cubic_spline)
+            {
+                index = 1;
+            }
+            // For STEP and LINEAR: index = 0.
+
+            if (output->type == cgltf_type_vec3)
+            {
+                cgltf_float tmp[3] = { 0.0f };
+                cgltf_bool r = cgltf_accessor_read_float(output, index, tmp, 3);
+                if (!r) return false;
+                Vector3* v = (Vector3*)data;
+                *v = { tmp[0], tmp[1], tmp[2] };
+                return true;
+            }
+            else if (output->type == cgltf_type_vec4)
+            {
+                cgltf_float tmp[4] = { 0.0f };
+                cgltf_bool r = cgltf_accessor_read_float(output, index, tmp, 4);
+                if (!r) return false;
+                Vector4* v = (Vector4*)data;
+                *v = { tmp[0], tmp[1], tmp[2], tmp[3] };
+                return true;
+            }
+            return false;
+        }        
 
         static bool GetPoseAtTimeGLTF(cgltf_interpolation_type interpolationType, cgltf_accessor* input, cgltf_accessor* output, float time, void* data)
         {

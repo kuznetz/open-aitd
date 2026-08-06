@@ -32,12 +32,11 @@ namespace openAITD {
                 if (!world->isObjectActive(gobj)) continue;
 
                 auto& objAni = gobj.animation;
-
                 if (!gobj.bitField.animated) {
-                    objAni.animChanged = false;
-                    objAni.animEnd = 0;
-                    objAni.keyFrameIdx = 0;
-                    objAni.animFrame = 0;
+                    //objAni.animChanged = false;
+                    //objAni.animEnd = 0;
+                    //objAni.keyFrameIdx = 0;
+                    //objAni.animFrame = 0;
                     continue;
                 }
 
@@ -123,7 +122,9 @@ namespace openAITD {
                 gobj.prevModelId = gobj.modelId;
                 objAni.prevId = objAni.id;
 
-                processPose(gobj);
+                if (objAni.id != -1) {
+                    processPose(gobj);
+                }
 			}
 
         }
@@ -163,7 +164,7 @@ namespace openAITD {
                 }
             }
 
-            if (curAnim.keyFrames.size() == 1) {
+            if (curAnim.duration == 0) {
                 curPose = newPose.data();
 			}
             else if (isTransition && gobj.animation.hasPose) {
