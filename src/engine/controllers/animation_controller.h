@@ -122,10 +122,61 @@ namespace openAITD {
 
                 gobj.prevModelId = gobj.modelId;
                 objAni.prevId = objAni.id;
+
+                processPose(gobj);
 			}
 
         }
 
+        void processPose(GameObject& gobj) {
+			if (gobj.animation.animIdx < 0) return;
+
+            auto rmodel = resources->models.getModel(gobj.modelId);
+            auto& model = rmodel->model;
+
+			int bonesSize = model.skin->joints_count;
+			if (bonesSize != gobj.animation.transitionPose.size()) {
+                gobj.animation.fromPose.resize(bonesSize);
+				gobj.animation.transitionPose.resize(bonesSize);
+				gobj.animation.hasPose = false;
+			}
+
+			auto& curPose = gobj.animation.curPose;
+			auto& curAnim = model.animations[gobj.animation.animIdx];
+			auto& newPose = curAnim.bakedPoses[gobj.animation.animFrame];
+			bool isTransition = (curAnim.duration > 0) && (gobj.animation.animTime <= curAnim.transition);
+
+            if (gobj.animation.animChanged) {
+                if (gobj.animation.hasPose) {
+                    //Set current pose to transition start
+                    memcpy_s(
+                        gobj.animation.fromPose.data(), bonesSize * sizeof(Transform),
+                        curPose, bonesSize * sizeof(Transform)
+                    );
+                } else {
+                    //Init fromPose
+                    memcpy_s(
+                        gobj.animation.fromPose.data(), bonesSize * sizeof(Transform),
+                        newPose.data(), bonesSize * sizeof(Transform)
+                    );
+                    gobj.animation.hasPose = true;
+                }
+            }
+
+            if (curAnim.keyFrames.size() == 1) {
+                curPose = newPose.data();
+			}
+            else if (isTransition && gobj.animation.hasPose) {
+				model.PoseLerp(gobj.animation.transitionPose.data(), gobj.animation.fromPose.data(), newPose.data(), gobj.animation.animTime / curAnim.transition);
+				curPose = gobj.animation.transitionPose.data();
+			}
+			else {
+				curPose = newPose.data();
+			}
+        	
+        }
+
+    private:
 	};
 
 }

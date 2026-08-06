@@ -98,7 +98,7 @@ namespace openAITD {
 		Bounds getCubeBounds()
 		{
 			Bounds r(*this);
-			r.max.z = r.max.x = (max.x + max.z) / 2;
+			r.max.z = r.max.x = (max.x - min.x + max.z - min.z) / 4;
 			r.min.z = r.min.x = -r.max.z;
 			return r;
 		}

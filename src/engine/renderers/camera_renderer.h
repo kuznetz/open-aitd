@@ -149,7 +149,7 @@ namespace openAITD {
 			ord.next = 0;
 			ord.gobj = &gobj;
 			auto rmodel = resources->models.getModel(gobj.modelId);
-			ProcessPose(gobj, rmodel->model);
+			processSkin(gobj, rmodel->model);
 			ord.bb = gobj.getRenderBounds();
 
 			//Calc matrix

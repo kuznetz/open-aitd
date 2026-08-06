@@ -161,7 +161,7 @@ namespace openAITD {
 
 				if (gobj.modelId != -1) {
 					auto rmodel = resources->models.getModel(gobj.modelId);
-					ProcessPose(gobj, rmodel->model);
+					processSkin(gobj, rmodel->model);
 				}
 
 				//auto& screenPos = GetWorldToScreenZ(pos);

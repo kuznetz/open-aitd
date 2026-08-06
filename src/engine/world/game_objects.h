@@ -86,8 +86,9 @@ namespace openAITD {
 		float animTime;
 
 		bool hasPose = false;
+		vector<Transform> fromPose;
 		vector<Transform> transitionPose;
-		vector<Transform> curPose;
+		Transform* curPose;
 		union {
 			unsigned short int flags;
 			AnimationFlags bitField;
@@ -267,6 +268,7 @@ namespace openAITD {
 			RModel* m = resources.models.getModel(this->modelId);
 			if (!m) return {{0,0,0},{0,0,0}};
 			Bounds objB = (this->physics.boundsOverload) ? this->physics.overloadBounds : m->bounds;
+			objB.correctBounds();
 
 			if (this->boundsType == BoundsType::cube) {
 				objB = objB.getCubeBounds();

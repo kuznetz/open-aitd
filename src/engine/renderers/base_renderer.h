@@ -24,8 +24,6 @@ namespace openAITD {
 		WCamera* curCamera = 0;
 		Matrix perspective;
 
-		Transform tempPose[100];
-
 		const int getScreenW() { return resources->config.screenW; }
 		const int getScreenH() { return resources->config.screenH; }
 
@@ -102,55 +100,13 @@ namespace openAITD {
 			DrawLine3D(vecs[3], vecs[7], color);
 		}
 
-		void ProcessPose(GameObject& gobj, Model& model)
+		void processSkin(GameObject& gobj, Model& model)
 		{
 			if (!model.skin || gobj.animation.id == -1) return;
-			if (gobj.animation.animIdx < 0) return;
 
-			int bonesSize = model.skin->joints_count;
-			if (bonesSize != gobj.animation.curPose.size()) {
-				gobj.animation.curPose.resize(bonesSize);
-				gobj.animation.transitionPose.resize(bonesSize);
-				gobj.animation.hasPose = false;
-			}
-
-			auto& curAnim = model.animations[gobj.animation.animIdx];
-			auto& newPose = curAnim.bakedPoses[gobj.animation.animFrame];
-
-			if (gobj.animation.hasPose && gobj.animation.animChanged) {
-				//Set current pose to transition start
-				memcpy_s(
-					gobj.animation.transitionPose.data(), gobj.animation.transitionPose.size() * sizeof(Transform),
-					gobj.animation.curPose.data(), gobj.animation.curPose.size() * sizeof(Transform)
-				);
-			}
-
-			Transform* curPose;
-			bool isTransition = (curAnim.duration > 0) && (gobj.animation.animTime <= curAnim.transition);
-			if (isTransition && gobj.animation.hasPose) {
-				//newPose[0].translation = { 0,0,0 };
-				model.PoseLerp(tempPose, gobj.animation.transitionPose.data(), newPose.data(), gobj.animation.animTime / curAnim.transition);
-				//anim2.CalcPoseByTime(newPose, animIndex, 0);
-				curPose = tempPose;
-			}
-			else {
-				curPose = newPose.data();
-				//curPose[0].translation = { 0,0,0 };
-				//anim2.CalcPoseByTime(curPose, animIndex, animTime);
-			}
-			model.ApplyPose(curPose);
-			model.UpdateBuffer();
-			memcpy_s(
-				gobj.animation.curPose.data(), gobj.animation.curPose.size() * sizeof(Transform),
-				curPose, newPose.size() * sizeof(Transform)
-			);
-			if (!gobj.animation.hasPose) {
-				//Init transition start pose
-				memcpy_s(
-					gobj.animation.transitionPose.data(), gobj.animation.transitionPose.size() * sizeof(Transform),
-					curPose, newPose.size() * sizeof(Transform)
-				);
-				gobj.animation.hasPose = true;
+			if (gobj.animation.curPose) {
+				model.ApplyPose(gobj.animation.curPose);
+				model.UpdateBuffer();
 			}
 		}
 

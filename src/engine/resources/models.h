@@ -68,6 +68,7 @@ namespace openAITD {
 		auto& b = dataJson["bounds"];
 
 		newMod.bounds = { { b[0], b[1], b[2] }, { b[3], b[4], b[5] } };
+		//TODO: move to extractor conversion
 		newMod.bounds = newMod.bounds.getRotatedBounds(MatrixScale(1,-1,-1));
 		newMod.bounds.correctBounds();
 

@@ -250,17 +250,25 @@ namespace openAITD {
 
 	void World::setRepeatAnimation(GameObject& gobj, int animId) {
 		if (gobj.animation.bitField.uninterruptable && !gobj.animation.animEnd) return;
+		if (gobj.animation.id == animId) return;
 		cout << "setRepeatAnimation " << gobj.name << " " << animId << endl;
+		if (animId == -1) {
+			gobj.bitField.animated = 0;
+			return;
+		}
 		gobj.animation.scriptAnimId = animId;
 		gobj.animation.id = animId;
 		gobj.animation.nextId = -1;
+		gobj.animation.animEnd = 0;
 		gobj.animation.flags = 0;
 		gobj.animation.bitField.repeat = 1;
+		gobj.animation.bitField.uninterruptable = false;
 		gobj.bitField.animated = 1;
 	}
 
 	void World::setOnceAnimation(GameObject& gobj, int animId, int nextAnimId, bool uninterrupable) {
 		if (gobj.animation.bitField.uninterruptable && !gobj.animation.animEnd) return;
+		if (gobj.animation.id == animId) return;
 	  cout << "setOnceAnimation " << gobj.name << " " << animId << " " << nextAnimId << endl;
 		if (animId == -1) {
 			gobj.bitField.animated = 0;
@@ -269,6 +277,7 @@ namespace openAITD {
 		gobj.animation.scriptAnimId = animId;
 		gobj.animation.id = animId;
 		gobj.animation.nextId = nextAnimId;
+		gobj.animation.animEnd = 0;
 		gobj.animation.flags = 0;
 		gobj.animation.bitField.uninterruptable = uninterrupable;
 		gobj.bitField.animated = 1;

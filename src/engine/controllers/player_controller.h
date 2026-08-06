@@ -18,15 +18,15 @@ namespace openAITD {
 		void processRotate(GameObject& gobj, float timeDelta) {
 			float rotate = 0;
 			if (IsKeyDown(KEY_LEFT)) {
-				rotate = -1;
+				rotate = 1;
 			}
 			if (IsKeyDown(KEY_RIGHT)) {
-				rotate = 1;
+				rotate = -1;
 			}
 			if (rotate != 0) {
 				auto newRot = gobj.getOrigRotation();
 				newRot.y += rotate * PI * timeDelta;
-				gobj.setOrigRotation(newRot);				
+				gobj.setOrigRotation(newRot);
 			}
 		}
 
