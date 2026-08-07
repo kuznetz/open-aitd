@@ -65,7 +65,7 @@ namespace openAITD {
 
 		void renderModel() {
 			auto& gobj = this->world->gobjects[foundItem];
-			RModel* rmodel = resources->models.getModel(gobj.invItem.modelId);
+			RModel* rmodel = resources->models.getModel(gobj.invItem.modelId, world->altModels);
 
 			BeginTextureMode(renderTexture);
 			ClearBackground(BLACK);

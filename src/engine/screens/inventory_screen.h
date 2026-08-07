@@ -254,7 +254,7 @@ public:
         if (idx < 0 || idx >= static_cast<int>(world->inventory.size())) return;
 
         GameObject& gobj = *world->inventory[idx];
-        RModel* rmodel = resources->models.getModel(gobj.invItem.modelId);
+        RModel* rmodel = resources->models.getModel(gobj.invItem.modelId, world->altModels);
         if (!rmodel) return;
 
         auto& c = resources->config;

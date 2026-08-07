@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <vector>
+#include <vector>
 #include <string>
 #include "../../common/raylib_cpp.hpp"
 #include "../world/world.h"
@@ -22,7 +23,7 @@ namespace openAITD {
 	public:
 		Resources* resources;
 
-		RenderOrder renderQueue[100];
+		std::vector<RenderOrder> renderQueue;
 		RenderOrder* renderStart = 0;
 		RenderOrder* renderIter = 0;
 		RenderOrder* renderIterPrev = 0;
@@ -41,6 +42,7 @@ namespace openAITD {
 
 		CameraRenderer(World* world) : BaseRenderer(world) {
 			resources = world->resources;
+			renderQueue.resize(50);
 		}
 
 		void initShaders() {
@@ -148,7 +150,7 @@ namespace openAITD {
 		{
 			ord.next = 0;
 			ord.gobj = &gobj;
-			auto rmodel = resources->models.getModel(gobj.modelId);
+			auto rmodel = resources->models.getModel(gobj.modelId, world->altModels);
 			processSkin(gobj, rmodel->model);
 			ord.bb = gobj.getRenderBounds();
 
@@ -158,7 +160,7 @@ namespace openAITD {
 			Matrix matTranslation = MatrixTranslate(pos.x, pos.y, pos.z);
 			const Matrix& matRotation = gobj.getRotMatrix();
 
-			auto rmodel = resources->models.getModel(gobj.modelId);
+			auto rmodel = resources->models.getModel(gobj.modelId, world->altModels);
 			rmodel->model.CalcBounds();
 			ord.bb = rmodel->model.bounds;
 			ord.bb = ord.bb.getRotatedBounds(matRotation);
@@ -275,7 +277,7 @@ namespace openAITD {
 				pos = Vector3Add(roomPos, pos);
 
 				// if (gobj.modelId != -1) {
-				// 	auto rmodel = resources->models.getModel(gobj.modelId);
+				// 	auto rmodel = resources->models.getModel(gobj.modelId, world->altModels);
 				// 	ProcessPose(gobj, rmodel->model);
 				// }
 

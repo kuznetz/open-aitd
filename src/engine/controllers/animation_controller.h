@@ -42,7 +42,7 @@ namespace openAITD {
 
                 objAni.animChanged = false;
 				if (objAni.id == -1) continue;
-                auto mdl = resources->models.getModel(gobj.modelId);
+                auto mdl = resources->models.getModel(gobj.modelId, world->altModels);
 
                 if (gobj.modelId != gobj.prevModelId) {
                     objAni.animTime = 0;
@@ -132,7 +132,7 @@ namespace openAITD {
         void processPose(GameObject& gobj) {
 			if (gobj.animation.animIdx < 0) return;
 
-            auto rmodel = resources->models.getModel(gobj.modelId);
+            auto rmodel = resources->models.getModel(gobj.modelId, world->altModels);
             auto& model = rmodel->model;
 
 			int bonesSize = model.skin->joints_count;

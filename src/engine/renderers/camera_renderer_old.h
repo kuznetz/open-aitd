@@ -62,7 +62,7 @@ namespace openAITD {
 			Matrix matScale = MatrixScale(1, 1, 1);
 			Matrix matTransform = MatrixMultiply(MatrixMultiply(matScale, matRotation), matTranslation);
 
-			auto rmodel = resources->models.getModel(gobj.modelId);
+			auto rmodel = resources->models.getModel(gobj.modelId, world->altModels);
 
 			rmodel->model.CalcBounds();			
 			auto& bb = ord.bb;
@@ -160,7 +160,7 @@ namespace openAITD {
 				pos = Vector3Add(roomPos, pos);
 
 				if (gobj.modelId != -1) {
-					auto rmodel = resources->models.getModel(gobj.modelId);
+					auto rmodel = resources->models.getModel(gobj.modelId, world->altModels);
 					processSkin(gobj, rmodel->model);
 				}
 

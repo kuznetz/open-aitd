@@ -1,15 +1,15 @@
 Features:
 - Character Select
-- Cut model in water
 - Particles: blood, enemyblood, cigar smoke, enemy smoke, bullet hit
 - Transparent Materials
 - Noise Textures
-- Light in maze
-- Camera shaking
+- Intro border scaling
 - Gun fire model
 - More fancy save/load
 - Book - spaces / animation / page number
-- Intro border scaling
+- Cut model in water
+- Light in maze
+- Camera shaking
 0.3
 - Multilanguage support
 - Additional multilang text
@@ -33,6 +33,5 @@ Extra Featurtes (1.1?):
 
 Bugs:
 - script put - disable takable
-- Death sequence broken
 - Falling through obstacle (on low frame rate?)
 - Some door rotation wrong direction

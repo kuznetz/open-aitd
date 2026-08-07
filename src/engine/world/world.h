@@ -63,6 +63,9 @@ namespace openAITD {
 		//Time, how long the room was active
 		float roomChrono = 0;
 
+		bool altModels = false;
+		bool altBackgrounds = false;
+
 		bool gameOver = true;
 		bool inDark = false;
 		
@@ -138,6 +141,24 @@ namespace openAITD {
 				curRoomId = roomId;
 				curRoom = (roomId != -1) ? &curStage->rooms[roomId]: 0;
 				roomChrono = chrono;
+			}
+		}
+
+		void setAltModels(bool newValue) {
+			altModels = newValue;
+			GameObject::altModels = newValue;
+		};
+
+		void preload() {
+			//Preload Cameras
+			resources->backgrounds.loadStage(curStageId);
+							
+			//Preload Objects
+			for (int i = 0; i < gobjects.size(); i++) {
+					auto& gobj = gobjects[i];
+					if (gobj.modelId == -1) continue;
+					if (gobj.getStageId() != curStageId) continue;
+					resources->models.getModel(gobj.modelId, altModels);
 			}
 		}
 

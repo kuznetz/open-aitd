@@ -54,7 +54,7 @@ namespace openAITD {
         }
 
         void calcHitBounds(GameObject& gobj) {
-            auto mdl = resources->models.getModel(gobj.modelId);
+            auto mdl = resources->models.getModel(gobj.modelId, world->altModels);
             if (!mdl) throw new exception("Invalid model");
             auto& curAnim = mdl->model.animations[gobj.animation.animIdx];
             auto& curPose = curAnim.bakedPoses[gobj.animation.animFrame];

@@ -96,7 +96,7 @@ namespace openAITD {
     private:
 
         Vector3 getBonePosition(GameObject* gobj, int boneIdx) {
-            auto mdl = resources->models.getModel(gobj->modelId);
+            auto mdl = resources->models.getModel(gobj->modelId, world->altModels);
             if (!mdl) throw std::runtime_error("Invalid model");
             auto& curAnim = mdl->model.animations[gobj->animation.animIdx];
             auto& curPose = curAnim.bakedPoses[gobj->animation.animFrame];

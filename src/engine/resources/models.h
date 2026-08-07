@@ -5,6 +5,7 @@
 
 #include "../../common/raylib_cpp.hpp"
 #include "../../common/name_decoders.hpp"
+#include "./data_path.h"
 
 #include "bounds.h"
 #include "config.h"
@@ -31,10 +32,9 @@ namespace openAITD {
 	public:
 		Config* config = 0;
 		NameDecoders* nameDecoders = 0;
-		string modelsPath = "data/models";
 		RModels();
 		~RModels();
-		RModel* getModel(int idx, bool alt = false);
+		RModel* getModel(int idx, bool alt);
 		void clear();
 	};
 
@@ -49,7 +49,11 @@ namespace openAITD {
 		if (mi != modMap.end()) {
 			return &(*mi).second;
 		}
-		string str = this->getModelDir(id, alt) + "/model.gltf";
+		string str = DataPath::GetFile( this->getModelDir(id, alt) + "/model.gltf" );
+		if (alt && str.size() == 0) {
+			return getModel(id, false);
+		}
+				
 		auto& newMod = modMap[id];
 		newMod.model.load(str.c_str());
 		newMod.model.bakePoses(config->targetFps);
@@ -62,7 +66,7 @@ namespace openAITD {
 			}
 		}
 
-		str = this->getModelDir(id, alt) + "/data.json";
+		str = DataPath::GetFile( this->getModelDir(id, alt) + "/data.json" );
 		std::ifstream ifs(str);
 		json dataJson = json::parse(ifs);
 		auto& b = dataJson["bounds"];
@@ -76,7 +80,7 @@ namespace openAITD {
 	}
 
 	string RModels::getModelDir(int id, bool alt) {
-		return modelsPath + "/" + nameDecoders->model.getName(id) + (alt ? "_alt" : "");
+		return string("models/") + nameDecoders->model.getName(id) + (alt ? "_alt" : "");
 	}
 
 	void RModels::clear() {

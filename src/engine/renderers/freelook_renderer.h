@@ -141,7 +141,7 @@ namespace openAITD {
 		void renderObjectEx(GameObject& gobj, Color tint)
 		{
 			if (gobj.modelId != -1) {
-				auto rmodel = resources->models.getModel(gobj.modelId);
+				auto rmodel = resources->models.getModel(gobj.modelId, world->altModels);
 				processSkin(gobj, rmodel->model);
 				renderObject(gobj, tint);
 			}

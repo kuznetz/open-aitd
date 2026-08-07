@@ -112,7 +112,7 @@ namespace openAITD {
 
 		void renderObject(GameObject& gobj, Color tint)
 		{
-			auto rmodel = resources->models.getModel(gobj.modelId);
+			auto rmodel = resources->models.getModel(gobj.modelId, world->altModels);
 			auto& model = rmodel->model;
 
 			/*

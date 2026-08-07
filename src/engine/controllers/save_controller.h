@@ -82,6 +82,8 @@ namespace openAITD {
                 outJson["inventory"].push_back(world->inventory[i]->id);
             }
 
+            outJson["altModels"] = world->altModels;
+
             outJson["objects"] = json::array();
             for (int i = 0; i < world->gobjects.size(); i++) {
                 auto& gobj = world->gobjects[i];
@@ -220,6 +222,11 @@ namespace openAITD {
                 world->setCurStage(foll->getStageId(), foll->getRoomId());
                 
                 world->resources->backgrounds.setIsAltBackgrounds(!!world->cVars[12]);
+
+                bool altModels = inJson.value("altModels", false);
+                world->setAltModels(altModels);
+
+                world->preload();
 
             } catch(exception e) {
                 string message = "Error loading : " + path;

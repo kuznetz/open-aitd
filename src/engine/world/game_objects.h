@@ -190,6 +190,8 @@ namespace openAITD {
 	class GameObject
 	{
 	public:
+    static bool altModels;
+
 		int id = -1;
 		string name;
 
@@ -265,7 +267,7 @@ namespace openAITD {
 			if (this->boundsCached) {
 				return this->bounds;
 			}
-			RModel* m = resources.models.getModel(this->modelId);
+			RModel* m = resources.models.getModel(this->modelId, GameObject::altModels);
 			if (!m) return {{0,0,0},{0,0,0}};
 			Bounds objB = (this->physics.boundsOverload) ? this->physics.overloadBounds : m->bounds;
 			objB.correctBounds();
@@ -287,7 +289,7 @@ namespace openAITD {
 		}
 
 		Bounds getRenderBounds() {
-			RModel* m = resources.models.getModel(this->modelId);
+			RModel* m = resources.models.getModel(this->modelId, GameObject::altModels);
 			if (!m) return {{0,0,0},{0,0,0}};
 		  m->model.CalcBounds();
 			Bounds objB = m->model.bounds;
@@ -358,5 +360,7 @@ namespace openAITD {
 		int stageId = -1;
 		int roomId = -1;
 	};
+
+	inline bool GameObject::altModels = false;
 
 }

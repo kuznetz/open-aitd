@@ -77,7 +77,7 @@ namespace openAITD {
 				Matrix invRotMatrix = MatrixInvert(rotMatrix);  // or MatrixTranspose?
 				localVec = Vector3Transform(localVec, invRotMatrix);
 
-				RModel* mdl = resources->models.getModel(actor1->modelId);
+				RModel* mdl = resources->models.getModel(actor1->modelId, world->altModels);
 				Bounds b = mdl->bounds;
 
 				int res = 0;
@@ -603,7 +603,7 @@ namespace openAITD {
 
 		bool canCompleteAnimation(GameObject& gobj, int animationId, float yOffset) {			
 			if (gobj.modelId == -1) return false;
-			RModel* m = resources->models.getModel(gobj.modelId);
+			RModel* m = resources->models.getModel(gobj.modelId, world->altModels);
 			if (!m) return false;
 
 			auto& animIter = m->animsIds.find(animationId);

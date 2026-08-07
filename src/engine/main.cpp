@@ -23,6 +23,7 @@
 #include "./screens/picture_screen.h"
 #include "./screens/book_screen.h"
 #include "./screens/console_screen.h"
+#include "./screens/char_select_screen.h"
 
 #include "../extractor/include/extractor.h"
 
@@ -33,6 +34,7 @@ namespace openAITD {
 
     enum class AppState {
         Loading,
+        CharSelect,
         Intro,
         InWorld,
         MainMenu,
@@ -64,6 +66,7 @@ namespace openAITD {
     SaveController saveContr(&world, &lifeContr);
     ConsoleScreen consoleScreen(&world);
     MenuScreen mainMenu(world, saveContr);
+    CharSelectScreen charSelectScreen(world);
 
     bool freeLook = false;
     bool pause = false;
@@ -83,7 +86,6 @@ namespace openAITD {
         world.setCurStage(7, 1);
         state = AppState::Intro;
     }
-
 
     void loadGame(int slot) {
         startGame();
@@ -107,17 +109,7 @@ namespace openAITD {
         world.curStage = &resources.stages[world.nextStageId];
         world.curStageId = world.nextStageId;
         world.curCameraId = -1;
-
-        //Preload Cameras
-        resources.backgrounds.loadStage(world.curStageId);
-                
-        //Preload Objects
-        for (int i = 0; i < world.gobjects.size(); i++) {
-            auto& gobj = world.gobjects[i];
-            if (gobj.modelId == -1) continue;
-            if (gobj.getStageId() != world.curStageId) continue;
-            resources.models.getModel(gobj.modelId);
-        }
+        world.preload();
 
         //reset animation
         for (int i = 0; i < world.gobjects.size(); i++) {
@@ -257,7 +249,8 @@ namespace openAITD {
             return false;
             break;
         case MenuScreenResult::newGame:
-            startIntro();
+            charSelectScreen.start();
+            state = AppState::CharSelect;
             break;
         case MenuScreenResult::resume:
             state = AppState::InWorld;
@@ -280,6 +273,16 @@ namespace openAITD {
         if (state == AppState::MainMenu) {
             world.brightnessTrg = world.inDark ? inDarkBrightness : 0.1f;
             if (!processMenu(timeDelta)) return false;
+        }
+        else if (state == AppState::CharSelect) {
+            charSelectScreen.process(timeDelta);
+            if (charSelectScreen.exited) {
+                if (charSelectScreen.selected != -1) {
+                    startIntro();                    
+                } else {
+                    state = AppState::MainMenu;
+                }
+            }
         }
         else if (state == AppState::Intro) {
             processWorld(timeDelta);
@@ -356,7 +359,12 @@ namespace openAITD {
             resources.screen.begin();
             bookScreen.render();
             resources.screen.end();
-        }        
+        } 
+        else if (state == AppState::CharSelect) {
+            resources.screen.begin();
+            charSelectScreen.render();
+            resources.screen.end();
+        }
         else if (state == AppState::Intro) {
             renderWorld();
         }
