@@ -21,7 +21,7 @@ public:
     SavesScreen(Resources& resources, SaveController& saveContr)
         : resources(resources),
           saveContr(saveContr),
-          menu(resources.screen.mainFont, raylib::Rectangle{0, 0, 1, 1}, 10)
+          menu(resources.texts.mainFont, raylib::Rectangle{0, 0, 1, 1}, 10)
     {}
 
     ~SavesScreen() {
@@ -90,7 +90,7 @@ public:
 
     void render() {
         const char* title = (mode == Mode::Save) ? "Save Game" : "Load Game";
-        resources.screen.drawCentered(title, {
+        resources.texts.drawCentered(title, {
             0, resources.config.screenH * 0.05f,
             (float)resources.config.screenW, 0
         }, WHITE);

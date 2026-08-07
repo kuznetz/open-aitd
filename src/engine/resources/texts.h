@@ -8,6 +8,8 @@
 #include <fstream>
 #include <sstream>
 
+#include "config.h"
+
 using namespace std;
 namespace openAITD {
 
@@ -17,15 +19,37 @@ namespace openAITD {
     bool loaded = false;
     string language = "en";
 		map<int,string> texts;
+		Font mainFont;
+		Config& config;
 
-		Texts() {}
+		Texts(Config& config):
+		  config(config)
+		  {}
+
+		~Texts() {
+			unload();
+		}
 
     void load() {
 			string s = "data/texts/" + defaultLanguage + "/main.txt";
 			loadTexts(s);
       s = "data/texts/" + language + "/main.txt";
       loadTexts(s);
+
+			s = DataPath::GetFile("texts/" + language + "/font.ttf");
+			if (s != "") {
+				mainFont = LoadFontEx(s.c_str(), config.screenH * 16 / 200, 0, 95);
+			} else {
+				s = DataPath::GetFile("texts/" + defaultLanguage + "/font.ttf");
+	  		mainFont = LoadFontEx(s.c_str(), config.screenH * 16 / 200, 0, 95);
+			}
     }
+
+    void unload() {
+			if (!loaded) return;
+			UnloadFont(mainFont);
+			loaded=false;
+		}
 
 		void loadTexts(string textsPath) {
 			int idx;
@@ -79,6 +103,20 @@ namespace openAITD {
 			}
 
 			throw std::runtime_error("Read error: " + path + " and " + defaultPath);
+		}
+
+		void drawLeft(const char* text, raylib::Rectangle r, Color color) {
+				auto& f = this->mainFont;
+				Vector2 v = { r.x, r.y };
+				DrawTextEx(f, text, v, f.baseSize, 0, color);
+		}
+
+		void drawCentered(const char* text, raylib::Rectangle r, Color color) {
+				auto& f = this->mainFont;
+				Vector2 mt = MeasureTextEx(f, text, f.baseSize, 0);
+				int x = (int)(r.x + ((r.width - mt.x) / 2));
+				Vector2 v = { (float)x, r.y };
+				DrawTextEx(f, text, v, f.baseSize, 0, color);
 		}
 
 	};

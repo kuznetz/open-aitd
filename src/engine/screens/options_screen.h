@@ -35,7 +35,7 @@ public:
         world(world),
         resources(*world.resources),
         config(resources.config),
-        verticalMenu(resources.screen.mainFont, {0, 0, (float)config.screenW, (float)config.screenH}, 10)
+        verticalMenu(resources.texts.mainFont, {0, 0, (float)config.screenW, (float)config.screenH}, 10)
     {
     }
 
@@ -142,11 +142,11 @@ public:
 		}
 
     void render() {
-			resources.screen.drawCentered("Options", {
+			resources.texts.drawCentered("Options", {
 					0, config.screenH * 0.05f,
 					(float)config.screenW, 0
 			}, WHITE);
-			resources.screen.drawCentered("Resolution applied after restart", {
+			resources.texts.drawCentered("Resolution applied after restart", {
 					0, config.screenH * 0.90f,
 					(float)config.screenW, 0
 			}, WHITE);

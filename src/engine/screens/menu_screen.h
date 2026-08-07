@@ -45,7 +45,7 @@ namespace openAITD {
             : world(world),
             resources(*world.resources),
             options(world),
-            mainMenu(resources.screen.mainFont, raylib::Rectangle{0,0,1,1}, 10),
+            mainMenu(resources.texts.mainFont, raylib::Rectangle{0,0,1,1}, 10),
             savesScreen(resources, saveContr)
         {}
 

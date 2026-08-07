@@ -33,7 +33,7 @@ namespace openAITD {
 		  world(world),
 			resources(*world.resources),
 			bookData(world.bookData),
-			text(resources.screen.mainFont, {})
+			text(resources.texts.mainFont, {})
 			{}
 
 		~BookScreen() {

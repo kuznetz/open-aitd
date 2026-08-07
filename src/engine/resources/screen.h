@@ -13,9 +13,7 @@ namespace openAITD {
     class Screen
     {
     public:
-        string fontPath = "newdata/font.ttf";
         Config& config;
-        Font mainFont;
         RenderTexture sceneTex;
 				bool fullscreen = false;
 				bool initialized = false;
@@ -31,7 +29,6 @@ namespace openAITD {
 
         ~Screen() {
             if (!initialized) return;
-            UnloadFont(mainFont);
             UnloadRenderTexture(sceneTex);
             UnloadShader(brightnessShader);
         }
@@ -60,7 +57,6 @@ namespace openAITD {
 						SetWindowState(FLAG_VSYNC_HINT);
 						SetTargetFPS(config.targetFps);					
 
-            mainFont = LoadFontEx(fontPath.c_str(), config.screenH * 16 / 200, 0, 95);
 						sceneTex = LoadRenderTexture(config.screenW, config.screenH);
 
 						brightnessShader = LoadShader(
@@ -98,9 +94,6 @@ namespace openAITD {
 								SetWindowSize(config.screenW, config.screenH);
 								SetWindowPosition(config.screenX, config.screenY);
 						}
-
-						UnloadFont(mainFont);
-						mainFont = LoadFontEx(fontPath.c_str(), config.screenH * 16 / 200, 0, 95);
 
 						UnloadRenderTexture(sceneTex);
 						sceneTex = LoadRenderTexture(config.screenW, config.screenH);
@@ -145,20 +138,6 @@ namespace openAITD {
 						}
 						EndDrawing();
 				}
-
-        void drawLeft(const char* text, raylib::Rectangle r, Color color) {
-            auto& f = this->mainFont;
-            Vector2 v = { r.x, r.y };
-            DrawTextEx(f, text, v, f.baseSize, 0, color);
-        }
-
-        void drawCentered(const char* text, raylib::Rectangle r, Color color) {
-            auto& f = this->mainFont;
-            Vector2 mt = MeasureTextEx(f, text, f.baseSize, 0);
-            int x = (int)(r.x + ((r.width - mt.x) / 2));
-            Vector2 v = { (float)x, r.y };
-            DrawTextEx(f, text, v, f.baseSize, 0, color);
-        }
 
 				void saveScreenshot(const string& path, int outWidth = 0, int outHeight = 0) {
 						Image img = LoadImageFromTexture(sceneTex.texture);

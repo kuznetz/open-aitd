@@ -1,31 +1,32 @@
 Features:
+0.2: Main support
 - Character Select
 - Particles: blood, enemyblood, cigar smoke, enemy smoke, bullet hit
 - Gun fire model (particles)
-- Transparent Materials
-- Noise Textures
+- Multilanguage support
 - Intro border scaling
 - More fancy save/load
 - Cut model in water
 - Camera shaking
 - Intro images
-0.3
-- Multilanguage support
+1.0: full original support
+- Transparent Materials
+- Noise Textures
 - Additional multilang text
-- CDAudio music ripper
+- CDAudio music ripper (.cue)
+- Extract files from cd (.cue)
 - Book audio ripper from cd
 - Light in maze
 - Book - spaces / animation / page number
-0.4
 - Take script hack / upgrade take screen
-- New skinning model system (non baking mesh, GPU shader)
-
-Extra Featurtes (1.1?):
+- Extract resuources screen
+1.1:  Extra Featurtes 
 - Shoot Autoaim
+- Extend modding support
 - Eight turn movement
 - Codirection camera on aim
 - Gamepad support
-- Extract screen, autosearch AitD in steam
+- Hi poly models support
 - Character model separate in-hand item from main body
 - Top-down shadows
 - Thread loading backgrounds

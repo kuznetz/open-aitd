@@ -34,8 +34,9 @@ namespace openAITD {
 		Texts texts;
 
 		Resources():
-		 screen(config)
-		 {
+			screen(config),
+			texts(config)
+		{
 			nameDecoders.load();
 			backgrounds.loadAltBackgrounds();
 			models.config = &config;

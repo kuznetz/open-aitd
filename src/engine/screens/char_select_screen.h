@@ -27,7 +27,7 @@ namespace openAITD {
 		CharSelectScreen(World& world) :
 		  world(world),
 			resources(*world.resources),
-			textWid(resources.screen.mainFont,{0})
+			textWid(resources.texts.mainFont,{0})
 			{}
 
 		~CharSelectScreen() {

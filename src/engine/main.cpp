@@ -100,7 +100,7 @@ namespace openAITD {
     bool loadStage() {
         if (world.curStageId == world.nextStageId) return false;
         resources.screen.begin();
-        auto& f = resources.screen.mainFont;
+        auto& f = resources.texts.mainFont;
         const char* m = "Loading...";
         auto mt = MeasureTextEx(f, m, f.baseSize, 0);
         Vector2 v = { (int)(resources.config.screenW - mt.x) / 2, resources.config.screenH - (f.baseSize * 2) };
@@ -140,21 +140,21 @@ namespace openAITD {
 
     void renderMessage() {
         if (world.messageTime > 0) {
-            auto& scr = resources.screen;
+            auto& txt = resources.texts;
             const char* m = world.messageText.c_str();
-            int& fontH = resources.screen.mainFont.baseSize;
+            int& fontH = resources.texts.mainFont.baseSize;
             raylib::Rectangle messageRect = { 
                 0,
-                (float)(scr.config.screenH - (fontH * 2)),
-                (float)scr.config.screenW,
+                (float)(txt.config.screenH - (fontH * 2)),
+                (float)txt.config.screenW,
                 (float)fontH
             };
             messageRect.x += 2;
             messageRect.y += 2;
-            scr.drawCentered(m, messageRect, BLACK);
+            txt.drawCentered(m, messageRect, BLACK);
             messageRect.x -= 2;
             messageRect.y -= 2;
-            scr.drawCentered(m, messageRect, WHITE);
+            txt.drawCentered(m, messageRect, WHITE);
 
         }
     }

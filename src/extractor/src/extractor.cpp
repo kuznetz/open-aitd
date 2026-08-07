@@ -353,7 +353,7 @@ namespace AITDExtractor {
         //dumpInstructions("instr.txt");
         this->processTexts("ENGLISH", "en");
         this->processTexts("ESPAGNOL", "sp");
-        this->processTexts("USA", "usa");
+        this->processTexts("USA", "en-us");
         this->processTexts("DEUTSCH", "de");
         this->processTexts("FRANCAIS", "fr");
 

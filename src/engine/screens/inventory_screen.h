@@ -53,13 +53,13 @@ public:
         float H = static_cast<float>(resources->config.screenH);
 
         itemsMenu = std::make_unique<VerticalMenuWidget>(
-            resources->screen.mainFont,
+            resources->texts.mainFont,
             raylib::Rectangle{ 0, 0.05f * H, W, 0.45f * H },
             5
         );
 
         actionsMenu = std::make_unique<VerticalMenuWidget>(
-            resources->screen.mainFont,
+            resources->texts.mainFont,
             raylib::Rectangle{ W / 2, H / 2, W / 2, H / 2 },
             5
         );
@@ -294,7 +294,7 @@ public:
             (float)(resources->config.screenW / 2),
             (float)resources->config.screenH
         };
-        resources->screen.drawLeft(valStr.c_str(), r, raylib::WHITE);
+        resources->texts.drawLeft(valStr.c_str(), r, raylib::WHITE);
     }
 };
 
