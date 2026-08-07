@@ -16,6 +16,7 @@
 //#include "extractors/skeleton_extractor.h"
 #include "./extractors/track_extractor.h"
 #include "./extractors/vars_extractor.hpp"
+#include "./extractors/font_extractor.hpp"
 
 #include "./life/life_writer.hpp"
 #include "./life/life_optimizer.h"
@@ -46,6 +47,12 @@ namespace AITDExtractor {
         void processTexts(const string filelang, const string lang);
         void processPictures();
         void extractAllData(bool floppy);
+        
+        void renderFontTable() {
+            PakFile fontPak("original/ITD_RESS.PAK");
+            auto fonts = fontPak.readBlock(5);
+            ExtractFontGlyphs(fonts.data(), "./fonts.png", 2);            
+        }
 
     private:
         vector<gameObjectStruct> gameObjs;
@@ -299,10 +306,10 @@ namespace AITDExtractor {
             PakFile textsPak(originalPak);
             
             auto& data = textsPak.readBlock(0);
-            extractText(data, dirname+"/main.txt", cp1252_table);
+            extractText(data, dirname+"/main.txt");
             for (int i=1; i<textsPak.headers.size()-1; i++) {
                 auto& data = textsPak.readBlock(i);
-                extractText(data, dirname+"/"+to_string(i)+".txt", cp1252_table);
+                extractText(data, dirname+"/"+to_string(i)+".txt");
             }
         }
     }
@@ -351,6 +358,7 @@ namespace AITDExtractor {
 
     void AITDExtractor::extractAllData(bool floppy) {
         //dumpInstructions("instr.txt");
+
         this->processTexts("ENGLISH", "en");
         this->processTexts("ESPAGNOL", "sp");
         this->processTexts("USA", "en-us");

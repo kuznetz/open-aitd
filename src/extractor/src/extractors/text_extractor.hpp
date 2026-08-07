@@ -4,86 +4,65 @@
 #include <string>
 #include <fstream>
 #include <iostream>
+#include <filesystem>
+#include <array>
+#include <stdexcept>
 #include "../structs/int_types.h"
 
 namespace AITDExtractor {
 
-    inline const wchar_t cp1252_table[128] = {
-        // 0x80 .. 0x9F
-        0x20AC, 0x0081, 0x201A, 0x0192, 0x201E, 0x2026, 0x2020, 0x2021,
-        0x02C6, 0x2030, 0x0160, 0x2039, 0x0152, 0x008D, 0x017D, 0x008F,
-        0x0090, 0x2018, 0x2019, 0x201C, 0x201D, 0x2022, 0x2013, 0x2014,
-        0x02DC, 0x2122, 0x0161, 0x203A, 0x0153, 0x009D, 0x017E, 0x0178,
-        // 0xA0 .. 0xBF
-        0x00A0, 0x00A1, 0x00A2, 0x00A3, 0x00A4, 0x00A5, 0x00A6, 0x00A7,
-        0x00A8, 0x00A9, 0x00AA, 0x00AB, 0x00AC, 0x00AD, 0x00AE, 0x00AF,
-        0x00B0, 0x00B1, 0x00B2, 0x00B3, 0x00B4, 0x00B5, 0x00B6, 0x00B7,
-        0x00B8, 0x00B9, 0x00BA, 0x00BB, 0x00BC, 0x00BD, 0x00BE, 0x00BF,
-        // 0xC0 .. 0xDF
-        0x00C0, 0x00C1, 0x00C2, 0x00C3, 0x00C4, 0x00C5, 0x00C6, 0x00C7,
-        0x00C8, 0x00C9, 0x00CA, 0x00CB, 0x00CC, 0x00CD, 0x00CE, 0x00CF,
-        0x00D0, 0x00D1, 0x00D2, 0x00D3, 0x00D4, 0x00D5, 0x00D6, 0x00D7,
-        0x00D8, 0x00D9, 0x00DA, 0x00DB, 0x00DC, 0x00DD, 0x00DE, 0x00DF,
-        // 0xE0 .. 0xFF
-        0x00E0, 0x00E1, 0x00E2, 0x00E3, 0x00E4, 0x00E5, 0x00E6, 0x00E7,
-        0x00E8, 0x00E9, 0x00EA, 0x00EB, 0x00EC, 0x00ED, 0x00EE, 0x00EF,
-        0x00F0, 0x00F1, 0x00F2, 0x00F3, 0x00F4, 0x00F5, 0x00F6, 0x00F7,
-        0x00F8, 0x00F9, 0x00FA, 0x00FB, 0x00FC, 0x00FD, 0x00FE, 0x00FF
-    };  
+    typedef std::array<std::string, 128> AitdCharset;
 
-    inline const wchar_t cp1251_table[128] = {
-        // 0x80 .. 0x9F
-        0x0402, 0x0403, 0x201A, 0x0453, 0x201E, 0x2026, 0x2020, 0x2021,
-        0x20AC, 0x2030, 0x0409, 0x2039, 0x040A, 0x040C, 0x040B, 0x040F,
-        0x0452, 0x2018, 0x2019, 0x201C, 0x201D, 0x2022, 0x2013, 0x2014,
-        0x0098, 0x2122, 0x0459, 0x203A, 0x045A, 0x045C, 0x045B, 0x045F,
-        0x00A0, 0x040E, 0x045E, 0x0408, 0x00A4, 0x0490, 0x00A6, 0x00A7,
-        0x0401, 0x00A9, 0x0404, 0x00AB, 0x00AC, 0x00AD, 0x00AE, 0x0407,
-        0x00B0, 0x00B1, 0x0406, 0x0456, 0x0491, 0x00B5, 0x00B6, 0x00B7,
-        0x0451, 0x2116, 0x0454, 0x00BB, 0x0458, 0x0405, 0x0455, 0x0457,
-        0x0410, 0x0411, 0x0412, 0x0413, 0x0414, 0x0415, 0x0416, 0x0417,
-        0x0418, 0x0419, 0x041A, 0x041B, 0x041C, 0x041D, 0x041E, 0x041F,
-        0x0420, 0x0421, 0x0422, 0x0423, 0x0424, 0x0425, 0x0426, 0x0427,
-        0x0428, 0x0429, 0x042A, 0x042B, 0x042C, 0x042D, 0x042E, 0x042F,
-        0x0430, 0x0431, 0x0432, 0x0433, 0x0434, 0x0435, 0x0436, 0x0437,
-        0x0438, 0x0439, 0x043A, 0x043B, 0x043C, 0x043D, 0x043E, 0x043F,
-        0x0440, 0x0441, 0x0442, 0x0443, 0x0444, 0x0445, 0x0446, 0x0447,
-        0x0448, 0x0449, 0x044A, 0x044B, 0x044C, 0x044D, 0x044E, 0x044F
-    };
+    inline const AitdCharset AITD1_CHARSET = {{
+        "\xC3\x87","\xC3\xBC","\xC3\xA9","\xC3\xA2","\xC3\xA4","\xC3\xA0","\xC3\xA5","\xC3\xA7",
+        "\xC3\xAA","\xC3\xAB","\xC3\xA8","\xC3\xAF","\xC3\xAE","\xC3\xAC","\xC3\x84","\xC3\x85",
+        "\xC3\x89","\xC3\xA6","\xC3\x86","\xC3\xB4","\xC3\xB6","\xC3\xB2","\xC3\xBB","\xC3\xB9",
+        "\xC3\xBF","\xC3\x96","\xC3\x9C","\xC2\xA2","\xC2\xA3","\xC2\xA5","\x3F"    ,"\xC2\xA7",
+        "\xC3\xA1","\xC3\xAD","\xC3\xB3","\xC3\xBA","\xC3\xB1","\xC3\x91","\xC2\xAA","\xC2\xBA",
+        "\xC2\xBF","\xC2\xA9","\xC2\xAA","\xC2\xBD","\xC2\xBC","\xC3\xA4","\xC2\xAE","\x69",
+        "\xC2\xB0","\xC2\xB1","\xC2\xB2","\xC2\xB3","\xC2\xB4","\xC2\xB5","\xC2\xB6","\xC2\xB7",
+        "\xC2\xB8","\xC2\xB9","\xC2\xBA","\xC2\xBB","\xC2\xBC","\xC2\xBD","\xC2\xBE","\xC2\xBF",
+        "\xC3\x80","\xC3\x81","\xC3\x82","\xC3\x83","\xC3\x84","\xC3\x85","\xC3\x86","\xC3\x87",
+        "\xC3\x89","\xC3\x88","\xC3\x8A","\xC3\x8B","\xC3\x8C","\xC3\x8D","\xC3\x8E","\xC3\x8F",
+        "\xC3\x90","\xC3\x91","\xC3\x92","\xC3\x93","\xC3\x94","\xC3\x95","\xC3\x96","\xC3\x97",
+        "\xC3\x98","\xC3\x99","\xC3\x9A","\xC3\x9B","\xC3\x9C","\xC3\x9D","\xC3\x9E","\xC3\x9F",
+        "\xC3\x9E","\xC3\x9F","\xC3\xA2","\xC3\xA3","\xC3\xA4","\xC3\xA5","\xC3\xA6","\xC3\xA7",
+        "\xC3\xA8","\xC3\xA9","\xC3\xAA","\xC3\xAB","\xC3\xAC","\xC3\xAD","\xC3\xAE","\xC3\xAF",
+        "\xC3\xB0","\xC3\xB1","\xC3\xB2","\xC3\xB3","\xC3\xB4","\xC3\xB5","\xC3\xB6","\xC3\xB7",
+        "\xC3\xB8","\xC3\xB9","\xC3\xBA","\xC3\xBB","\xC3\xBC","\xC2\xB2","\xC3\xBE","\xC3\xBF"
+    }};
 
 
-    // Convert a CP1251 byte to a Unicode code point (wchar_t)
-    static wchar_t charset_to_unicode(u8 c, const wchar_t* charset) {
-        if (c < 0x80) return static_cast<wchar_t>(c); // ASCII  
-        return charset[c - 0x80];
-    }
+    std::string convert_text(const char* input, size_t length, const AitdCharset& charset) {
+        std::string output;
+        output.reserve(length * 4);
 
-    // Convert a CP1251 byte sequence to UTF‑8
-    static std::string charset_to_utf8(const std::vector<u8>& data, const wchar_t* charset) {
-        std::string utf8;
-        utf8.reserve(data.size() * 2);
-
-        for (u8 c : data) {
-            wchar_t wc = charset_to_unicode(c, charset);
-            if (wc < 0x80) {
-                utf8.push_back(static_cast<char>(wc));
-            } else if (wc < 0x800) {
-                utf8.push_back(static_cast<char>(0xC0 | (wc >> 6)));
-                utf8.push_back(static_cast<char>(0x80 | (wc & 0x3F)));
-            } else if (wc < 0x10000) {
-                utf8.push_back(static_cast<char>(0xE0 | (wc >> 12)));
-                utf8.push_back(static_cast<char>(0x80 | ((wc >> 6) & 0x3F)));
-                utf8.push_back(static_cast<char>(0x80 | (wc & 0x3F)));
+        for (size_t i = 0; i < length; ++i) {
+            unsigned char c = static_cast<unsigned char>(input[i]);
+            if (c < 128) {
+                output.push_back(static_cast<char>(c));
             } else {
-                utf8.push_back('?'); // in case of surrogates (should not happen)
+                size_t idx = static_cast<size_t>(c) - 128;
+                if (idx >= charset.size()) {
+                    throw std::runtime_error("Invalid byte value in input");
+                }
+                output.append(charset[idx]);
             }
         }
-        return utf8;
+
+        return output;
     }
 
-    // Main text extraction function
-    inline void extractText(const std::vector<u8>& data, const std::string& outPath, const wchar_t* charset) {
-        //Find the end‑of‑text marker 0x1A if present
+    std::string charset_test(const AitdCharset& table) {
+        std::string output;
+        output.reserve(128 * 4);
+        for (int i=0; i<128; i++) {
+            output.append(string("[")+to_string(i+128)+"]"+table[i]+" ");
+        }
+        return output;
+    }    
+
+    inline void extractText(const std::vector<u8>& data, const std::string& outPath) {
         size_t endPos = data.size();
         for (size_t i = 0; i < data.size(); ++i) {
             if (data[i] == 0x1A) {
@@ -91,17 +70,13 @@ namespace AITDExtractor {
                 break;
             }
         }
-        
 
-        //Build a cleaned buffer, preserving control sequences
         std::vector<u8> cleanData;
         cleanData.reserve(endPos);
-
         for (size_t i = 0; i < endPos; ++i) {
             u8 c = data[i];
             if (c == 0x0D) {
                 cleanData.push_back('\n');
-                // If next byte is LF (0x0A), skip it to avoid double newline
                 if (i + 1 < endPos && data[i + 1] == 0x0A) {
                     ++i;
                 }
@@ -110,13 +85,15 @@ namespace AITDExtractor {
             if (c < 0x20 && c != '\t' && c != '\n') {
                 continue;
             }
-            // Preserve everything else
             cleanData.push_back(c);
         }
 
-        std::string utf8Text = charset_to_utf8(cleanData, charset);
+        std::string utf8Text = convert_text(
+            reinterpret_cast<const char*>(cleanData.data()),
+            cleanData.size(),
+            AITD1_CHARSET
+        );
 
-        // Write to file (without BOM)
         std::ofstream out(outPath, std::ios::binary | std::ios::trunc);
         if (!out) {
             std::cerr << "Could not open file: " << outPath << std::endl;
@@ -126,4 +103,4 @@ namespace AITDExtractor {
         out.close();
     }
 
-}
+} // namespace AITDExtractor
