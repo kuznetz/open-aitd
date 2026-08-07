@@ -22,7 +22,10 @@ namespace openAITD {
 	//Store static data in game
 	class Resources {
 	public:
+		const string defaultLanguage = "en";
+
 		Config config;
+		string language = "en";
 		NameDecoders nameDecoders;
 		map<int,string> texts;
 		vector<Stage> stages;
@@ -129,6 +132,11 @@ namespace openAITD {
 				}
 			}
 			return false;
+		}
+
+		void setLanguage(const string lang) {
+			if (language == lang) return;
+			language = lang;
 		}
 
 	};

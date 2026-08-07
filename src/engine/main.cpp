@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <vector>
 #include <string>
+#include "../platform/platform.h"
 #include "./resources/resources.h"
 #include "./world/world.h"
 #include "./renderers/camera_renderer.h"
@@ -382,6 +383,8 @@ namespace openAITD {
 
     int main(void)
     {
+        string systemLang = getSystemLanguageCode();
+        resources.setLanguage(systemLang);
         resources.config = loadConfig();
 
         auto extractor =  AITDExtractor::createAITDExtractor();

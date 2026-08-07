@@ -3,6 +3,7 @@
 #include <string>
 #include "../../common/raylib_cpp.hpp"
 #include "game_objects.h"
+#include "particles.h"
 #include "../resources/resources.h"
 
 #define NLOHMANN_JSON_NAMESPACE_NO_VERSION 1
@@ -52,7 +53,8 @@ namespace openAITD {
 		vector<string> dataDirectories = { "./mods", "./oaitd", "./data" };
 		
 		vector<GameObject> gobjects;
-		vector<GameObject*> inventory;
+		vector<ParticleGroup> partGroups;
+		vector<GameObject*> inventory;	
 
 		vector<short int> vars;
 		vector<short int> cVars;

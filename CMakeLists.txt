@@ -39,6 +39,15 @@ else()
     endif()
 endif()
 
+#Platform depended code
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    set(PLATFORM_SOURCE "src/platform/windows.cpp")
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(PLATFORM_SOURCE "src/platform/linux.cpp")
+else()
+    set(PLATFORM_SOURCE "src/platform/other.cpp")
+endif()
+
 #ZLIB
 set(BUILD_SHARED_LIBS OFF)
 set(BUILD_TESTING OFF)
@@ -133,7 +142,7 @@ set_property(TARGET model-render-test PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${
 add_executable(open-aitd)
 file(GLOB_RECURSE AITD_SOURCES CONFIGURE_DEPENDS "src/engine/*.cpp" "src/engine/*.h" "src/engine/*.hpp")
 target_include_directories(open-aitd PRIVATE ${ALL_INCLUDES})
-target_sources(open-aitd PRIVATE ${AITD_SOURCES} ${LUACPP_SOURCES} ${RAYLIB_SOURCES})
+target_sources(open-aitd PRIVATE ${AITD_SOURCES} ${LUACPP_SOURCES} ${RAYLIB_SOURCES} ${PLATFORM_SOURCE})
 #target_include_directories(open-aitd PRIVATE ${CMAKE_SOURCE_DIR}/libs/includes)
 target_link_libraries(open-aitd PRIVATE PNG::PNG ZLIB::ZLIB lua::lua Ogg::ogg Vorbis::vorbis libextractor raylib)
 set_property(TARGET open-aitd PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/data")
