@@ -387,12 +387,13 @@ namespace openAITD {
         resources.setLanguage(systemLang);
         resources.config = loadConfig();
 
-        auto extractor =  AITDExtractor::createAITDExtractor();
-        extractor->extractAllData(false);
         resources.screen.init();
         SetExitKey(KEY_F10);
 
-        resources.loadTexts("data/texts/ENGLISH/main.txt");
+        auto extractor =  AITDExtractor::createAITDExtractor();
+        extractor->extractAllData(false);
+
+        resources.texts.load();
 
         resources.stages.resize(8);
         for (int i = 0; i < 8; i++) {

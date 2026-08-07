@@ -272,7 +272,7 @@ namespace openAITD {
 			}, "SET_C");
 			
 			lua->CreateFunction([this](int messId) {
-				this->world->messageText = resources->texts[messId];
+				this->world->messageText = resources->texts.getText(messId);
 				this->world->messageTime = 5;
 			}, "MESSAGE");
 

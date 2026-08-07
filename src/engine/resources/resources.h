@@ -13,6 +13,7 @@
 #include "backgrounds.h"
 #include "screen.h"
 #include "audio.h"
+#include "texts.h"
 #include "../../common/raylib_cpp.hpp"
 #include "../../common/name_decoders.hpp"
 
@@ -22,18 +23,15 @@ namespace openAITD {
 	//Store static data in game
 	class Resources {
 	public:
-		const string defaultLanguage = "en";
-
 		Config config;
-		string language = "en";
 		NameDecoders nameDecoders;
-		map<int,string> texts;
 		vector<Stage> stages;
 		vector<Track> tracks;
 		RModels models;
 		Backgrounds backgrounds;
 		Screen screen;
 		Audio audio;
+		Texts texts;
 
 		Resources():
 		 screen(config)
@@ -48,39 +46,6 @@ namespace openAITD {
 
 		~Resources() {
 			printf("Deleting resources\n");
-		}
-
-		void loadTexts(string textsPath) {
-			int idx;
-			string str;
-			ifstream inFile;
-			inFile.open(textsPath);
-			while (getline(inFile, str))
-			{
-				if (str[0] != '@') continue;
-				idx = 0;
-				int i = 1;
-				while (str[i] >= '0' && str[i] <= '9') // parse string number
-				{
-					idx = idx * 10 + (str[i] - 48);
-					i++;
-				}
-				if (str[i] == ':') // start of string
-				{
-					texts[idx] = str.substr(i+1);
-				}
-			}
-		}
-
-		string loadBookText(int textId) {
-			string path = "data/texts/ENGLISH/" + to_string(textId+1) + ".txt";
-			std::ifstream file(path);
-			if (!file.is_open()) {
-					throw std::runtime_error( "Read error: " + path );
-			}
-			std::ostringstream buffer;
-			buffer << file.rdbuf();
-			return buffer.str();
 		}
 
 		void loadTracks(string dataPath, string newDataPath) {
@@ -135,8 +100,7 @@ namespace openAITD {
 		}
 
 		void setLanguage(const string lang) {
-			if (language == lang) return;
-			language = lang;
+			texts.setLanguage(lang);
 		}
 
 	};

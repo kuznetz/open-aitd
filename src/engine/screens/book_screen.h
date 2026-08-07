@@ -43,7 +43,7 @@ namespace openAITD {
 			auto& c = resources.config;
 			auto& b = bookTypes[bookData.bookType].bounds;
 			text.setBounds({ b.x * c.screenW, b.y * c.screenH, b.width * c.screenW, b.height * c.screenH });
-			string textSrc = resources.loadBookText(bookData.readText);			
+			string textSrc = resources.texts.getBookText(bookData.readText);			
 			text.setText(textSrc);
 			lastBookText = bookData.readText;			
 		}

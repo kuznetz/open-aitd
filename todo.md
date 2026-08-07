@@ -1,22 +1,22 @@
 Features:
 - Character Select
 - Particles: blood, enemyblood, cigar smoke, enemy smoke, bullet hit
+- Gun fire model (particles)
 - Transparent Materials
 - Noise Textures
 - Intro border scaling
-- Gun fire model
 - More fancy save/load
-- Book - spaces / animation / page number
 - Cut model in water
-- Light in maze
 - Camera shaking
+- Intro images
 0.3
 - Multilanguage support
 - Additional multilang text
-- Autodelect language
-- Intro images
 - CDAudio music ripper
 - Book audio ripper from cd
+- Light in maze
+- Book - spaces / animation / page number
+0.4
 - Take script hack / upgrade take screen
 - New skinning model system (non baking mesh, GPU shader)
 

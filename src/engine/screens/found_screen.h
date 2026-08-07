@@ -110,7 +110,7 @@ namespace openAITD {
 			DrawRenderTex(renderTexture.texture);
 
 			auto& gobj = this->world->gobjects[foundItem];
-			auto& name = resources->texts[gobj.invItem.nameId];
+			auto& name = resources->texts.getText(gobj.invItem.nameId);
 
 			auto& f = resources->screen.mainFont;
 			const char* m = "New item:";

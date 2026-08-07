@@ -75,7 +75,7 @@ public:
         for (auto& gobjPtr : world->inventory) {
             if (gobjPtr) {
                 int nameId = gobjPtr->invItem.nameId;
-                itemNames.push_back(resources->texts[nameId]);
+                itemNames.push_back(resources->texts.getText(nameId));
             }
         }
         itemsMenu->setItems(itemNames);
@@ -121,7 +121,7 @@ public:
         vector<string> actionNames;
         actionNames.reserve(curActions.size());
         for (int actionId : curActions) {
-            actionNames.push_back(resources->texts[actionId]);
+            actionNames.push_back(resources->texts.getText(actionId));
         }
         actionsMenu->setItems(actionNames);
     }

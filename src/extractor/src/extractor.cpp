@@ -43,7 +43,7 @@ namespace AITDExtractor {
         void processTracks();
         void processSounds();
         void processAdlibMusic();
-        void processTexts(const string lang);
+        void processTexts(const string filelang, const string lang);
         void processPictures();
         void extractAllData(bool floppy);
 
@@ -291,11 +291,11 @@ namespace AITDExtractor {
         }
     }
 
-    void AITDExtractor::processTexts(const string lang) {
+    void AITDExtractor::processTexts(const string filelang, const string lang) {
         string dirname = "data/texts/"+lang;
         if (!std::filesystem::exists(dirname)) {
             std::filesystem::create_directories(dirname);            
-            string originalPak = "original/"+lang+".PAK";
+            string originalPak = "original/"+filelang+".PAK";
             PakFile textsPak(originalPak);
             
             auto& data = textsPak.readBlock(0);
@@ -351,7 +351,11 @@ namespace AITDExtractor {
 
     void AITDExtractor::extractAllData(bool floppy) {
         //dumpInstructions("instr.txt");
-        this->processTexts("ENGLISH");
+        this->processTexts("ENGLISH", "en");
+        this->processTexts("ESPAGNOL", "sp");
+        this->processTexts("USA", "usa");
+        this->processTexts("DEUTSCH", "de");
+        this->processTexts("FRANCAIS", "fr");
 
         this->gameObjs = resLoader.loadGameObjects();
         if (!std::filesystem::exists("data/objects.json")) {
