@@ -2,17 +2,19 @@
 #include <vector>
 #include <vector>
 #include <string>
+#include <variant>
 #include "../../common/raylib_cpp.hpp"
 #include "../world/world.h"
 #include "../resources/resources.h"
 #include "./base_renderer.h"
+#include "./particle_renderer.hpp"
 
 using namespace std;
 namespace openAITD {
 
 	struct RenderOrder {
 		RenderOrder* next = 0;
-		GameObject* gobj = 0;
+		std::variant<GameObject*, ParticleGroup*> renderable;
 		float zPos;
 		Bounds bb;
 		raylib::Rectangle screenRect;
@@ -21,6 +23,7 @@ namespace openAITD {
 	class CameraRenderer : public BaseRenderer {
 	public:
 		Resources* resources;
+		ParticleRenderer particleRend;
 
 		std::vector<RenderOrder> renderQueue;
 		RenderOrder* renderStart = 0;
@@ -83,15 +86,21 @@ namespace openAITD {
 			BeginTextureMode(maskTex);
 			ClearBackground(BLACK);
 			BeginBlendMode(BLEND_ADDITIVE);
-			for (int camRoomIdx = 0; camRoomIdx < curCamera->rooms.size(); camRoomIdx++) {
-				if (renderIter->gobj->getRoomId() != curCamera->rooms[camRoomIdx].roomId) continue;
-				for (int ovlIdx = 0; ovlIdx < curCamera->rooms[camRoomIdx].overlays.size(); ovlIdx++) {
-					auto& ovl = curCamera->rooms[camRoomIdx].overlays[ovlIdx];
-					if (checkOverlay(ovl, *renderIter->gobj)) {
-						renderOverlay(curBackground->overlays[camRoomIdx][ovlIdx]);
+
+			auto* gobjPtr = std::get_if<GameObject*>(&renderIter->renderable);
+			if (gobjPtr) {
+				GameObject* gobj = *gobjPtr;
+				for (int camRoomIdx = 0; camRoomIdx < curCamera->rooms.size(); camRoomIdx++) {
+					if (gobj->getRoomId() != curCamera->rooms[camRoomIdx].roomId) continue;
+					for (int ovlIdx = 0; ovlIdx < curCamera->rooms[camRoomIdx].overlays.size(); ovlIdx++) {
+						auto& ovl = curCamera->rooms[camRoomIdx].overlays[ovlIdx];
+						if (checkOverlay(ovl, *gobj)) {
+							renderOverlay(curBackground->overlays[camRoomIdx][ovlIdx]);
+						}
 					}
 				}
 			}
+
 			EndBlendMode();
 			EndTextureMode();
 		}
@@ -99,7 +108,7 @@ namespace openAITD {
 		void fillRenderOrder(RenderOrder& ord, GameObject& gobj)
 		{
 			ord.next = 0;
-			ord.gobj = &gobj;
+			ord.renderable = &gobj;
 			auto rmodel = resources->models.getModel(gobj.modelId, world->altModels);
 			processSkin(gobj, rmodel->model);
 			ord.bb = gobj.getRenderBounds();
@@ -251,8 +260,13 @@ namespace openAITD {
 					ClearBackground(BLANK);
 					BeginMode3D(mainCamera);
 					rlSetMatrixProjection(perspective);
-					renderObject(*renderIter->gobj, WHITE);
+
+					auto* gobjPtr = std::get_if<GameObject*>(&renderIter->renderable);
+					if (gobjPtr) {
+							renderObject(**gobjPtr, WHITE);   // рендерим GameObject
+					}					
 					//DrawBounds(renderIter->bb, GREEN);
+
 					EndMode3D();
 					EndTextureMode();
 
@@ -276,10 +290,18 @@ namespace openAITD {
 					renderIter = renderIter->next;
 					if (!renderIter) break;
 				}
-			}
 
-			BeginTextureMode(resources->screen.sceneTex);
-			EndTextureMode();
+				for (auto& pg : world->partGroups ) {
+					if (!pg.active) continue;
+					BeginTextureMode(resources->screen.sceneTex);
+					BeginMode3D(mainCamera);
+					rlSetMatrixProjection(perspective);
+					particleRend.render(pg, mainCamera);
+					EndMode3D();
+					EndTextureMode();
+				}
+
+			}
 		}
 
 	};

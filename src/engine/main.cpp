@@ -16,6 +16,7 @@
 #include "./controllers/throw_controller.h"
 #include "./controllers/life_controller.h"
 #include "./controllers/tracks_controller.h"
+#include "./controllers/particle_controller.h"
 #include "./controllers/save_controller.h"
 
 #include "./screens/found_screen.h"
@@ -60,6 +61,7 @@ namespace openAITD {
     ShootController shootContr(&world);
     PlayerController playerContr(&world);
     TracksController tracksContr(&world);
+    ParticleController particleContr(world);
     InventoryScreen inventoryScreen(&world);
     BookScreen bookScreen(world);
     PictureScreen pictureScr(&world);
@@ -204,6 +206,7 @@ namespace openAITD {
                 shootContr.process();
                 throwContr.process(partDelta);
                 physContr.process(partDelta);
+                particleContr.process(partDelta);
                 camContr.process();
                 objrotContr.process(partDelta);
                 if (world.messageTime > 0) {

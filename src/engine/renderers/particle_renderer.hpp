@@ -1,19 +1,12 @@
 #pragma once
 #include <vector>
 #include "../../common/raylib_cpp.hpp"
+#include "../world/particles.h"
 
 using namespace std;
 using namespace raylib;
 
 namespace openAITD {
-
-  class Particle {
-  public:
-    Vector3 position;
-    Color color;
-    float size;
-    float lifetime;
-  };
 
   class ParticleRenderer {
   private:
@@ -36,20 +29,19 @@ namespace openAITD {
         }
       }
 
-      void init() {
+      void render(const ParticleGroup& group, const Camera3D& camera) {
           if (circleTexture.id == 0) {
               createCircleTexture();
           }
-      }
-
-      void render(const vector<Particle>& particles, const Camera3D& camera) {
-          if (particles.empty() || circleTexture.id == 0) return;
+          if (!group.active || group.particles.empty() || circleTexture.id == 0) return;
           BeginBlendMode(BLEND_ALPHA);
-          for (const auto& p : particles) {
+          for (const auto& p : group.particles) {
+              if (!p.active) return;
               DrawBillboard(camera, circleTexture, p.position, p.size, p.color);
           }
           EndBlendMode();
       }
+
   };
 
 }

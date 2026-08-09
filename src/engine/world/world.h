@@ -99,8 +99,11 @@ namespace openAITD {
     float brightnessCur = 1;
     float brightnessTrg = 1;
 
-		World(Resources* res) {
+		World(Resources* res) :
+			partGroups(10)
+		{
 			this->resources = res;
+			partGroups[0].active = true;
 		}
 
 		bool isObjectActive(const GameObject& gobj) {
