@@ -15,8 +15,7 @@ namespace openAITD {
 		GameObject* gobj = 0;
 		float zPos;
 		Bounds bb;
-		Vector2 screenMin;
-		Vector2 screenMax;
+		raylib::Rectangle screenRect;
 	};
 
 	class CameraRenderer : public BaseRenderer {
@@ -73,7 +72,6 @@ namespace openAITD {
 			Vector3 pos = gobj.getPosition();
 			for (int i = 0; i < ovl.bounds.size(); i++) {
 				auto& b = ovl.bounds[i].getExpanded(-0.01);
-				//if (CheckCollisionBoxes(objBnd, ovl.bounds[i])) {
 				if (pos.x >= b.min.x && pos.x <= b.max.x && pos.z >= b.min.z && pos.z <= b.max.z) {
 					return true;
 				}
@@ -96,54 +94,6 @@ namespace openAITD {
 			}
 			EndBlendMode();
 			EndTextureMode();
-
-			/*
-			auto testImg = LoadImageFromTexture(maskTex.texture);
-    		raylib::ExportImage(testImg, "./image-test.png");
-			UnloadImage(testImg);
-			*/
-
-			/*
-			BeginTextureMode(resources->screen.screenTex);
-			BeginBlendMode(BLEND_ADDITIVE);
-			//DrawTexturePro( maskTex.texture, r, r, { 0, 0 }, 0, WHITE );
-			DrawTextureRec(maskTex.texture, { 0, 0, (float)maskTex.texture.width, (float)-maskTex.texture.height }, { 0, 0 }, WHITE);
-			EndBlendMode();
-			EndTextureMode();
-			*/
-		}
-
-		void boundsToScreen(RenderOrder &ord, const Bounds& bb) {
-			Vector3 vecs[8];
-			//Bottom
-			vecs[0] = { bb.min.x, bb.min.y, bb.max.z }; // Front left
-			vecs[1] = { bb.max.x, bb.min.y, bb.max.z }; // Front right
-			vecs[2] = { bb.min.x, bb.min.y, bb.min.z }; // Back left
-			vecs[3] = { bb.max.x, bb.min.y, bb.min.z }; // Back right
-			//Top
-			vecs[4] = { bb.min.x, bb.max.y, bb.max.z }; // Front left
-			vecs[5] = { bb.max.x, bb.max.y, bb.max.z }; // Front right
-			vecs[6] = { bb.min.x, bb.max.y, bb.min.z }; // Back left
-			vecs[7] = { bb.max.x, bb.max.y, bb.min.z }; // Back right
-
-			for (int i = 0; i < 8; i++) {
-				Vector3 v = GetWorldToScreenZ(vecs[i]);
-				if (i == 0) {
-					ord.zPos = v.z;
-					ord.screenMin.x = v.x;
-					ord.screenMin.y = v.y;
-					ord.screenMax.x = v.x;
-					ord.screenMax.y = v.y;
-					continue;
-				}
-				if (ord.zPos < v.z) {
-						ord.zPos = v.z;
-				}
-				if (ord.screenMin.x > v.x) ord.screenMin.x = v.x;
-				if (ord.screenMin.y > v.y) ord.screenMin.y = v.y;
-				if (ord.screenMax.x < v.x) ord.screenMax.x = v.x;
-				if (ord.screenMax.y < v.y) ord.screenMax.y = v.y;
-			}
 		}
 
 		void fillRenderOrder(RenderOrder& ord, GameObject& gobj)
@@ -153,21 +103,7 @@ namespace openAITD {
 			auto rmodel = resources->models.getModel(gobj.modelId, world->altModels);
 			processSkin(gobj, rmodel->model);
 			ord.bb = gobj.getRenderBounds();
-
-			//Calc matrix
-			/*Vector3& roomPos = world->curStage->rooms[gobj.getRoomId()].origPosition;
-			auto pos = Vector3Add(roomPos, gobj.getPosition());
-			Matrix matTranslation = MatrixTranslate(pos.x, pos.y, pos.z);
-			const Matrix& matRotation = gobj.getRotMatrix();
-
-			auto rmodel = resources->models.getModel(gobj.modelId, world->altModels);
-			rmodel->model.CalcBounds();
-			ord.bb = rmodel->model.bounds;
-			ord.bb = ord.bb.getRotatedBounds(matRotation);
-			Vector3TransformRef(ord.bb.min, matTranslation);
-			Vector3TransformRef(ord.bb.max, matTranslation);*/
-
-			boundsToScreen(ord, ord.bb);
+			boundsToScreen(ord.bb, ord.screenRect, ord.zPos);
 		}
 
 		void renderMasked(const Texture2D tex, const raylib::Rectangle& r) {
@@ -184,8 +120,6 @@ namespace openAITD {
 			
 			rlSetTexture(tex.id);
 			rlBegin(RL_QUADS);
-			//rlColor4ub(1,1,1,1);
-			//rlNormal3f(0.0f, 0.0f, 1.0f);
 			// Top-left corner for texture and quad
 			rlTexCoord2f(topLeft.x, topLeft.y);
 			rlVertex2f(r.x, r.y);
@@ -205,8 +139,6 @@ namespace openAITD {
 			auto& b = ovl.bounds;
 			rlSetTexture(ovl.texture.id);
 			rlBegin(RL_QUADS);
-			//rlColor4ub(1,1,1,1);
-			//rlNormal3f(0.0f, 0.0f, 1.0f);
 			// Top-left corner for texture and quad
 			rlTexCoord2f(0, 0);
 			rlVertex2f(b.x, b.y);
@@ -227,13 +159,6 @@ namespace openAITD {
 				initShaders();
 			}
 
-			/*if (world->inDark) {
-				BeginTextureMode(resources->screen.sceneTex);
-				renderMessage();
-				EndTextureMode();
-				return;
-			}*/
-
     	if (world->curStageId == -1 || world->curCameraId == -1) return;
 
 			if (curAltBg != resources->backgrounds.isAltBackgrounds) {
@@ -245,15 +170,6 @@ namespace openAITD {
 				curStageId = world->curStageId;
 				loadCamera(world->curCameraId);
 			}
-
-			/*
-			for (int i = 0; i < this->world->gobjects.size(); i++) {
-				auto& gobj = this->world->gobjects[i];
-				if (gobj.model.id == -1) continue;
-				if (gobj.getStageId() != curStageId) continue;
-				renderObject(gobj, WHITE);
-			}
-			*/
 
 			renderQueueCount = 0;
 			renderStart = 0;
@@ -276,23 +192,12 @@ namespace openAITD {
 				Vector3& roomPos = world->curStage->rooms[gobj.getRoomId()].origPosition;
 				pos = Vector3Add(roomPos, pos);
 
-				// if (gobj.modelId != -1) {
-				// 	auto rmodel = resources->models.getModel(gobj.modelId, world->altModels);
-				// 	ProcessPose(gobj, rmodel->model);
-				// }
-
-				//auto& screenPos = GetWorldToScreenZ(pos);
-				//if (screenPos.z < 0) continue;
-
 				RenderOrder& ro = renderQueue[renderQueueCount++];
 				fillRenderOrder(ro, gobj);
 				if (ro.zPos < 0) continue;
-				if (ro.screenMax.x < 0 || ro.screenMin.x > getScreenW()) continue;
-				if (ro.screenMax.y < 0 || ro.screenMin.y > getScreenH()) continue;
-
-				//renderObject(gobj, WHITE);				
-				//string s = to_string(i);
-								
+				if ((ro.screenRect.x + ro.screenRect.width) < 0 || (ro.screenRect.x) > getScreenW()) continue;
+				if ((ro.screenRect.y + ro.screenRect.height) < 0 || (ro.screenRect.y) > getScreenH()) continue;
+							
 				if (renderStart) {
 					bool inserted = false;
 					renderIterPrev = 0;
@@ -339,38 +244,17 @@ namespace openAITD {
 				int num = 1;
 				renderIter = renderStart;
 				while (true) {
-					//auto s = to_string(num)+" R" + to_string(it->obj->getRoomId());
-					//auto s = to_string(it->obj->);
-
-					raylib::Rectangle r = {
-						renderIter->screenMin.x,
-						renderIter->screenMin.y,
-						(renderIter->screenMax.x - renderIter->screenMin.x) + 1,
-						(renderIter->screenMax.y - renderIter->screenMin.y) + 1
-					};
-					// raylib::Rectangle r2 = {
-					// 	renderIter->screenMin.x,
-					// 	GetScreenHeight() - renderIter->screenMin.y,
-					// 	(renderIter->screenMax.x - renderIter->screenMin.x) + 1,
-					// 	- (renderIter->screenMax.y - renderIter->screenMin.y) - 1
-					// };
+					raylib::Rectangle& r = renderIter->screenRect;
 					renderMask(r);
 					
 					BeginTextureMode(colorTex);
 					ClearBackground(BLANK);
 					BeginMode3D(mainCamera);
-					//rlSetMatrixModelview(curCamera->modelview);
 					rlSetMatrixProjection(perspective);
 					renderObject(*renderIter->gobj, WHITE);
 					//DrawBounds(renderIter->bb, GREEN);
 					EndMode3D();
 					EndTextureMode();
-
-					/*
-					auto testImg = LoadImageFromTexture(colorTex.texture);
-					raylib::ExportImage(testImg, "./image-test.png");
-					UnloadImage(testImg);
-					*/
 
 					BeginTextureMode(resources->screen.sceneTex);
 					BeginBlendMode(BLEND_ALPHA);
@@ -388,8 +272,6 @@ namespace openAITD {
 
 					EndTextureMode();
 
-
-					//it->marker = s;
 					num++;
 					renderIter = renderIter->next;
 					if (!renderIter) break;
@@ -398,14 +280,6 @@ namespace openAITD {
 
 			BeginTextureMode(resources->screen.sceneTex);
 			EndTextureMode();
-
-			//for (auto it = renderQueue.begin(); it != renderQueue.end(); it++) {
-			//	DrawLine(it->screenMin.x, it->screenMin.y, it->screenMax.x, it->screenMin.y, RED);
-			//	DrawLine(it->screenMin.x, it->screenMin.y, it->screenMin.x, it->screenMax.y, RED);
-			//	DrawLine(it->screenMax.x, it->screenMax.y, it->screenMax.x, it->screenMin.y, RED);
-			//	DrawLine(it->screenMax.x, it->screenMax.y, it->screenMin.x, it->screenMax.y, RED);
-			//}
-
 		}
 
 	};

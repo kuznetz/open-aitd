@@ -70,6 +70,48 @@ namespace openAITD {
 			return screenPosition;
 		}
 
+		void boundsToScreen(const Bounds& bb, Rectangle& rect, float& zPos) {
+				// 8 corners of the AABB: bottom face (y = min) then top face (y = max)
+				Vector3 corners[8];
+				// Bottom face
+				corners[0] = { bb.min.x, bb.min.y, bb.max.z }; // front-left
+				corners[1] = { bb.max.x, bb.min.y, bb.max.z }; // front-right
+				corners[2] = { bb.min.x, bb.min.y, bb.min.z }; // back-left
+				corners[3] = { bb.max.x, bb.min.y, bb.min.z }; // back-right
+				// Top face
+				corners[4] = { bb.min.x, bb.max.y, bb.max.z }; // front-left
+				corners[5] = { bb.max.x, bb.max.y, bb.max.z }; // front-right
+				corners[6] = { bb.min.x, bb.max.y, bb.min.z }; // back-left
+				corners[7] = { bb.max.x, bb.max.y, bb.min.z }; // back-right
+
+				// Project the first corner to initialize extremes
+				Vector3 first = GetWorldToScreenZ(corners[0]);
+				float minX = first.x, maxX = first.x;
+				float minY = first.y, maxY = first.y;
+				float maxZ = first.z;
+
+				// Process the remaining 7 corners
+				for (int i = 1; i < 8; ++i) {
+						Vector3 v = GetWorldToScreenZ(corners[i]);
+						// Update 2D bounds
+						if (v.x < minX) minX = v.x;
+						if (v.x > maxX) maxX = v.x;
+						if (v.y < minY) minY = v.y;
+						if (v.y > maxY) maxY = v.y;
+						// Keep the farthest depth (largest Z, assuming Z increases away from camera)
+						if (v.z > maxZ) maxZ = v.z;
+				}
+
+				// Fill the output rectangle (top-left corner and size)
+				rect.x = minX;
+				rect.y = minY;
+				rect.width  = maxX - minX;
+				rect.height = maxY - minY;
+
+				// Return the maximum depth for later sorting
+				zPos = maxZ;
+		}
+
 		void DrawBounds(Bounds bb, Color color)
 		{
 			Vector3 vecs[8];
