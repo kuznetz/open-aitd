@@ -103,7 +103,10 @@ namespace openAITD {
 			partGroups(10)
 		{
 			this->resources = res;
+
 			partGroups[0].active = true;
+			partGroups[0].stageId = 0;
+			partGroups[0].roomId = 0;
 		}
 
 		bool isObjectActive(const GameObject& gobj) {

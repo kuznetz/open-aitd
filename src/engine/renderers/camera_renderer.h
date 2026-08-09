@@ -42,7 +42,7 @@ namespace openAITD {
 		RenderTexture2D colorTex;
 		float scale3dTex = 1;
 
-		CameraRenderer(World* world) : BaseRenderer(world) {
+		CameraRenderer(World* world) : BaseRenderer(world), particleRend(*world) {
 			resources = world->resources;
 			renderQueue.resize(50);
 		}
@@ -71,38 +71,52 @@ namespace openAITD {
 			curBackground = resources->backgrounds.get(world->curStageId, newCameraId);
 		}
 
-		bool checkOverlay(GCameraOverlay& ovl, GameObject& gobj) {
-			Vector3 pos = gobj.getPosition();
-			for (int i = 0; i < ovl.bounds.size(); i++) {
-				auto& b = ovl.bounds[i].getExpanded(-0.01);
-				if (pos.x >= b.min.x && pos.x <= b.max.x && pos.z >= b.min.z && pos.z <= b.max.z) {
-					return true;
+		bool checkOverlay(const GCameraOverlay& ovl, const Vector3& pos) {
+				for (int i = 0; i < ovl.bounds.size(); i++) {
+						auto& b = ovl.bounds[i].getExpanded(-0.01);
+						if (pos.x >= b.min.x && pos.x <= b.max.x &&
+								pos.z >= b.min.z && pos.z <= b.max.z) {
+								return true;
+						}
 				}
-			}
-			return false;
+				return false;
 		}
 
 		void renderMask(const raylib::Rectangle& r) {
-			BeginTextureMode(maskTex);
-			ClearBackground(BLACK);
-			BeginBlendMode(BLEND_ADDITIVE);
+				BeginTextureMode(maskTex);
+				ClearBackground(BLACK);
+				BeginBlendMode(BLEND_ADDITIVE);
 
-			auto* gobjPtr = std::get_if<GameObject*>(&renderIter->renderable);
-			if (gobjPtr) {
-				GameObject* gobj = *gobjPtr;
-				for (int camRoomIdx = 0; camRoomIdx < curCamera->rooms.size(); camRoomIdx++) {
-					if (gobj->getRoomId() != curCamera->rooms[camRoomIdx].roomId) continue;
-					for (int ovlIdx = 0; ovlIdx < curCamera->rooms[camRoomIdx].overlays.size(); ovlIdx++) {
-						auto& ovl = curCamera->rooms[camRoomIdx].overlays[ovlIdx];
-						if (checkOverlay(ovl, *gobj)) {
-							renderOverlay(curBackground->overlays[camRoomIdx][ovlIdx]);
+				auto* gobjPtr = std::get_if<GameObject*>(&renderIter->renderable);
+				if (gobjPtr) {
+						GameObject* gobj = *gobjPtr;
+						for (int camRoomIdx = 0; camRoomIdx < curCamera->rooms.size(); camRoomIdx++) {
+								if (gobj->getRoomId() != curCamera->rooms[camRoomIdx].roomId) continue;
+								for (int ovlIdx = 0; ovlIdx < curCamera->rooms[camRoomIdx].overlays.size(); ovlIdx++) {
+										auto& ovl = curCamera->rooms[camRoomIdx].overlays[ovlIdx];
+										if (checkOverlay(ovl, gobj->getPosition())) {
+												renderOverlay(curBackground->overlays[camRoomIdx][ovlIdx]);
+										}
+								}
 						}
-					}
+				} else {
+						auto* pgPtr = std::get_if<ParticleGroup*>(&renderIter->renderable);
+						if (pgPtr) {
+								ParticleGroup* pg = *pgPtr;
+								for (int camRoomIdx = 0; camRoomIdx < curCamera->rooms.size(); camRoomIdx++) {
+										if (pg->roomId != curCamera->rooms[camRoomIdx].roomId) continue;
+										for (int ovlIdx = 0; ovlIdx < curCamera->rooms[camRoomIdx].overlays.size(); ovlIdx++) {
+												auto& ovl = curCamera->rooms[camRoomIdx].overlays[ovlIdx];
+												if (checkOverlay(ovl, pg->position)) {
+														renderOverlay(curBackground->overlays[camRoomIdx][ovlIdx]);
+												}
+										}
+								}
+						}
 				}
-			}
 
-			EndBlendMode();
-			EndTextureMode();
+				EndBlendMode();
+				EndTextureMode();
 		}
 
 		void fillRenderOrder(RenderOrder& ord, GameObject& gobj)
@@ -163,145 +177,160 @@ namespace openAITD {
 			rlEnd();
 		}
 
-		void render() {
-			if (maskShader.id == 0) {
-				initShaders();
-			}
-
-    	if (world->curStageId == -1 || world->curCameraId == -1) return;
-
-			if (curAltBg != resources->backgrounds.isAltBackgrounds) {
-					curAltBg = resources->backgrounds.isAltBackgrounds;
-					curCameraId = -1;
-			}			
-
-			if (world->curStageId != curStageId || world->curCameraId != curCameraId) {
-				curStageId = world->curStageId;
-				loadCamera(world->curCameraId);
-			}
-
-			renderQueueCount = 0;
-			renderStart = 0;
-
-			for (int i = 0; i < this->world->gobjects.size(); i++) {
-				auto& gobj = this->world->gobjects[i];
-				if (gobj.modelId == -1) continue;
-				if (gobj.getStageId() != curStageId) continue;
-				
-				int curCamRoom = -1;
-				for (int j = 0; j < curCamera->rooms.size(); j++) {
-					if (gobj.getRoomId() == curCamera->rooms[j].roomId) {
-						curCamRoom = j;
-						break;
-					}
-				}
-				if (curCamRoom == -1) continue;
-
-				Vector3 pos = gobj.getPosition();
-				Vector3& roomPos = world->curStage->rooms[gobj.getRoomId()].origPosition;
-				pos = Vector3Add(roomPos, pos);
-
-				RenderOrder& ro = renderQueue[renderQueueCount++];
-				fillRenderOrder(ro, gobj);
-				if (ro.zPos < 0) continue;
-				if ((ro.screenRect.x + ro.screenRect.width) < 0 || (ro.screenRect.x) > getScreenW()) continue;
-				if ((ro.screenRect.y + ro.screenRect.height) < 0 || (ro.screenRect.y) > getScreenH()) continue;
-							
+		void insertIntoSortedQueue(RenderOrder& ro) {
 				if (renderStart) {
-					bool inserted = false;
-					renderIterPrev = 0;
-					renderIter = renderStart;
-					while (true) {
-						if (renderIter->zPos < ro.zPos) {
-							if (renderIterPrev) {
-								renderIterPrev->next = &ro;
-							}
-							else {
-								renderStart = &ro;
-							}
-							ro.next = renderIter;
-							inserted = true;
-							break;
+						bool inserted = false;
+						renderIterPrev = 0;
+						renderIter = renderStart;
+						while (true) {
+								if (renderIter->zPos < ro.zPos) {
+										if (renderIterPrev) {
+												renderIterPrev->next = &ro;
+										} else {
+												renderStart = &ro;
+										}
+										ro.next = renderIter;
+										inserted = true;
+										break;
+								}
+								if (!renderIter->next) break;
+								renderIterPrev = renderIter;
+								renderIter = renderIter->next;
 						}
-						if (!renderIter->next) break;
-						renderIterPrev = renderIter;
-						renderIter = renderIter->next;
-					}
-					if (!inserted) {
-						renderIter->next = &ro;
-					}
+						if (!inserted) {
+								renderIter->next = &ro;
+						}
+				} else {
+						renderStart = &ro;
 				}
-				else {
-					renderStart = &ro;
-				}
+		}
 
-			}
-
-			BeginTextureMode(resources->screen.sceneTex);
-			ClearBackground(BLACK);
-
-			DrawTexturePro(
-				curBackground->texture,
-				{ 0, 0, (float)getScreenW(), (float)getScreenH() },
-				{ 0, 0, (float)getScreenW(), (float)getScreenH() },
-				{ 0, 0 }, 0, WHITE
-			);
-
-			EndTextureMode();
-
-			if (renderStart) {
-				int num = 1;
-				renderIter = renderStart;
-				while (true) {
-					raylib::Rectangle& r = renderIter->screenRect;
-					renderMask(r);
-					
-					BeginTextureMode(colorTex);
-					ClearBackground(BLANK);
-					BeginMode3D(mainCamera);
-					rlSetMatrixProjection(perspective);
-
-					auto* gobjPtr = std::get_if<GameObject*>(&renderIter->renderable);
-					if (gobjPtr) {
-							renderObject(**gobjPtr, WHITE);   // рендерим GameObject
-					}					
-					//DrawBounds(renderIter->bb, GREEN);
-
-					EndMode3D();
-					EndTextureMode();
-
-					BeginTextureMode(resources->screen.sceneTex);
-					BeginBlendMode(BLEND_ALPHA);
-					BeginShaderMode(maskShader);
-					SetShaderValueTexture(maskShader, shTextureColorLoc, colorTex.texture);
-					SetShaderValueTexture(maskShader, shTextureMaskLoc, maskTex.texture);
-					
-					//DrawTextureRec(colorTex.texture, { 0, 0, (float)colorTex.texture.width, ((float)-colorTex.texture.height) / 2 }, { 0, 0 }, WHITE);
-					renderMasked(colorTex.texture, r);
-
-					EndShaderMode();
-					EndBlendMode();
-
-				  //DrawRectangleLinesEx(r, 1, WHITE);
-
-					EndTextureMode();
-
-					num++;
-					renderIter = renderIter->next;
-					if (!renderIter) break;
+		void render() {
+				if (maskShader.id == 0) {
+						initShaders();
 				}
 
-				for (auto& pg : world->partGroups ) {
-					if (!pg.active) continue;
-					BeginTextureMode(resources->screen.sceneTex);
-					BeginMode3D(mainCamera);
-					rlSetMatrixProjection(perspective);
-					particleRend.render(pg, mainCamera);
-					EndMode3D();
-					EndTextureMode();
+				if (world->curStageId == -1 || world->curCameraId == -1) return;
+
+				if (curAltBg != resources->backgrounds.isAltBackgrounds) {
+						curAltBg = resources->backgrounds.isAltBackgrounds;
+						curCameraId = -1;
 				}
 
-			}
+				if (world->curStageId != curStageId || world->curCameraId != curCameraId) {
+						curStageId = world->curStageId;
+						loadCamera(world->curCameraId);
+				}
+
+				renderQueueCount = 0;
+				renderStart = 0;
+
+				//GameObjects
+				for (int i = 0; i < this->world->gobjects.size(); i++) {
+						auto& gobj = this->world->gobjects[i];
+						if (gobj.modelId == -1) continue;
+						if (gobj.getStageId() != curStageId) continue;
+
+						int curCamRoom = -1;
+						for (int j = 0; j < curCamera->rooms.size(); j++) {
+								if (gobj.getRoomId() == curCamera->rooms[j].roomId) {
+										curCamRoom = j;
+										break;
+								}
+						}
+						if (curCamRoom == -1) continue;
+
+						Vector3 pos = gobj.getPosition();
+						Vector3& roomPos = world->curStage->rooms[gobj.getRoomId()].origPosition;
+						pos = Vector3Add(roomPos, pos);
+
+						RenderOrder& ro = renderQueue[renderQueueCount++];
+						fillRenderOrder(ro, gobj);
+						if (ro.zPos < 0) continue;
+						if ((ro.screenRect.x + ro.screenRect.width) < 0 || (ro.screenRect.x) > getScreenW()) continue;
+						if ((ro.screenRect.y + ro.screenRect.height) < 0 || (ro.screenRect.y) > getScreenH()) continue;
+
+						insertIntoSortedQueue(ro); 
+				}
+
+				//ParticleGroups
+				for (auto& pg : world->partGroups) {
+						if (!pg.active) continue;
+						if (pg.stageId != curStageId) continue;
+
+						int curCamRoom = -1;
+						for (int j = 0; j < curCamera->rooms.size(); j++) {
+								if (pg.roomId == curCamera->rooms[j].roomId) {
+										curCamRoom = j;
+										break;
+								}
+						}
+						if (curCamRoom == -1) continue;
+
+						Vector3 roomPos = world->curStage->rooms[pg.roomId].origPosition;
+						Vector3 worldPos = Vector3Add(roomPos, pg.position);
+
+						RenderOrder& ro = renderQueue[renderQueueCount++];
+						ro.next = 0;
+						ro.renderable = &pg;
+						pg.calcBounds();
+						ro.bb = pg.getRenderBounds();
+						boundsToScreen(ro.bb, ro.screenRect, ro.zPos);
+						ro.zPos = GetWorldToScreenZ(pg.position).z;
+
+						if (ro.zPos < 0) continue;
+						if ((ro.screenRect.x + ro.screenRect.width) < 0 || (ro.screenRect.x) > getScreenW()) continue;
+						if ((ro.screenRect.y + ro.screenRect.height) < 0 || (ro.screenRect.y) > getScreenH()) continue;
+
+						insertIntoSortedQueue(ro);
+				}
+
+				BeginTextureMode(resources->screen.sceneTex);
+				ClearBackground(BLACK);
+				DrawTexturePro(
+						curBackground->texture,
+						{ 0, 0, (float)getScreenW(), (float)getScreenH() },
+						{ 0, 0, (float)getScreenW(), (float)getScreenH() },
+						{ 0, 0 }, 0, WHITE
+				);
+				EndTextureMode();
+
+				if (renderStart) {
+						renderIter = renderStart;
+						while (renderIter) {
+								raylib::Rectangle& r = renderIter->screenRect;
+								renderMask(r);
+								BeginTextureMode(colorTex);
+								ClearBackground(BLANK);
+								BeginMode3D(mainCamera);
+								rlSetMatrixProjection(perspective);
+
+								auto* gobjPtr = std::get_if<GameObject*>(&renderIter->renderable);
+								if (gobjPtr) {
+										renderObject(**gobjPtr, WHITE);
+								} else {
+										auto* pgPtr = std::get_if<ParticleGroup*>(&renderIter->renderable);
+										if (pgPtr) {
+												particleRend.render(**pgPtr, mainCamera);
+										}
+								}
+
+								EndMode3D();
+								EndTextureMode();
+
+								BeginTextureMode(resources->screen.sceneTex);
+								BeginBlendMode(BLEND_ALPHA);
+								BeginShaderMode(maskShader);
+								SetShaderValueTexture(maskShader, shTextureColorLoc, colorTex.texture);
+								SetShaderValueTexture(maskShader, shTextureMaskLoc, maskTex.texture);
+								renderMasked(colorTex.texture, r);
+								EndShaderMode();
+								EndBlendMode();
+								EndTextureMode();
+
+								renderIter = renderIter->next;
+						}
+				}
 		}
 
 	};

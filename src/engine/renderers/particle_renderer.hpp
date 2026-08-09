@@ -10,6 +10,7 @@ namespace openAITD {
 
   class ParticleRenderer {
   private:
+      World& world;
       const int textureSize = 128;
       Texture2D circleTexture;
 
@@ -21,7 +22,7 @@ namespace openAITD {
       }
 
   public:
-      ParticleRenderer() : circleTexture() {}
+      ParticleRenderer(World& world) : circleTexture(), world(world) {}
 
       ~ParticleRenderer() {
         if (circleTexture.id != 0) {
@@ -33,13 +34,24 @@ namespace openAITD {
           if (circleTexture.id == 0) {
               createCircleTexture();
           }
-          if (!group.active || group.particles.empty() || circleTexture.id == 0) return;
+
+          const Vector3& pos = group.position;
+          const Vector3& roomPos = world.curStage->rooms[group.roomId].origPosition;
+
+          Matrix matr = MatrixIdentity();
+          matr = MatrixMultiply(MatrixTranslate(roomPos.x, roomPos.y, roomPos.z), matr);
+          matr = MatrixMultiply(MatrixTranslate(pos.x, pos.y, pos.z), matr);
+          auto m = rlGetMatrixModelview();
+          rlSetMatrixModelview(MatrixMultiply(matr, m));
+
           BeginBlendMode(BLEND_ALPHA);
           for (const auto& p : group.particles) {
               if (!p.active) return;
               DrawBillboard(camera, circleTexture, p.position, p.size, p.color);
           }
           EndBlendMode();
+
+    			rlSetMatrixModelview(m);
       }
 
   };

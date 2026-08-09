@@ -13,7 +13,7 @@ namespace openAITD {
     Vector3 position = {0,0,0};
     Vector3 velocity = {0,0,0};
     Color color = {255,255,255,255};
-    float size = 0.1f;
+    float size = 0.05f;
     float lifetime = 0;
   };
 
@@ -23,6 +23,7 @@ namespace openAITD {
     float spawnTimer = 0.0f;
     int type;
     int roomId;
+    int stageId = -1;
     Vector3 position = {0,0,0};
     vector<Particle> particles;
     Bounds bounds;
@@ -34,6 +35,7 @@ namespace openAITD {
 
     void calcActive();
     void ParticleGroup::calcBounds();
+    Bounds ParticleGroup::getRenderBounds();
     Particle& ParticleGroup::addParticle();
   };
 
@@ -47,7 +49,8 @@ namespace openAITD {
     active = false;
   }
 
-  inline void ParticleGroup::calcBounds() {
+  Bounds ParticleGroup::getRenderBounds() {
+      Bounds bounds;
       bool first = true;
       for (const auto& p : particles) {
           if (!p.active) continue;
@@ -71,6 +74,12 @@ namespace openAITD {
       if (first) {
           bounds.min = bounds.max = {0, 0, 0};
       }
+      return bounds;
+  }
+
+  inline void ParticleGroup::calcBounds() {
+    bounds.min = {position.x - 0.2f, position.y - 0.2f, position.z - 0.2f};
+    bounds.max = {position.x + 0.2f, position.y + 0.2f, position.z + 0.2f};
   }
 
   inline Particle& ParticleGroup::addParticle() {

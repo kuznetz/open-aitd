@@ -33,8 +33,8 @@ namespace openAITD {
 
       // Fountain parameters
       const float gravity = -9.8f;          // gravitational acceleration
-      const float baseSpeed = 5.0f;         // base ejection speed
-      const float spread = 0.5f;            // horizontal spread
+      const float baseSpeed = 4.0f;         // base ejection speed
+      const float spread = 0.3f;            // horizontal spread
       const float particleLifetime = 1.5f;  // lifetime of each particle
       const float spawnInterval = 0.1f;  // spawn every 0.2 seconds
 
@@ -43,8 +43,15 @@ namespace openAITD {
           if (!p.active) continue;
           // Movement
           p.position += p.velocity * timeDelta;
-          // Gravity (affects only vertical velocity)
-          p.velocity.y += gravity * timeDelta;
+
+          if (p.position.y > 0) {
+            // Gravity (affects only vertical velocity)
+            p.velocity.y += gravity * timeDelta;
+          } else {
+            p.velocity.y = 0;
+            p.position.y = 0;
+          }
+
           // Decrease particle lifetime
           p.lifetime -= timeDelta;
           if (p.lifetime <= 0.0f) {
