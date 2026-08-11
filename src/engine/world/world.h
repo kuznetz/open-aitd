@@ -53,7 +53,7 @@ namespace openAITD {
 		vector<string> dataDirectories = { "./mods", "./oaitd", "./data" };
 		
 		vector<GameObject> gobjects;
-		vector<ParticleGroup> partGroups;
+		ParticleGroups partGroups;
 		vector<GameObject*> inventory;	
 
 		vector<short int> vars;
@@ -99,14 +99,13 @@ namespace openAITD {
     float brightnessCur = 1;
     float brightnessTrg = 1;
 
-		World(Resources* res) :
-			partGroups(10)
+		World(Resources* res)
 		{
 			this->resources = res;
-
-			partGroups[0].active = true;
-			partGroups[0].stageId = 0;
-			partGroups[0].roomId = 0;
+			// auto& partGroup = partGroups.add();
+			// partGroup.active = true;
+			// partGroup.stageId = 0;
+			// partGroup.roomId = 0;
 		}
 
 		bool isObjectActive(const GameObject& gobj) {
@@ -132,7 +131,6 @@ namespace openAITD {
 		void setCurStage(int stageId, int roomId) {
 			nextStageId = stageId;
 			nextRoomId = roomId;
-
 			//if (stageId == -1) throw new exception("Stage = -1");
 			//if (curStageId != stageId) {
 			//	curStageId = stageId;

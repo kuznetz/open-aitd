@@ -281,7 +281,6 @@ namespace openAITD {
 				DrawText(s.c_str(), (int)(pos.x), (int)(pos.y), 20, WHITE);
 			}
 			
-
 			//int num = 1;
 			//for (auto it = renderQueue.begin(); it != renderQueue.end(); it++) {
 			//	BeginMode3D(mainCamera);
@@ -306,6 +305,14 @@ namespace openAITD {
 				renderShoot();
 				//renderOvlBounds();
 				//renderTrack();
+				for (auto& pg: world->partGroups.groups) {
+					if (!pg.active) continue;
+					DrawCube(pg.position, 0.2, 0.2, 0.2, ORANGE);
+					for (auto& p: pg.particles) {
+						if (!p.active) continue;
+						DrawCube(pg.position, 0.1, 0.1, 0.1, ORANGE);
+					}
+				}
 			EndMode3D();
 
 			for (int i = 0; i < 100; i++) {

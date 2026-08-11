@@ -107,6 +107,14 @@ namespace openAITD {
             return Vector3Add(bonePos, gobj->getPosition());
         }
 
+        void addRicochet(const Vector3& pos, const int& roomId) {
+            auto& partGrp = world->partGroups.add();
+            partGrp.type = 1;
+            partGrp.position = pos;
+            partGrp.stageId = world->curStageId;
+            partGrp.roomId = roomId;
+        }
+
         // Internal raycast shot implementation
         void shootInternal(const ShootAction* act) {
             GameObject* shooter = act->gobj;
@@ -163,13 +171,17 @@ namespace openAITD {
                     hitTarget->damage.hitBy = shooter;
                     hitTarget->damage.damage = damage;
                     shooter->hit.hitTo = hitTarget;
+                    hitPoint = world->curStage->VectorChangeRoom(hitPoint, shooter->getRoomId(), hitTarget->getRoomId());
+                    addRicochet(hitPoint, hitTarget->getRoomId());
+                } else {
+                    addRicochet(hitPoint, shooter->getRoomId());
                 }
-
             } else {
                 hitPoint = Vector3Add(origin, Vector3Scale(dir, range));
                 world->debugShootTo = hitPoint;
             }
         }
+
     };
 
 }

@@ -27,17 +27,51 @@ namespace openAITD {
     Vector3 position = {0,0,0};
     vector<Particle> particles;
     Bounds bounds;
-    float lifetime;
+    bool initialized = false;
+    unsigned int creationOrder = 0;
 
     ParticleGroup() :
       particles(25)
-      {}
+      {
+        reset();
+        active = false;
+      }
+
+    void reset() {
+      spawnTimer = 0.0f;
+      type = 0;
+      roomId = -1;
+      stageId = -1;
+      position = {0,0,0};
+      initialized = false;
+      for (auto& p : particles) {
+          p.active = false;
+      }
+    }      
 
     void calcActive();
     void ParticleGroup::calcBounds();
     Bounds ParticleGroup::getRenderBounds();
     Particle& ParticleGroup::addParticle();
   };
+
+  class ParticleGroups {
+  public:
+      std::vector<ParticleGroup> groups;
+      unsigned int nextOrder = 0;
+ 
+      ParticleGroups(): groups(10) {
+          clear();
+      }
+
+      ParticleGroup& add();
+
+      void clear() {
+          for (auto& g : groups) {
+              g.active = false;
+          }
+      }
+  };  
 
   inline void ParticleGroup::calcActive() {
     for (const auto& p : particles) {
@@ -49,7 +83,7 @@ namespace openAITD {
     active = false;
   }
 
-  Bounds ParticleGroup::getRenderBounds() {
+  inline Bounds ParticleGroup::getRenderBounds() {
       Bounds bounds;
       bool first = true;
       for (const auto& p : particles) {
@@ -97,5 +131,26 @@ namespace openAITD {
       }
       return *candidate;
   }
+
+  inline ParticleGroup& ParticleGroups::add() {
+      for (auto& g : groups) {
+          if (!g.active) {
+              g.reset();
+              g.active = true;
+              g.creationOrder = nextOrder++;
+              return g;
+          }
+      }
+      ParticleGroup* oldest = &groups[0];
+      for (auto& g : groups) {
+          if (g.creationOrder < oldest->creationOrder) {
+              oldest = &g;
+          }
+      }
+      oldest->reset();
+      oldest->active = true;
+      oldest->creationOrder = nextOrder++;
+      return *oldest;
+  }  
 
 }

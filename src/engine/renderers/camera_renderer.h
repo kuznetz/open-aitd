@@ -254,7 +254,7 @@ namespace openAITD {
 				}
 
 				//ParticleGroups
-				for (auto& pg : world->partGroups) {
+				for (auto& pg : world->partGroups.groups) {
 						if (!pg.active) continue;
 						if (pg.stageId != curStageId) continue;
 

@@ -40,13 +40,14 @@ namespace openAITD {
 
           Matrix matr = MatrixIdentity();
           matr = MatrixMultiply(MatrixTranslate(roomPos.x, roomPos.y, roomPos.z), matr);
-          matr = MatrixMultiply(MatrixTranslate(pos.x, pos.y, pos.z), matr);
+          //matr = MatrixMultiply(MatrixTranslate(pos.x, pos.y, pos.z), matr);
           auto m = rlGetMatrixModelview();
           rlSetMatrixModelview(MatrixMultiply(matr, m));
 
           BeginBlendMode(BLEND_ALPHA);
+          DrawBillboard(camera, circleTexture, group.position, 0.1f, {255,255,255,255}); //center
           for (const auto& p : group.particles) {
-              if (!p.active) return;
+              if (!p.active) continue;
               DrawBillboard(camera, circleTexture, p.position, p.size, p.color);
           }
           EndBlendMode();

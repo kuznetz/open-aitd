@@ -13,13 +13,18 @@ namespace openAITD {
           : world(world), resources(*world.resources) {}
 
       void process(const float timeDelta) {
-        for (auto& partGrp: world.partGroups) {
+        for (auto& partGrp: world.partGroups.groups) {
           if (!partGrp.active) continue;
-          processFountain(partGrp, timeDelta); 
+          if (partGrp.type == 1) {
+            processRicochet(partGrp, timeDelta);
+          } else {
+            processFountain(partGrp, timeDelta); 
+          }
         }      
       }
 
       void processFountain(ParticleGroup& partGrp, const float timeDelta);
+      void processRicochet(ParticleGroup& partGrp, const float timeDelta);
   };
 
 
@@ -74,6 +79,55 @@ namespace openAITD {
         // Particle parameters
         p.lifetime = particleLifetime;
         p.color = {255, 128, 0, 255}; // orange (example)
+      }
+  }
+
+  inline void ParticleController::processRicochet(ParticleGroup& partGrp, const float timeDelta) {
+      // Fountain parameters
+      const float gravity = -9.8f;          // gravitational acceleration
+      const float baseSpeed = 2.5f;         // base ejection speed
+      const float spread = 0.5f;            // horizontal spread
+      const float particleLifetime = 1.0f;  // lifetime of each particle
+      const float spawnInterval = 0.1f;  // spawn every 0.2 seconds
+
+      if (!partGrp.initialized) {
+        for (int i=0; i<10; i++) {
+          auto& p = partGrp.addParticle();
+          p.position = partGrp.position;
+          float angleX = (static_cast<float>(rand()) / RAND_MAX - 0.5f) * spread * 2.0f;
+          float angleZ = (static_cast<float>(rand()) / RAND_MAX - 0.5f) * spread * 2.0f;
+          float speedY = baseSpeed + (static_cast<float>(rand()) / RAND_MAX) * baseSpeed * 0.5f;
+          p.velocity = {angleX * baseSpeed, speedY, angleZ * baseSpeed};
+          p.lifetime = particleLifetime + ((static_cast<float>(rand()) / RAND_MAX - 0.5f) * (0.5f));
+          p.color = {255, 255, 255, 255};
+        }
+        partGrp.initialized = true;
+      }
+
+      bool allInactive = true;
+      for (auto& p : partGrp.particles) {
+          if (!p.active) continue;
+          allInactive = false;
+          
+          // Movement
+          p.position += p.velocity * timeDelta;
+          if (p.position.y > 0) {
+            // Gravity (affects only vertical velocity)
+            p.velocity.y += gravity * timeDelta;
+          } else {
+            p.velocity.y = 0;
+            p.position.y = 0;
+          }
+
+          // Decrease particle lifetime
+          p.lifetime -= timeDelta;
+          if (p.lifetime <= 0.0f) {
+              p.active = false;
+          }
+      }
+
+      if (allInactive) {
+          partGrp.active = false;
       }
   }
 
