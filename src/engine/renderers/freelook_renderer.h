@@ -138,6 +138,33 @@ namespace openAITD {
 			endDebugObjs++;
 		}
 
+		void renderObject(GameObject& gobj, Color tint)
+		{
+			RModel* rmodel = resources->models.getModel(gobj.modelId, world->altModels);
+			Model& model = rmodel->model;
+			if (!model.data) return;
+
+			const Vector3 pos = gobj.getPosition();
+  		const Vector3 roomPos = world->curStage->rooms[gobj.getRoomId()].origPosition;
+
+			Matrix matr = MatrixIdentity();
+			matr = MatrixMultiply(MatrixTranslate(roomPos.x, roomPos.y, roomPos.z), matr);
+			matr = MatrixMultiply(MatrixTranslate(pos.x, pos.y, pos.z), matr);
+			matr = MatrixMultiply(gobj.getRotMatrix(), matr);
+			matr = MatrixMultiply(MatrixRotateY(PI), matr);
+			
+			auto m = rlGetMatrixModelview();
+			rlSetMatrixModelview(MatrixMultiply(matr, m));
+			
+			auto& rlModel = model.model;
+			for (int i = 0; i < rlModel.meshCount; i++)
+			{
+					DrawMesh(rlModel.meshes[i], rlModel.materials[rlModel.meshMaterial[i]], rlModel.transform);
+			}			
+
+			rlSetMatrixModelview(m);
+		}		
+
 		void renderObjectEx(GameObject& gobj, Color tint)
 		{
 			if (gobj.modelId != -1) {

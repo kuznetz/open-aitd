@@ -8,6 +8,7 @@
 #include "../resources/resources.h"
 #include "./base_renderer.h"
 #include "./particle_renderer.hpp"
+#include "./object_renderer.hpp"
 
 using namespace std;
 namespace openAITD {
@@ -24,6 +25,7 @@ namespace openAITD {
 	public:
 		Resources* resources;
 		ParticleRenderer particleRend;
+    ObjectRenderer objectRend;
 
 		std::vector<RenderOrder> renderQueue;
 		RenderOrder* renderStart = 0;
@@ -42,7 +44,7 @@ namespace openAITD {
 		RenderTexture2D colorTex;
 		float scale3dTex = 1;
 
-		CameraRenderer(World* world) : BaseRenderer(world), particleRend(*world) {
+		CameraRenderer(World* world) : BaseRenderer(world), particleRend(*world), objectRend(*world) {
 			resources = world->resources;
 			renderQueue.resize(50);
 		}
@@ -307,7 +309,7 @@ namespace openAITD {
 
 								auto* gobjPtr = std::get_if<GameObject*>(&renderIter->renderable);
 								if (gobjPtr) {
-										renderObject(**gobjPtr, WHITE);
+										objectRend.renderObject(**gobjPtr);
 								} else {
 										auto* pgPtr = std::get_if<ParticleGroup*>(&renderIter->renderable);
 										if (pgPtr) {
