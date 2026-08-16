@@ -29,7 +29,6 @@ namespace openAITD {
 		bool hasControl;
 		PlayerAnimations animations;
 		bool allowInventory;
-
 		bool space;
 		int keyboard;
 	};
@@ -50,7 +49,6 @@ namespace openAITD {
 	class World {
 	public:
 		Resources* resources;
-		vector<string> dataDirectories = { "./mods", "./oaitd", "./data" };
 		
 		vector<GameObject> gobjects;
 		ParticleGroups partGroups;
@@ -59,7 +57,6 @@ namespace openAITD {
 		vector<short int> vars;
 		vector<short int> cVars;
 		Player player;
-		Picture picture;
 		
 		float chrono = 0;
 		//Time, how long the room was active
@@ -83,19 +80,26 @@ namespace openAITD {
 		//Object to follow camera
 		GameObject* followTarget = 0;
 
+		//Current message
 		string messageText;
 		float messageTime = 0;
 
+		//Inventory
 		GameObject* takedObj = 0;
 		GameObject* curInvGObject = 0;
 		GameObject* inHandObj = 0;
 		int curInvAction = 0;
 
+		//Current reading book
 		BookData bookData;
+
+		//Showed image
+		Picture picture;
 
 		Vector3 debugShootFrom;
 		Vector3 debugShootTo;
 
+		float waterLevel = -1000;
     float brightnessCur = 1;
     float brightnessTrg = 1;
 

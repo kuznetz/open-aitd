@@ -34,6 +34,8 @@ namespace openAITD {
             const Vector3 pos = gobj.getPosition();
             const Vector3 roomPos = world.curStage->rooms[gobj.getRoomId()].origPosition;
 
+						YCut = world.waterLevel - pos.y;
+
             Matrix matr = MatrixIdentity();
             matr = MatrixMultiply(MatrixTranslate(roomPos.x, roomPos.y, roomPos.z), matr);
             matr = MatrixMultiply(MatrixTranslate(pos.x, pos.y, pos.z), matr);
@@ -54,9 +56,6 @@ namespace openAITD {
 
             rlSetMatrixModelview(m);
         }
-
-        // Set the Y-axis clipping level
-        void setYCut(float level) { YCut = level; }
 
     private:
         // Custom shader and load flag
@@ -146,7 +145,7 @@ namespace openAITD {
             ensureShaderLoaded();
 
             rlEnableShader(customShader.id);
-            rlEnableBackfaceCulling();
+            //rlEnableBackfaceCulling();
 
             // --- Matrices ---
             Matrix matModel = MatrixIdentity();
@@ -242,7 +241,7 @@ namespace openAITD {
             rlDisableVertexArray();
             rlDisableVertexBuffer();
             rlDisableVertexBufferElement();
-            rlDisableBackfaceCulling();
+            //rlDisableBackfaceCulling();
             rlDisableShader();
 
             // Restore matrices (not strictly necessary, but for good order)

@@ -253,7 +253,7 @@ namespace openAITD {
 				}, "GAMMA");
 			lua->CreateFunction([this](int obj) -> int {
 				return floor(this->world->gobjects[obj].getPosition().y * -1000);
-				}, "ROOMY");			
+				}, "ROOMY");
 
 			lua->CreateFunction([this](int obj) -> int {
 				return (int)((this->world->chrono - this->world->gobjects[obj].chrono));
@@ -584,7 +584,7 @@ namespace openAITD {
 				this->world->inDark = !light;
 				}, "SET_LIGHT");
 			lua->CreateFunction([this](int water) {
-				//TODO: SOUND_THEN
+				this->world->waterLevel = (water == 0) ? -1000 : water;
 				}, "WATER");
 			lua->CreateFunction([this](int shaking) {
 				//TODO: SET_SHAKING
