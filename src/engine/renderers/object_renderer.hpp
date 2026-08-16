@@ -22,9 +22,9 @@ namespace openAITD {
             shaderLoaded = false;
         }
 
-        // Основной метод рендеринга объекта
+        // Main object rendering method
         void renderObject(GameObject& gobj) {
-            // Ленивая загрузка шейдера при первом вызове
+            // Lazy shader loading on first call
             ensureShaderLoaded();
 
             RModel* rmodel = resources.models.getModel(gobj.modelId, world.altModels);
@@ -43,7 +43,7 @@ namespace openAITD {
             auto m = rlGetMatrixModelview();
             rlSetMatrixModelview(MatrixMultiply(matr, m));
 
-            // Рендерим каждый меш модели с нашим кастомным шейдером
+            // Render each mesh of the model with our custom shader
             auto& rlModel = model.model;
             for (int i = 0; i < rlModel.meshCount; i++) {
                 Mesh mesh = rlModel.meshes[i];
@@ -55,15 +55,20 @@ namespace openAITD {
             rlSetMatrixModelview(m);
         }
 
+        // Set the Y-axis clipping level
+        void setYCut(float level) { YCut = level; }
+
     private:
-        // Кастомный шейдер и флаг загрузки
+        // Custom shader and load flag
         Shader customShader;
         bool shaderLoaded;
+        float YCut = -10000.0f;   // by default very low value – clipping disabled
 
-        // Храним локации uniform-ов для быстрого доступа
+        // Store uniform locations for quick access
         int locUseTexture = -1;
+        int locYCut = -1;
 
-        // Inline-код шейдеров (GLSL 330)
+        // Inline shader code (GLSL 330)
         static constexpr const char* vertexShader = R"(
             #version 330
             in vec3 vertexPosition;
@@ -96,49 +101,54 @@ namespace openAITD {
             uniform sampler2D texture0;
             uniform vec4 colDiffuse;
             uniform int useTexture;
+            uniform float YCut;
 
             out vec4 finalColor;
 
             void main() {
+                if (fragPosition.y < YCut) discard;
                 vec4 texColor = texture(texture0, fragTexCoord);
-                // Если текстура не используется или её пиксель прозрачен — берём цвет из colDiffuse
-                if (useTexture == 0 || texColor.a < 0.01) {
+                if (useTexture == 0) {
                     finalColor = colDiffuse;
                 } else {
                     finalColor = texColor * colDiffuse;
                 }
-								finalColor.a = 1.0;
+                finalColor.a = 1.0;
             }
         )";
 
-        // Загрузка шейдера из inline-строк
+        // Load shader from inline strings
         void ensureShaderLoaded() {
             if (shaderLoaded) return;
 
             customShader = LoadShaderFromMemory(vertexShader, fragmentShader);
             if (customShader.id == 0) {
-                TraceLog(LOG_ERROR, "Failed to load custom shader from memory");
+                TraceLog(LOG_ERROR, "Failed to load model shader from memory");
                 return;
             }
 
-            // Получаем локации для наших uniform-ов
+            // Get locations for our uniforms
             locUseTexture = GetShaderLocation(customShader, "useTexture");
             if (locUseTexture == -1) {
-                TraceLog(LOG_WARNING, "Uniform 'useTexture' not found in custom shader");
+                TraceLog(LOG_WARNING, "Uniform 'useTexture' not found in model shader");
+            }
+            locYCut = GetShaderLocation(customShader, "YCut");
+            if (locYCut == -1) {
+                TraceLog(LOG_WARNING, "Uniform 'YCut' not found in model shader");
             }
 
             shaderLoaded = true;
         }
 
-        // Рисуем один меш с кастомным шейдером
+        // Draw a single mesh with the custom shader
         void drawMesh(Mesh mesh, Material material, Matrix transform) {
-            // Убедимся, что шейдер загружен (на всякий случай)
+            // Ensure shader is loaded (just in case)
             ensureShaderLoaded();
 
             rlEnableShader(customShader.id);
-						rlEnableBackfaceCulling();
+            rlEnableBackfaceCulling();
 
-            // --- Матрицы ---
+            // --- Matrices ---
             Matrix matModel = MatrixIdentity();
             Matrix matView = rlGetMatrixModelview();
             Matrix matProjection = rlGetMatrixProjection();
@@ -160,7 +170,7 @@ namespace openAITD {
             if (customShader.locs[SHADER_LOC_MATRIX_MVP] != -1)
                 rlSetUniformMatrix(customShader.locs[SHADER_LOC_MATRIX_MVP], matModelViewProjection);
 
-            // --- Цвет (colDiffuse) ---
+            // --- Color (colDiffuse) ---
             if (customShader.locs[SHADER_LOC_COLOR_DIFFUSE] != -1) {
                 Color color = material.maps[MATERIAL_MAP_DIFFUSE].color;
                 float values[4] = {
@@ -169,13 +179,10 @@ namespace openAITD {
                     (float)color.b / 255.0f,
                     (float)color.a / 255.0f
                 };
-								if (values[3] < 1.0f) {
-									printf("alpha: %f", values[3]);
-								}
                 rlSetUniform(customShader.locs[SHADER_LOC_COLOR_DIFFUSE], values, SHADER_UNIFORM_VEC4, 1);
             }
 
-            // --- Текстура и флаг useTexture ---
+            // --- Texture and useTexture flag ---
             int diffuseSlot = 0;
             bool hasTexture = (material.maps[MATERIAL_MAP_DIFFUSE].texture.id > 0);
 
@@ -187,13 +194,18 @@ namespace openAITD {
                 }
             }
 
-            // Устанавливаем useTexture (наша кастомная локация)
+            // Set useTexture (our custom location)
             if (locUseTexture != -1) {
                 int useTex = hasTexture ? 1 : 0;
                 rlSetUniform(locUseTexture, &useTex, SHADER_UNIFORM_INT, 1);
             }
 
-            // --- Настройка вершинных атрибутов ---
+            // Set YCut
+            if (locYCut != -1) {
+                rlSetUniform(locYCut, &YCut, SHADER_UNIFORM_FLOAT, 1);
+            }
+
+            // --- Vertex attribute setup ---
             if (!rlEnableVertexArray(mesh.vaoId)) {
                 rlEnableVertexBuffer(mesh.vboId[RL_DEFAULT_SHADER_ATTRIB_LOCATION_POSITION]);
                 rlSetVertexAttribute(customShader.locs[SHADER_LOC_VERTEX_POSITION], 3, RL_FLOAT, 0, 0, 0);
@@ -215,13 +227,13 @@ namespace openAITD {
                     rlEnableVertexBufferElement(mesh.vboId[RL_DEFAULT_SHADER_ATTRIB_LOCATION_INDICES]);
             }
 
-            // --- Отрисовка ---
+            // --- Drawing ---
             if (mesh.indices != NULL)
                 rlDrawVertexArrayElements(0, mesh.triangleCount * 3, 0);
             else
                 rlDrawVertexArray(0, mesh.vertexCount);
 
-            // --- Очистка ---
+            // --- Cleanup ---
             if (hasTexture) {
                 rlActiveTextureSlot(diffuseSlot);
                 rlDisableTexture();
@@ -230,10 +242,10 @@ namespace openAITD {
             rlDisableVertexArray();
             rlDisableVertexBuffer();
             rlDisableVertexBufferElement();
-						rlDisableBackfaceCulling();
+            rlDisableBackfaceCulling();
             rlDisableShader();
 
-            // Восстанавливаем матрицы (необязательно, но для порядка)
+            // Restore matrices (not strictly necessary, but for good order)
             rlSetMatrixModelview(matView);
             rlSetMatrixProjection(matProjection);
         }

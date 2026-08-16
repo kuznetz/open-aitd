@@ -47,6 +47,7 @@ namespace openAITD {
 		CameraRenderer(World* world) : BaseRenderer(world), particleRend(*world), objectRend(*world) {
 			resources = world->resources;
 			renderQueue.resize(50);
+			//objectRend.setYCut(0.25f);
 		}
 
 		void initShaders() {
@@ -304,6 +305,7 @@ namespace openAITD {
 								renderMask(r);
 								BeginTextureMode(colorTex);
 								ClearBackground(BLANK);
+								
 								BeginMode3D(mainCamera);
 								rlSetMatrixProjection(perspective);
 
