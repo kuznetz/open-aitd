@@ -102,8 +102,12 @@ namespace openAITD {
             auto& curPose = curAnim.bakedPoses[gobj->animation.animFrame];
             mdl->model.ApplyPose(curPose.data());
             Vector3 bonePos = mdl->model.curPose[boneIdx].translation;
-            Matrix rotM = MatrixRotateYZX(gobj->getOrigRotation());
-            bonePos = Vector3Transform(bonePos, rotM);
+
+            Matrix matr = MatrixIdentity();
+            matr = MatrixMultiply(gobj->getRotMatrix(), matr);
+            matr = MatrixMultiply(MatrixRotateY(PI), matr);
+            bonePos = Vector3Transform(bonePos, matr);
+
             return Vector3Add(bonePos, gobj->getPosition());
         }
 
@@ -165,14 +169,15 @@ namespace openAITD {
             world->debugShootFrom = origin;
             Vector3 hitPoint;
             if (hitTarget || hitStatic) {
-                hitPoint = Vector3Add(origin, Vector3Scale(dir, minDist));
+                hitPoint = Vector3Add(origin, Vector3Scale(dir, minDist - 0.05f));
                 world->debugShootTo = hitPoint;
                 if (hitTarget) {
+                    hitPoint = world->curStage->VectorChangeRoom(hitPoint, shooter->getRoomId(), hitTarget->getRoomId());
                     hitTarget->damage.hitBy = shooter;
                     hitTarget->damage.damage = damage;
+                    hitTarget->damage.point = hitPoint;
                     shooter->hit.hitTo = hitTarget;
-                    hitPoint = world->curStage->VectorChangeRoom(hitPoint, shooter->getRoomId(), hitTarget->getRoomId());
-                    addRicochet(hitPoint, hitTarget->getRoomId());
+                    //addRicochet(hitPoint, hitTarget->getRoomId());
                 } else {
                     addRicochet(hitPoint, shooter->getRoomId());
                 }

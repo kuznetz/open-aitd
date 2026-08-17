@@ -140,6 +140,7 @@ namespace openAITD {
                     if (hitDynamic && hitObject != nullptr) {
                         hitObject->damage.hitBy = &gobj;
                         hitObject->damage.damage = gobj.throwing.hitDamage;
+                        hitObject->damage.point = gobj.getPosition();
                         gobj.hit.hitTo = hitObject;
                     }
                 } else {

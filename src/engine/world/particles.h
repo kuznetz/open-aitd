@@ -29,6 +29,7 @@ namespace openAITD {
     Bounds bounds;
     bool initialized = false;
     unsigned int creationOrder = 0;
+    float lifetime = 0;
 
     ParticleGroup() :
       particles(25)

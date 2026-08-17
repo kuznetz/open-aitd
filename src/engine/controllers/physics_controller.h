@@ -52,6 +52,7 @@ namespace openAITD {
 			damager.hit.hitTo = &gobj;
 			gobj.damage.hitBy = &damager;
 			gobj.damage.damage = damager.physics.hitObjectDamage;
+			gobj.damage.point = gobj.getPosition();
 		}
 
 		void processStaticColliders(GameObject& gobj, Room& room) {

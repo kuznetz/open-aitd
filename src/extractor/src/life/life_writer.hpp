@@ -177,6 +177,23 @@ namespace AITDExtractor {
 					writeLifeExpr(instr.arguments[1]);
 					out << ")\n";
 					return;
+			} else if (instr.type->type == LifeEnum::SPECIAL) {
+				  s16 specialType = instr.arguments[0].constVal;
+					switch (specialType) {
+						case 0:
+						  out << "DEATH_PARTICLES(obj);\n";
+							break;
+						case 1:
+						  out << "HIT_PARTICLES(obj);\n";
+							break;
+            case 4:
+						  out << "CIGAR_PARTICLES(obj);\n";
+							break;
+						default:
+						  out << "UNKNOWN_SPECIAL(obj);\n";
+						  cout<<"ERROR: Unknown specialType "<< specialType <<endl;
+					};
+					return;
 			}
 
 			// Generic instruction output

@@ -584,14 +584,39 @@ namespace openAITD {
 				this->world->inDark = !light;
 				}, "SET_LIGHT");
 			lua->CreateFunction([this](int water) {
-				this->world->waterLevel = (water == 0) ? -1000 : water;
+				this->world->waterLevel = (water == 0) ? -1000.f : water;
 				}, "WATER");
 			lua->CreateFunction([this](int shaking) {
 				//TODO: SET_SHAKING
 				}, "SET_SHAKING");
-			lua->CreateFunction([this](int obj, int spType) {
-				//TODO: SPECIAL
-				}, "SPECIAL");
+
+			//SPECIAL
+			lua->CreateFunction([this](int objId) {
+				  auto& obj = this->world->gobjects[objId];
+					auto& partGrp = world->partGroups.add();
+					partGrp.type = 2;
+					partGrp.position = obj.getPosition();
+					partGrp.stageId = obj.getStageId();
+					partGrp.roomId = obj.getRoomId();
+				}, "DEATH_PARTICLES");
+
+			lua->CreateFunction([this](int objId) {
+				  auto& obj = this->world->gobjects[objId];
+					auto& partGrp = world->partGroups.add();
+					partGrp.type = 1;
+					partGrp.position = obj.damage.point;
+					partGrp.stageId = obj.getStageId();
+					partGrp.roomId = obj.getRoomId();
+				}, "HIT_PARTICLES");
+
+			lua->CreateFunction([this](int objId) {
+				  auto& obj = this->world->gobjects[objId];
+					auto& partGrp = world->partGroups.add();
+					partGrp.type = 2;
+					partGrp.position = obj.getPosition();
+					partGrp.stageId = obj.getStageId();
+					partGrp.roomId = obj.getRoomId();
+				}, "CIGAR_PARTICLES");
 
 			lua->CreateFunction([this](int light) {
 				world->gameOver = true;

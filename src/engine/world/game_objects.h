@@ -167,6 +167,7 @@ namespace openAITD {
 	{
 		int damage;
 		GameObject* hitBy = nullptr;
+		Vector3 point;
 	};
 
 	struct GOHit

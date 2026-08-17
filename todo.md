@@ -1,22 +1,22 @@
 Features:
-0.2: Main support
+0.2: Main features support
 - Character Select
 - Particles: blood, enemyblood, cigar smoke, enemy smoke, bullet hit
 - Gun fire model (particles)
 - Multilanguage support
-- Intro border scaling
-- More fancy save/load
 - Cut model in water
 - Camera shaking
 - Intro images
-1.0: full original support
+- Light in maze
+1.0: Full original support
+- Intro border scaling
+- More fancy save/load
 - Transparent Materials
 - Noise Textures
 - Additional multilang text
 - CDAudio music ripper (.cue)
 - Extract files from cd (.cue)
 - Book audio ripper from cd
-- Light in maze
 - Book - spaces / animation / page number
 - Take script hack / upgrade take screen
 - Extract resuources screen

@@ -53,7 +53,7 @@ namespace openAITD {
             this->resources = world->resources;
         }
 
-        void calcHitBounds(GameObject& gobj) {
+        Vector3 calcHitPosition(GameObject& gobj) {
             auto mdl = resources->models.getModel(gobj.modelId, world->altModels);
             if (!mdl) throw new exception("Invalid model");
             auto& curAnim = mdl->model.animations[gobj.animation.animIdx];
@@ -66,10 +66,8 @@ namespace openAITD {
             const auto& rotM = gobj.getRotMatrix();
             v = Vector3Transform(v, rotM);
             v = Vector3Add(v, gobj.getPosition());
-            auto& r = gobj.hit.range;
-
-            gobj.hit.bounds = { { v.x - r, v.y - r, v.z - r }, { v.x + r, v.y + r, v.z + r } };
-        }
+            return v;
+        }        
 
         void process(float timeDelta) {
             for (int j = 0; j < world->gobjects.size(); j++) {
@@ -105,7 +103,13 @@ namespace openAITD {
                     }
                 }
                 if (!act->gobj->hit.active) continue;
-                calcHitBounds(*act->gobj);
+                
+                auto& hitPos = calcHitPosition(*act->gobj);
+                auto& r = act->gobj->hit.range;
+                act->gobj->hit.bounds = { 
+                  { hitPos.x - r, hitPos.y - r, hitPos.z - r },
+                  { hitPos.x + r, hitPos.y + r, hitPos.z + r }
+                };
 
                 for (int j = 0; j < world->gobjects.size(); j++) {
                     //if (j == 6) printf("6");
@@ -119,10 +123,11 @@ namespace openAITD {
                     printf("HIT %d->%d\n", act->gobj->id, gobj.id);
                     gobj.damage.hitBy = act->gobj;
                     gobj.damage.damage = act->gobj->hit.hitDamage;
+                    gobj.damage.point = hitPos;
                     act->gobj->hit.hitTo = &gobj;
 
                     if (gobj.bitField.animated) {
-                        printf("HIT BREAK");
+                        //printf("HIT BREAK");
                         act->gobj->hit.active = false;
                         break;
                     }
