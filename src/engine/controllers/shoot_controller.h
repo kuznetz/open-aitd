@@ -119,16 +119,28 @@ namespace openAITD {
             partGrp.roomId = roomId;
         }
 
+        void muzzleFlash(const Vector3& pos, const Vector3& dir, const int& roomId) {
+            auto& partGrp = world->partGroups.add();
+            partGrp.type = 3;
+            partGrp.position = pos;
+            partGrp.direction = dir;
+            partGrp.stageId = world->curStageId;
+            partGrp.roomId = roomId;
+        }
+
         // Internal raycast shot implementation
         void shootInternal(const ShootAction* act) {
             GameObject* shooter = act->gobj;
             Room room = resources->stages[world->curStageId].rooms[shooter->getRoomId()];
             Vector3 origin = getBonePosition(shooter, act->boneIdx);
 
+
             Matrix& rotMatrix = shooter->getRotMatrix();
             Vector3 dir = Vector3Transform({ 0, 0, 1 }, rotMatrix);
             float range = act->range;
             int damage = act->damage;
+
+            muzzleFlash(Vector3Add(origin, Vector3Scale(dir, 0.05f)), dir, shooter->getRoomId());
 
             float minDist = range;
             GameObject* hitTarget = nullptr;

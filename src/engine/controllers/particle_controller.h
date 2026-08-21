@@ -19,6 +19,8 @@ namespace openAITD {
             processRicochet(partGrp, timeDelta);
           } else if (partGrp.type == 2) {
             processSmoke(partGrp, timeDelta);
+          } else if (partGrp.type == 3) {
+            processMuzzleFlash(partGrp, timeDelta);
           } else {
             processFountain(partGrp, timeDelta); 
           }
@@ -28,6 +30,7 @@ namespace openAITD {
       void processFountain(ParticleGroup& partGrp, const float timeDelta);
       void processRicochet(ParticleGroup& partGrp, const float timeDelta);
       void processSmoke(ParticleGroup& partGrp, const float timeDelta);
+      void processMuzzleFlash(ParticleGroup& partGrp, const float timeDelta);
   };
 
 
@@ -207,6 +210,79 @@ namespace openAITD {
       if (partGrp.lifetime < 0 && allInactive) {
           partGrp.active = false;
       }     
+  }
+
+  inline void ParticleController::processMuzzleFlash(ParticleGroup& partGrp, const float timeDelta) {
+      // Muzzle flash parameters
+      const int numParticles = 5;
+      const float speed = 3.0f;
+      const float spread = 0.4f;          // cone half‑angle in radians
+      const float particleLifetime = 0.2f;
+      const float baseSize = 0.25f;
+
+      // 1. Initial burst: spawn all particles at once
+      if (!partGrp.initialized) {
+          // Get a normalized direction; fallback to upward (0,1,0)
+          Vector3 dir = partGrp.direction;
+          float len = Vector3Length(dir);
+          if (len < 0.0001f) dir = {0.0f, 1.0f, 0.0f};
+          else dir = Vector3Scale(dir, 1.0f / len);
+
+          // Build an orthonormal basis (right, up) around dir
+          raylib::Vector3 up = 
+            (fabs(dir.y) < 0.99f) ? 
+            Vector3{0.0f, 1.0f, 0.0f} : 
+            Vector3{1.0f, 0.0f, 0.0f};
+          Vector3 right = Vector3Normalize(Vector3CrossProduct(dir, up));
+          up = Vector3Normalize(Vector3CrossProduct(right, dir));
+
+          // Spawn particles
+          for (int i = 0; i < numParticles; ++i) {
+              Particle& p = partGrp.addParticle();
+
+              // Random direction inside a cone around 'dir'
+              float theta = (rand() / (float)RAND_MAX - 0.5f) * 2.0f * spread; // [-spread, spread]
+              float phi   = (rand() / (float)RAND_MAX) * 2.0f * PI;
+              Vector3 dirVec = Vector3Scale(dir, cosf(theta));
+              Vector3 radial = Vector3Add(Vector3Scale(right, cosf(phi)), Vector3Scale(up, sinf(phi)));
+              dirVec = Vector3Add(dirVec, Vector3Scale(radial, sinf(theta)));
+              dirVec = Vector3Normalize(dirVec);
+
+              // Apply random speed variation
+              float speedVar = 0.8f + 0.4f * (rand() / (float)RAND_MAX);
+              p.velocity = Vector3Scale(dirVec, speed * speedVar);
+
+              // Set particle properties
+              p.position = partGrp.position;
+              p.lifetime = particleLifetime + (rand() / (float)RAND_MAX * 0.1f);
+              p.color = {255, 200, 100, 255}; // bright yellow/orange
+              p.size = baseSize;
+              p.active = true;
+          }
+
+          partGrp.initialized = true;
+      }
+
+      // 2. Update existing particles
+      bool allInactive = true;
+      for (auto& p : partGrp.particles) {
+          if (!p.active) continue;
+          allInactive = false;
+
+          // Move the particle
+          p.position = Vector3Add(p.position, Vector3Scale(p.velocity, timeDelta));
+
+          // Reduce size
+          p.size -= 1.0f * timeDelta;
+          if (p.size <= 0.0f) {
+              p.active = false;
+          }
+      }
+
+      // 3. Deactivate the group when all particles have died
+      if (allInactive) {
+          partGrp.active = false;
+      }
   }
 
 }

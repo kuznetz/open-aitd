@@ -25,6 +25,7 @@ namespace openAITD {
     int roomId;
     int stageId = -1;
     Vector3 position = {0,0,0};
+    Vector3 direction = {0,0,0};
     vector<Particle> particles;
     Bounds bounds;
     bool initialized = false;
@@ -44,6 +45,7 @@ namespace openAITD {
       roomId = -1;
       stageId = -1;
       position = {0,0,0};
+      direction = {0,0,0};
       initialized = false;
       for (auto& p : particles) {
           p.active = false;

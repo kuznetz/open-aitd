@@ -18,6 +18,7 @@ Features:
 - Extract files from cd (.cue)
 - Book audio ripper from cd
 - Book - spaces / animation / page number
+- Pregzt if fire sequense
 - Take script hack / upgrade take screen
 - Extract resuources screen
 1.1:  Extra Featurtes 
