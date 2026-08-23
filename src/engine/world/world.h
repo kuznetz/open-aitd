@@ -57,16 +57,22 @@ namespace openAITD {
 			float time = 0.0f;
 
 			void start() {
+				if (active && !fadingOut) return;
+				if (fadingOut) {
+					fadingOut = false;
+					return;
+				} else {
 					active = true;
 					fadingOut = false;
 					intensity = 0.0f;
 					time = 0.0f;
+				}
 			}
 
 			void stop() {
-					if (active && !fadingOut) {
-							fadingOut = true;
-					}
+				if (active && !fadingOut) {
+					fadingOut = true;
+				}
 			}
 	};
 
