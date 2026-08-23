@@ -35,17 +35,17 @@ namespace openAITD {
 			EulerAngles euler = gobj.getOrigRotation();
 			const float eps = 0.001f;
 			if (fabs(diff) < eps) {
-				  printf("forw\n");
+				  //printf("forw\n");
 					euler.y = targetYaw;
 					gobj.setOrigRotation(euler);
 					return;
 			}
 			float maxStep = rotateSpeed * timeDelta;
 			if (fabs(diff) <= maxStep) {
-				  printf("forw+\n");
+				  //printf("forw+\n");
 					euler.y = targetYaw;
 			} else {
-				  printf((string("rot ") + (diff > 0?"+":"-") + "\n").c_str());
+				  //printf((string("rot ") + (diff > 0?"+":"-") + "\n").c_str());
 					euler.y += (diff > 0 ? maxStep : -maxStep);
 			}
 			euler.y = EulerAngles::NormalizeAngle(euler.y);

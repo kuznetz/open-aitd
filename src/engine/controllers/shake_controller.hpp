@@ -35,7 +35,7 @@ namespace openAITD {
         // In pixels
         if (shake.intensity > 0.001f) {
             float t = shake.time;
-            float ampPixels = shake.intensity * screenH;  // переводим в пиксели
+            float ampPixels = shake.intensity * screenH;
             shake.offsetX = (sinf(t * 43.7f) * 0.6f + sinf(t * 71.3f + 1.2f) * 0.4f) * ampPixels;
             shake.offsetY = (cosf(t * 57.1f) * 0.6f + cosf(t * 83.9f + 2.3f) * 0.4f) * ampPixels;
         } else {

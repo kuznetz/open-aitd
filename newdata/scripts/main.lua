@@ -183,7 +183,7 @@ function life_549(obj)
       SET_ANIM_ALL_ONCE(obj, 267, 268)
     end
     if (HIT_BY(obj) ~= -1) then
-      SPECIAL(1)
+      HIT_PARTICLES()
       SET_LIFE(obj, Life.PLAYER_HIT_BY_SOMETHING)
     end
     if (GET(Vars.THROWING_SOMETHING_USING_JUG) == 1) and (END_ANIM(obj) == 1) then

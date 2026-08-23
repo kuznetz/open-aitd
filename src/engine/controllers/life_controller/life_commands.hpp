@@ -243,7 +243,7 @@ namespace openAITD {
 			lua->CreateFunction([this](int obj) -> int {
 				//return this->world->gobjects[obj].location.rotOrig.y;
 				auto rot = this->world->gobjects[obj].getIntRotation();
-				cout << "BETA " << obj << " " << rot.y << endl;
+				//cout << "BETA " << obj << " " << rot.y << endl;
 				return rot.y;
 				}, "BETA");
 			lua->CreateFunction([this](int obj) -> int {
@@ -579,16 +579,20 @@ namespace openAITD {
 				this->world->picture.curTime = 0;
 				this->world->picture.delay = delay / 30.;
 				resources->audio.PlaySound(sampleId);
-				}, "PICTURE");			
+			}, "PICTURE");			
 			lua->CreateFunction([this](int light) {
 				this->world->inDark = !light;
-				}, "SET_LIGHT");
+			}, "SET_LIGHT");
 			lua->CreateFunction([this](int water) {
 				this->world->waterLevel = (water == 0) ? -1000.f : water;
-				}, "WATER");
+		  }, "WATER");
 			lua->CreateFunction([this](int shaking) {
-				//TODO: SET_SHAKING
-				}, "SET_SHAKING");
+				if (shaking) {
+					this->world->shake.start();
+				} else {
+					this->world->shake.stop();
+				}
+			}, "SET_SHAKING");
 
 			//SPECIAL
 			lua->CreateFunction([this](int objId) {
