@@ -18,10 +18,6 @@ namespace openAITD {
 				bool fullscreen = false;
 				bool initialized = false;
 
-				Vector3 brightnessFactor = { 1.0f, 1.0f, 1.0f };
-				Shader brightnessShader = { 0 };
-				int shUniformLoc = 0;
-				
         Screen(Config& config):
 				 config(config)
 				{
@@ -30,7 +26,6 @@ namespace openAITD {
         ~Screen() {
             if (!initialized) return;
             UnloadRenderTexture(sceneTex);
-            UnloadShader(brightnessShader);
         }
 
         void init() {
@@ -58,14 +53,7 @@ namespace openAITD {
 						SetTargetFPS(config.targetFps);					
 
 						sceneTex = LoadRenderTexture(config.screenW, config.screenH);
-
-						brightnessShader = LoadShader(
-							"newdata/shaders/glsl330/brightness.vs",
-							"newdata/shaders/glsl330/brightness.fs"
-						);
-					  shUniformLoc = GetShaderLocation(brightnessShader, "brightness");
-            SetShaderValue(brightnessShader, shUniformLoc, &brightnessFactor, SHADER_UNIFORM_VEC3);
-						
+					
 						initialized = true;
         }
 
@@ -98,22 +86,6 @@ namespace openAITD {
 						UnloadRenderTexture(sceneTex);
 						sceneTex = LoadRenderTexture(config.screenW, config.screenH);
 				}				
-
-        void renderScene(float brightness = 1) {
-						auto& c = config;
-					  if (brightness != 1) {
-							BeginShaderMode(brightnessShader);
-							brightnessFactor = {brightness,brightness,brightness};
-							SetShaderValue(brightnessShader, shUniformLoc, &brightnessFactor, SHADER_UNIFORM_VEC3);
-							DrawTextureRec(sceneTex.texture,
-														{ 0, 0, (float)c.screenW, (float)-c.screenH },
-														{ 0, 0 },
-														WHITE);
-							EndShaderMode();							
-						} else {
-							DrawTextureRec(sceneTex.texture, { 0, 0, (float)c.screenW, (float)-c.screenH }, { 0,0 }, WHITE);
-						}
-        }
 
 				void begin() {
 						BeginDrawing();

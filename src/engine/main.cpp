@@ -4,8 +4,11 @@
 #include "../platform/platform.h"
 #include "./resources/resources.h"
 #include "./world/world.h"
+
 #include "./renderers/camera_renderer.h"
 #include "./renderers/freelook_renderer.h"
+#include "./renderers/scene_renderer.hpp"
+
 #include "./controllers/player_controller.h"
 #include "./controllers/physics_controller.h"
 #include "./controllers/camera_controller.h"
@@ -52,6 +55,7 @@ namespace openAITD {
     FoundScreen foundScreen(&world);
     CameraRenderer renderer(&world);
     FreelookRenderer flRenderer(&world);
+    SceneRenderer sceneRend(world);
     ThrowController throwContr(&world);
     PhysicsController physContr(&resources, &world, &foundScreen);
     CameraController camContr(world);
@@ -235,7 +239,7 @@ namespace openAITD {
             renderer.render();
         }
         resources.screen.begin();
-        resources.screen.renderScene(world.brightnessCur);
+        sceneRend.render(world.brightnessCur);
         renderMessage();
         resources.screen.end();
     }
@@ -355,7 +359,7 @@ namespace openAITD {
     void render() {
         if (state == AppState::MainMenu) {
             resources.screen.begin();
-            resources.screen.renderScene(world.brightnessCur);
+            sceneRend.render(world.brightnessCur);
             mainMenu.render();
             resources.screen.end();
         }
@@ -377,7 +381,7 @@ namespace openAITD {
         }
         else if (state == AppState::Inventory) {
             resources.screen.begin();
-            resources.screen.renderScene(world.brightnessCur);
+            sceneRend.render(world.brightnessCur);
             inventoryScreen.render();
             resources.screen.end();
         }
@@ -391,6 +395,7 @@ namespace openAITD {
         resources.config = loadConfig();
 
         resources.screen.init();
+        sceneRend.init();
         SetExitKey(KEY_F10);
 
         auto extractor =  AITDExtractor::createAITDExtractor();
