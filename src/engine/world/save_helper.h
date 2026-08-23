@@ -1,7 +1,6 @@
 ﻿#pragma once
 #include "../resources/resources.h"
 #include "../world/world.h"
-#include "life_controller.h"
 #include <stdexcept>
 #include <filesystem>
 
@@ -18,15 +17,11 @@ namespace openAITD {
 
     class SaveHelper {
     public:
-        World* world;
-        Resources* resources;
-        LifeController* life;
+        World& world;
+        Resources& resources;
         string saveDir = "./saves";
 
-        SaveHelper(World* world, LifeController* life) {
-            this->world = world;
-            this->resources = world->resources;
-            this->life = life;
+        SaveHelper(World& world): world(world), resources(*world.resources) {
         }
 
         json vector2json(Vector3 vec) {
@@ -56,37 +51,37 @@ namespace openAITD {
         }
 
         void save(int slot) {
-            auto& cVars = world->cVars;
+            auto& cVars = world.cVars;
             json outJson = json::object();
 
-            if (world->followTarget) {
-                outJson["follow"] = world->followTarget->id;
+            if (world.followTarget) {
+                outJson["follow"] = world.followTarget->id;
             }
-            if (world->inHandObj) {
-                outJson["inHand"] = world->inHandObj->id;
+            if (world.inHandObj) {
+                outJson["inHand"] = world.inHandObj->id;
             }
-            outJson["inDark"] = world->inDark;
+            outJson["inDark"] = world.inDark;
 
             outJson["vars"] = json::array();
-            for (int i = 0; i < world->vars.size(); i++) {
-                outJson["vars"].push_back(world->vars[i]);
+            for (int i = 0; i < world.vars.size(); i++) {
+                outJson["vars"].push_back(world.vars[i]);
             }
 
             outJson["cVars"] = json::array();
-            for (int i = 0; i < world->cVars.size(); i++) {
-                outJson["cVars"].push_back(world->cVars[i]);
+            for (int i = 0; i < world.cVars.size(); i++) {
+                outJson["cVars"].push_back(world.cVars[i]);
             }
 
             outJson["inventory"] = json::array();
-            for (int i = 0; i < world->inventory.size(); i++) {
-                outJson["inventory"].push_back(world->inventory[i]->id);
+            for (int i = 0; i < world.inventory.size(); i++) {
+                outJson["inventory"].push_back(world.inventory[i]->id);
             }
 
-            outJson["altModels"] = world->altModels;
+            outJson["altModels"] = world.altModels;
 
             outJson["objects"] = json::array();
-            for (int i = 0; i < world->gobjects.size(); i++) {
-                auto& gobj = world->gobjects[i];
+            for (int i = 0; i < world.gobjects.size(); i++) {
+                auto& gobj = world.gobjects[i];
                 auto outObj = json::object();
 
                 outObj["location"] = json::object();
@@ -126,7 +121,7 @@ namespace openAITD {
                 outObj["stageLifeId"] = gobj.stageLifeId;
                 outObj["lifeId"] = gobj.lifeId;
                 outObj["lifeMode"] = gobj.lifeMode;
-                outObj["chrono"] = world->chrono - gobj.chrono;
+                outObj["chrono"] = world.chrono - gobj.chrono;
                 outObj["hitObjectDamage"] = gobj.physics.hitObjectDamage;
 
                 outJson["objects"].push_back(outObj);
@@ -140,13 +135,13 @@ namespace openAITD {
 
             json outSlotJson = json::object();
             outSlotJson["date"] = getCurrentDate();
-            outSlotJson["location"] = "Stage "+to_string(world->curStageId)+" Room "+to_string(world->curRoomId);
+            outSlotJson["location"] = "Stage "+to_string(world.curStageId)+" Room "+to_string(world.curRoomId);
             path = slotDir + "/slot.json";
             std::ofstream o2(path);
             o2 << std::setw(2) << outSlotJson << std::endl;
 
             path = slotDir + "/screen.png";
-            resources->screen.saveScreenshot(path, 640, 480);
+            resources.screen.saveScreenshot(path, 640, 480);
         }
 
         void load(int slot) {
@@ -155,21 +150,21 @@ namespace openAITD {
                 ifstream ifs(path);
                 json inJson = json::parse(ifs);
 
-                world->vars.resize(inJson["vars"].size());
-                for (int i = 0; i < world->vars.size(); i++) {
-                    world->vars[i] = inJson["vars"][i];
+                world.vars.resize(inJson["vars"].size());
+                for (int i = 0; i < world.vars.size(); i++) {
+                    world.vars[i] = inJson["vars"][i];
                 }
 
-                world->cVars.resize(inJson["cVars"].size());
-                for (int i = 0; i < world->cVars.size(); i++) {
-                    world->cVars[i] = inJson["cVars"][i];
+                world.cVars.resize(inJson["cVars"].size());
+                for (int i = 0; i < world.cVars.size(); i++) {
+                    world.cVars[i] = inJson["cVars"][i];
                 }
 
-                world->gobjects.clear();
-                world->gobjects.reserve(inJson["objects"].size());
+                world.gobjects.clear();
+                world.gobjects.reserve(inJson["objects"].size());
                 for (int i = 0; i < inJson["objects"].size(); i++) {
                     auto& inObj = inJson["objects"][i];
-                    auto& gobj = world->gobjects.emplace_back(*resources);
+                    auto& gobj = world.gobjects.emplace_back(resources);
                     gobj.id = i;
                     
                     gobj.setStage(
@@ -201,32 +196,32 @@ namespace openAITD {
                     gobj.stageLifeId = inObj["stageLifeId"];
                     gobj.lifeId = inObj["lifeId"];
                     gobj.lifeMode = inObj["lifeMode"];
-                    gobj.chrono = world->chrono + inObj["chrono"];
+                    gobj.chrono = world.chrono + inObj["chrono"];
                     gobj.physics.hitObjectDamage = inObj["hitObjectDamage"];
                 }
 
-                world->inventory.resize(inJson["inventory"].size());
-                for (int i = 0; i < world->inventory.size(); i++) {
+                world.inventory.resize(inJson["inventory"].size());
+                for (int i = 0; i < world.inventory.size(); i++) {
                     int objId = inJson["inventory"][i];
-                    auto obj  = &world->gobjects[objId];
-                    world->inventory[i] = obj;
+                    auto obj  = &world.gobjects[objId];
+                    world.inventory[i] = obj;
                 }
 
                 int inHand = inJson["inHand"].get<int>();
-                world->inHandObj = &world->gobjects[inHand];
+                world.inHandObj = &world.gobjects[inHand];
                 int followTarget = inJson["follow"].get<int>();
-                world->followTarget = &world->gobjects[followTarget];
-                world->inDark = inJson["inDark"];
+                world.followTarget = &world.gobjects[followTarget];
+                world.inDark = inJson["inDark"];
 
-                auto foll = world->followTarget;
-                world->setCurStage(foll->getStageId(), foll->getRoomId());
+                auto foll = world.followTarget;
+                world.setCurStage(foll->getStageId(), foll->getRoomId());
                 
-                world->resources->backgrounds.setIsAltBackgrounds(!!world->cVars[12]);
+                resources.backgrounds.setIsAltBackgrounds(!!world.cVars[12]);
 
                 bool altModels = inJson.value("altModels", false);
-                world->setAltModels(altModels);
+                world.setAltModels(altModels);
 
-                world->preload();
+                world.preload();
 
             } catch(exception e) {
                 string message = "Error loading : " + path;
