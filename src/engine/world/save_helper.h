@@ -16,14 +16,14 @@ namespace openAITD {
         string location;
     };
 
-    class SaveController {
+    class SaveHelper {
     public:
         World* world;
         Resources* resources;
         LifeController* life;
         string saveDir = "./saves";
 
-        SaveController(World* world, LifeController* life) {
+        SaveHelper(World* world, LifeController* life) {
             this->world = world;
             this->resources = world->resources;
             this->life = life;

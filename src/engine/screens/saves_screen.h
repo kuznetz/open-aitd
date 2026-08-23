@@ -7,7 +7,7 @@
 #include "../resources/resources.h"
 #include "./options_screen.h"
 #include "./widgets/vertical_menu.hpp"
-#include "./controllers/save_controller.h"
+#include "./world/save_helper.h"
 
 using namespace std;
 using namespace raylib;
@@ -18,9 +18,9 @@ public:
     enum class Mode { Save, Load };
 
 public:
-    SavesScreen(Resources& resources, SaveController& saveContr)
+    SavesScreen(Resources& resources, SaveHelper& saveHelper)
         : resources(resources),
-          saveContr(saveContr),
+          saveHelper(saveHelper),
           menu(resources.texts.mainFont, raylib::Rectangle{0, 0, 1, 1}, 10)
     {}
 
@@ -46,7 +46,7 @@ public:
         };
 
         // FillSlots
-        saveSlots = saveContr.listSlots();
+        saveSlots = saveHelper.listSlots();
         vector<string> items;
         if (mode == Mode::Save) {
             items.push_back("<New save>");   // только для Save
@@ -141,7 +141,7 @@ private:
         if (slotIdx < 0) return;
         const auto& slot = saveSlots[slotIdx];
         
-        std::string path = saveContr.saveDir + "/" + to_string(slot.id) + "/screen.png";
+        std::string path = saveHelper.saveDir + "/" + to_string(slot.id) + "/screen.png";
         if (FileExists(path.c_str())) {
             Image img = raylib::LoadImage(path.c_str());
             if (img.data != nullptr) {
@@ -154,7 +154,7 @@ private:
 
 private:
     Resources& resources;
-    SaveController& saveContr;
+    SaveHelper& saveHelper;
     std::vector<SaveSlot> saveSlots;
     VerticalMenuWidget menu;
     Mode mode = Mode::Save;

@@ -41,12 +41,12 @@ namespace openAITD {
         MenuScreenState state = MenuScreenState::main;
         MenuScreenResult result = MenuScreenResult::none;
 
-        MenuScreen(World& world, SaveController& saveContr)
+        MenuScreen(World& world, SaveHelper& saveHelper)
             : world(world),
             resources(*world.resources),
             options(world),
             mainMenu(resources.texts.mainFont, raylib::Rectangle{0,0,1,1}, 10),
-            savesScreen(resources, saveContr)
+            savesScreen(resources, saveHelper)
         {}
 
         ~MenuScreen() = default;

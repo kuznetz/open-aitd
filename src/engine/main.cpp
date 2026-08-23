@@ -4,6 +4,7 @@
 #include "../platform/platform.h"
 #include "./resources/resources.h"
 #include "./world/world.h"
+#include "./world/save_helper.h"
 
 #include "./renderers/camera_renderer.h"
 #include "./renderers/freelook_renderer.h"
@@ -20,7 +21,6 @@
 #include "./controllers/life_controller.h"
 #include "./controllers/tracks_controller.h"
 #include "./controllers/particle_controller.h"
-#include "./controllers/save_controller.h"
 
 #include "./screens/found_screen.h"
 #include "./screens/inventory_screen.h"
@@ -70,9 +70,9 @@ namespace openAITD {
     BookScreen bookScreen(world);
     PictureScreen pictureScr(&world);
     LifeController lifeContr(&world, &tracksContr, &playerContr, &hitContr, &throwContr, &physContr, &foundScreen, &shootContr);
-    SaveController saveContr(&world, &lifeContr);
+    SaveHelper saveHelper(&world, &lifeContr);
     ConsoleScreen consoleScreen(&world);
-    MenuScreen mainMenu(world, saveContr);
+    MenuScreen mainMenu(world, saveHelper);
     CharSelectScreen charSelectScreen(world);
 
     bool freeLook = false;
@@ -97,7 +97,7 @@ namespace openAITD {
     void loadGame(int slot) {
         startGame();
         try {
-            saveContr.load(mainMenu.saveSlot);
+            saveHelper.load(mainMenu.saveSlot);
         } catch (exception e) {
             cout << e.what() << endl;
         }
@@ -264,7 +264,7 @@ namespace openAITD {
             state = AppState::InWorld;
             break;
         case MenuScreenResult::saveGame:
-            saveContr.save(mainMenu.saveSlot);
+            saveHelper.save(mainMenu.saveSlot);
             world.messageText = "Game saved...";
             world.messageTime = 2;
             state = AppState::InWorld;
