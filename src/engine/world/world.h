@@ -45,6 +45,31 @@ namespace openAITD {
 		int readAudio = -1;
 	};
 
+	struct Shake {
+			bool active = false;
+			bool fadingOut = false;
+			float intensity = 0.0f;          // current amplitude
+			float maxIntensity = 0.01f;      // max amplitude (5% screen height)
+			float fadeInTime = 0.3f;
+			float fadeOutTime = 0.5f;
+			float offsetX = 0.0f;            // in pixels
+			float offsetY = 0.0f;
+			float time = 0.0f;
+
+			void start() {
+					active = true;
+					fadingOut = false;
+					intensity = 0.0f;
+					time = 0.0f;
+			}
+
+			void stop() {
+					if (active && !fadingOut) {
+							fadingOut = true;
+					}
+			}
+	};
+
 	//Store all dynamic data in game
 	class World {
 	public:
@@ -95,6 +120,9 @@ namespace openAITD {
 
 		//Showed image
 		Picture picture;
+
+		//Shake screen
+		Shake shake;
 
 		Vector3 debugShootFrom;
 		Vector3 debugShootTo;

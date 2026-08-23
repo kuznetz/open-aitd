@@ -39,17 +39,23 @@ namespace openAITD {
 
       void render(float brightness = 1) {
           auto& c = resources.config;
+          float offX = world.shake.offsetX;
+          float offY = world.shake.offsetY;
+
           if (brightness != 1) {
-            BeginShaderMode(brightnessShader);
-            brightnessFactor = {brightness,brightness,brightness};
-            SetShaderValue(brightnessShader, shUniformLoc, &brightnessFactor, SHADER_UNIFORM_VEC3);
-            DrawTextureRec(resources.screen.sceneTex.texture,
-                          { 0, 0, (float)c.screenW, (float)-c.screenH },
-                          { 0, 0 },
-                          WHITE);
-            EndShaderMode();							
+              BeginShaderMode(brightnessShader);
+              brightnessFactor = { brightness, brightness, brightness };
+              SetShaderValue(brightnessShader, shUniformLoc, &brightnessFactor, SHADER_UNIFORM_VEC3);
+              DrawTextureRec(resources.screen.sceneTex.texture,
+                            { 0, 0, (float)c.screenW, (float)-c.screenH },
+                            { offX, offY },
+                            WHITE);
+              EndShaderMode();
           } else {
-            DrawTextureRec(resources.screen.sceneTex.texture, { 0, 0, (float)c.screenW, (float)-c.screenH }, { 0,0 }, WHITE);
+              DrawTextureRec(resources.screen.sceneTex.texture,
+                            { 0, 0, (float)c.screenW, (float)-c.screenH },
+                            { offX, offY },
+                            WHITE);
           }
       }
 

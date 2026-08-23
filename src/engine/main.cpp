@@ -21,6 +21,7 @@
 #include "./controllers/life_controller.h"
 #include "./controllers/tracks_controller.h"
 #include "./controllers/particle_controller.h"
+#include "./controllers/shake_controller.hpp"
 
 #include "./screens/found_screen.h"
 #include "./screens/inventory_screen.h"
@@ -56,6 +57,7 @@ namespace openAITD {
     CameraRenderer renderer(&world);
     FreelookRenderer flRenderer(&world);
     SceneRenderer sceneRend(world);
+    
     ThrowController throwContr(&world);
     PhysicsController physContr(&resources, &world, &foundScreen);
     CameraController camContr(world);
@@ -66,6 +68,8 @@ namespace openAITD {
     PlayerController playerContr(&world);
     TracksController tracksContr(&world);
     ParticleController particleContr(world);
+    ShakeController shakeContr(world);
+
     InventoryScreen inventoryScreen(&world);
     BookScreen bookScreen(world);
     PictureScreen pictureScr(&world);
@@ -211,6 +215,7 @@ namespace openAITD {
                 throwContr.process(partDelta);
                 physContr.process(partDelta);
                 particleContr.process(partDelta);
+                shakeContr.process(partDelta);
                 camContr.process();
                 objrotContr.process(partDelta);
                 if (world.messageTime > 0) {

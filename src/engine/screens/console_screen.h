@@ -84,6 +84,8 @@ namespace openAITD {
         ShowObjectInfo(tokens);
       } else if (cmd == 'V') {
         SetValue(tokens);
+      } else if (cmd == 'S') {
+        ShakeScreen(tokens);
       } else {
         ShowHelp();
       }
@@ -102,6 +104,7 @@ namespace openAITD {
       lines[3] = "T {OBJECT_ID} - Take item";
       lines[4] = "O {OBJECT_ID} - Object info";
       lines[5] = "V {VAR_ID} {VALUE} - Set value";
+      lines[6] = "S {1/0} - Shake screen";
     }
 
     template<typename... Args> std::string BuildString(Args&&... args) {
@@ -240,6 +243,15 @@ namespace openAITD {
       } catch (exception e) {
         lines[0] = "Invalid object ID";
         ShowHelp();
+      }
+    }
+
+    void ShakeScreen(const vector<string>& tokens) {
+      int setShake = std::stoi(tokens.at(1));
+      if (setShake) {
+        world->shake.start();
+      } else {
+        world->shake.stop();
       }
     }
 
