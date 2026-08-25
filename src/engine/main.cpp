@@ -244,7 +244,7 @@ namespace openAITD {
             renderer.render();
         }
         resources.screen.begin();
-        sceneRend.render(world.brightnessCur);
+        sceneRend.render();
         renderMessage();
         resources.screen.end();
     }
@@ -364,7 +364,7 @@ namespace openAITD {
     void render() {
         if (state == AppState::MainMenu) {
             resources.screen.begin();
-            sceneRend.render(world.brightnessCur);
+            sceneRend.render();
             mainMenu.render();
             resources.screen.end();
         }
@@ -386,7 +386,7 @@ namespace openAITD {
         }
         else if (state == AppState::Inventory) {
             resources.screen.begin();
-            sceneRend.render(world.brightnessCur);
+            sceneRend.render();
             inventoryScreen.render();
             resources.screen.end();
         }

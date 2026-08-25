@@ -40,7 +40,7 @@ namespace openAITD {
 		int shTextureColorLoc = 0;
 		int shTextureMaskLoc = 0;
 
-		RenderTexture2D maskTex;
+		RenderTexture2D objMaskTex;
 		RenderTexture2D colorTex;
 		float scale3dTex = 1;
 
@@ -56,7 +56,7 @@ namespace openAITD {
 			scale3dTex = resources->config.antialiasing;
 			colorTex = LoadRenderTexture(cfg.screenW * scale3dTex, cfg.screenH * scale3dTex);
 			SetTextureFilter(colorTex.texture, (scale3dTex == 1.0)? TEXTURE_FILTER_POINT: TEXTURE_FILTER_BILINEAR);
-			maskTex = LoadRenderTexture(cfg.screenW, cfg.screenH);
+			objMaskTex = LoadRenderTexture(cfg.screenW, cfg.screenH);
 
 			//maskShader = LoadShaderFromMemory(vertexShaderSrc, fragmentShaderSrc);
 			maskShader = LoadShader(
@@ -86,7 +86,7 @@ namespace openAITD {
 		}
 
 		void renderMask(const raylib::Rectangle& r) {
-				BeginTextureMode(maskTex);
+				BeginTextureMode(objMaskTex);
 				ClearBackground(BLACK);
 				BeginBlendMode(BLEND_ADDITIVE);
 
@@ -133,15 +133,15 @@ namespace openAITD {
 		}
 
 		void renderMasked(const Texture2D tex, const raylib::Rectangle& r) {
-			float width = maskTex.texture.width;
-			float height = maskTex.texture.height;
+			float width = objMaskTex.texture.width;
+			float height = objMaskTex.texture.height;
 			Vector2 topLeft = { 
 				r.x / width,
 				(height - r.y) / height
 			};
 			Vector2 botRight = {
 				(r.x + r.width) / width,
-				(height - (r.y+r.height)) / height
+				(height - (r.y + r.height)) / height
 			};
 			
 			rlSetTexture(tex.id);
@@ -326,7 +326,7 @@ namespace openAITD {
 								BeginBlendMode(BLEND_ALPHA);
 								BeginShaderMode(maskShader);
 								SetShaderValueTexture(maskShader, shTextureColorLoc, colorTex.texture);
-								SetShaderValueTexture(maskShader, shTextureMaskLoc, maskTex.texture);
+								SetShaderValueTexture(maskShader, shTextureMaskLoc, objMaskTex.texture);
 								renderMasked(colorTex.texture, r);
 								EndShaderMode();
 								EndBlendMode();

@@ -14,7 +14,8 @@ namespace openAITD {
     {
     public:
         Config& config;
-        RenderTexture sceneTex;
+        RenderTexture sceneTex = {0};
+				RenderTexture maskTex = {0};
 				bool fullscreen = false;
 				bool initialized = false;
 
@@ -26,6 +27,7 @@ namespace openAITD {
         ~Screen() {
             if (!initialized) return;
             UnloadRenderTexture(sceneTex);
+						UnloadRenderTexture(maskTex);
         }
 
         void init() {
@@ -53,6 +55,7 @@ namespace openAITD {
 						SetTargetFPS(config.targetFps);					
 
 						sceneTex = LoadRenderTexture(config.screenW, config.screenH);
+						maskTex = LoadRenderTexture(config.screenW, config.screenH);
 					
 						initialized = true;
         }
@@ -84,7 +87,10 @@ namespace openAITD {
 						}
 
 						UnloadRenderTexture(sceneTex);
+						UnloadRenderTexture(maskTex);
+
 						sceneTex = LoadRenderTexture(config.screenW, config.screenH);
+						maskTex = LoadRenderTexture(config.screenW, config.screenH);
 				}				
 
 				void begin() {

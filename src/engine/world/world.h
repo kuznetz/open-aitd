@@ -134,7 +134,9 @@ namespace openAITD {
 		Vector3 debugShootTo;
 
 		float waterLevel = -1000;
-    float brightnessCur = 1;
+    
+		int lightSpotObjId = -1;
+		float brightnessCur = 1;
     float brightnessTrg = 1;
 
 		World(Resources* res)
