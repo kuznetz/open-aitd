@@ -6,23 +6,17 @@
 #include "../../common/raylib_cpp.hpp"
 
 using namespace std;
+using namespace raylib;
 namespace openAITD {
 
 	class BaseRenderer {
 	public:
 		World* world;
 		Resources* resources;
-		Camera mainCamera = {
-			{ 0.0f, 0, -5 },
-			{ 0.0f, 0.0f, 0.0f },
-			{ 0.0f, 1.0f, 0.0f },   // mainCamera up vector (rotation towards target)
-			60.,
-			CAMERA_PERSPECTIVE
-		};
+
 		int curStageId = -1;
 		int curCameraId = -1;
 		WCamera* curCamera = 0;
-		Matrix perspective;
 
 		const int getScreenW() { return resources->config.screenW; }
 		const int getScreenH() { return resources->config.screenH; }
@@ -41,12 +35,6 @@ namespace openAITD {
 			printf("Load Camera %d\n", newCameraId);
 			curCameraId = newCameraId;
 			curCamera = &resources->stages[world->curStageId].cameras[newCameraId];
-			auto& camPers = curCamera->pers;
-			perspective = MatrixPerspective(camPers.yfov, camPers.aspectRatio, camPers.znear, camPers.zfar);
-
-			mainCamera.position = curCamera->position;
-			mainCamera.target = Vector3Add(curCamera->position, Vector3Negate(Vector3RotateByQuaternion({ 0,0,1 }, curCamera->rotation)));
-			mainCamera.up = Vector3RotateByQuaternion({ 0,1,0 }, curCamera->rotation);
 		}
 
 		void clearCamera()
@@ -57,18 +45,59 @@ namespace openAITD {
 		}
 
 		Vector3 GetWorldToScreenZ(Vector3 position) {
-			const int& width = getScreenW();
-			const int& height = getScreenH();
-			auto& matProj = perspective;
-			Matrix matView = MatrixLookAt(mainCamera.position, mainCamera.target, mainCamera.up);
-			Vector3 depth = Vector3Transform(position, matView);
-			Quaternion worldPos = { position.x, position.y, position.z, 1.0f };
-			worldPos = QuaternionTransform(worldPos, matView);
-			worldPos = QuaternionTransform(worldPos, matProj);
-			Vector3 ndcPos = { worldPos.x / worldPos.w, -worldPos.y / worldPos.w, worldPos.z / worldPos.w };
-			Vector3 screenPosition = { (ndcPos.x + 1.0f) / 2.0f * (float)width, (ndcPos.y + 1.0f) / 2.0f * (float)height, -depth.z };
-			return screenPosition;
+				// Get screen dimensions (in pixels)
+				const int width  = getScreenW();
+				const int height = getScreenH();
+
+				// Retrieve the view and projection matrices from the camera
+				const Matrix& view = world->cameraView;
+				const Matrix& proj = world->cameraProjection;
+
+				// ---- Helper functions to multiply a vector by a 4x4 matrix ----
+				// Multiply a 3D vector (with w implicitly = 1) by a 4x4 matrix, returning a 4D vector
+				auto multiply3 = [](Vector3 v, const Matrix& m) -> Vector4 {
+						return {
+								v.x * m.m0 + v.y * m.m4 + v.z * m.m8  + 1.0f * m.m12,
+								v.x * m.m1 + v.y * m.m5 + v.z * m.m9  + 1.0f * m.m13,
+								v.x * m.m2 + v.y * m.m6 + v.z * m.m10 + 1.0f * m.m14,
+								v.x * m.m3 + v.y * m.m7 + v.z * m.m11 + 1.0f * m.m15
+						};
+				};
+
+				// Multiply a 4D vector by a 4x4 matrix
+				auto multiply4 = [](const Vector4& v, const Matrix& m) -> Vector4 {
+						return {
+								v.x * m.m0 + v.y * m.m4 + v.z * m.m8  + v.w * m.m12,
+								v.x * m.m1 + v.y * m.m5 + v.z * m.m9  + v.w * m.m13,
+								v.x * m.m2 + v.y * m.m6 + v.z * m.m10 + v.w * m.m14,
+								v.x * m.m3 + v.y * m.m7 + v.z * m.m11 + v.w * m.m15
+						};
+				};
+				// ----------------------------------------------------------
+
+				// 1. Transform world position to view space (camera space)
+				Vector4 viewPos = multiply3(position, view);
+
+				// 2. Transform view-space position to clip space (homogeneous coordinates)
+				Vector4 clipPos = multiply4(viewPos, proj);
+
+				// 3. Perspective division: convert from clip space to normalized device coordinates (NDC)
+				if (clipPos.w != 0.0f) {
+						clipPos.x /= clipPos.w;
+						clipPos.y /= clipPos.w;
+						clipPos.z /= clipPos.w;
+				}
+
+				// 4. NDC → screen coordinates
+				//    NDC x,y in [-1,1] map to [0,width] and [0,height].
+				//    In raylib, the screen Y axis points downward, so we flip the Y coordinate.
+				float screenX = (clipPos.x + 1.0f) * 0.5f * width;
+				float screenY = (1.0f - (clipPos.y + 1.0f) * 0.5f) * height;
+				float screenZ = clipPos.z;   // depth in NDC range [-1,1], useful for sorting
+
+				return { screenX, screenY, screenZ };
 		}
+
 
 		void boundsToScreen(const Bounds& bb, Rectangle& rect, float& zPos) {
 				// 8 corners of the AABB: bottom face (y = min) then top face (y = max)

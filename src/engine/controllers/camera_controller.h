@@ -30,7 +30,7 @@ public:
         // Find the closest camera in the current scene
         auto camId = world.curStage->closestCamera(pos);
         if (camId != -1) {
-            world.curCameraId = camId;
+            world.setCamera(camId);
         }
     }
 };

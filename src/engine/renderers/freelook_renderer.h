@@ -25,9 +25,16 @@ namespace openAITD {
 		int invX = 0;
 		int invZ = 0;
 
+		Camera mainCamera = {
+			{ 0.0f, 0, -5 },
+			{ 0.0f, 0.0f, 0.0f },
+			{ 0.0f, 1.0f, 0.0f },   // mainCamera up vector (rotation towards target)
+			60.,
+			CAMERA_PERSPECTIVE
+		};
+
 		FreelookRenderer(World* world) : BaseRenderer(world)
 		{
-
 		}
 
 		void renderBounds() {
@@ -274,6 +281,9 @@ namespace openAITD {
 			if (world->curStageId != curStageId || world->curCameraId != curCameraId) {
 				curStageId = world->curStageId;
 				loadCamera(world->curCameraId);
+				mainCamera.position = curCamera->position;
+				mainCamera.target = Vector3Add(curCamera->position, Vector3Negate(Vector3RotateByQuaternion({ 0,0,1 }, curCamera->rotation)));
+				mainCamera.up = Vector3RotateByQuaternion({ 0,1,0 }, curCamera->rotation);				
 			}
 
 			endDebugObjs = debugObjs;
@@ -299,7 +309,10 @@ namespace openAITD {
 				//auto& screenPos = GetWorldToScreenZ(pos);
 				//if (screenPos.z < 0) continue;
 				BeginMode3D(mainCamera);
-				if (curCamera) rlSetMatrixProjection(perspective);
+				if (curCamera) {
+					rlSetMatrixProjection(world->cameraProjection);
+					//rlSetMatrixModelview(world->cameraView);
+				}
 				renderObjectEx(gobj, WHITE);
 				EndMode3D();
 
@@ -323,8 +336,10 @@ namespace openAITD {
 			//}
 
 			BeginMode3D(mainCamera);
-				//rlSetMatrixModelview(curCamera->modelview);
-				if (curCamera) rlSetMatrixProjection(perspective);
+				if (curCamera) {
+					rlSetMatrixProjection(world->cameraProjection);
+					//rlSetMatrixModelview(world->cameraView);
+				}
 				DrawCube({ 0,0,0 }, 0.2, 0.2, 0.2, GREEN);
 				renderBounds();
 				renderZones();

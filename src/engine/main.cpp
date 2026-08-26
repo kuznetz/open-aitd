@@ -119,7 +119,7 @@ namespace openAITD {
 
         world.curStage = &resources.stages[world.nextStageId];
         world.curStageId = world.nextStageId;
-        world.curCameraId = -1;
+        world.setCamera(-1);
         world.preload();
 
         //reset animation

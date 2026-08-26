@@ -107,6 +107,10 @@ namespace openAITD {
 		Room* curRoom = 0;
 		
 		int curCameraId = -1;
+		WCamera* curCamera = nullptr;
+    Matrix cameraView;
+		Matrix cameraProjection;
+
 		//Object to follow camera
 		GameObject* followTarget = 0;
 
@@ -145,6 +149,25 @@ namespace openAITD {
 			// partGroup.active = true;
 			// partGroup.stageId = 0;
 			// partGroup.roomId = 0;
+		}
+
+		void setCamera(int cameraId) {
+			curCameraId = cameraId;
+			if (cameraId == -1) return;
+
+			curCamera = &curStage->cameras[cameraId];
+			auto& camPers = curCamera->pers;
+			cameraProjection = raylib::MatrixPerspective(camPers.yfov, camPers.aspectRatio, camPers.znear, camPers.zfar);
+      //view matrix
+			// raylib::Camera3D mainCamera;
+			// mainCamera.position = curCamera->position;
+			// mainCamera.target = Vector3Add(curCamera->position, Vector3Negate(Vector3RotateByQuaternion({ 0,0,1 }, curCamera->rotation)));
+			// mainCamera.up = Vector3RotateByQuaternion({ 0,1,0 }, curCamera->rotation);	
+			this->cameraView = raylib::MatrixLookAt(
+					curCamera->position,
+					Vector3Add(curCamera->position, Vector3Negate(Vector3RotateByQuaternion({0, 0, 1}, curCamera->rotation))),
+					Vector3RotateByQuaternion({0, 1, 0}, curCamera->rotation)
+			);
 		}
 
 		bool isObjectActive(const GameObject& gobj) {

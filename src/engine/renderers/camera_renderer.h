@@ -208,6 +208,15 @@ namespace openAITD {
 				}
 		}
 
+		void MyBeginMode3D()
+		{
+				rlDrawRenderBatchActive();      // Update and draw internal render batch
+				rlPushMatrix();                 // Save previous matrix, which contains the settings for the 2d ortho projection
+				rlSetMatrixProjection(world->cameraProjection);
+				rlSetMatrixModelview(world->cameraView);
+				rlEnableDepthTest();            // Enable DEPTH_TEST for 3D
+		}
+
 		void render() {
 				if (maskShader.id == 0) {
 						initShaders();
@@ -305,21 +314,19 @@ namespace openAITD {
 								renderMask(r);
 								BeginTextureMode(colorTex);
 								ClearBackground(BLANK);
-								
-								BeginMode3D(mainCamera);
-								rlSetMatrixProjection(perspective);
 
 								auto* gobjPtr = std::get_if<GameObject*>(&renderIter->renderable);
 								if (gobjPtr) {
+    								MyBeginMode3D();
 										objectRend.renderObject(**gobjPtr);
+    								EndMode3D();
 								} else {
 										auto* pgPtr = std::get_if<ParticleGroup*>(&renderIter->renderable);
 										if (pgPtr) {
-												particleRend.render(**pgPtr, mainCamera);
+												particleRend.render(**pgPtr);
 										}
 								}
 
-								EndMode3D();
 								EndTextureMode();
 
 								BeginTextureMode(resources->screen.sceneTex);
