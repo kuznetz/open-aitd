@@ -3,98 +3,13 @@
 
 #include "config.h"
 
-//////////////// GAME SPECIFIC DEFINES
-
-#define NUM_MAX_CAMERA_IN_ROOM 20
-//#define NUM_MAX_OBJ         300
-#define NUM_MAX_OBJECT       50
-#define NUM_MAX_TEXT        40
-#define NUM_MAX_MESSAGE     5
-
-
-// 250
-#define NUM_MAX_TEXT_ENTRY  1000
-
-//////////////////
-
-enum enumCVars
-{
-	SAMPLE_PAGE,
-	BODY_FLAMME,
-	MAX_WEIGHT_LOADABLE,
-	TEXTE_CREDITS,
-	SAMPLE_TONNERRE,
-	INTRO_DETECTIVE,
-	INTRO_HERITIERE,
-	WORLD_NUM_PERSO,
-	CHOOSE_PERSO,
-	SAMPLE_CHOC,
-	SAMPLE_PLOUF,
-	REVERSE_OBJECT,
-	KILLED_SORCERER,
-	LIGHT_OBJECT,
-	FOG_FLAG,
-	DEAD_PERSO,
-	JET_SARBACANE,
-	TIR_CANON,
-	JET_SCALPEL,
-	POIVRE,
-	DORTOIR,
-	EXT_JACK,
-	NUM_MATRICE_PROTECT_1,
-	NUM_MATRICE_PROTECT_2,
-	NUM_PERSO,
-	TYPE_INVENTAIRE,
-	PROLOGUE,
-	POIGNARD,
-	MATRICE_FORME,
-	MATRICE_COULEUR,
-
-	UNKNOWN_CVAR // for table padding, shouldn't be called !
-};
-
-typedef enum enumCVars enumCVars;
-
-extern int AITD1KnownCVars[];
-extern int AITD2KnownCVars[];
-extern int* currentCVarTable;
-
-int getCVarsIdx(enumCVars);
-int getCVarsIdx(int);
-
-//////////////////////
-
-#define	SAMPLE_PAGE				0
-#define	BODY_FLAMME				1
-#define	MAX_WEIGHT_LOADABLE		2
-#define	TEXTE_CREDITS			3
-#define	SAMPLE_TONNERRE			4
-#define	INTRO_DETECTIVE			5
-#define	INTRO_HERITIERE			6
-#define	WORLD_NUM_PERSO			7
-#define	CHOOSE_PERSO			8
-#define	SAMPLE_CHOC				9
-#define	SAMPLE_PLOUF			10
-#define	REVERSE_OBJECT			11
-#define	KILLED_SORCERER			12
-#define	LIGHT_OBJECT			13
-#define	FOG_FLAG				14
-#define	DEAD_PERSO				15
-
-
-//////////////////
-
-#if !AITD_UE4
 typedef unsigned char uint8;
 typedef unsigned short uint16;
 typedef unsigned long uint32;
-#ifndef UNIX
 typedef unsigned int uint;
-#endif
 typedef signed char int8;
 typedef signed short int16;
 typedef signed long int32;
-#endif
 
 typedef unsigned char U8;
 typedef unsigned short U16;
@@ -102,13 +17,6 @@ typedef unsigned long U32;
 typedef signed char S8;
 typedef signed short S16;
 typedef signed long S32;
-
-#define TYPE_MASK 0x1D1
-
-#define ANIM_ONCE             0
-#define ANIM_REPEAT           1
-#define ANIM_UNINTERRUPTABLE  2
-#define ANIM_RESET            4
 
 #ifdef UNIX
 #define FORCEINLINE static inline

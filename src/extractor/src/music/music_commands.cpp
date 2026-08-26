@@ -1,4 +1,4 @@
-#include "music-commands.h"
+#include "music_commands.h"
 
 void commandNop(channelTable2Element* entry, int param, u8* ptr)
 {

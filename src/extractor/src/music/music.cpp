@@ -1,8 +1,8 @@
 #include "common.h"
 #include "opl3.h"
 #include "music.h"
-#include "music-data.h"
-#include "music-commands.h"
+#include "music_data.h"
+#include "music_commands.h"
 
 #define musicSync 700
 
