@@ -23,6 +23,7 @@ namespace openAITD {
 
 	struct Background {
 		//Image background;
+		std::string texturePath;
 		Texture2D texture;
 		//vector<vector<Image>> masks;
 		vector<vector<BackgroundOverlay>> overlays;
@@ -110,18 +111,19 @@ namespace openAITD {
 		}
 
 		void setIsAltBackgrounds(bool newVal) {
-			if (isAltBackgrounds == newVal || curStageId == -1) return;
-			isAltBackgrounds = newVal;
-			auto curStage = &(*this->stages)[curStageId];
-			for (int camId = 0; camId < curStage->cameras.size(); camId++) {
-				UnloadTexture(items[camId].texture);
-				for (int j = 0; j < items[camId].overlays.size(); j++) {
-					for (int k = 0; k < items[camId].overlays[j].size(); k++) {
-						UnloadTexture(items[camId].overlays[j][k].texture);
-					}
-				}					
-				loadBackground(items[camId], curStage, curStageId, camId);
-			}
+				if (isAltBackgrounds == newVal || curStageId == -1) return;
+				isAltBackgrounds = newVal;
+				auto curStage = &(*this->stages)[curStageId];
+
+				for (int camId = 0; camId < curStage->cameras.size(); camId++) {
+						string newPath = getBackgroundPath(curStageId, camId, newVal);
+						if (newPath == items[camId].texturePath) {
+								continue;
+						}
+						UnloadTexture(items[camId].texture);
+						items[camId].texture = loadImageResized(newPath);
+						items[camId].texturePath = newPath;
+				}
 		}
 
     string getBackgroundPath(int stageId, int cameraId, bool isAltBg = false) {
@@ -139,26 +141,27 @@ namespace openAITD {
         return path;
     }
 
-		void loadBackground(Background& bg, Stage* curStage, int newStageId, int cameraId) {
-			string path = this->getBackgroundPath(newStageId, cameraId, isAltBackgrounds);
-			if (path == "" || !DataPath::FileExists(path)) {
-				throw runtime_error("Could not find background image: " + path);
-			}
-			bg.texture = this->loadImageResized(path);
+    void loadBackground(Background& bg, Stage* curStage, int newStageId, int cameraId) {
+        string path = this->getBackgroundPath(newStageId, cameraId, isAltBackgrounds);
+        if (path == "" || !DataPath::FileExists(path)) {
+            throw runtime_error("Could not find background image: " + path);
+        }
+        bg.texture = this->loadImageResized(path);
+        bg.texturePath = path;
 
-      string cameraDir = std::to_string(newStageId) + "/camera_" + std::to_string(cameraId);
-			auto& camRooms = curStage->cameras[cameraId].rooms;
-			bg.overlays.resize(camRooms.size());
-			for (int cr = 0; cr < camRooms.size(); cr++) {
-				bg.overlays[cr].resize(camRooms[cr].overlays.size());
-				for (int ovlId = 0; ovlId < camRooms[cr].overlays.size(); ovlId++) {
-					path = getImgStagePath(cameraDir + "/mask_" + to_string(cr) + "_" + to_string(ovlId) + ".png");
-					auto mskImg = raylib::LoadImage(path.c_str());
-					bg.overlays[cr][ovlId] = this->generateOverlayMask(mskImg);
-					UnloadImage(mskImg);
-				}
-			}
-		}
+        string cameraDir = std::to_string(newStageId) + "/camera_" + std::to_string(cameraId);
+        auto& camRooms = curStage->cameras[cameraId].rooms;
+        bg.overlays.resize(camRooms.size());
+        for (int cr = 0; cr < camRooms.size(); cr++) {
+            bg.overlays[cr].resize(camRooms[cr].overlays.size());
+            for (int ovlId = 0; ovlId < camRooms[cr].overlays.size(); ovlId++) {
+                string maskPath = getImgStagePath(cameraDir + "/mask_" + to_string(cr) + "_" + to_string(ovlId) + ".png");
+                auto mskImg = raylib::LoadImage(maskPath.c_str());
+                bg.overlays[cr][ovlId] = this->generateOverlayMask(mskImg);
+                UnloadImage(mskImg);
+            }
+        }
+    }
 
 		Background* get(int stageId, int roomId) {
 			loadStage(stageId);
