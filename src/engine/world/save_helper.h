@@ -51,7 +51,6 @@ namespace openAITD {
         }
 
         void save(int slot) {
-            auto& cVars = world.cVars;
             json outJson = json::object();
 
             if (world.followTarget) {
@@ -67,17 +66,13 @@ namespace openAITD {
                 outJson["vars"].push_back(world.vars[i]);
             }
 
-            outJson["cVars"] = json::array();
-            for (int i = 0; i < world.cVars.size(); i++) {
-                outJson["cVars"].push_back(world.cVars[i]);
-            }
-
             outJson["inventory"] = json::array();
             for (int i = 0; i < world.inventory.size(); i++) {
                 outJson["inventory"].push_back(world.inventory[i]->id);
             }
 
             outJson["altModels"] = world.altModels;
+            outJson["altBackgrounds"] = resources.backgrounds.isAltBackgrounds;
 
             outJson["objects"] = json::array();
             for (int i = 0; i < world.gobjects.size(); i++) {
@@ -155,11 +150,6 @@ namespace openAITD {
                     world.vars[i] = inJson["vars"][i];
                 }
 
-                world.cVars.resize(inJson["cVars"].size());
-                for (int i = 0; i < world.cVars.size(); i++) {
-                    world.cVars[i] = inJson["cVars"][i];
-                }
-
                 world.gobjects.clear();
                 world.gobjects.reserve(inJson["objects"].size());
                 for (int i = 0; i < inJson["objects"].size(); i++) {
@@ -216,7 +206,7 @@ namespace openAITD {
                 auto foll = world.followTarget;
                 world.setCurStage(foll->getStageId(), foll->getRoomId());
                 
-                resources.backgrounds.setIsAltBackgrounds(!!world.cVars[12]);
+                resources.backgrounds.setIsAltBackgrounds(inJson["altBackgrounds"]);
 
                 bool altModels = inJson.value("altModels", false);
                 world.setAltModels(altModels);

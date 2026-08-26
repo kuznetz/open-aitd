@@ -119,10 +119,25 @@ namespace openAITD {
 		
 			lua->CreateFunction([this](int rmax) -> int {
 				return rand() % rmax;
-				}, "RAND");
-			lua->CreateFunction([this](int i) -> int {
-				return this->world->cVars[i];
-				}, "GET_C");
+			}, "RAND");
+			
+  		// Deprecated, for comtatibility
+			lua->CreateFunction([this](int cvar) -> int {
+				return 0;
+			}, "GET_C");
+
+			lua->CreateFunction([this]() -> int {
+				return this->world->altModels ? 1 : 0;
+  		}, "ALT_MODELS");
+
+			lua->CreateFunction([this]() -> int {
+				return world->resources->backgrounds.isAltBackgrounds ? 1 : 0;
+			}, "ALT_BACKGROUNDS");
+
+      // Unknown code for cigar, script rewrited
+			lua->CreateFunction([this]() -> int {
+				return 0;
+			}, "CIGAR_STATE");
 
 			//player
 			lua->CreateFunction([this](int obj) -> int {
@@ -265,11 +280,24 @@ namespace openAITD {
 
 		void initInstructions() {
 			lua->CreateFunction([this](int i, int val) {
-				world->cVars[i] = val;
-				if (i == 12) {
-          world->resources->backgrounds.setIsAltBackgrounds(!!world->cVars[12]);
-			  }
+				//Not use, for compatibility
 			}, "SET_C");
+
+			lua->CreateFunction([this](int val) {
+				//Not use, in script set to -1 once
+			}, "SET_REVERSE_OBJECT");
+
+			lua->CreateFunction([this](int val) {
+        world->resources->backgrounds.setIsAltBackgrounds(val);
+			}, "SET_ALT_BACKGROUNDS");
+
+			lua->CreateFunction([this](int val) {
+				world->lightSpotObjId = val; 
+			}, "SET_LIGHT_OBJECT");
+
+			lua->CreateFunction([this](int val) {
+				//TODO: disable save
+			}, "SET_PLAYER_DEAD");
 			
 			lua->CreateFunction([this](int messId) {
 				this->world->messageText = resources->texts.getText(messId);

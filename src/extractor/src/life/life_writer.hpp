@@ -115,9 +115,22 @@ namespace AITDExtractor {
 					out << "GET(" << varName << ")";
 					return;
 			} else if (expr.type->type == EvalEnum::GET_C) {
-				  string varName = "CVars." + namesDecoders->cVar.getName(expr.arguments[0].constVal);
-					out << "GET_C(" << varName << ")";
-					return;
+          s16 cvarType = expr.arguments[0].constVal;
+					switch (cvarType) {
+						case 8:
+						  out << "ALT_MODELS()";
+							break;
+						case 12:
+						  out << "ALT_BACKGROUNDS()";
+							break;
+						case 14:
+						  out << "CIGAR_STATE()";
+							break;
+						default:
+							string varName = "CVars." + namesDecoders->cVar.getName(expr.arguments[0].constVal);
+							out << "GET_C(" << varName << ")";
+					}
+					return;				
 			}
 			out << expr.type->typeStr;
 			out << "(";
@@ -172,10 +185,35 @@ namespace AITDExtractor {
 					out << ")\n";
 					return;
 			} else if (instr.type->type == LifeEnum::SET_C) {
-				  string varName = "CVars." + namesDecoders->cVar.getName(instr.arguments[0].constVal);
-					out << "SET_C(" << varName << ", ";
-					writeLifeExpr(instr.arguments[1]);
-					out << ")\n";
+          s16 cvarType = instr.arguments[0].constVal;
+					switch (cvarType) {
+						case 11:
+						  //Not use?
+						  out << "SET_REVERSE_OBJECT(";
+							writeLifeExpr(instr.arguments[1]);
+							out << ")\n";
+							break;
+						case 12:
+						  out << "SET_ALT_BACKGROUNDS(";
+							writeLifeExpr(instr.arguments[1]);
+							out << ")\n";
+							break;
+						case 13:
+						  out << "SET_LIGHT_OBJECT(";
+							writeLifeExpr(instr.arguments[1]);
+							out << ")\n";
+							break;
+            case 15:
+						  out << "SET_PLAYER_DEAD(";
+							writeLifeExpr(instr.arguments[1]);
+							out << ")\n";
+							break;
+						default:
+							string varName = "CVars." + namesDecoders->cVar.getName(instr.arguments[0].constVal);
+							out << "SET_C(" << varName << ", ";
+							writeLifeExpr(instr.arguments[1]);
+							out << ")\n";
+					}
 					return;
 			} else if (instr.type->type == LifeEnum::SPECIAL) {
 				  s16 specialType = instr.arguments[0].constVal;

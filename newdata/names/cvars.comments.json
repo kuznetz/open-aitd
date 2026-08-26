@@ -7,12 +7,12 @@
     "5": "INTRO_DETECTIVE",
     "6": "INTRO_HERITIERE",
     "7": "WORLD_NUM_PERSO",
-    "8": "CHOOSE_PERSO", // only get
+    "8": "ALT_MODELS", // only get
     "9": "SAMPLE_CHOC",
     "10": "SAMPLE_PLOUF",
     "11": "REVERSE_OBJECT", // only set -1
     "12": "ALT_BACKGROUNDS", // get and set
     "13": "LIGHT_OBJECT", // only set
-    "14": "FOG_FLAG", // only get - cigar script
+    "14": "CIGAR_STATE", // only get - cigar script
     "15": "PLAYER_DEAD" // only set - cannot save, fast exit
 }

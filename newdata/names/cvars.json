@@ -7,12 +7,12 @@
     "5": "INTRO_DETECTIVE",
     "6": "INTRO_HERITIERE",
     "7": "WORLD_NUM_PERSO",
-    "8": "CHOOSE_PERSO",
+    "8": "ALT_MODELS",
     "9": "SAMPLE_CHOC",
     "10": "SAMPLE_PLOUF",
     "11": "REVERSE_OBJECT",
     "12": "ALT_BACKGROUNDS",
     "13": "LIGHT_OBJECT",
-    "14": "FOG_FLAG",
+    "14": "CIGAR_STATE",
     "15": "PLAYER_DEAD"
 }

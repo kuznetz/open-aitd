@@ -86,7 +86,6 @@ namespace openAITD {
 		vector<GameObject*> inventory;	
 
 		vector<short int> vars;
-		vector<short int> cVars;
 		Player player;
 		
 		float chrono = 0;
@@ -363,10 +362,6 @@ namespace openAITD {
 		vars.resize(objsJson["vars"].size());
 		for (int i = 0; i < objsJson["vars"].size(); i++) {
 			vars[i] = objsJson["vars"][i];
-		}
-		cVars.resize(objsJson["cVars"].size());
-		for (int i = 0; i < objsJson["cVars"].size(); i++) {
-			cVars[i] = objsJson["cVars"][i];
 		}
 	};
 
