@@ -28,12 +28,6 @@ namespace openAITD {
 		vector<vector<BackgroundOverlay>> overlays;
 	};
 
-	struct AltBackground {
-		int stageId;
-		int cameraId;
-		int imageId;
-	};
-
 	struct IntRect {
 		int x;
 		int y;
@@ -47,13 +41,11 @@ namespace openAITD {
 		Config* config = 0;
 		vector<Stage>* stages = 0;
 		vector<Background> items;
-		vector<AltBackground> altBackgrounds;
 
 		int curPictureId = -1;
 		bool isAltBackgrounds = false;
 
 		string picturesDir = "pictures";
-		string altBackgroundsDir = "alt_bg";
 		raylib::Texture2D picture = { 0 };
 
 		Backgrounds() {
@@ -105,19 +97,6 @@ namespace openAITD {
 			return path;
 		}
 
-		void loadAltBackgrounds() {
-			const string path = "newdata/alt_bg.json";
-			if (!std::filesystem::exists(path)) return;
-			std::ifstream ifs(path);
-			auto objsJson = json::parse(ifs);
-			altBackgrounds.resize(objsJson.size());
-			for (int i = 0; i < objsJson.size(); i++) {
-				altBackgrounds[i].cameraId = objsJson[i]["cameraId"];
-				altBackgrounds[i].stageId = objsJson[i]["stageId"];				
-				altBackgrounds[i].imageId = objsJson[i]["imageId"];
-			}
-		}
-
 		void loadStage(int newStageId)
 		{
 			if (newStageId == curStageId) return;
@@ -135,38 +114,39 @@ namespace openAITD {
 			isAltBackgrounds = newVal;
 			auto curStage = &(*this->stages)[curStageId];
 			for (int camId = 0; camId < curStage->cameras.size(); camId++) {
-				AltBackground* altBg = getAltBg(curStageId, camId);
-				if (altBg) {
-					UnloadTexture(items[camId].texture);
-					for (int j = 0; j < items[camId].overlays.size(); j++) {
-						for (int k = 0; k < items[camId].overlays[j].size(); k++) {
-							UnloadTexture(items[camId].overlays[j][k].texture);
-						}
-					}					
-					loadBackground(items[camId], curStage, curStageId, camId);
-				}
+				UnloadTexture(items[camId].texture);
+				for (int j = 0; j < items[camId].overlays.size(); j++) {
+					for (int k = 0; k < items[camId].overlays[j].size(); k++) {
+						UnloadTexture(items[camId].overlays[j][k].texture);
+					}
+				}					
+				loadBackground(items[camId], curStage, curStageId, camId);
 			}
 		}
 
-		void loadBackground(Background& bg, Stage* curStage, int newStageId, int cameraId) {
-			AltBackground* altBg = nullptr;	
-			if (isAltBackgrounds) {
-				altBg = getAltBg(newStageId, cameraId);
-			}
-			string cameraDir = to_string(newStageId) + "/camera_" + to_string(cameraId);
-			string path;
-			if (altBg != nullptr) {
-				path = DataPath::GetFile(altBackgroundsDir + "/" + to_string(altBg->imageId) + ".png");
-			} else {
-				path = getImgStagePath(cameraDir + "/background.png");
-			}
+    string getBackgroundPath(int stageId, int cameraId, bool isAltBg = false) {
+        string cameraDir = "stages/" + std::to_string(stageId) + "/camera_" + std::to_string(cameraId);
+				string path;
+        if (isAltBg) {
+					path = DataPath::GetFile(cameraDir + "/background_alt.png");
+					if (path == "") {
+	          path = DataPath::GetFile(cameraDir + "/background.png");
+					}
+        } else {
+          path = DataPath::GetFile(cameraDir + "/background.png");
+        }
+  			if (path == "")	throw std::runtime_error((string("Background ") + to_string(stageId) + "/" + to_string(cameraId) +" not exists").c_str());
+        return path;
+    }
 
+		void loadBackground(Background& bg, Stage* curStage, int newStageId, int cameraId) {
+			string path = this->getBackgroundPath(newStageId, cameraId, isAltBackgrounds);
 			if (path == "" || !DataPath::FileExists(path)) {
 				throw runtime_error("Could not find background image: " + path);
 			}
-
 			bg.texture = this->loadImageResized(path);
 
+      string cameraDir = std::to_string(newStageId) + "/camera_" + std::to_string(cameraId);
 			auto& camRooms = curStage->cameras[cameraId].rooms;
 			bg.overlays.resize(camRooms.size());
 			for (int cr = 0; cr < camRooms.size(); cr++) {
@@ -187,15 +167,6 @@ namespace openAITD {
 
 	private:
 		int curStageId  = -1;
-
-		AltBackground* getAltBg(int newStageId, int cameraId) {
-			for (auto& i : altBackgrounds) {
-				if (i.stageId == newStageId && i.cameraId == cameraId) {
-					return &i;
-				}
-			}
-			return nullptr;
-		}
 
 		Image resizeImg(Image& src, int w, int h) {
 			Image res = { 0, w, h, 1, src.format };

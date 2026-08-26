@@ -35,6 +35,20 @@
 
 namespace AITDExtractor {
 
+	struct AltBackground {
+		int stageId;
+		int cameraId;
+		int imageId;
+	};
+
+    AltBackground altBackgrounds[] = {
+        { 7, 0, 15 },
+        { 7, 1, 16 },
+        { 6, 0, 17 },
+        { 6, 5, 18 },
+        { 6 ,8, 19 }
+    };
+
     class AITDExtractor : public IAITDExtractor {
     public:
         AITDExtractor();
@@ -347,13 +361,14 @@ namespace AITDExtractor {
         processPicture(picsPak, 10, dir + "/0.png");
         processPicture(picsPak, 14, dir + "/1.png");
 
-        dir = "data/alt_bg";
-        std::filesystem::create_directories(dir);
-        processPicture(picsPak, 15, dir + "/15.png");
-        processPicture(picsPak, 16, dir + "/16.png");
-        processPicture(picsPak, 17, dir + "/17.png");
-        processPicture(picsPak, 18, dir + "/18.png");
-        processPicture(picsPak, 19, dir + "/19.png");
+        for (auto& altBg : altBackgrounds ) {
+            string path = 
+              ExtractorPath::data + 
+              "/stages/" + to_string(altBg.stageId) +
+              "/camera_" + to_string(altBg.cameraId) +
+              "/background_alt.png";
+            processPicture(picsPak, altBg.imageId, path);
+        }
     }
 
     void AITDExtractor::extractAllData(bool floppy) {
