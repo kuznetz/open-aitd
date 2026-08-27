@@ -1,6 +1,5 @@
 ﻿#pragma once
 #include <vector>
-#include <vector>
 #include <string>
 #include <variant>
 #include "../../common/raylib_cpp.hpp"
@@ -9,341 +8,225 @@
 #include "./base_renderer.h"
 #include "./particle_renderer.hpp"
 #include "./object_renderer.hpp"
+#include "./mask_renderer.hpp"
 
 using namespace std;
 namespace openAITD {
 
-	struct RenderOrder {
-		RenderOrder* next = 0;
-		std::variant<GameObject*, ParticleGroup*> renderable;
-		float zPos;
-		Bounds bb;
-		raylib::Rectangle screenRect;
-	};
+    struct RenderOrder {
+        RenderOrder* next = 0;
+        std::variant<GameObject*, ParticleGroup*> renderable;
+        float zPos;
+        Bounds bb;
+        raylib::Rectangle screenRect;
+    };
 
-	class CameraRenderer : public BaseRenderer {
-	public:
-		Resources* resources;
-		ParticleRenderer particleRend;
-    ObjectRenderer objectRend;
+    class CameraRenderer : public BaseRenderer {
+    public:
+        Resources* resources;
+        ParticleRenderer particleRend;
+        ObjectRenderer objectRend;
+        MaskRenderer maskRenderer;
 
-		std::vector<RenderOrder> renderQueue;
-		RenderOrder* renderStart = 0;
-		RenderOrder* renderIter = 0;
-		RenderOrder* renderIterPrev = 0;
-		int renderQueueCount = 0;
+        std::vector<RenderOrder> renderQueue;
+        RenderOrder* renderStart = 0;
+        RenderOrder* renderIter = 0;
+        RenderOrder* renderIterPrev = 0;
+        int renderQueueCount = 0;
 
-		bool curAltBg = false;
-		Background* curBackground = 0;
+        bool curAltBg = false;
+        Background* curBackground = 0;
 
-		Shader maskShader = { 0 };
-		int shTextureColorLoc = 0;
-		int shTextureMaskLoc = 0;
+        RenderTexture2D colorTex;
+        float scale3dTex = 1;
 
-		RenderTexture2D objMaskTex;
-		RenderTexture2D colorTex;
-		float scale3dTex = 1;
+        CameraRenderer(World* world) : BaseRenderer(world), particleRend(*world), objectRend(*world) {
+            resources = world->resources;
+            renderQueue.resize(50);
+        }
 
-		CameraRenderer(World* world) : BaseRenderer(world), particleRend(*world), objectRend(*world) {
-			resources = world->resources;
-			renderQueue.resize(50);
-			//objectRend.setYCut(0.25f);
-		}
+        void initShaders() {
+            auto& cfg = world->resources->config;
+            maskRenderer.init(cfg);
 
-		void initShaders() {
-			auto& cfg = world->resources->config;
-			
-			scale3dTex = resources->config.antialiasing;
-			colorTex = LoadRenderTexture(cfg.screenW * scale3dTex, cfg.screenH * scale3dTex);
-			SetTextureFilter(colorTex.texture, (scale3dTex == 1.0)? TEXTURE_FILTER_POINT: TEXTURE_FILTER_BILINEAR);
-			objMaskTex = LoadRenderTexture(cfg.screenW, cfg.screenH);
+            scale3dTex = resources->config.antialiasing;
+            colorTex = LoadRenderTexture(cfg.screenW * scale3dTex, cfg.screenH * scale3dTex);
+            SetTextureFilter(colorTex.texture, (scale3dTex == 1.0) ? TEXTURE_FILTER_POINT : TEXTURE_FILTER_BILINEAR);
+        }
 
-			//maskShader = LoadShaderFromMemory(vertexShaderSrc, fragmentShaderSrc);
-			maskShader = LoadShader(
-				"newdata/shaders/glsl330/mask.vs",
-				"newdata/shaders/glsl330/mask.fs"
-			);
-			// Get shader uniform locations
-			shTextureColorLoc = GetShaderLocation(maskShader, "texture0");
-			shTextureMaskLoc = GetShaderLocation(maskShader, "texture1");
-		}
+        void loadCamera(int newCameraId) override {
+            BaseRenderer::loadCamera(newCameraId);
+            curBackground = resources->backgrounds.get(world->curStageId, newCameraId);
+        }
 
-		void loadCamera(int newCameraId) override
-		{
-			BaseRenderer::loadCamera(newCameraId);
-			curBackground = resources->backgrounds.get(world->curStageId, newCameraId);
-		}
+        void fillRenderOrder(RenderOrder& ord, GameObject& gobj) {
+            ord.next = 0;
+            ord.renderable = &gobj;
+            auto rmodel = resources->models.getModel(gobj.modelId, world->altModels);
+            processSkin(gobj, rmodel->model);
+            ord.bb = gobj.getRenderBounds();
+            boundsToScreen(ord.bb, ord.screenRect, ord.zPos);
+        }
 
-		bool checkOverlay(const GCameraOverlay& ovl, const Vector3& pos) {
-				for (int i = 0; i < ovl.bounds.size(); i++) {
-						auto& b = ovl.bounds[i].getExpanded(-0.01);
-						if (pos.x >= b.min.x && pos.x <= b.max.x &&
-								pos.z >= b.min.z && pos.z <= b.max.z) {
-								return true;
-						}
-				}
-				return false;
-		}
+        void MyBeginMode3D() {
+            rlDrawRenderBatchActive();
+            rlPushMatrix();
+            rlSetMatrixProjection(world->cameraProjection);
+            rlSetMatrixModelview(world->cameraView);
+            rlEnableDepthTest();
+        }
 
-		void renderMask(const raylib::Rectangle& r) {
-				BeginTextureMode(objMaskTex);
-				ClearBackground(BLACK);
-				BeginBlendMode(BLEND_ADDITIVE);
+        void render() {
+            if (maskRenderer.maskShader.id == 0) {
+                initShaders();
+            }
 
-				auto* gobjPtr = std::get_if<GameObject*>(&renderIter->renderable);
-				if (gobjPtr) {
-						GameObject* gobj = *gobjPtr;
-						for (int camRoomIdx = 0; camRoomIdx < curCamera->rooms.size(); camRoomIdx++) {
-								if (gobj->getRoomId() != curCamera->rooms[camRoomIdx].roomId) continue;
-								for (int ovlIdx = 0; ovlIdx < curCamera->rooms[camRoomIdx].overlays.size(); ovlIdx++) {
-										auto& ovl = curCamera->rooms[camRoomIdx].overlays[ovlIdx];
-										if (checkOverlay(ovl, gobj->getPosition())) {
-												renderOverlay(curBackground->overlays[camRoomIdx][ovlIdx]);
-										}
-								}
-						}
-				} else {
-						auto* pgPtr = std::get_if<ParticleGroup*>(&renderIter->renderable);
-						if (pgPtr) {
-								ParticleGroup* pg = *pgPtr;
-								for (int camRoomIdx = 0; camRoomIdx < curCamera->rooms.size(); camRoomIdx++) {
-										if (pg->roomId != curCamera->rooms[camRoomIdx].roomId) continue;
-										for (int ovlIdx = 0; ovlIdx < curCamera->rooms[camRoomIdx].overlays.size(); ovlIdx++) {
-												auto& ovl = curCamera->rooms[camRoomIdx].overlays[ovlIdx];
-												if (checkOverlay(ovl, pg->position)) {
-														renderOverlay(curBackground->overlays[camRoomIdx][ovlIdx]);
-												}
-										}
-								}
-						}
-				}
+            if (world->curStageId == -1 || world->curCameraId == -1) return;
 
-				EndBlendMode();
-				EndTextureMode();
-		}
+            if (curAltBg != resources->backgrounds.isAltBackgrounds) {
+                curAltBg = resources->backgrounds.isAltBackgrounds;
+                curCameraId = -1;
+            }
 
-		void fillRenderOrder(RenderOrder& ord, GameObject& gobj)
-		{
-			ord.next = 0;
-			ord.renderable = &gobj;
-			auto rmodel = resources->models.getModel(gobj.modelId, world->altModels);
-			processSkin(gobj, rmodel->model);
-			ord.bb = gobj.getRenderBounds();
-			boundsToScreen(ord.bb, ord.screenRect, ord.zPos);
-		}
+            if (world->curStageId != curStageId || world->curCameraId != curCameraId) {
+                curStageId = world->curStageId;
+                loadCamera(world->curCameraId);
+            }
 
-		void renderMasked(const Texture2D tex, const raylib::Rectangle& r) {
-			float width = objMaskTex.texture.width;
-			float height = objMaskTex.texture.height;
-			Vector2 topLeft = { 
-				r.x / width,
-				(height - r.y) / height
-			};
-			Vector2 botRight = {
-				(r.x + r.width) / width,
-				(height - (r.y + r.height)) / height
-			};
-			
-			rlSetTexture(tex.id);
-			rlBegin(RL_QUADS);
-			// Top-left corner for texture and quad
-			rlTexCoord2f(topLeft.x, topLeft.y);
-			rlVertex2f(r.x, r.y);
-			// Bottom-left corner for texture and quad
-			rlTexCoord2f(topLeft.x, botRight.y);
-			rlVertex2f(r.x, r.y + r.height);
-			// Bottom-right corner for texture and quad
-			rlTexCoord2f(botRight.x, botRight.y);
-			rlVertex2f(r.x + r.width, r.y + r.height);
-			// Top-right corner for texture and quad
-			rlTexCoord2f(botRight.x, topLeft.y);
-			rlVertex2f(r.x + r.width, r.y);
-			rlEnd();
-		}
+            renderQueueCount = 0;
+            renderStart = 0;
 
-		void renderOverlay(const BackgroundOverlay ovl) {
-			auto& b = ovl.bounds;
-			rlSetTexture(ovl.texture.id);
-			rlBegin(RL_QUADS);
-			// Top-left corner for texture and quad
-			rlTexCoord2f(0, 0);
-			rlVertex2f(b.x, b.y);
-			// Bottom-left corner for texture and quad
-			rlTexCoord2f(0, 1);
-			rlVertex2f(b.x, b.y + b.height);
-			// Bottom-right corner for texture and quad
-			rlTexCoord2f(1, 1);
-			rlVertex2f(b.x + b.width, b.y + b.height);
-			// Top-right corner for texture and quad
-			rlTexCoord2f(1, 0);
-			rlVertex2f(b.x + b.width, b.y);
-			rlEnd();
-		}
+            // ---- Collect objects into queue ----
+            for (auto& gobj : this->world->gobjects) {
+                if (gobj.modelId == -1) continue;
+                if (gobj.getStageId() != curStageId) continue;
 
-		void insertIntoSortedQueue(RenderOrder& ro) {
-				if (renderStart) {
-						bool inserted = false;
-						renderIterPrev = 0;
-						renderIter = renderStart;
-						while (true) {
-								if (renderIter->zPos < ro.zPos) {
-										if (renderIterPrev) {
-												renderIterPrev->next = &ro;
-										} else {
-												renderStart = &ro;
-										}
-										ro.next = renderIter;
-										inserted = true;
-										break;
-								}
-								if (!renderIter->next) break;
-								renderIterPrev = renderIter;
-								renderIter = renderIter->next;
-						}
-						if (!inserted) {
-								renderIter->next = &ro;
-						}
-				} else {
-						renderStart = &ro;
-				}
-		}
+                int curCamRoom = -1;
+                for (int j = 0; j < curCamera->rooms.size(); j++) {
+                    if (gobj.getRoomId() == curCamera->rooms[j].roomId) {
+                        curCamRoom = j;
+                        break;
+                    }
+                }
+                if (curCamRoom == -1) continue;
 
-		void MyBeginMode3D()
-		{
-				rlDrawRenderBatchActive();      // Update and draw internal render batch
-				rlPushMatrix();                 // Save previous matrix, which contains the settings for the 2d ortho projection
-				rlSetMatrixProjection(world->cameraProjection);
-				rlSetMatrixModelview(world->cameraView);
-				rlEnableDepthTest();            // Enable DEPTH_TEST for 3D
-		}
+                RenderOrder& ro = renderQueue[renderQueueCount++];
+                fillRenderOrder(ro, gobj);
+                if (ro.zPos < 0) continue;
+                if ((ro.screenRect.x + ro.screenRect.width) < 0 || ro.screenRect.x > getScreenW()) continue;
+                if ((ro.screenRect.y + ro.screenRect.height) < 0 || ro.screenRect.y > getScreenH()) continue;
 
-		void render() {
-				if (maskShader.id == 0) {
-						initShaders();
-				}
+                insertIntoSortedQueue(ro);
+            }
 
-				if (world->curStageId == -1 || world->curCameraId == -1) return;
+            for (auto& pg : world->partGroups.groups) {
+                if (!pg.active) continue;
+                if (pg.stageId != curStageId) continue;
 
-				if (curAltBg != resources->backgrounds.isAltBackgrounds) {
-						curAltBg = resources->backgrounds.isAltBackgrounds;
-						curCameraId = -1;
-				}
+                int curCamRoom = -1;
+                for (int j = 0; j < curCamera->rooms.size(); j++) {
+                    if (pg.roomId == curCamera->rooms[j].roomId) {
+                        curCamRoom = j;
+                        break;
+                    }
+                }
+                if (curCamRoom == -1) continue;
 
-				if (world->curStageId != curStageId || world->curCameraId != curCameraId) {
-						curStageId = world->curStageId;
-						loadCamera(world->curCameraId);
-				}
+                RenderOrder& ro = renderQueue[renderQueueCount++];
+                ro.next = 0;
+                ro.renderable = &pg;
+                pg.calcBounds();
+                ro.bb = pg.getRenderBounds();
+                boundsToScreen(ro.bb, ro.screenRect, ro.zPos);
+                ro.zPos = world->WorldToScreenZ(pg.position).z;
 
-				renderQueueCount = 0;
-				renderStart = 0;
+                if (ro.zPos < 0) continue;
+                if ((ro.screenRect.x + ro.screenRect.width) < 0 || ro.screenRect.x > getScreenW()) continue;
+                if ((ro.screenRect.y + ro.screenRect.height) < 0 || ro.screenRect.y > getScreenH()) continue;
 
-				//GameObjects
-				for (int i = 0; i < this->world->gobjects.size(); i++) {
-						auto& gobj = this->world->gobjects[i];
-						if (gobj.modelId == -1) continue;
-						if (gobj.getStageId() != curStageId) continue;
+                insertIntoSortedQueue(ro);
+            }
 
-						int curCamRoom = -1;
-						for (int j = 0; j < curCamera->rooms.size(); j++) {
-								if (gobj.getRoomId() == curCamera->rooms[j].roomId) {
-										curCamRoom = j;
-										break;
-								}
-						}
-						if (curCamRoom == -1) continue;
+            // ---- Background rendering ----
+            BeginTextureMode(resources->screen.sceneTex);
+            ClearBackground(BLACK);
+            DrawTexturePro(
+                curBackground->texture,
+                { 0, 0, (float)getScreenW(), (float)getScreenH() },
+                { 0, 0, (float)getScreenW(), (float)getScreenH() },
+                { 0, 0 }, 0, WHITE
+            );
+            EndTextureMode();
 
-						Vector3 pos = gobj.getPosition();
-						Vector3& roomPos = world->curStage->rooms[gobj.getRoomId()].origPosition;
-						pos = Vector3Add(roomPos, pos);
+            // ---- Process each object in the queue ----
+            if (renderStart) {
+                renderIter = renderStart;
+                while (renderIter) {
+                    raylib::Rectangle& r = renderIter->screenRect;
 
-						RenderOrder& ro = renderQueue[renderQueueCount++];
-						fillRenderOrder(ro, gobj);
-						if (ro.zPos < 0) continue;
-						if ((ro.screenRect.x + ro.screenRect.width) < 0 || (ro.screenRect.x) > getScreenW()) continue;
-						if ((ro.screenRect.y + ro.screenRect.height) < 0 || (ro.screenRect.y) > getScreenH()) continue;
+                    // 1. Render the mask for the current object
+                    int roomId;
+                    Vector3 pos;
+                    if (auto* gobjPtr = std::get_if<GameObject*>(&renderIter->renderable)) {
+                        GameObject* gobj = *gobjPtr;
+                        roomId = gobj->getRoomId();
+                        pos = gobj->getPosition();   // local coordinates
+                    } else if (auto* pgPtr = std::get_if<ParticleGroup*>(&renderIter->renderable)) {
+                        ParticleGroup* pg = *pgPtr;
+                        roomId = pg->roomId;
+                        pos = pg->position;          // local coordinates
+                    } else {
+                        renderIter = renderIter->next;
+                        continue;
+                    }
+                    maskRenderer.renderMask(roomId, pos, *curCamera, *curBackground);
 
-						insertIntoSortedQueue(ro); 
-				}
+                    // 2. Render the color texture (the object itself)
+                    BeginTextureMode(colorTex);
+                    ClearBackground(BLANK);
+                    if (auto* gobjPtr = std::get_if<GameObject*>(&renderIter->renderable)) {
+                        MyBeginMode3D();
+                        objectRend.renderObject(**gobjPtr);
+                        EndMode3D();
+                    } else if (auto* pgPtr = std::get_if<ParticleGroup*>(&renderIter->renderable)) {
+                        particleRend.render(**pgPtr);
+                    }
+                    EndTextureMode();
 
-				//ParticleGroups
-				for (auto& pg : world->partGroups.groups) {
-						if (!pg.active) continue;
-						if (pg.stageId != curStageId) continue;
+                    // 3. Output the color texture with the mask applied
+                    BeginTextureMode(resources->screen.sceneTex);
+                    BeginBlendMode(BLEND_ALPHA);
+                    maskRenderer.renderMasked(colorTex.texture, r);
+                    EndBlendMode();
+                    EndTextureMode();
 
-						int curCamRoom = -1;
-						for (int j = 0; j < curCamera->rooms.size(); j++) {
-								if (pg.roomId == curCamera->rooms[j].roomId) {
-										curCamRoom = j;
-										break;
-								}
-						}
-						if (curCamRoom == -1) continue;
+                    renderIter = renderIter->next;
+                }
+            }
+        }
 
-						Vector3 roomPos = world->curStage->rooms[pg.roomId].origPosition;
-						Vector3 worldPos = Vector3Add(roomPos, pg.position);
-
-						RenderOrder& ro = renderQueue[renderQueueCount++];
-						ro.next = 0;
-						ro.renderable = &pg;
-						pg.calcBounds();
-						ro.bb = pg.getRenderBounds();
-						boundsToScreen(ro.bb, ro.screenRect, ro.zPos);
-						ro.zPos = world->WorldToScreenZ(pg.position).z;
-
-						if (ro.zPos < 0) continue;
-						if ((ro.screenRect.x + ro.screenRect.width) < 0 || (ro.screenRect.x) > getScreenW()) continue;
-						if ((ro.screenRect.y + ro.screenRect.height) < 0 || (ro.screenRect.y) > getScreenH()) continue;
-
-						insertIntoSortedQueue(ro);
-				}
-
-				BeginTextureMode(resources->screen.sceneTex);
-				ClearBackground(BLACK);
-				DrawTexturePro(
-						curBackground->texture,
-						{ 0, 0, (float)getScreenW(), (float)getScreenH() },
-						{ 0, 0, (float)getScreenW(), (float)getScreenH() },
-						{ 0, 0 }, 0, WHITE
-				);
-				EndTextureMode();
-
-				if (renderStart) {
-						renderIter = renderStart;
-						while (renderIter) {
-								raylib::Rectangle& r = renderIter->screenRect;
-								renderMask(r);
-								BeginTextureMode(colorTex);
-								ClearBackground(BLANK);
-
-								auto* gobjPtr = std::get_if<GameObject*>(&renderIter->renderable);
-								if (gobjPtr) {
-    								MyBeginMode3D();
-										objectRend.renderObject(**gobjPtr);
-    								EndMode3D();
-								} else {
-										auto* pgPtr = std::get_if<ParticleGroup*>(&renderIter->renderable);
-										if (pgPtr) {
-												particleRend.render(**pgPtr);
-										}
-								}
-
-								EndTextureMode();
-
-								BeginTextureMode(resources->screen.sceneTex);
-								BeginBlendMode(BLEND_ALPHA);
-								BeginShaderMode(maskShader);
-								SetShaderValueTexture(maskShader, shTextureColorLoc, colorTex.texture);
-								SetShaderValueTexture(maskShader, shTextureMaskLoc, objMaskTex.texture);
-								renderMasked(colorTex.texture, r);
-								EndShaderMode();
-								EndBlendMode();
-								EndTextureMode();
-
-								renderIter = renderIter->next;
-						}
-				}
-		}
-
-	};
-
+        // Helper method to insert into the sorted list (remains unchanged)
+        void insertIntoSortedQueue(RenderOrder& ro) {
+            if (renderStart) {
+                bool inserted = false;
+                renderIterPrev = 0;
+                renderIter = renderStart;
+                while (true) {
+                    if (renderIter->zPos < ro.zPos) {
+                        if (renderIterPrev) renderIterPrev->next = &ro;
+                        else renderStart = &ro;
+                        ro.next = renderIter;
+                        inserted = true;
+                        break;
+                    }
+                    if (!renderIter->next) break;
+                    renderIterPrev = renderIter;
+                    renderIter = renderIter->next;
+                }
+                if (!inserted) renderIter->next = &ro;
+            } else {
+                renderStart = &ro;
+            }
+        }
+    };
 }
