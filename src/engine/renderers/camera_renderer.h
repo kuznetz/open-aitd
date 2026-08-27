@@ -136,9 +136,17 @@ namespace openAITD {
                 ro.next = 0;
                 ro.renderable = &pg;
                 pg.calcBounds();
+
+								const Vector3& roomPos = resources->stages[pg.stageId].rooms[pg.roomId].origPosition;
+								Vector3 pos = Vector3Add(pg.position, roomPos);
+
                 ro.bb = pg.getRenderBounds();
+								ro.bb.min = Vector3Add(ro.bb.min, roomPos);
+								ro.bb.max = Vector3Add(ro.bb.max, roomPos);
+								ro.bb.correctBounds();
+
                 boundsToScreen(ro.bb, ro.screenRect, ro.zPos);
-                ro.zPos = world->WorldToScreenZ(pg.position).z;
+                ro.zPos = world->WorldToScreenZ(pos).z;
 
                 if (ro.zPos < 0) continue;
                 if ((ro.screenRect.x + ro.screenRect.width) < 0 || ro.screenRect.x > getScreenW()) continue;
@@ -170,16 +178,16 @@ namespace openAITD {
                     if (auto* gobjPtr = std::get_if<GameObject*>(&renderIter->renderable)) {
                         GameObject* gobj = *gobjPtr;
                         roomId = gobj->getRoomId();
-                        pos = gobj->getPosition();   // local coordinates
+                        pos = gobj->getPosition();
                     } else if (auto* pgPtr = std::get_if<ParticleGroup*>(&renderIter->renderable)) {
                         ParticleGroup* pg = *pgPtr;
                         roomId = pg->roomId;
-                        pos = pg->position;          // local coordinates
+                        pos = pg->position;
                     } else {
                         renderIter = renderIter->next;
                         continue;
                     }
-                    maskRenderer.renderMask(roomId, pos, *curCamera, *curBackground);
+                    maskRenderer.renderMask(roomId, pos, *curCamera, *curBackground);										
 
                     // 2. Render the color texture (the object itself)
                     BeginTextureMode(colorTex);
@@ -190,6 +198,9 @@ namespace openAITD {
                         EndMode3D();
                     } else if (auto* pgPtr = std::get_if<ParticleGroup*>(&renderIter->renderable)) {
                         particleRend.render(**pgPtr);
+                        // MyBeginMode3D();
+												// DrawBounds(renderIter->bb, RED);
+                        // EndMode3D();
                     }
                     EndTextureMode();
 

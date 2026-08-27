@@ -21,6 +21,8 @@ namespace openAITD {
             processSmoke(partGrp, timeDelta);
           } else if (partGrp.type == 3) {
             processMuzzleFlash(partGrp, timeDelta);
+          } else if (partGrp.type == 4) {
+            processCigarSmoke(partGrp, timeDelta);
           } else {
             processFountain(partGrp, timeDelta); 
           }
@@ -30,6 +32,7 @@ namespace openAITD {
       void processFountain(ParticleGroup& partGrp, const float timeDelta);
       void processRicochet(ParticleGroup& partGrp, const float timeDelta);
       void processSmoke(ParticleGroup& partGrp, const float timeDelta);
+      void processCigarSmoke(ParticleGroup& partGrp, const float timeDelta);
       void processMuzzleFlash(ParticleGroup& partGrp, const float timeDelta);
   };
 
@@ -284,5 +287,75 @@ namespace openAITD {
           partGrp.active = false;
       }
   }
+
+  inline void ParticleController::processCigarSmoke(ParticleGroup& partGrp, const float timeDelta) {
+      // Smoke parameters
+      const float riseSpeed = 1.0f;            // base rise speed
+      const float spread = 1.2f;               // horizontal spread
+      const float turbulence = 1.2f;           // amplitude of random deviations
+      const float particleLifetime = 1.5f;     // lifetime of each particle
+      const float spawnInterval = 0.1f;       // interval for spawning new particles
+
+      if (!partGrp.initialized) {
+          partGrp.lifetime = 1.f;
+          partGrp.initialized = true;
+      }
+
+      // 1. Update existing particles
+      for (auto& p : partGrp.particles) {
+          if (!p.active) continue;
+
+          // Movement: upward with slight random horizontal drift
+          p.position += p.velocity * timeDelta;
+
+          // Turbulence: random velocity change (vortex effect)
+          float turbX = (static_cast<float>(rand()) / RAND_MAX - 0.5f) * turbulence * timeDelta;
+          float turbZ = (static_cast<float>(rand()) / RAND_MAX - 0.5f) * turbulence * timeDelta;
+          p.velocity.x += turbX;
+          p.velocity.z += turbZ;
+
+          // Gradual slowdown of the ascent (can add weak drag)
+          p.velocity.y *= (1.0f - 0.2f * timeDelta); // slight damping
+
+          // Decrease lifetime
+          p.lifetime -= timeDelta;
+          if (p.lifetime <= 0.0f) {
+              p.active = false;
+          } else {
+              p.size += (0.3f * timeDelta);
+          }
+      }
+
+      // 2. Spawn new particles
+      partGrp.spawnTimer -= timeDelta;
+      partGrp.lifetime -= timeDelta;
+      if (partGrp.lifetime > 0 && partGrp.spawnTimer <= 0.0f) {
+          partGrp.spawnTimer = spawnInterval;
+          auto& p = partGrp.addParticle();
+          p.size = 0.05f;
+          p.position = partGrp.position;
+
+          // Initial velocity: upward with horizontal spread
+          float angleX = (static_cast<float>(rand()) / RAND_MAX - 0.5f) * spread * 2.0f;
+          float angleZ = (static_cast<float>(rand()) / RAND_MAX - 0.5f) * spread * 2.0f;
+          float speedY = riseSpeed + (static_cast<float>(rand()) / RAND_MAX) * riseSpeed * 0.5f;
+          p.velocity = { angleX * riseSpeed * 0.5f, speedY, angleZ * riseSpeed * 0.5f };
+
+          // Particle parameters
+          p.lifetime = particleLifetime + (static_cast<float>(rand()) / RAND_MAX - 0.5f) * 1.0f;
+          // Smoke color – light gray, with maximum opacity
+          p.color = { 200, 200, 200, 255 };
+      }
+
+      bool allInactive = true;
+      for (auto& p : partGrp.particles) {
+          if (!p.active) continue;
+          allInactive = false;
+      }
+
+      if (partGrp.lifetime < 0 && allInactive) {
+          partGrp.active = false;
+      }     
+  }  
 
 }

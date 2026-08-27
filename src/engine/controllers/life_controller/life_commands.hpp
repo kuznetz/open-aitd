@@ -642,12 +642,24 @@ namespace openAITD {
 				}, "HIT_PARTICLES");
 
 			lua->CreateFunction([this](int objId) {
-				  auto& obj = this->world->gobjects[objId];
-					auto& partGrp = world->partGroups.add();
-					partGrp.type = 2;
-					partGrp.position = obj.getPosition();
-					partGrp.stageId = obj.getStageId();
-					partGrp.roomId = obj.getRoomId();
+				  ParticleGroup* partGrp = nullptr;
+					for (auto& pg : world->partGroups.groups) {
+						if (pg.active && pg.type == 4) {
+							partGrp = &pg;
+							break;
+						}
+					}
+
+					if (!partGrp) {
+			      partGrp = &world->partGroups.add();
+  				  auto& obj = this->world->gobjects[objId];
+						partGrp->type = 4;
+						partGrp->position = obj.getPosition();
+						partGrp->stageId = obj.getStageId();
+						partGrp->roomId = obj.getRoomId();
+					}
+
+					partGrp->lifetime = 1.0f;
 				}, "CIGAR_PARTICLES");
 
 			lua->CreateFunction([this](int light) {
