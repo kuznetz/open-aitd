@@ -236,6 +236,12 @@ namespace openAITD {
 			return position;
 		}
 
+		Vector3 getAbsPosition() const {
+			const auto& curStage = resources.stages[stageId];
+			const auto& roomPos = curStage.rooms[roomId].origPosition;
+			return Vector3Add(position, roomPos);
+		}
+
 		void setOrigRotation(const EulerAngles& newEuler){
 			origRotation = newEuler.GetNormalized();
 			rotMatrixCached = false;

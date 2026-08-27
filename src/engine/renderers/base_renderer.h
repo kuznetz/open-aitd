@@ -44,61 +44,6 @@ namespace openAITD {
 			curCamera = 0;
 		}
 
-		Vector3 GetWorldToScreenZ(Vector3 position) {
-				// Get screen dimensions (in pixels)
-				const int width  = getScreenW();
-				const int height = getScreenH();
-
-				// Retrieve the view and projection matrices from the camera
-				const Matrix& view = world->cameraView;
-				const Matrix& proj = world->cameraProjection;
-
-				// ---- Helper functions to multiply a vector by a 4x4 matrix ----
-				// Multiply a 3D vector (with w implicitly = 1) by a 4x4 matrix, returning a 4D vector
-				auto multiply3 = [](Vector3 v, const Matrix& m) -> Vector4 {
-						return {
-								v.x * m.m0 + v.y * m.m4 + v.z * m.m8  + 1.0f * m.m12,
-								v.x * m.m1 + v.y * m.m5 + v.z * m.m9  + 1.0f * m.m13,
-								v.x * m.m2 + v.y * m.m6 + v.z * m.m10 + 1.0f * m.m14,
-								v.x * m.m3 + v.y * m.m7 + v.z * m.m11 + 1.0f * m.m15
-						};
-				};
-
-				// Multiply a 4D vector by a 4x4 matrix
-				auto multiply4 = [](const Vector4& v, const Matrix& m) -> Vector4 {
-						return {
-								v.x * m.m0 + v.y * m.m4 + v.z * m.m8  + v.w * m.m12,
-								v.x * m.m1 + v.y * m.m5 + v.z * m.m9  + v.w * m.m13,
-								v.x * m.m2 + v.y * m.m6 + v.z * m.m10 + v.w * m.m14,
-								v.x * m.m3 + v.y * m.m7 + v.z * m.m11 + v.w * m.m15
-						};
-				};
-				// ----------------------------------------------------------
-
-				// 1. Transform world position to view space (camera space)
-				Vector4 viewPos = multiply3(position, view);
-
-				// 2. Transform view-space position to clip space (homogeneous coordinates)
-				Vector4 clipPos = multiply4(viewPos, proj);
-
-				// 3. Perspective division: convert from clip space to normalized device coordinates (NDC)
-				if (clipPos.w != 0.0f) {
-						clipPos.x /= clipPos.w;
-						clipPos.y /= clipPos.w;
-						clipPos.z /= clipPos.w;
-				}
-
-				// 4. NDC → screen coordinates
-				//    NDC x,y in [-1,1] map to [0,width] and [0,height].
-				//    In raylib, the screen Y axis points downward, so we flip the Y coordinate.
-				float screenX = (clipPos.x + 1.0f) * 0.5f * width;
-				float screenY = (1.0f - (clipPos.y + 1.0f) * 0.5f) * height;
-				float screenZ = clipPos.z;   // depth in NDC range [-1,1], useful for sorting
-
-				return { screenX, screenY, screenZ };
-		}
-
-
 		void boundsToScreen(const Bounds& bb, Rectangle& rect, float& zPos) {
 				// 8 corners of the AABB: bottom face (y = min) then top face (y = max)
 				Vector3 corners[8];
@@ -114,14 +59,14 @@ namespace openAITD {
 				corners[7] = { bb.max.x, bb.max.y, bb.min.z }; // back-right
 
 				// Project the first corner to initialize extremes
-				Vector3 first = GetWorldToScreenZ(corners[0]);
+				Vector3 first = world->WorldToScreenZ(corners[0]);
 				float minX = first.x, maxX = first.x;
 				float minY = first.y, maxY = first.y;
 				float maxZ = first.z;
 
 				// Process the remaining 7 corners
 				for (int i = 1; i < 8; ++i) {
-						Vector3 v = GetWorldToScreenZ(corners[i]);
+						Vector3 v = world->WorldToScreenZ(corners[i]);
 						// Update 2D bounds
 						if (v.x < minX) minX = v.x;
 						if (v.x > maxX) maxX = v.x;

@@ -61,22 +61,29 @@ public:
             255
         };
         
+        auto& obj = world.gobjects[world.lightSpotObjId];
+        auto& b = obj.getBounds();
+        Vector3 pos = obj.getAbsPosition();
+        pos.y += (b.max.y - b.min.y) / 2.f;
+        
+        // Screen coordinates for the center of the circle
+        Vector3 screenPos = world.WorldToScreenZ(pos);
+        
+        // Distance from the camera to the light source (Euclidean)
+        Vector3 camPos = world.curCamera->position; // or from the matrix
+        float dist = Vector3Distance(camPos, pos);
+        if (dist < 0.001f) dist = 0.001f; // protection against division by zero
+        
+        // Radius parameters (adjustable)
+        const float baseRadius = 150.0f;
+        const float referenceDist = 10.0f;
+        float radius = baseRadius * (referenceDist / dist);
+        radius = Clamp(radius, 10.0f, 800.0f);
+        
         BeginTextureMode(resources.screen.maskTex);
         ClearBackground(bgColor);
-        
-        Camera2D cam = { 0 };
-        cam.offset = { c.screenW / 2.0f, c.screenH / 2.0f };
-        cam.target = { 0, 0 };
-        cam.rotation = 0;
-        cam.zoom = 1.0f;
-        BeginMode2D(cam);
-        
-        // Draw circle on center of screen
-        float radius = 200.0f;
-        DrawCircleV({0, 0}, radius, WHITE);
-        
-        EndMode2D();
-        EndTextureMode();
+        DrawCircleV({screenPos.x, screenPos.y}, radius, WHITE);
+        EndTextureMode(); 
     }
     
 
@@ -85,7 +92,8 @@ public:
         float offX = world.shake.offsetX;
         float offY = world.shake.offsetY;
 
-        if (useMask) {
+        if (world.lightSpotObjId != -1) {
+            useMask = true;
             renderMask();
         }
 

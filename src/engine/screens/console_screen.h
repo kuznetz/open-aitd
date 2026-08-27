@@ -86,6 +86,8 @@ namespace openAITD {
         SetValue(tokens);
       } else if (cmd == 'S') {
         ShakeScreen(tokens);
+      } else if (cmd == 'L') {        
+        LightObject(tokens);
       } else {
         ShowHelp();
       }
@@ -103,8 +105,8 @@ namespace openAITD {
       lines[2] = "J {STAGE} {ROOM} - Jump to room";
       lines[3] = "T {OBJECT_ID} - Take item";
       lines[4] = "O {OBJECT_ID} - Object info";
-      lines[5] = "V {VAR_ID} {VALUE} - Set value";
-      lines[6] = "S {1/0} - Shake screen";
+      lines[5] = "V {VAR_ID} {VALUE} - Set variable / V {VAR_ID} - Get variable";
+      lines[6] = "S {1/0} - Shake screen / L {OBJECT_ID} - Set light object";
     }
 
     template<typename... Args> std::string BuildString(Args&&... args) {
@@ -252,6 +254,24 @@ namespace openAITD {
         world->shake.start();
       } else {
         world->shake.stop();
+      }
+    }
+
+    void LightObject(const vector<string>& tokens) {
+      if (tokens.size() != 2) {
+        lines[0] = "Invalid arguments";
+        ShowHelp();
+        return;
+      }
+      try {
+        int objId = std::stoi(tokens.at(1));
+        world->inDark = true;
+        world->lightSpotObjId = objId;
+        lines[0] = "lightSpotObjId set!";
+      }
+      catch (const std::exception& e) {
+          lines[0] = "Invalid object ID";
+          ShowHelp();
       }
     }
 

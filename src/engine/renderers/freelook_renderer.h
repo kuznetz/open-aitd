@@ -132,7 +132,7 @@ namespace openAITD {
 		}
 
 		void renderDebugText3D(Vector3 pos, const string& text, Color color) {
-			auto screenPos = GetWorldToScreenZ(pos);
+			auto screenPos = world->WorldToScreenZ(pos);
 			if (screenPos.z > 0) {
 				renderDebugText({ screenPos.x, screenPos.y }, text, color);
 			}
@@ -306,7 +306,7 @@ namespace openAITD {
 				Vector3 pos = gobj.getPosition();
 				Vector3& roomPos = world->curStage->rooms[gobj.getRoomId()].origPosition;
 
-				//auto& screenPos = GetWorldToScreenZ(pos);
+				//auto& screenPos = world->WorldToScreenZ(pos);
 				//if (screenPos.z < 0) continue;
 				BeginMode3D(mainCamera);
 				if (curCamera) {

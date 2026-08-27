@@ -288,7 +288,7 @@ namespace openAITD {
 						pg.calcBounds();
 						ro.bb = pg.getRenderBounds();
 						boundsToScreen(ro.bb, ro.screenRect, ro.zPos);
-						ro.zPos = GetWorldToScreenZ(pg.position).z;
+						ro.zPos = world->WorldToScreenZ(pg.position).z;
 
 						if (ro.zPos < 0) continue;
 						if ((ro.screenRect.x + ro.screenRect.width) < 0 || (ro.screenRect.x) > getScreenW()) continue;
