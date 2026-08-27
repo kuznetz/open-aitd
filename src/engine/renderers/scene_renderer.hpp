@@ -13,11 +13,10 @@ class SceneRenderer {
 private:
     World& world;
     Resources& resources;
+    Texture2D softCircleTex = { 0 };
+    Shader brightnessShader = { 0 };
 
 public:
-    
-    Shader brightnessShader = { 0 };
-    
     // Локации uniform
     int shUniformLoc = 0;
     int modeUniformLoc = 0;
@@ -48,9 +47,44 @@ public:
         if (brightnessShader.id) {
             UnloadShader(brightnessShader);
         }
+        if (softCircleTex.id) {
+            UnloadTexture(softCircleTex);
+        }
+    }
+
+    Texture2D GenerateSoftCircleTexture(int size = 128, float falloff = 2.0f) {
+        // Create a black image
+        Image img = GenImageColor(size, size, BLACK);
+        float half = size / 2.0f;
+
+        // Fill pixels with gradient
+        for (int y = 0; y < size; y++) {
+            for (int x = 0; x < size; x++) {
+                float dx = (float)x - half;
+                float dy = (float)y - half;
+                float dist = sqrtf(dx * dx + dy * dy);
+                // Normalized distance from center (0 at center, 1 at edges)
+                float t = dist / half;
+                if (t > 1.0f) t = 1.0f;
+                // Intensity: 1 - t^falloff
+                float intensity = 1.0f - powf(t, falloff);
+                // Convert to byte
+                unsigned char val = (unsigned char)(intensity * 255.0f);
+                ImageDrawPixel(&img, x, y, { val, val, val, 255 });
+            }
+        }
+
+        // Load texture from image and unload the image
+        Texture2D tex = LoadTextureFromImage(img);
+        UnloadImage(img);
+        return tex;
     }
 
     void renderMask() {
+        if (!softCircleTex.id) {
+            softCircleTex = GenerateSoftCircleTexture(128, 2.0f);            
+        }
+
         auto& c = resources.config;
         float bright = world.brightnessCur;
         
@@ -82,7 +116,13 @@ public:
         
         BeginTextureMode(resources.screen.maskTex);
         ClearBackground(bgColor);
-        DrawCircleV({screenPos.x, screenPos.y}, radius, WHITE);
+        
+        float size = radius * 2.0f;
+        raylib::Rectangle srcRect = { 0, 0, (float)softCircleTex.width, (float)softCircleTex.height };
+        raylib::Rectangle dstRect = { screenPos.x - size/2, screenPos.y - size/2, size, size };
+        Vector2 origin = { 0, 0 };
+        DrawTexturePro(softCircleTex, srcRect, dstRect, origin, 0.0f, WHITE);
+
         EndTextureMode(); 
     }
     
