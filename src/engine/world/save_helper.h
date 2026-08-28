@@ -219,6 +219,14 @@ namespace openAITD {
             }
         }
 
+        void remove(int slot) {
+            if (this->saveDir == "") return;
+            string slotDir = this->saveDir + "/" + to_string(slot);
+            if (std::filesystem::exists(slotDir)) {
+                std::filesystem::remove_all(slotDir);
+            }
+        }
+
         std::vector<SaveSlot> listSlots() {
             std::vector<SaveSlot> result;
             if (!std::filesystem::exists(saveDir)) {

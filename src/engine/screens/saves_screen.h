@@ -79,6 +79,15 @@ public:
                 complete = true;
             }
         }
+        if (IsKeyPressed(KEY_DELETE)) {
+            int menuIdx = menu.getSelectedIndex();
+            int slotIdx = getSlotIdx(menuIdx);
+            if (slotIdx >= 0) {
+              int delSlot = saveSlots[slotIdx].id;
+              saveHelper.remove(delSlot);
+              reload(mode);
+            }
+        }
         if (changed) {
             updateScreenshot(menu.getSelectedIndex());
         }
