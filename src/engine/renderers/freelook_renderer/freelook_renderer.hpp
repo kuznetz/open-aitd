@@ -172,7 +172,30 @@ namespace openAITD {
 			}			
 
 			rlSetMatrixModelview(m);
-		}		
+		}
+
+		void renderEndAnim(GameObject& gobj, Vector3 pos) {
+			  const int animationId = 267;
+				const float yOffset = 2.0;
+
+				auto rmodel = resources->models.getModel(gobj.modelId, world->altModels);
+				auto& animIter = rmodel->animsIds.find(animationId);
+				if (animIter == rmodel->animsIds.end()) {
+					return;
+				}
+				
+				auto& animIdx = animIter->second;
+				raylib::Vector3 rootMotion = rmodel->model.getLastFrameRootMotion(animIdx);
+
+				Matrix mtx = gobj.getRotMatrix();
+				mtx = MatrixMultiply(MatrixRotateY(PI), mtx);			
+				rootMotion = Vector3Transform(rootMotion, mtx);
+
+				Vector3 posEndAnim = Vector3Add(pos, rootMotion);
+				posEndAnim.y += yOffset + 0.001f;
+								
+				DrawCube(posEndAnim, 0.1, 0.1, 0.1, PINK);
+		}
 
 		void renderObjectEx(GameObject& gobj, Color tint)
 		{
@@ -188,6 +211,10 @@ namespace openAITD {
 			rlMultMatrixf(MatrixToFloat(MatrixTranslate(roomPos.x,roomPos.y,roomPos.z)));
 
 			DrawCube(pos, 0.1, 0.1, 0.1, RED);
+
+			if (gobj.id == 1) {
+				renderEndAnim(gobj, pos);
+			}
 
 			string debugStr = 
 			  this->resources->nameDecoders.obj.getName(gobj.id) +
