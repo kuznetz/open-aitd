@@ -151,10 +151,11 @@ namespace openAITD {
                 }
 
                 world.gobjects.clear();
-                world.gobjects.reserve(inJson["objects"].size());
+                world.loadGObjects("data/objects.json");
+                //world.gobjects.reserve(inJson["objects"].size());
                 for (int i = 0; i < inJson["objects"].size(); i++) {
                     auto& inObj = inJson["objects"][i];
-                    auto& gobj = world.gobjects.emplace_back(resources);
+                    auto& gobj = world.gobjects[i];
                     gobj.id = i;
                     
                     gobj.setStage(

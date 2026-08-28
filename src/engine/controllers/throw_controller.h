@@ -109,15 +109,21 @@ namespace openAITD {
                 newBounds.max = Vector3Add(newBounds.max, velocity);
 
                 bool hitStatic = false;
+                bool hitDynamic = false;
+                GameObject* hitObject = nullptr;
+
                 for (auto& collider : room.colliders) {
                     if (collider.bounds.CollToBox(newBounds)) {
-                        hitStatic = true;
+                        if (collider.linkedObjectId != -1) {
+                            hitDynamic = true;
+                            hitObject = &world->gobjects[collider.linkedObjectId];
+                        } else {
+                            hitStatic = true;
+                        }
                         break;
                     }
                 }
 
-                bool hitDynamic = false;
-                GameObject* hitObject = nullptr;
                 for (auto& other : world->gobjects) {
                     if (&other == &gobj) continue;
                     if (other.getStageId() != gobj.getStageId()) continue;
