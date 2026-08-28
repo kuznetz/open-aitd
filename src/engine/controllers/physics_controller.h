@@ -205,11 +205,13 @@ namespace openAITD {
 
 		void processGravity(GameObject& gobj, Room& room, float timeDelta) {
 			if (!gobj.bitField.fallable) return;
+			if (!gobj.physics.collidable) return;
 			if (gobj.track.id != -1 ) return;
 			gobj.physics.falling = true;
 
 			auto& objB = gobj.getBounds();
 			float moveY = (-2 * timeDelta);
+			float newMoveY = 0;
 			auto objBM = objB;
 			objBM.min.y += moveY;
 			objBM.max.y += moveY;
@@ -222,12 +224,18 @@ namespace openAITD {
 				return;
 			}
 
+			const float colBSVal = 0.002f;
 			for (int i = 0; i < room.colliders.size(); i++) {
 				Bounds& colB = room.colliders[i].bounds;
-				Bounds colBS = colB.getExpanded(-0.002f);
+				Bounds colBS = colB.getExpanded(-colBSVal);
 				if (!objBM.CollToBox(colBS)) continue;
 				gobj.physics.falling = false;
-				moveY = (colBS.max.y - objB.min.y) + 0.002f;
+				newMoveY = (colBS.max.y - objB.min.y) + colBSVal;
+				if (newMoveY < 0.5f && newMoveY > moveY) {
+					moveY = newMoveY;
+				} else {
+  				if (gobj.id == 1) cout << "not newMoveY" << to_string(newMoveY) << "\n";
+				}
 			}
 
 			for (int i = 0; i < world->gobjects.size(); i++) {
@@ -240,17 +248,29 @@ namespace openAITD {
 					continue;
 				}				
 				Bounds objB2 = gobj2.getBounds();
-				Bounds objB2S = objB2.getExpanded(-0.002f);
+				Bounds objB2S = objB2.getExpanded(-colBSVal);
 				if (!objBM.CollToBox(objB2S)) continue;
 				gobj.physics.falling = false;
-				moveY = (objB2S.max.y - objB.min.y) + 0.002f;
+
+				newMoveY = (objB2S.max.y - objB.min.y) + colBSVal; 
+				if (newMoveY < 0.5f && newMoveY > moveY) {
+					moveY = newMoveY;
+				}
+				if (gobj2.physics.objectColl == -1) {
+				  gobj.physics.objectColl = gobj2.id;
+				}
+				if (gobj2.physics.collidedBy == -1) {
+					gobj2.physics.collidedBy = gobj.id;
+				}				
+			}
+			
+			if (gobj.physics.falling) {
+				if (gobj.id == 1) cout << "Fall!\n";
 			}
 
-			if (moveY < 0.0001f) {
-				Vector3 pos = gobj.getPosition();
-				pos.y += moveY;
-				gobj.setPosition(pos);
-			}
+			Vector3 pos = gobj.getPosition();
+			pos.y += moveY;
+			gobj.setPosition(pos);
 		}
 
 		// Helper: finds the highest surface (max Y) of any static collider that

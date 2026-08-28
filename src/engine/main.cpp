@@ -81,7 +81,7 @@ namespace openAITD {
 
     bool freeLook = false;
     bool pause = false;
-    const float maxDelta = 1. / 30;
+    const float maxDelta = 1.f / 30;
 
     void startGame() {
         world.gameOver = false;

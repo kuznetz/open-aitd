@@ -94,34 +94,36 @@ public:
             (unsigned char)(bright * 255.0f),
             255
         };
-        
-        auto& obj = world.gobjects[world.lightSpotObjId];
-        auto& b = obj.getBounds();
-        Vector3 pos = obj.getAbsPosition();
-        pos.y += (b.max.y - b.min.y) / 2.f;
-        
-        // Screen coordinates for the center of the circle
-        Vector3 screenPos = world.WorldToScreenZ(pos);
-        
-        // Distance from the camera to the light source (Euclidean)
-        Vector3 camPos = world.curCamera->position; // or from the matrix
-        float dist = Vector3Distance(camPos, pos);
-        if (dist < 0.001f) dist = 0.001f; // protection against division by zero
-        
-        // Radius parameters (adjustable)
-        const float baseRadius = 150.0f;
-        const float referenceDist = 10.0f;
-        float radius = baseRadius * (referenceDist / dist);
-        radius = Clamp(radius, 10.0f, 800.0f);
-        
+
         BeginTextureMode(resources.screen.maskTex);
         ClearBackground(bgColor);
-        
-        float size = radius * 2.0f;
-        raylib::Rectangle srcRect = { 0, 0, (float)softCircleTex.width, (float)softCircleTex.height };
-        raylib::Rectangle dstRect = { screenPos.x - size/2, screenPos.y - size/2, size, size };
-        Vector2 origin = { 0, 0 };
-        DrawTexturePro(softCircleTex, srcRect, dstRect, origin, 0.0f, WHITE);
+
+        auto& obj = world.gobjects[world.lightSpotObjId];
+        if (obj.getStageId() == world.curStageId) {
+            auto& b = obj.getBounds();
+            Vector3 pos = obj.getAbsPosition();
+            pos.y += (b.max.y - b.min.y) / 2.f;
+            
+            // Screen coordinates for the center of the circle
+            Vector3 screenPos = world.WorldToScreenZ(pos);
+            
+            // Distance from the camera to the light source (Euclidean)
+            Vector3 camPos = world.curCamera->position; // or from the matrix
+            float dist = Vector3Distance(camPos, pos);
+            if (dist < 0.001f) dist = 0.001f; // protection against division by zero
+            
+            // Radius parameters (adjustable)
+            const float baseRadius = 150.0f;
+            const float referenceDist = 10.0f;
+            float radius = baseRadius * (referenceDist / dist);
+            radius = Clamp(radius, 10.0f, 800.0f);
+            
+            float size = radius * 3.0f;
+            raylib::Rectangle srcRect = { 0, 0, (float)softCircleTex.width, (float)softCircleTex.height };
+            raylib::Rectangle dstRect = { screenPos.x - size/2, screenPos.y - size/2, size, size };
+            Vector2 origin = { 0, 0 };
+            DrawTexturePro(softCircleTex, srcRect, dstRect, origin, 0.0f, WHITE);
+        }
 
         EndTextureMode(); 
     }
@@ -135,6 +137,8 @@ public:
         if (world.lightSpotObjId != -1) {
             useMask = true;
             renderMask();
+        } else {
+            useMask = false;
         }
 
         BeginShaderMode(brightnessShader);

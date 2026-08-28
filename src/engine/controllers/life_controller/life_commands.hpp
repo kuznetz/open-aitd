@@ -292,10 +292,6 @@ namespace openAITD {
 			}, "SET_ALT_BACKGROUNDS");
 
 			lua->CreateFunction([this](int val) {
-				world->lightSpotObjId = val; 
-			}, "SET_LIGHT_OBJECT");
-
-			lua->CreateFunction([this](int val) {
 				//TODO: disable save
 			}, "SET_PLAYER_DEAD");
 			
@@ -560,6 +556,7 @@ namespace openAITD {
 				Vector3 pos = gobj.getPosition();
 				pos.y += 2.001f;
 				gobj.setPosition(pos);
+				physContr->raiseStuckObject(gobj);
 				}, "UP_COOR_Y");
 
       lua->CreateFunction([this](int fromObjId) {
@@ -608,9 +605,17 @@ namespace openAITD {
 				this->world->picture.delay = delay / 30.;
 				resources->audio.PlaySound(sampleId);
 			}, "PICTURE");			
+
 			lua->CreateFunction([this](int light) {
 				this->world->inDark = !light;
+				if (light) {
+					world->lightSpotObjId = -1;
+				}
 			}, "SET_LIGHT");
+			lua->CreateFunction([this](int val) {
+				world->lightSpotObjId = val; 
+			}, "SET_LIGHT_OBJECT");
+			
 			lua->CreateFunction([this](int water) {
 				this->world->waterLevel = (water == 0) ? -1000.f : water;
 		  }, "WATER");
