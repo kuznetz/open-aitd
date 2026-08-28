@@ -3,8 +3,8 @@
 #include <string>
 #include <variant>
 #include "common/raylib_cpp.hpp"
-#include "world/world.h"
-#include "resources/resources.h"
+#include "engine/world/world.h"
+#include "engine/resources/resources.h"
 #include "../base_renderer.hpp"
 #include "./particle_renderer.hpp"
 #include "./object_renderer.hpp"

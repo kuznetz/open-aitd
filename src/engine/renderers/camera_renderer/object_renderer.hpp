@@ -1,8 +1,8 @@
 #pragma once
 #include <vector>
 #include <string>
-#include "world/world.h"
-#include "resources/resources.h"
+#include "engine/world/world.h"
+#include "engine/resources/resources.h"
 #include "common/raylib_cpp.hpp"
 
 using namespace std;
