@@ -1,10 +1,10 @@
 ﻿#pragma once
 #include <vector>
 #include <string>
-#include "../world/world.h"
-#include "../resources/resources.h"
-#include "../../common/raylib_cpp.hpp"
-#include "./base_renderer.h"
+#include "engine/world/world.h"
+#include "engine/resources/resources.h"
+#include "common/raylib_cpp.hpp"
+#include "../base_renderer.hpp"
 
 using namespace std;
 
@@ -132,10 +132,12 @@ namespace openAITD {
 		}
 
 		void renderDebugText3D(Vector3 pos, const string& text, Color color) {
-			auto screenPos = world->WorldToScreenZ(pos);
-			if (screenPos.z > 0) {
-				renderDebugText({ screenPos.x, screenPos.y }, text, color);
-			}
+			Vector3 forward = Vector3Normalize(Vector3Subtract(mainCamera.target, mainCamera.position));
+			Vector3 toPoint = Vector3Subtract(pos, mainCamera.position);
+			bool inFrontCamera = Vector3DotProduct(forward, toPoint) > 0.0f;
+			if (!inFrontCamera) return;
+			auto screenPos = GetWorldToScreen(pos, mainCamera);
+			renderDebugText({ screenPos.x, screenPos.y }, text, color);
 		}
 
 		void renderDebugText(Vector2 screenpos, const string& text, Color color) {

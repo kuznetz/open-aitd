@@ -2,10 +2,10 @@
 #include <vector>
 #include <string>
 #include <variant>
-#include "../../common/raylib_cpp.hpp"
-#include "../world/world.h"
-#include "../resources/resources.h"
-#include "./base_renderer.h"
+#include "common/raylib_cpp.hpp"
+#include "world/world.h"
+#include "resources/resources.h"
+#include "../base_renderer.hpp"
 #include "./particle_renderer.hpp"
 #include "./object_renderer.hpp"
 #include "./mask_renderer.hpp"

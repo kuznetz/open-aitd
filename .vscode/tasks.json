@@ -25,7 +25,8 @@
                 "--build", "${workspaceFolder}/build",
                 "--target", "open-aitd",
                 "--config", "Debug",
-                "--parallel", "8"
+                "--parallel", "8",
+                "--", "/consoleloggerparameters:ForceNoAlign;NoSummary"
             ],
             "group": "build",
             "presentation": {

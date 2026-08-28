@@ -1,9 +1,9 @@
 #pragma once
 #include <vector>
 #include <string>
-#include "../world/world.h"
-#include "../resources/resources.h"
-#include "../../common/raylib_cpp.hpp"
+#include "world/world.h"
+#include "resources/resources.h"
+#include "common/raylib_cpp.hpp"
 
 using namespace std;
 using namespace raylib;

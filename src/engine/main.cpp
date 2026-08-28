@@ -6,8 +6,8 @@
 #include "./world/world.h"
 #include "./world/save_helper.h"
 
-#include "./renderers/camera_renderer.h"
-#include "./renderers/freelook_renderer.h"
+#include "./renderers/camera_renderer/camera_renderer.hpp"
+#include "./renderers/freelook_renderer/freelook_renderer.hpp"
 #include "./renderers/scene_renderer.hpp"
 
 #include "./controllers/player_controller.h"

@@ -290,11 +290,11 @@ namespace openAITD {
 
   inline void ParticleController::processCigarSmoke(ParticleGroup& partGrp, const float timeDelta) {
       // Smoke parameters
-      const float riseSpeed = 1.0f;            // base rise speed
+      const float riseSpeed = 0.5f;            // base rise speed
       const float spread = 1.2f;               // horizontal spread
       const float turbulence = 1.2f;           // amplitude of random deviations
-      const float particleLifetime = 1.5f;     // lifetime of each particle
-      const float spawnInterval = 0.1f;       // interval for spawning new particles
+      const float particleLifetime = 4.0f;     // lifetime of each particle
+      const float spawnInterval = 0.2f;       // interval for spawning new particles
 
       if (!partGrp.initialized) {
           partGrp.lifetime = 1.f;
@@ -322,7 +322,7 @@ namespace openAITD {
           if (p.lifetime <= 0.0f) {
               p.active = false;
           } else {
-              p.size += (0.3f * timeDelta);
+              p.size += (0.1f * timeDelta);
           }
       }
 

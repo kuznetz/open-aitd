@@ -1,9 +1,9 @@
 #pragma once
 
 #include <functional>
-#include "../../common/raylib_cpp.hpp"
-#include "../resources/resources.h"
-#include "../world/world.h"
+#include "common/raylib_cpp.hpp"
+#include "engine/resources/resources.h"
+#include "engine/world/world.h"
 
 namespace openAITD {
 

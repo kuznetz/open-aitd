@@ -114,7 +114,8 @@ set(ALL_INCLUDES
     ${JSON_INCLUDE_DIR}
     ${TINYGLTF_INCLUDE_DIR}
 	${OGG_INCLUDE_DIR}
-	${VORBIS_INCLUDE_DIR})
+	${VORBIS_INCLUDE_DIR}
+    ${CMAKE_SOURCE_DIR}/src)
 
 add_library(libextractor STATIC)
 file(GLOB_RECURSE EXTRACTOR_SOURCES CONFIGURE_DEPENDS "src/extractor/*.cpp" "src/extractor/*.h" "src/extractor/*.hpp")
