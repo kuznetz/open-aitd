@@ -14,21 +14,21 @@ namespace openAITD {
 
     void process(const float timeDelta) {
         auto& shake = world.shake;
+        if (!shake.active && shake.intensity == 0) return;
+
         const float screenH = (float)world.resources->config.screenH;
 
         shake.time += timeDelta;
 
         // Relative
-        if (shake.active && !shake.fadingOut) {
+        if (shake.active) {
             shake.intensity += (shake.maxIntensity / shake.fadeInTime) * timeDelta;
             if (shake.intensity > shake.maxIntensity)
                 shake.intensity = shake.maxIntensity;
-        } else if (shake.fadingOut) {
+        } else {
             shake.intensity -= (shake.maxIntensity / shake.fadeOutTime) * timeDelta;
             if (shake.intensity <= 0.0f) {
                 shake.intensity = 0.0f;
-                shake.fadingOut = false;
-                shake.active = false;
             }
         }
 

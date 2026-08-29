@@ -47,7 +47,6 @@ namespace openAITD {
 
 	struct Shake {
 			bool active = false;
-			bool fadingOut = false;
 			float intensity = 0.0f;          // current amplitude
 			float maxIntensity = 0.01f;      // max amplitude (5% screen height)
 			float fadeInTime = 0.3f;
@@ -57,22 +56,13 @@ namespace openAITD {
 			float time = 0.0f;
 
 			void start() {
-				if (active && !fadingOut) return;
-				if (fadingOut) {
-					fadingOut = false;
-					return;
-				} else {
-					active = true;
-					fadingOut = false;
-					intensity = 0.0f;
-					time = 0.0f;
-				}
+				active = true;
+				intensity = 0.0f;
+				time = 0.0f;
 			}
 
 			void stop() {
-				if (active && !fadingOut) {
-					fadingOut = true;
-				}
+				active = false;
 			}
 	};
 

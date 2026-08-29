@@ -2,9 +2,9 @@ Features:
 0.2: Main features support
 - Character Select
 - Particles: blood, enemyblood, cigar smoke, enemy smoke, bullet hit
-- Gun fire model (particles)
++ Gun fire model (particles)
 - Multilanguage support
-- Cut model in water
++ Cut model in water
 - Camera shaking
 - Intro images
 - Light in maze

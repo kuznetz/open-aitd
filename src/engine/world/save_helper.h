@@ -60,6 +60,9 @@ namespace openAITD {
                 outJson["inHand"] = world.inHandObj->id;
             }
             outJson["inDark"] = world.inDark;
+            outJson["lightSpotObjId"] = world.lightSpotObjId;
+            outJson["waterLevel"] = world.waterLevel;
+            outJson["shaking"] = world.shake.active;
 
             outJson["vars"] = json::array();
             for (int i = 0; i < world.vars.size(); i++) {
@@ -202,12 +205,16 @@ namespace openAITD {
                 world.inHandObj = &world.gobjects[inHand];
                 int followTarget = inJson["follow"].get<int>();
                 world.followTarget = &world.gobjects[followTarget];
-                world.inDark = inJson["inDark"];
+                world.inDark = inJson.value("inDark", false);
+                world.lightSpotObjId = inJson.value("lightSpotObjId", -1);
+                world.waterLevel = inJson.value("waterLevel", -1000.0f);
+                world.shake.active = inJson.value("shaking", false);
 
                 auto foll = world.followTarget;
                 world.setCurStage(foll->getStageId(), foll->getRoomId());
                 
-                resources.backgrounds.setIsAltBackgrounds(inJson["altBackgrounds"]);
+                bool altBackgrounds = inJson.value("altBackgrounds", false);
+                resources.backgrounds.setIsAltBackgrounds(altBackgrounds);
 
                 bool altModels = inJson.value("altModels", false);
                 world.setAltModels(altModels);
