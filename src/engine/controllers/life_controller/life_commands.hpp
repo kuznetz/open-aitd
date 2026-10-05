@@ -202,7 +202,6 @@ namespace openAITD {
 				}, "HIT_DAMAGE");
 
 			lua->CreateFunction([this](int obj) -> int {
-				//return this->world->gobjects[obj].animation.scriptAnimId;
 				return this->world->gobjects[obj].animation.id;
 				}, "ANIM");
 			lua->CreateFunction([this](int obj) -> int {

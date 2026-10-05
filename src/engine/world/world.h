@@ -390,7 +390,6 @@ namespace openAITD {
 			gobj.bitField.animated = 0;
 			return;
 		}
-		gobj.animation.scriptAnimId = animId;
 		gobj.animation.id = animId;
 		gobj.animation.nextId = -1;
 		gobj.animation.animEnd = 0;
@@ -408,7 +407,6 @@ namespace openAITD {
 			gobj.bitField.animated = 0;
 			return;
 		}
-		gobj.animation.scriptAnimId = animId;
 		gobj.animation.id = animId;
 		gobj.animation.nextId = nextAnimId;
 		gobj.animation.animEnd = 0;
