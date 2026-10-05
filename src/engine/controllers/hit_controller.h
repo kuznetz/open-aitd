@@ -83,7 +83,8 @@ namespace openAITD {
 
                 if (act->gobj->getStageId() != world->curStageId) {
                     act->gobj->hit.active = false;
-                    break;
+                    act->gobj = 0;
+                    continue;
                 }                
 
                 if (act->gobj->animation.id != act->animId) {

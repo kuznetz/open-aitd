@@ -39,6 +39,12 @@ namespace openAITD {
 				isAction = true;
 			}
 
+			// A scripted one-shot animation must play to its end and must not be
+			// overwritten by idle/input (old-engine animActionType behaviour).
+			if (!gobj.animation.bitField.repeat && gobj.bitField.animated) {
+				isAction = true;
+			}
+
 			//Rotate Player
 			if (!isAction) {
 				float rotate = 0;
