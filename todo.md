@@ -2,10 +2,9 @@ Features:
 0.2: Main features support
 + Intro border scaling
 + Noise Textures
-- Transparent Materials
++ Transparent Materials
 - Intro images
-- Character Select
-- Particles: blood, enemyblood, cigar smoke, enemy smoke, bullet hit
++ Particles: blood, enemyblood, cigar smoke, enemy smoke, bullet hit
 + Gun fire model (particles)
 + Cut model in water
 + Camera shaking
@@ -13,6 +12,7 @@ Features:
 0.3: Additional features
 - Multilanguage support (lang select and save)
 - Light in maze (animate spot)
+- Character Select
 - More fancy save/load
 - Additional multilang text
 - Book - spaces / animation / page number
