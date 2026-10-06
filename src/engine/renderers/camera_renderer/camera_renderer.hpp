@@ -68,6 +68,25 @@ namespace openAITD {
             boundsToScreen(ord.bb, ord.screenRect, ord.zPos);
         }
 
+        // Returns true when the whole bounding box is at or behind the camera
+        // plane. The camera looks down -Z in view space, so a point is in front
+        // when its view-space z is negative. Objects at/near the camera still
+        // have at least one corner in front, so they must remain in the queue
+        // (the near clipping plane itself is handled by the GPU).
+        bool isBehindCamera(const Bounds& bb) {
+            const Vector3 corners[8] = {
+                { bb.min.x, bb.min.y, bb.min.z }, { bb.max.x, bb.min.y, bb.min.z },
+                { bb.min.x, bb.max.y, bb.min.z }, { bb.max.x, bb.max.y, bb.min.z },
+                { bb.min.x, bb.min.y, bb.max.z }, { bb.max.x, bb.min.y, bb.max.z },
+                { bb.min.x, bb.max.y, bb.max.z }, { bb.max.x, bb.max.y, bb.max.z },
+            };
+            for (int i = 0; i < 8; i++) {
+                Vector3 v = Vector3Transform(corners[i], world->cameraView);
+                if (v.z < 0.0f) return false; // at least one corner is in front
+            }
+            return true;
+        }
+
         void MyBeginMode3D() {
             rlDrawRenderBatchActive();
             rlPushMatrix();
@@ -112,7 +131,7 @@ namespace openAITD {
 
                 RenderOrder& ro = renderQueue[renderQueueCount++];
                 fillRenderOrder(ro, gobj);
-                if (ro.zPos < 0) continue;
+                if (isBehindCamera(ro.bb)) continue;
                 if ((ro.screenRect.x + ro.screenRect.width) < 0 || ro.screenRect.x > getScreenW()) continue;
                 if ((ro.screenRect.y + ro.screenRect.height) < 0 || ro.screenRect.y > getScreenH()) continue;
 
@@ -148,7 +167,7 @@ namespace openAITD {
                 boundsToScreen(ro.bb, ro.screenRect, ro.zPos);
                 ro.zPos = world->WorldToScreenZ(pos).z;
 
-                if (ro.zPos < 0) continue;
+                if (isBehindCamera(ro.bb)) continue;
                 if ((ro.screenRect.x + ro.screenRect.width) < 0 || ro.screenRect.x > getScreenW()) continue;
                 if ((ro.screenRect.y + ro.screenRect.height) < 0 || ro.screenRect.y > getScreenH()) continue;
 
