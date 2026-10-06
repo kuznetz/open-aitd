@@ -66,6 +66,9 @@ namespace AITDExtractor {
 			case 1:
 			{
 				int numPoints = READ_LE_U8(data + i);
+				//subType is polyType: 0-shadeless, 1-noise, 2-transparent,
+				//3/6-gradient horizontal, 4/5-gradient vertical.
+				//Consumed by the extractor to pick transparent/noise materials.
 				prim.subType = READ_LE_U8(data + i + 1);
 				prim.colorIndex = READ_LE_U8(data + i + 2);
 				i += 3;

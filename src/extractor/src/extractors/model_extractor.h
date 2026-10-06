@@ -3,12 +3,15 @@
 #include "structs/model.h"
 #include "structs/animation.h"
 #include "../utils/TriangulatePolygon.h"
+#include "../utils/save_png.h"
 #include "../loaders/loaders.h"
 #include "../utils/my_gltf.h"
 #include "../../../common/raylib_cpp.hpp"
 
 #define NLOHMANN_JSON_NAMESPACE_NO_VERSION 1
 #include <nlohmann/json.hpp>
+#include <random>
+#include <algorithm>
 
 namespace AITDExtractor {
 
@@ -18,10 +21,20 @@ namespace AITDExtractor {
 
     inline const Matrix modelMatrix  = MatrixMultiply(MatrixRotateX(PI), MatrixRotateY(PI)); //MatrixIdentity();
 
+    // Alpha for "transparent" polygons (polyType 2). Sample uses color.a = 128.
+    inline constexpr float MATERIAL_TRANSPARENT_ALPHA = 128.0f / 255.0f;
+    // Static raster noise texture (generated once, not a shader).
+    inline constexpr int NOISE_TEXTURE_SIZE = 32;
+    inline constexpr const char* NOISE_TEXTURE_FILE = "noise.png";
+    // noisesize = NOISE_UV_SCALE / bounds.size.magnitude
+    inline constexpr float NOISE_UV_SCALE = 8.f;
+    // linesize = bounds.size.magnitude / LINE_SIZE_DIVISOR (reference loader uses 250)
+    inline constexpr float LINE_SIZE_DIVISOR = 250.0f;
+
     void ComputeUV(vector<Vector3>& allVertices, vector<int>& polyVertices, Vector3& forward, Vector3& left)
     {
         int lastPoly = polyVertices.size() - 1;
-        Vector3 up;
+        Vector3 up = { 0, 0, 0 };
         do
         {
             Vector3 a = allVertices[polyVertices[0]];
@@ -33,13 +46,15 @@ namespace AITDExtractor {
             up = Vector3Normalize(Vector3CrossProduct(left, forward));
             left = Vector3Normalize(Vector3CrossProduct(up, forward));
             lastPoly--;
-        } while (lastPoly > 1);
+        } while (Vector3LengthSqr(up) == 0.0f && lastPoly > 1);
     }
 
-    int getMaterialIdx(tinygltf::Model& m, u8 colorIdx, const Pallete& pallete, u8 subType = 0)
+    // polyType (prim.subType) semantics from the reference loader:
+    //   0 - shadeless, 1 - noise, 2 - transparent,
+    //   3/6 - gradient horizontal, 4/5 - gradient vertical
+    int getMaterialIdx(tinygltf::Model& m, u8 colorIdx, const Pallete& pallete, u8 subType = 0, int noiseTexIdx = -1)
     {
-        //string matName = string("mat_")+ to_string(colorIdx) + "_" + to_string(subType);
-        string matName = string("mat_") + to_string(colorIdx);
+        string matName = string("mat_") + to_string(colorIdx) + "_" + to_string(subType);
         for (int i = 0; i < m.materials.size(); i++) {
             if (m.materials[i].name == matName) {
                 return i;
@@ -50,16 +65,113 @@ namespace AITDExtractor {
         newMat.doubleSided = false;
 
         auto col = pallete[colorIdx];
-        newMat.pbrMetallicRoughness.baseColorFactor = { 
+        float alpha = 1.0f;
+
+        if (subType == 2)
+        {
+            //transparent / glass
+            alpha = MATERIAL_TRANSPARENT_ALPHA;
+            newMat.alphaMode = "BLEND";
+            newMat.doubleSided = true;
+        }
+
+        newMat.pbrMetallicRoughness.baseColorFactor = {
             (float)col[0] / 255,
             (float)col[1] / 255,
             (float)col[2] / 255,
-            1 };
+            alpha };
         newMat.pbrMetallicRoughness.metallicFactor = 0;
         newMat.pbrMetallicRoughness.roughnessFactor = 1;
-        //newMat.alphaMode
+
+        if (subType == 1 && noiseTexIdx >= 0)
+        {
+            //noise: static raster texture
+            newMat.pbrMetallicRoughness.baseColorTexture.index = noiseTexIdx;
+        }
+
         m.materials.push_back(newMat);
         return m.materials.size() - 1;
+    }
+
+    // Generates a static (deterministic) grayscale noise raster.
+    vector<unsigned char> generateNoiseRgba(int size)
+    {
+        vector<unsigned char> rgba(size * size * 4);
+        std::mt19937 rng(1337u);
+        std::uniform_int_distribution<int> dist(160, 255);
+        for (int i = 0; i < size * size; i++) {
+            unsigned char v = (unsigned char)dist(rng);
+            rgba[i * 4 + 0] = v;
+            rgba[i * 4 + 1] = v;
+            rgba[i * 4 + 2] = v;
+            rgba[i * 4 + 3] = 255;
+        }
+        return rgba;
+    }
+
+    // Registers an already-written texture file (uri is relative to model.gltf).
+    int addImageTexture(tinygltf::Model& m, const string& uri)
+    {
+        tinygltf::Image img;
+        img.name = uri;
+        img.uri = uri;
+
+        tinygltf::Sampler smp;
+        smp.magFilter = TINYGLTF_TEXTURE_FILTER_NEAREST;
+        smp.minFilter = TINYGLTF_TEXTURE_FILTER_NEAREST;
+        smp.wrapS = TINYGLTF_TEXTURE_WRAP_REPEAT;
+        smp.wrapT = TINYGLTF_TEXTURE_WRAP_REPEAT;
+        m.samplers.push_back(smp);
+        int smpIdx = m.samplers.size() - 1;
+
+        m.images.push_back(img);
+        int imgIdx = m.images.size() - 1;
+
+        tinygltf::Texture tex;
+        tex.source = imgIdx;
+        tex.sampler = smpIdx;
+        m.textures.push_back(tex);
+        return m.textures.size() - 1;
+    }
+
+    int createVec2Accessor(tinygltf::Model& m, const vector<Vector2>& vecs)
+    {
+        int vwIdx = createBufferAndView(m, (void*)vecs.data(), (int)(vecs.size() * sizeof(Vector2)), TINYGLTF_TARGET_ARRAY_BUFFER);
+        tinygltf::Accessor acc;
+        acc.bufferView = vwIdx;
+        acc.byteOffset = 0;
+        acc.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
+        acc.count = vecs.size();
+        acc.type = TINYGLTF_TYPE_VEC2;
+        m.accessors.push_back(acc);
+        return m.accessors.size() - 1;
+    }
+
+    // Magnitude of the model bounding box diagonal.
+    float computeBoundsMagnitude(const vector<Vector3>& verts)
+    {
+        if (verts.empty()) return 0.0f;
+
+        Vector3 mn = verts[0];
+        Vector3 mx = verts[0];
+        for (auto& v : verts) {
+            mn.x = std::min(mn.x, v.x); mn.y = std::min(mn.y, v.y); mn.z = std::min(mn.z, v.z);
+            mx.x = std::max(mx.x, v.x); mx.y = std::max(mx.y, v.y); mx.z = std::max(mx.z, v.z);
+        }
+        return Vector3Length(Vector3Subtract(mx, mn));
+    }
+
+    // noisesize = NOISE_UV_SCALE / bounds.size.magnitude (see reference loader)
+    float computeNoiseSize(const vector<Vector3>& verts)
+    {
+        float mag = computeBoundsMagnitude(verts);
+        return mag > 0.0f ? NOISE_UV_SCALE / mag : 0.0f;
+    }
+
+    // line radius = bounds.size.magnitude / LINE_SIZE_DIVISOR (see reference loader)
+    float computeLineSize(const vector<Vector3>& verts)
+    {
+        return computeBoundsMagnitude(verts) / LINE_SIZE_DIVISOR;
     }
 
     Quaternion GetAniRotation(AniBone& bone)
@@ -290,21 +402,8 @@ namespace AITDExtractor {
     */
 
 
-    tinygltf::Primitive createPrimitivePoly(tinygltf::Model& m, const PakModelPrimitive& prim, vector<Vector3>& modelVerts, int vertAccIdx, const Pallete pallette) {
-        auto matIdx = getMaterialIdx(m, prim.colorIndex, pallette, prim.subType);
-
-        /*
-        UV:
-            ComputeUV(polyVertices, out forward, out left);
-            foreach (int pointIndex in polyVertices)
-            {
-                Vector3 poly = allVertices[pointIndex];
-                uv.Add(new Vector2(
-                    Vector3.Dot(poly, left) * noisesize,
-                    Vector3.Dot(poly, forward) * noisesize
-                ));
-            }
-        */
+    tinygltf::Primitive createPrimitivePoly(tinygltf::Model& m, const PakModelPrimitive& prim, vector<Vector3>& modelVerts, int vertAccIdx, const Pallete pallette, const vector<u8>& vecBoneAffect, const VertexSkin& globalSkin, bool hasBones, int noiseTexIdx = -1, float noisesize = 0.0f) {
+        auto matIdx = getMaterialIdx(m, prim.colorIndex, pallette, prim.subType, noiseTexIdx);
 
         std::vector<int> idxMap(prim.vertexIdxs.size());
         for (int i = 0; i < prim.vertexIdxs.size(); i++) {
@@ -316,6 +415,59 @@ namespace AITDExtractor {
         }
 
         const auto& triangles = triangulate1(prim.vertexIdxs.size());
+
+        //Noise polygons get their own duplicated vertices so that every polygon
+        //has independent UVs. The reference loader adds separate vertices per
+        //polygon (uv.Add(...) per point); reusing shared model vertices would
+        //let neighbouring polygons overwrite each other's noise UVs.
+        if (prim.subType == 1 && noiseTexIdx >= 0) {
+            const int n = (int)idxMap.size();
+
+            vector<Vector3> localVerts(n);
+            vector<int> localPoly(n);
+            for (int i = 0; i < n; i++) {
+                localVerts[i] = modelVerts[idxMap[i]];
+                localPoly[i] = i;
+            }
+
+            Vector3 forward, left;
+            ComputeUV(localVerts, localPoly, forward, left);
+
+            vector<Vector2> localUVs(n);
+            for (int i = 0; i < n; i++) {
+                localUVs[i] = {
+                    Vector3DotProduct(localVerts[i], left) * noisesize,
+                    Vector3DotProduct(localVerts[i], forward) * noisesize
+                };
+            }
+
+            vector<unsigned int> localIdxs;
+            for (int i = 0; i < triangles.size(); i++) {
+                localIdxs.emplace_back(triangles[i].p0);
+                localIdxs.emplace_back(triangles[i].p2);
+                localIdxs.emplace_back(triangles[i].p1);
+            }
+            if (localIdxs.size() < 3) {
+                throw new exception("localIdxs.size() < 3");
+            }
+
+            int localVertAcc = createVertexes(m, localVerts);
+            int localUvAcc = createVec2Accessor(m, localUVs);
+
+            auto outPrim = createPolyPrimitive(m, localIdxs, localVertAcc, matIdx);
+            outPrim.attributes["TEXCOORD_0"] = localUvAcc;
+
+            if (hasBones) {
+                vector<u8> localSkin(n);
+                for (int i = 0; i < n; i++) {
+                    localSkin[i] = vecBoneAffect[idxMap[i]];
+                }
+                auto vSkin = addVertexSkin(m, localSkin);
+                outPrim.attributes["JOINTS_0"] = vSkin.jointsAccIdx;
+                outPrim.attributes["WEIGHTS_0"] = vSkin.weightsAccIdx;
+            }
+            return outPrim;
+        }
 
         vector<unsigned int> modelIdxs;
         for (int i = 0; i < triangles.size(); i++) {
@@ -329,7 +481,12 @@ namespace AITDExtractor {
             throw new exception("modelIdxs.size() < 3");
         }
 
-        return createPolyPrimitive(m, modelIdxs, vertAccIdx, matIdx);
+        auto outPrim = createPolyPrimitive(m, modelIdxs, vertAccIdx, matIdx);
+        if (hasBones) {
+            outPrim.attributes["JOINTS_0"] = globalSkin.jointsAccIdx;
+            outPrim.attributes["WEIGHTS_0"] = globalSkin.weightsAccIdx;
+        }
+        return outPrim;
     }
 
     int getParent(tinygltf::Model& m, int childIdx) {
@@ -452,6 +609,25 @@ namespace AITDExtractor {
 
         int vertAccIdx = createVertexes(m, modelVerts);
 
+        //--- noise / transparent materials setup ---
+        bool hasNoise = false;
+        for (auto& p : model.primitives) {
+            if (p.type == 1 && p.subType == 1) { hasNoise = true; break; }
+        }
+
+        int noiseTexIdx = -1;
+        float noisesize = 0.0f;
+        float lineSize = computeLineSize(modelVerts);
+        if (hasNoise) {
+            //UV are generated per polygon in createPrimitivePoly()
+            noisesize = computeNoiseSize(modelVerts);
+
+            auto noiseRgba = generateNoiseRgba(NOISE_TEXTURE_SIZE);
+            std::filesystem::create_directories(dirname);
+            savePng((dirname + "/" + NOISE_TEXTURE_FILE).c_str(), NOISE_TEXTURE_SIZE, NOISE_TEXTURE_SIZE, noiseRgba.data(), PNG_COLOR_TYPE_RGBA);
+            noiseTexIdx = addImageTexture(m, NOISE_TEXTURE_FILE);
+        }
+
         if (splitPrimitives)
         {
             //=== multi mesh (for test) ===
@@ -476,8 +652,9 @@ namespace AITDExtractor {
         {
             //=== single mesh ===
             tinygltf::Mesh mesh;
+            const bool hasBones = model.bones.size() > 0;
             VertexSkin vSkin = { -1,-1 };
-            if (model.bones.size()) {
+            if (hasBones) {
                 vSkin = addVertexSkin(m, vecBoneAffect);
             }
 
@@ -485,11 +662,7 @@ namespace AITDExtractor {
             {
                 auto& prim = model.primitives[pIdx];
                 if (prim.type != 1) continue;
-                auto& prim2 = createPrimitivePoly(m, prim, modelVerts, vertAccIdx, pallete);
-                if (model.bones.size()) {
-                    prim2.attributes["JOINTS_0"] = vSkin.jointsAccIdx;
-                    prim2.attributes["WEIGHTS_0"] = vSkin.weightsAccIdx;
-                }
+                auto prim2 = createPrimitivePoly(m, prim, modelVerts, vertAccIdx, pallete, vecBoneAffect, vSkin, hasBones, noiseTexIdx, noisesize);
                 mesh.primitives.push_back(prim2);
             }
 
@@ -498,7 +671,7 @@ namespace AITDExtractor {
                 auto& prim = model.primitives[pIdx];
                 if (prim.type != 3) continue;
                 const int vertCount = 5;
-                auto matIdx = getMaterialIdx(m, prim.colorIndex, pallete, prim.subType);
+                auto matIdx = getMaterialIdx(m, prim.colorIndex, pallete, prim.subType, noiseTexIdx);
                 auto& pos = modelVerts[prim.vertexIdxs[0] / 6];
                 float size = prim.size / 1000.0f;
                 auto& prim2 = createSpherePrim(m, size, vertCount, pos, matIdx);
@@ -520,12 +693,12 @@ namespace AITDExtractor {
                 if (prim.vertexIdxs.size() != 2) {
                     throw new exception("Line indexes not 2");
                 }
-                auto matIdx = getMaterialIdx(m, prim.colorIndex, pallete, 0);
+                auto matIdx = getMaterialIdx(m, prim.colorIndex, pallete, 0, noiseTexIdx);
                 Vector3 points[2] = {
                     modelVerts[prim.vertexIdxs[0] / 6],
                     modelVerts[prim.vertexIdxs[1] / 6]
                 };
-                auto& prim2 = createPipePrim(m, points, 0.005f, 4, matIdx);
+                auto& prim2 = createPipePrim(m, points, lineSize, 4, matIdx);
                 if (model.bones.size()) {
                     vector<u8> vecBoneAffect2(8);
                     for (int i = 0; i < 4; i++) {
@@ -545,15 +718,17 @@ namespace AITDExtractor {
             for (int pIdx = 0; pIdx < model.primitives.size(); pIdx++)
             {
                 auto& prim = model.primitives[pIdx];
-                float size = 0.01f;
+                //pointsize from the reference loader: linesize, linesize*2.5, linesize*5.0
+                float size;
                 if (prim.type == 2) {
+                    size = lineSize;
                 } else if (prim.type == 6) {
-                    size = 0.02f;
+                    size = lineSize * 2.5f;
                 } else if (prim.type == 7) {
-                    size = 0.1f;
+                    size = lineSize * 5.0f;
                 } else continue;
 
-                auto matIdx = getMaterialIdx(m, prim.colorIndex, pallete, 0);
+                auto matIdx = getMaterialIdx(m, prim.colorIndex, pallete, 0, noiseTexIdx);
                 auto& prim2 = createCubePrim(m, modelVerts[prim.vertexIdxs[0] / 6], { size,size,size }, matIdx);
                 if (model.bones.size()) {
                     vector<u8> vecBoneAffect2(8);
