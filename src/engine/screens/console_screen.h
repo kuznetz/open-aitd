@@ -231,7 +231,10 @@ namespace openAITD {
         if (gobj.animation.bitField.uninterruptable) animInfo += " UnInt";
         lines[3] = animInfo;
         
-        lines[4] = BuildString("Life: ", (int)gobj.lifeMode, " ", gobj.lifeId);
+        lines[4] = BuildString(
+          "Life: ", (int)gobj.lifeMode, " ", gobj.lifeId, 
+          " Track: ", (int)gobj.track.mode, " ", gobj.track.id, " Mrk ", gobj.track.mark
+        );
 
         auto pos = gobj.getPosition();
         lines[5] = BuildString("Pos X:", pos.x, " Y:", pos.y, " Z:", pos.z);
