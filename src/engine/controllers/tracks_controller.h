@@ -144,10 +144,11 @@ namespace openAITD {
 		}
 
 		void rotateXYZ(GameObject& gobj, TrackItem& trackItm) {
-			auto& r = gobj.getOrigRotation();
-      r.x = trackItm.rot.x;
-			r.y = trackItm.rot.y;
-			r.z = trackItm.rot.z;
+			gobj.setOrigRotation({
+				trackItm.rot.x,
+				trackItm.rot.y,
+				trackItm.rot.z
+			});
 		}
 
 		void processObjTrack( GameObject& gobj, const float timeDelta ) {
