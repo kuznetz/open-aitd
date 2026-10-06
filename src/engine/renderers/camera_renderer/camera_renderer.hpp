@@ -223,9 +223,14 @@ namespace openAITD {
                     }
                     EndTextureMode();
 
-                    // 3. Output the color texture with the mask applied
+                    // 3. Output the color texture with the mask applied.
+                    // The object color texture holds premultiplied alpha (see
+                    // ObjectRenderer), so composite it with the matching
+                    // premultiplied-alpha blend mode to keep translucent
+                    // materials blended correctly over the background and over
+                    // previously drawn objects.
                     BeginTextureMode(resources->screen.sceneTex);
-                    BeginBlendMode(BLEND_ALPHA);
+                    BeginBlendMode(BLEND_ALPHA_PREMULTIPLY);
                     maskRenderer.renderMasked(colorTex.texture, r);
                     EndBlendMode();
                     EndTextureMode();

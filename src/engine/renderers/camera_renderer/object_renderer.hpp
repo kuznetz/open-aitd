@@ -45,7 +45,12 @@ namespace openAITD {
             auto m = rlGetMatrixModelview();
             rlSetMatrixModelview(MatrixMultiply(matr, m));
 
-            // Render each mesh of the model with our custom shader
+            // Render each mesh of the model with our custom shader.
+            // The color render target is cleared to a fully transparent pixel
+            // before this call, so semi-transparent meshes must blend with each
+            // other. Premultiplied-alpha blending makes that accumulation
+            // correct (the fragment shader outputs premultiplied color/alpha).
+            BeginBlendMode(BLEND_ALPHA_PREMULTIPLY);
             auto& rlModel = model.model;
             for (int i = 0; i < rlModel.meshCount; i++) {
                 Mesh mesh = rlModel.meshes[i];
@@ -53,6 +58,7 @@ namespace openAITD {
                 Matrix transform = rlModel.transform;
                 drawMesh(mesh, material, transform);
             }
+            EndBlendMode();
 
             rlSetMatrixModelview(m);
         }
@@ -106,13 +112,17 @@ namespace openAITD {
 
             void main() {
                 if (fragPosition.y < YCut) discard;
-                vec4 texColor = texture(texture0, fragTexCoord);
-                if (useTexture == 0) {
-                    finalColor = colDiffuse;
-                } else {
-                    finalColor = texColor * colDiffuse;
-                }
-                finalColor.a = 1.0;
+
+                vec4 color = (useTexture == 0)
+                    ? colDiffuse
+                    : (texture(texture0, fragTexCoord) * colDiffuse);
+
+                // Do NOT force alpha to 1: the material alpha (baseColorFactor
+                // alpha and/or the texture alpha channel) is what makes a
+                // surface semi-transparent (glass, water, ghosts, alpha cutouts).
+                // Output premultiplied alpha so it combines correctly with the
+                // BLEND_ALPHA_PREMULTIPLY blend mode used while drawing meshes.
+                finalColor = vec4(color.rgb * color.a, color.a);
             }
         )";
 
