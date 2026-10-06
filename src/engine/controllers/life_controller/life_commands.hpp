@@ -312,7 +312,7 @@ namespace openAITD {
 
 			//Basic
 			lua->CreateFunction([this](int obj, int modelId) {
-				this->world->setModel(this->world->gobjects[obj], modelId);
+				this->world->gobjects[obj].setModel(modelId);
 			}, "SET_MODEL");
 			lua->CreateFunction([this](int obj, int lifeId) {
 				this->world->gobjects[obj].lifeId = lifeId;
@@ -407,10 +407,10 @@ namespace openAITD {
 				this->world->drop(itemObjId, actorObjId);
 				}, "DROP");
 			lua->CreateFunction([this](int obj, int animThrow, int frameThrow, int activeBone, int itemObjId, int throwRotated, int hitDamage, int animNext) {
-				auto gobj = &this->world->gobjects[obj];
-				auto gobj2 = &this->world->gobjects[itemObjId];
-				this->world->setUninterrupableAnimation(*gobj, animThrow, animNext);
-				this->throwContr->throw_(gobj, gobj2, animThrow, frameThrow, frameThrow, activeBone, hitDamage);
+				auto& gobj = this->world->gobjects[obj];
+				auto& gobj2 = this->world->gobjects[itemObjId];
+				gobj.setUninterrupableAnimation(animThrow, animNext);
+				this->throwContr->throw_(&gobj, &gobj2, animThrow, frameThrow, frameThrow, activeBone, hitDamage);
 				}, "THROW");
 			lua->CreateFunction([this](int obj) {
 				auto& gobj = this->world->gobjects[obj];				
@@ -428,29 +428,28 @@ namespace openAITD {
 
 			//Animations, tracks, rotations
 			lua->CreateFunction([this](int obj, int animId, int nextAnimId) {
-				this->world->setOnceAnimation(this->world->gobjects[obj], animId, nextAnimId);
+				this->world->gobjects[obj].setOnceAnimation(animId, nextAnimId);
 				}, "SET_ANIM_ONCE");
 			lua->CreateFunction([this](int obj, int animId) {
-				this->world->setRepeatAnimation(this->world->gobjects[obj], animId);
+				this->world->gobjects[obj].setRepeatAnimation(animId);
 				}, "SET_ANIM_REPEAT");
 			lua->CreateFunction([this](int obj, int animId, int nextAnimId) {
-				this->world->setUninterrupableAnimation(this->world->gobjects[obj], animId, nextAnimId);
-				//ANIM_ONCE | ANIM_UNINTERRUPTABLE;
+				this->world->gobjects[obj].setUninterrupableAnimation(animId, nextAnimId);
 				}, "SET_ANIM_ALL_ONCE");
 			
 			//Actions
 			lua->CreateFunction([this](int obj, int anim1, int keyFrameIdx, int activeBone, int range, int damage, int anim2) {
-				auto gobj = &this->world->gobjects[obj];
-				this->world->setOnceAnimation(this->world->gobjects[obj], anim1, anim2);
-				this->hitContr->addAction(gobj, anim1, keyFrameIdx);
-				gobj->hit.boneIdx = activeBone;
-				gobj->hit.range = range / 1000.f;
-				gobj->hit.hitDamage = damage;
+				auto& gobj = this->world->gobjects[obj];
+				gobj.setOnceAnimation(anim1, anim2);
+				this->hitContr->addAction(&gobj, anim1, keyFrameIdx);
+				gobj.hit.boneIdx = activeBone;
+				gobj.hit.range = range / 1000.f;
+				gobj.hit.hitDamage = damage;
 				}, "HIT");
 			lua->CreateFunction([this](int obj, int fireAnim, int shootFrame, int emitPoint, int zvSize, int damage, int nextAnim) {
-				auto gobj = &this->world->gobjects[obj];
-				this->world->setUninterrupableAnimation(this->world->gobjects[obj], fireAnim, nextAnim);
-				this->shootContr->addAction(gobj, fireAnim, shootFrame, emitPoint, damage);
+				auto& gobj = this->world->gobjects[obj];
+				gobj.setUninterrupableAnimation(fireAnim, nextAnim);
+				this->shootContr->addAction(&gobj, fireAnim, shootFrame, emitPoint, damage);
 				}, "FIRE");
 			lua->CreateFunction([this](int obj, int flags, int damage) {
 				auto gobj = &this->world->gobjects[obj];
@@ -469,7 +468,7 @@ namespace openAITD {
 				gobj.track.pos = positionInTrack;
 				gobj.track.posStarted = false;
 				if (gobj.track.mode == GOTrackMode::manual) {
-					world->setRepeatAnimation(gobj, world->player.animations.idle);
+					gobj.setRepeatAnimation(world->player.animations.idle);
 				}
 				}, "SET_TRACKMODE");
 

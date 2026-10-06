@@ -223,10 +223,6 @@ namespace openAITD {
 		void loadGObjects(string path);
 		void loadVars(string path);
 		void setCharacter(bool alt) {}
-		void setRepeatAnimation(GameObject& gobj, int animId);
-		void setOnceAnimation(GameObject& gobj, int animId, int nextAnimId);
-		void setUninterrupableAnimation(GameObject& gobj, int animId, int nextAnimId);
-		void setModel(GameObject& gobj, int modelId);
 		void delFromInventory(int itemObjId);
 		void take(int gObjId);
 		void drop(int itemObjId, int actorObjId);
@@ -381,72 +377,6 @@ namespace openAITD {
 		auto& room = curStage->rooms[gobj.getRoomId()];
 		const auto pos = gobj.getPosition();
 		return Vector3Add(pos, room.origPosition);
-	}
-
-	void World::setRepeatAnimation(GameObject& gobj, int animId) {
-		if (gobj.animation.id == animId) return;
-		cout << "setRepeatAnimation " << gobj.name << " " << animId << endl;
-		if (animId == -1) {
-			gobj.bitField.animated = 0;
-			return;
-		}
-		if (gobj.animation.bitField.uninterruptable && !gobj.animation.animEnd) {
-      gobj.animation.nextId = animId;
-      return;
-		}
-		gobj.animation.id = animId;
-		gobj.animation.nextId = -1;
-		gobj.animation.animEnd = 0;
-		gobj.animation.flags = 0;
-		gobj.animation.bitField.repeat = 1;
-		gobj.animation.bitField.uninterruptable = false;
-		gobj.bitField.animated = 1;
-	}
-
-	void World::setOnceAnimation(GameObject& gobj, int animId, int nextAnimId) {
-			if (gobj.animation.id == animId) return;
-			cout << "setOnceAnimation " << gobj.name << " " << animId << " " << nextAnimId << endl;
-			if (gobj.animation.bitField.uninterruptable && !gobj.animation.animEnd) {
-					gobj.animation.nextId = animId;
-					return;
-			}
-			if (animId == -1) {
-					gobj.bitField.animated = 0;
-					return;
-			}
-			gobj.animation.id = animId;
-			gobj.animation.nextId = nextAnimId;
-			gobj.animation.animEnd = 0;
-			gobj.animation.flags = 0;
-			gobj.animation.bitField.repeat = 0;
-			gobj.animation.bitField.uninterruptable = false;
-			gobj.bitField.animated = 1;
-	}
-
-	void World::setUninterrupableAnimation(GameObject& gobj, int animId, int nextAnimId) {
-			if (gobj.animation.id == animId) return;
-			cout << "setUninterrupableAnimation " << gobj.name << " " << animId << " " << nextAnimId << endl;
-			if (gobj.animation.bitField.uninterruptable && !gobj.animation.animEnd) {
-					gobj.animation.nextId = animId;
-					return;
-			}
-			if (animId == -1) {
-					gobj.bitField.animated = 0;
-					return;
-			}
-			gobj.animation.id = animId;
-			gobj.animation.nextId = nextAnimId;
-			gobj.animation.animEnd = 0;
-			gobj.animation.flags = 0;
-			gobj.animation.bitField.repeat = 0;
-			gobj.animation.bitField.uninterruptable = true;
-			gobj.bitField.animated = 1;
-	}
-
-	void World::setModel(GameObject& gobj, int modelId) {
-		gobj.modelId = modelId;
-		//gobj.animation.id = 0;
-		//gobj.animation.animTime = 0;
 	}
 
 	void World::loadVars(string path)

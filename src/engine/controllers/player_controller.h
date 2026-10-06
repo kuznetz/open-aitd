@@ -89,7 +89,7 @@ namespace openAITD {
 				nextAnimation = world->player.animations.idle;
 			}
 			if (nextAnimation != gobj.animation.id) {
-				world->setRepeatAnimation(gobj, nextAnimation);
+				gobj.setRepeatAnimation(nextAnimation);
 			}
 		}
 	};

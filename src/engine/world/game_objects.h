@@ -347,6 +347,75 @@ namespace openAITD {
 				Vector3Subtract(Vector3Add(b.min, roomFrom), roomTo),
 				Vector3Subtract(Vector3Add(b.max, roomFrom), roomTo)
 			};
+		}
+
+		void setRepeatAnimation(int animId) {
+			auto& gobj = *this;
+			if (gobj.animation.id == animId) return;
+			cout << "setRepeatAnimation " << gobj.name << " " << animId << endl;
+			if (animId == -1) {
+				gobj.bitField.animated = 0;
+				return;
+			}
+			if (gobj.animation.bitField.uninterruptable && !gobj.animation.animEnd) {
+				gobj.animation.nextId = animId;
+				return;
+			}
+			gobj.animation.id = animId;
+			gobj.animation.nextId = -1;
+			gobj.animation.animEnd = 0;
+			gobj.animation.flags = 0;
+			gobj.animation.bitField.repeat = 1;
+			gobj.animation.bitField.uninterruptable = false;
+			gobj.bitField.animated = 1;
+		}
+
+		void setOnceAnimation(int animId, int nextAnimId) {
+			auto& gobj = *this;
+			if (gobj.animation.id == animId) return;
+			cout << "setOnceAnimation " << gobj.name << " " << animId << " " << nextAnimId << endl;
+			if (gobj.animation.bitField.uninterruptable && !gobj.animation.animEnd) {
+					gobj.animation.nextId = animId;
+					return;
+			}
+			if (animId == -1) {
+					gobj.bitField.animated = 0;
+					return;
+			}
+			gobj.animation.id = animId;
+			gobj.animation.nextId = nextAnimId;
+			gobj.animation.animEnd = 0;
+			gobj.animation.flags = 0;
+			gobj.animation.bitField.repeat = 0;
+			gobj.animation.bitField.uninterruptable = false;
+			gobj.bitField.animated = 1;
+		}
+
+		void setUninterrupableAnimation(int animId, int nextAnimId) {
+			auto& gobj = *this;
+			if (gobj.animation.id == animId) return;
+			cout << "setUninterrupableAnimation " << gobj.name << " " << animId << " " << nextAnimId << endl;
+			if (gobj.animation.bitField.uninterruptable && !gobj.animation.animEnd) {
+					gobj.animation.nextId = animId;
+					return;
+			}
+			if (animId == -1) {
+					gobj.bitField.animated = 0;
+					return;
+			}
+			gobj.animation.id = animId;
+			gobj.animation.nextId = nextAnimId;
+			gobj.animation.animEnd = 0;
+			gobj.animation.flags = 0;
+			gobj.animation.bitField.repeat = 0;
+			gobj.animation.bitField.uninterruptable = true;
+			gobj.bitField.animated = 1;
+		}
+
+		void setModel(int modelId) {
+			this->modelId = modelId;
+			//gobj.animation.id = 0;
+			//gobj.animation.animTime = 0;
 		}		
 
 		bool changingStage = false;
