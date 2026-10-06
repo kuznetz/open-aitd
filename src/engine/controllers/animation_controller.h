@@ -78,6 +78,7 @@ namespace openAITD {
                             objAni.animTime = 0;
                             objAni.flags = 0;
                             objAni.bitField.repeat = 1;
+                            objAni.bitField.uninterruptable = 0;
                         }
                     }
                     else if (mdlAnim.duration > 0) {
