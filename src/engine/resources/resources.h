@@ -99,10 +99,6 @@ namespace openAITD {
 			return false;
 		}
 
-		void setLanguage(const string lang) {
-			texts.setLanguage(lang);
-		}
-
 	};
 
 }

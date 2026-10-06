@@ -6,6 +6,8 @@
 #include <fstream>
 #include <exception>
 
+#include "../../platform/platform.h"
+
 #define NLOHMANN_JSON_NAMESPACE_NO_VERSION 1
 #include <nlohmann/json.hpp>
 using namespace nlohmann;
@@ -16,6 +18,7 @@ namespace openAITD {
 
 	struct Config
 	{
+		std::string language;
 		bool fastStart = false;
 		bool showFps = false;
 		bool fulllscreen = true;
@@ -32,6 +35,11 @@ namespace openAITD {
 		if (!std::filesystem::exists(configPath)) return cfg;
 		std::ifstream ifs(configPath);
 		json confJson = json::parse(ifs);
+		if (confJson.contains("language")) {
+      cfg.language = confJson["language"];
+		} else {
+      cfg.language = getSystemLanguageCode();
+		}
 		if (confJson.contains("fastStart")) {
 			cfg.fastStart = confJson["fastStart"];
 		}
@@ -57,6 +65,7 @@ namespace openAITD {
 	void saveConfig(Config cfg) {
 		json outJson = json::object();
 
+    outJson["language"] = cfg.language;
 		outJson["fastStart"] = cfg.fastStart;
 		outJson["fulllscreen"] = cfg.fulllscreen;
 		outJson["antialiasing"] = cfg.antialiasing;

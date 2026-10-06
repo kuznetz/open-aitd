@@ -426,8 +426,6 @@ namespace openAITD {
 
     int main(void)
     {
-        string systemLang = getSystemLanguageCode();
-        resources.setLanguage(systemLang);
         resources.config = loadConfig();
 
         resources.screen.init();

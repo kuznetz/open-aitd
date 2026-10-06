@@ -9,6 +9,7 @@
 #include <sstream>
 
 #include "config.h"
+#include "data_path.h"
 
 using namespace std;
 namespace openAITD {
@@ -17,10 +18,13 @@ namespace openAITD {
 	public:
   	static inline const std::string defaultLanguage = "en";
     bool loaded = false;
-    string language = "en";
 		map<int,string> texts;
 		Font mainFont;
 		Config& config;
+
+		static std::vector<std::string> getLanguageList() {
+			return DataPath::ListDirs("texts");
+		}
 
 		Texts(Config& config):
 		  config(config)
@@ -65,11 +69,11 @@ namespace openAITD {
     void load() {
 			string s = "data/texts/" + defaultLanguage + "/main.txt";
 			loadTexts(s);
-      s = "data/texts/" + language + "/main.txt";
+      s = "data/texts/" + config.language + "/main.txt";
       loadTexts(s);
 
 			auto& codepoints = getCodepoints();
-			s = DataPath::GetFile("texts/" + language + "/font.ttf");
+			s = DataPath::GetFile("texts/" + config.language + "/font.ttf");
 			if (s != "") {
 				mainFont = LoadFontEx(s.c_str(), config.screenH * 16 / 200, codepoints.data(), codepoints.size());
 			} else {
@@ -108,11 +112,6 @@ namespace openAITD {
 			}
 		}
 
-    void setLanguage(const string lang) {
-      language = lang;
-      loaded = false;
-    }
-
     string getText(const int id) {
       if (!loaded) {
         load();
@@ -121,7 +120,7 @@ namespace openAITD {
     }
 
 		string getBookText(const int textId) {
-			string path = "data/texts/" + language + "/" + to_string(textId + 1) + ".txt";
+			string path = "data/texts/" + config.language + "/" + to_string(textId + 1) + ".txt";
 			std::ifstream file(path);
 			if (file.is_open()) {
 					std::ostringstream buffer;
