@@ -27,6 +27,7 @@
 #include "./screens/inventory_screen.h"
 #include "./screens/menu_screen.h"
 #include "./screens/picture_screen.h"
+#include "./screens/intro_screen.h"
 #include "./screens/book_screen.h"
 #include "./screens/console_screen.h"
 #include "./screens/char_select_screen.h"
@@ -39,6 +40,7 @@ namespace openAITD {
     const float inDarkBrightness = 0.02f;
 
     enum class AppState {
+        StartIntro,
         Loading,
         CharSelect,
         Intro,
@@ -48,7 +50,7 @@ namespace openAITD {
         Book,
         SelectGame
     };
-    AppState state = AppState::MainMenu;
+    AppState state = AppState::StartIntro;
     bool gameStarted = false;
     
     Resources resources;
@@ -73,6 +75,7 @@ namespace openAITD {
     InventoryScreen inventoryScreen(&world);
     BookScreen bookScreen(world);
     PictureScreen pictureScr(&world);
+    IntroScreen introScreen(&world);
     LifeController lifeContr(&world, &tracksContr, &playerContr, &hitContr, &throwContr, &physContr, &foundScreen, &shootContr);
     SaveHelper saveHelper(world);
     ConsoleScreen consoleScreen(&world);
@@ -96,6 +99,13 @@ namespace openAITD {
         startGame();
         world.setCurStage(7, 1);
         state = AppState::Intro;
+    }
+
+    void startStartIntro() {
+        world.gameOver = false;
+        world.brightnessTrg = 1;
+        introScreen.start();
+        state = AppState::StartIntro;
     }
 
     void loadGame(int slot) {
@@ -297,6 +307,21 @@ namespace openAITD {
                 }
             }
         }
+        else if (state == AppState::StartIntro) {
+            world.brightnessTrg = 1;
+            introScreen.process(timeDelta);
+            if (IsKeyPressed(KEY_ESCAPE)) {
+                introScreen.finished = true;
+            }
+            if (introScreen.finished) {
+                introScreen.end();
+                if (resources.config.fastStart) {
+                    startGame();
+                } else {
+                    startMenu();
+                }
+            }
+        }
         else if (state == AppState::Intro) {
             processWorld(timeDelta);
             if (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_ESCAPE)) {
@@ -378,6 +403,12 @@ namespace openAITD {
             charSelectScreen.render();
             resources.screen.end();
         }
+        else if (state == AppState::StartIntro) {
+            introScreen.render();
+            resources.screen.begin();
+            sceneRend.render();
+            resources.screen.end();
+        }
         else if (state == AppState::Intro) {
             renderWorld();
         }
@@ -416,12 +447,7 @@ namespace openAITD {
 
         DisableCursor();
 
-        if (resources.config.fastStart) {
-          startGame();
-        }
-        else {
-          startMenu();
-        }
+        startStartIntro();
 
         float timeDelta = 0;        
         while (!WindowShouldClose()) {

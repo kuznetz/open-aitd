@@ -3,7 +3,7 @@ Features:
 + Intro border scaling
 + Noise Textures
 + Transparent Materials
-- Intro images
++ Intro images
 + Particles: blood, enemyblood, cigar smoke, enemy smoke, bullet hit
 + Gun fire model (particles)
 + Cut model in water
@@ -11,17 +11,18 @@ Features:
 + Light in maze
 0.3: Additional features
 - Multilanguage support (lang select and save)
-- Light in maze (animate spot)
-- Character Select
-- More fancy save/load
 - Additional multilang text
+- Light in maze (animate spot)
+- Character Select (better)
+- More fancy save/load
 - Book - spaces / animation / page number
-- Pregzt if fire sequense
+- Pregzt if fire sequense (ogv/theora video support)
 0.4: CD extractor
 - Extract resuources screen
 - CDAudio music ripper (.cue)
 - Extract files from cd (.cue)
 - Book audio ripper from cd
+0.5: Bug fixes, adapt to modding
 - Take script hack / upgrade take screen
 1.0: Full original support
 1.1:  Extra Featurtes 
