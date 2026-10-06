@@ -78,8 +78,8 @@ namespace AITDExtractor {
         int varCount = 0;
 
         void processPicture(PakFile& picsPak, int id, string outPath);
+        void processPallettePicture(PakFile& picsPak, int id, string outPath);
         string intToStrWidth(int number, int width);
-
     };    
 
     AITDExtractor::AITDExtractor() : resLoader("./original") {
@@ -335,6 +335,13 @@ namespace AITDExtractor {
         }
     }
 
+    void AITDExtractor::processPallettePicture(PakFile& picsPak, int id, string outPath) {
+        if (!std::filesystem::exists(outPath)) {
+            auto& data = picsPak.readBlock(id);
+            extractPalletteBackground(data.data(), data.size(), outPath.c_str());
+        }
+    }
+
     void AITDExtractor::processPictures() {
         PakFile picsPak("original/ITD_RESS.PAK");
 
@@ -360,6 +367,11 @@ namespace AITDExtractor {
         std::filesystem::create_directories(dir);
         processPicture(picsPak, 10, dir + "/0.png");
         processPicture(picsPak, 14, dir + "/1.png");
+
+        dir = "data/intro";
+        std::filesystem::create_directories(dir);
+        processPallettePicture(picsPak, 2, dir + "/0.png");
+        processPallettePicture(picsPak, 13, dir + "/1.png");
 
         for (auto& altBg : altBackgrounds ) {
             string path = 

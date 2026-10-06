@@ -26,4 +26,31 @@ namespace AITDExtractor {
         delete[] data;
     }
 
+    // Extracts a 320x200 background whose palette is embedded in the data itself.
+    // Matches PAKExtract Background.GetBackground "case 64770: //ITD_RESS":
+    // the palette starts at offset 2 and the indexed image starts at offset 770.
+    void extractPalletteBackground(const u8* data, size_t size, const char* outPng,
+                                   size_t palleteOffset = 2, size_t imageOffset = 770) {
+        const size_t pixelCount = 320 * 200;
+        if (size < imageOffset + pixelCount ||
+            size < palleteOffset + PALETTE_SIZE * 3) {
+            return; // data too small for an embedded-palette background
+        }
+
+        Pallete pallete = loadPalleteFromData(data, palleteOffset);
+
+        unsigned char* rgb = new unsigned char[pixelCount * 3];
+        for (size_t i = 0; i < pixelCount; i++) {
+            u8 idx = data[imageOffset + i];
+            auto& col = pallete[idx];
+            rgb[i * 3 + 0] = col[0];
+            rgb[i * 3 + 1] = col[1];
+            rgb[i * 3 + 2] = col[2];
+        }
+
+        savePng(outPng, 320, 200, rgb);
+
+        delete[] rgb;
+    }
+
 }
