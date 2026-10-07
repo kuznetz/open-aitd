@@ -14,7 +14,7 @@ using namespace nlohmann;
 
 namespace openAITD {
 
-	std::string configPath("data/config.json");
+	std::string configPath("saves/config.json");
 
 	struct Config
 	{
