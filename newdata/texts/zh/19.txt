@@ -1,0 +1,79 @@
+#P
+
+
+
+
+#C出 版
+#CIúMotion
+
+#C制 作
+#CInfogrames
+#P
+
+
+
+
+#C制 作 与 导 演
+
+#CFrédérick Raynal
+#P
+
+第 一 助 理
+
+#T#T#TFranck De Girolami
+
+制 作 设 计
+
+#T#T#TYaël Barroz
+#T#T#TJean-Marc Toroella
+
+3D 建 模 与 动 画
+
+#T#T#TDidier Chanfray
+#P
+
+
+剧 本
+
+#T#T#THubert Chardot
+#T#T#TFranck Manzetti
+
+
+产 品 经 理
+
+#T#T#TOlivier Robin
+#P
+
+原 创 音 乐 与 音 效
+
+#T#T#TPhilippe Vachey
+#T#T#T混 音 ： Sequence Coda
+
+
+最 佳 助 手
+
+#T#T#TFrédérique Bourgin
+#T#T#TLionel Frappé
+#T#T#TSerge Plagnol
+#P
+
+
+特 别 鸣 谢 ：
+
+
+#T#T#TBruno Bonnell
+#T#T#TBernard Montibert
+#T#T#TEric Mottet
+#T#T#TVeronique Salmeron
+#T#T#TH.P.Lovecraft
+#T#T#TChaosium
+#P
+
+
+
+
+#C©1992 IúMotion / Infogrames
+
+
+#C发 行
+#CInterplay
