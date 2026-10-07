@@ -177,7 +177,9 @@ namespace openAITD {
 			}
 		}
 
-		// Draws the current frame (aspect-fit, letterboxed) into sceneTex.
+		// Draws the current frame (aspect-fit, letterboxed) straight into the
+		// current target (the final screen), skipping the sceneTex -> brightness
+		// shader pass, which the video does not need.
 		void render() {
 			if (!hasFrame || yTex.id == 0) return;
 
@@ -197,8 +199,7 @@ namespace openAITD {
 			float dstX = (screenW - dstW) * 0.5f;
 			float dstY = (screenH - dstH) * 0.5f;
 
-			BeginTextureMode(resources->screen.sceneTex);
-			ClearBackground(BLACK);
+			//ClearBackground(BLACK);
 			bindPlanes();
 			BeginShaderMode(yuvShader);
 			DrawTexturePro(
@@ -208,7 +209,6 @@ namespace openAITD {
 				{ 0, 0 }, 0, WHITE
 			);
 			EndShaderMode();
-			EndTextureMode();
 		}
 
 	private:

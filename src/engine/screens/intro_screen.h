@@ -168,11 +168,12 @@ namespace openAITD {
 			return (dur > 0) ? Clamp(1.0f - curTime / dur, 0.0f, 1.0f) : 0.0f;
 		}
 
+		// Draws directly into the current target (the final screen), skipping
+		// the sceneTex -> brightness shader pass, which intro does not need.
 		void render() {
 			if (texture.id == 0) return;
 			float screenW = this->resources->config.screenW;
 			float screenH = this->resources->config.screenH;
-			BeginTextureMode(resources->screen.sceneTex);
 			ClearBackground(BLACK);
 			DrawTexturePro(
 				texture,
@@ -180,7 +181,6 @@ namespace openAITD {
 				{ 0, 0, screenW, screenH },
 				{ 0, 0 }, 0, Fade(WHITE, getAlpha())
 			);
-			EndTextureMode();
 		}
 
 	};

@@ -450,15 +450,15 @@ namespace openAITD {
             resources.screen.end();
         }
         else if (state == AppState::StartIntro) {
-            introScreen.render();
+            // Intro draws straight to the screen
             resources.screen.begin();
-            sceneRend.render();
+            introScreen.render();
             resources.screen.end();
         }
         else if (state == AppState::Cutscene) {
-            videoScreen.render();
+            // Video draws straight to the screen: no sceneTex -> brightness
             resources.screen.begin();
-            sceneRend.render();
+            videoScreen.render();
             resources.screen.end();
         }
         else if (state == AppState::GameIntro) {
