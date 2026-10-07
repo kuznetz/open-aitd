@@ -33,3 +33,6 @@ language=语言:
 yes=是
 no=否
 restartHint=分辨率将在重启后生效
+
+[main]
+loading=载入中...

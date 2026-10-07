@@ -33,3 +33,6 @@ language=Langue:
 yes=oui
 no=non
 restartHint=Résolution appliquée après redémarrage
+
+[main]
+loading=Chargement...

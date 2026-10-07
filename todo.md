@@ -10,8 +10,8 @@ Features:
 + Camera shaking
 + Light in maze
 + Multilanguage support (lang select and save)
-- Additional multilang text
-- Pregzt if fire sequense (ogv/theora video support)
++ Additional multilang text
++ ogv/theora video cutscene support
 0.3: Additional features
 - Extract resuources screen
 - CDAudio music ripper (.cue)

@@ -270,9 +270,9 @@ namespace openAITD {
         ShowHelp();
         return;
       }
-      world->video.path = "cutscenes/" + tokens[1] + ".ogv";
-      world->video.request = true;
-      world->video.finished = false;
+      world->cutscene.path = "cutscenes/" + tokens[1] + ".ogv";
+      world->cutscene.request = true;
+      world->cutscene.finished = false;
       lines[0] = BuildString("Cutscene: ", tokens[1]);
       exit = true;  // close the console so the video starts right away
     }

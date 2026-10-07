@@ -33,3 +33,6 @@ language=Idioma:
 yes=sí
 no=no
 restartHint=La resolución se aplica tras reiniciar
+
+[main]
+loading=Cargando...

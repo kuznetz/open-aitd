@@ -33,3 +33,6 @@ language=Sprache:
 yes=Ja
 no=Nein
 restartHint=Auflösung wird nach Neustart übernommen
+
+[main]
+loading=Laden...

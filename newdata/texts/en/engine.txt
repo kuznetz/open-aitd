@@ -33,3 +33,6 @@ language=Language:
 yes=yes
 no=no
 restartHint=Resolution applied after restart
+
+[main]
+loading=Loading...

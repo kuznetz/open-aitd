@@ -606,9 +606,9 @@ namespace openAITD {
 
 			//Plays data/cutscenes/{cutsceneId}.ogv as a full-screen video (see ConsoleScreen::PlayCutscene).
 			lua->CreateFunction([this](int cutsceneId) {
-				this->world->video.path = "cutscenes/" + std::to_string(cutsceneId) + ".ogv";
-				this->world->video.request = true;
-				this->world->video.finished = false;
+				this->world->cutscene.path = "cutscenes/" + std::to_string(cutsceneId) + ".ogv";
+				this->world->cutscene.request = true;
+				this->world->cutscene.finished = false;
 			}, "CUTSCENE");
 
 			lua->CreateFunction([this](int light) {

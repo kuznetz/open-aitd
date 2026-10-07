@@ -129,7 +129,7 @@ namespace openAITD {
 		Picture picture;
 
 		//Full-screen video clip
-		Video video;
+		Video cutscene;
 
 		//Shake screen
 		Shake shake;

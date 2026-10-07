@@ -31,7 +31,7 @@
 #include "./screens/book_screen.h"
 #include "./screens/console_screen.h"
 #include "./screens/char_select_screen.h"
-#include "./screens/video_screen.h"
+#include "./screens/cutscene_screen.h"
 
 #include "../extractor/include/extractor.h"
 
@@ -50,10 +50,9 @@ namespace openAITD {
         Inventory,
         Book,
         SelectGame,
-        Video
+        Cutscene
     };
     AppState state = AppState::StartIntro;
-    AppState videoReturnState = AppState::InWorld;
     bool gameStarted = false;
     
     Resources resources;
@@ -113,20 +112,17 @@ namespace openAITD {
     }
 
     // Starts a full-screen video clip from the given file (see World::Video).
-    void startVideo(const string& path) {
+    void startCutscene(const string& path) {
         if (path.empty()) return;
         if (!videoScreen.start(path)) {
-            world.video.active = false;
-            world.video.finished = true;
+            world.cutscene.active = false;
+            world.cutscene.finished = true;
             return;
         }
-        if (state != AppState::Video) {
-            videoReturnState = state;
-        }
-        world.video.active = true;
-        world.video.finished = false;
-        world.video.path = path;
-        state = AppState::Video;
+        world.cutscene.active = true;
+        world.cutscene.finished = false;
+        world.cutscene.path = path;
+        state = AppState::Cutscene;
     }
 
     void loadGame(int slot) {
@@ -141,11 +137,16 @@ namespace openAITD {
     bool loadStage() {
         if (world.curStageId == world.nextStageId) return false;
         resources.screen.begin();
-        auto& f = resources.texts.mainFont;
-        const char* m = "Loading...";
-        auto mt = MeasureTextEx(f, m, f.baseSize, 0);
-        Vector2 v = { (int)(resources.config.screenW - mt.x) / 2, resources.config.screenH - (f.baseSize * 2) };
-        DrawTextEx(f, m, v, f.baseSize, 0, WHITE);
+        auto& txt = resources.texts;
+        string loadingText = txt.getEngineText("main.loading");
+        int fontH = txt.mainFont.baseSize;
+        raylib::Rectangle loadingRect = {
+            0,
+            (float)(resources.config.screenH - (fontH * 2)),
+            (float)resources.config.screenW,
+            (float)fontH
+        };
+        txt.drawCentered(loadingText.c_str(), loadingRect, WHITE);
         resources.screen.end();
 
         world.curStage = &resources.stages[world.nextStageId];
@@ -318,26 +319,26 @@ namespace openAITD {
         if (IsFileDropped()) {
             FilePathList dropped = LoadDroppedFiles();
             if (dropped.count > 0 && dropped.paths[0] != nullptr) {
-                world.video.path = dropped.paths[0];
-                world.video.request = true;
+                world.cutscene.path = dropped.paths[0];
+                world.cutscene.request = true;
             }
             UnloadDroppedFiles(dropped);
         }
 
         // Video can also be requested from anywhere by setting World::Video::request.
-        if (world.video.request && state != AppState::Video) {
-            world.video.request = false;
-            startVideo(world.video.path);
+        if (world.cutscene.request && state != AppState::Cutscene) {
+            world.cutscene.request = false;
+            startCutscene(world.cutscene.path);
         }
 
-        if (state == AppState::Video) {
+        if (state == AppState::Cutscene) {
             world.brightnessTrg = 1;
             videoScreen.process(timeDelta);
             if (IsKeyPressed(KEY_ESCAPE) || videoScreen.isFinished()) {
                 videoScreen.stop();
-                world.video.active = false;
-                world.video.finished = true;
-                state = videoReturnState;
+                world.cutscene.active = false;
+                world.cutscene.finished = true;
+                state = AppState::InWorld;
             }
         }
         else if (state == AppState::MainMenu) {
@@ -456,7 +457,7 @@ namespace openAITD {
             sceneRend.render();
             resources.screen.end();
         }
-        else if (state == AppState::Video) {
+        else if (state == AppState::Cutscene) {
             videoScreen.render();
             resources.screen.begin();
             sceneRend.render();
