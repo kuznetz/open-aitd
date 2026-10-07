@@ -113,16 +113,15 @@ namespace openAITD {
 			auto& name = resources->texts.getText(gobj.invItem.nameId);
 
 			auto& f = resources->texts.mainFont;
-			const char* m = "New item:";
 			raylib::Rectangle r = { 0, screenH * 0.05, screenW, 0 };
-			resources->texts.drawCentered("New item:", r, WHITE);
+			resources->texts.drawCentered(_T("found.youFind").c_str(), r, WHITE);
 			r.y += f.baseSize;
 			resources->texts.drawCentered(name.c_str(), r, GOLD);
 
 			r = { (screenW / 4.f), (screenH * 0.95f) - f.baseSize, (screenW / 4.f), 0 };
-			resources->texts.drawCentered("Leave", r, leave ? YELLOW : GRAY);
+			resources->texts.drawCentered(_T("found.leave").c_str(), r, leave ? YELLOW : GRAY);
 			r = { r.x + r.width, r.y, r.width, 0 };
-			resources->texts.drawCentered("Take", r, leave ? GRAY : YELLOW);
+			resources->texts.drawCentered(_T("found.take").c_str(), r, leave ? GRAY : YELLOW);
 		}
 
 		void main(int newFoundItem) {
@@ -158,6 +157,10 @@ namespace openAITD {
 			UnloadRenderTexture(renderTexture);
 		}
 
+	private:
+		string _T(const string& key) {
+			return this->resources->texts.getEngineText(key);
+		}
 	};
 
 }

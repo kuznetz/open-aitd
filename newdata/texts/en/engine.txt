@@ -1,0 +1,35 @@
+; Engine texts, default (English) language.
+; Format:
+;   [section]
+;   key=value
+; Keys are addressed as "section.key".
+; Note: values are trimmed, so trailing spaces are not preserved.
+
+[menu]
+resume=Resume to Game
+newGame=New Game
+saveGame=Save Game
+loadGame=Load Game
+options=Options
+quit=Quit
+
+[found]
+youFind=You Find
+leave=Leave
+take=Take
+
+[saves]
+newSave=<New save>
+saveTitle=Save Game
+loadTitle=Load Game
+
+[options]
+title=Options
+fullscreen=Fullscreen:
+resolution=Resolution:
+scale=3D Scale:
+showFps=Show fps:
+language=Language:
+yes=yes
+no=no
+restartHint=Resolution applied after restart

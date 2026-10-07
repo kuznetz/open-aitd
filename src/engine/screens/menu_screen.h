@@ -60,15 +60,15 @@ namespace openAITD {
 
             vector<string> mainItems;
             if (!world.gameOver) {
-                mainItems.push_back("Resume to Game");
+                mainItems.push_back(_T("menu.resume"));
             }
-            mainItems.push_back("New Game");
+            mainItems.push_back(_T("menu.newGame"));
             if (!world.gameOver) {
-                mainItems.push_back("Save Game");
+                mainItems.push_back(_T("menu.saveGame"));
             }
-            mainItems.push_back("Load Game");
-            mainItems.push_back("Options");
-            mainItems.push_back("Quit");
+            mainItems.push_back(_T("menu.loadGame"));
+            mainItems.push_back(_T("menu.options"));
+            mainItems.push_back(_T("menu.quit"));
             mainMenu.setItems(mainItems);
             mainMenu.setSelectedIndex(0);
         }
@@ -161,6 +161,11 @@ namespace openAITD {
         }
 
         int saveSlot = -1;
+
+    private:
+        string _T(const string& key) {
+            return this->resources.texts.getEngineText(key);
+        }
     };
 
 } // namespace openAITD

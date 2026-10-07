@@ -79,23 +79,23 @@ public:
         vector<pair<int, string>> menuItems;
         std::ostringstream sstream;
 
-        string fullscreen = string("Fullscreen: ") + (newConfig.fulllscreen ? "yes" : "no");
+        string fullscreen = _T("options.fullscreen") + " " + (newConfig.fulllscreen ? _T("options.yes") : _T("options.no"));
         menuItems.push_back({1, fullscreen});
 
         if (!newConfig.fulllscreen) {
-            string resol = string("Resolution: ") + to_string(newConfig.screenW) + "x" + to_string(newConfig.screenH);
+            string resol = _T("options.resolution") + " " + to_string(newConfig.screenW) + "x" + to_string(newConfig.screenH);
             menuItems.push_back({2, resol});
         }
 
         sstream.str("");
         sstream << std::fixed << std::setprecision(2) << newConfig.antialiasing;
-        string antialiasing = string("3D Scale: ") + sstream.str();
+        string antialiasing = _T("options.scale") + " " + sstream.str();
         menuItems.push_back({4, antialiasing});
 
-        string showFps = string("Show fps: ") + (newConfig.showFps ? "yes" : "no");
+        string showFps = _T("options.showFps") + " " + (newConfig.showFps ? _T("options.yes") : _T("options.no"));
         menuItems.push_back({3, showFps});
 
-        string language = string("Language: ") + newConfig.language;
+        string language = _T("options.language") + " " + newConfig.language;
         menuItems.push_back({5, language});
 
         this->menuItems = menuItems;
@@ -172,23 +172,27 @@ public:
 		}
 
     void render() {
-			resources.texts.drawCentered("Options", {
-					0, config.screenH * 0.05f,
-					(float)config.screenW, 0
-			}, WHITE);
-			resources.texts.drawCentered("Resolution applied after restart", {
-					0, config.screenH * 0.90f,
-					(float)config.screenW, 0
-			}, WHITE);
-			verticalMenu.draw();
+   resources.texts.drawCentered(_T("options.title").c_str(), {
+    	0, config.screenH * 0.05f,
+    	(float)config.screenW, 0
+   }, WHITE);
+   resources.texts.drawCentered(_T("options.restartHint").c_str(), {
+    	0, config.screenH * 0.90f,
+    	(float)config.screenW, 0
+   }, WHITE);
+   verticalMenu.draw();
     }
 
 private:
+    string _T(const string& key) {
+        return resources.texts.getEngineText(key);
+    }
+
     // Применяет выбранный язык в рантайме: обновляет config.language и
     // перезагружает строки/шрифт (Texts::reload()).
     void applyLanguage() {
         config.language = newConfig.language;
-        resources.texts.reload();
+        resources.texts.load();
     }
 
     vector<pair<int, string>> menuItems;

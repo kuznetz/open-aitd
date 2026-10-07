@@ -49,7 +49,7 @@ public:
         saveSlots = saveHelper.listSlots();
         vector<string> items;
         if (mode == Mode::Save) {
-            items.push_back("<New save>");   // только для Save
+            items.push_back(_T("saves.newSave"));   // only for save
         }
         for (const auto& slot : saveSlots) {
             items.push_back(slot.location);
@@ -98,8 +98,8 @@ public:
     }
 
     void render() {
-        const char* title = (mode == Mode::Save) ? "Save Game" : "Load Game";
-        resources.texts.drawCentered(title, {
+        string title = (mode == Mode::Save) ? _T("saves.saveTitle") : _T("saves.loadTitle");
+        resources.texts.drawCentered(title.c_str(), {
             0, resources.config.screenH * 0.05f,
             (float)resources.config.screenW, 0
         }, WHITE);
@@ -162,6 +162,10 @@ private:
     }
 
 private:
+    string _T(const string& key) {
+        return resources.texts.getEngineText(key);
+    }
+
     Resources& resources;
     SaveHelper& saveHelper;
     std::vector<SaveSlot> saveSlots;

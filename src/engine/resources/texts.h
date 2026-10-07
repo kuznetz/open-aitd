@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <map>
+#include <unordered_map>
 #include <string>
 #include <filesystem>
 #include <iostream>
@@ -17,9 +18,11 @@ namespace openAITD {
 
 	class Texts {
 	public:
-  	static inline const std::string defaultLanguage = "en";
-    bool loaded = false;
+	 	static inline const std::string defaultLanguage = "en";
+	   bool loaded = false;
 		map<int,string> texts;
+		// Engine texts loaded from engine.txt, stored as "section.key" -> value.
+		unordered_map<string,string> engine;
 		Font mainFont;
 		Config& config;
 
@@ -92,11 +95,20 @@ namespace openAITD {
 		}
 
     void load() {
+      if (loaded) {
+        unload();
+      }
       texts.clear();
-   string s = DataPath::GetFile("texts/" + defaultLanguage + "/main.txt");
-   loadTexts(s);
+      engine.clear();
+      string s = DataPath::GetFile("texts/" + defaultLanguage + "/main.txt");
+      loadTexts(s);
       s = DataPath::GetFile("texts/" + config.language + "/main.txt");
       loadTexts(s);
+
+      s = DataPath::GetFile("texts/" + defaultLanguage + "/engine.txt");
+      loadEngineTexts(s);
+      s = DataPath::GetFile("texts/" + config.language + "/engine.txt");
+      loadEngineTexts(s);
 
 			auto codepoints = getCodepoints(config.language);
 			s = DataPath::GetFile("texts/" + config.language + "/font.ttf");
@@ -111,16 +123,11 @@ namespace openAITD {
     }
 
     void unload() {
-   if (!loaded) return;
-   UnloadFont(mainFont);
-   loaded=false;
-  }
-
-    // Reloads strings and font for the current config.language.
-    void reload() {
-      unload();
+      if (!loaded) return;
       texts.clear();
-      load();
+      engine.clear();
+      UnloadFont(mainFont);
+      loaded=false;
     }
 
 		void loadTexts(string textsPath) {
@@ -152,7 +159,58 @@ namespace openAITD {
       return texts[id];
     }
 
-		string getBookText(const int textId) {
+  static std::string trim(const std::string& s) {
+   size_t a = s.find_first_not_of(" \t\r\n");
+   if (a == std::string::npos) return "";
+   size_t b = s.find_last_not_of(" \t\r\n");
+   return s.substr(a, b - a + 1);
+  }
+
+  // Parses an engine texts file in the format:
+  //   [section]
+  //   key=value
+  // Lines starting with '#' or ';' are treated as comments.
+  // Keys are stored as "section.key".
+  void loadEngineTexts(const string& textsPath) {
+   if (textsPath.empty()) return;
+   ifstream inFile(textsPath);
+   if (!inFile.is_open()) return;
+
+   string section;
+   string str;
+   while (getline(inFile, str)) {
+    string line = trim(str);
+    if (line.empty()) continue;
+    if (line[0] == '#' || line[0] == ';') continue;
+
+    // Section header: [section].
+    if (line.front() == '[' && line.back() == ']') {
+    	section = trim(line.substr(1, line.size() - 2));
+    	continue;
+    }
+
+    auto eq = line.find('=');
+    if (eq == string::npos) continue;
+
+    string key = trim(line.substr(0, eq));
+    string value = trim(line.substr(eq + 1));
+    if (key.empty()) continue;
+
+    engine[section.empty() ? key : section + "." + key] = value;
+   }
+  }
+
+  // Returns the engine text for "section.key" (the fallback language is
+  // loaded first, so the selected language overrides it).
+  string getEngineText(const string& key) {
+   if (!loaded) {
+    load();
+   }
+   auto it = engine.find(key);
+   return it != engine.end() ? it->second : "";
+  }
+
+	 string getBookText(const int textId) {
 			string path = DataPath::GetFile("texts/" + config.language + "/" + to_string(textId + 1) + ".txt");
 			std::ifstream file(path);
 			if (file.is_open()) {
