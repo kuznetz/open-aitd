@@ -31,6 +31,7 @@ namespace openAITD {
 		PhysicsController* physContr;
 
 		LuaState* lua = 0;
+		float curRndFreq = 0;
 
 		LifeCommands(LifeCore* lifeCore, TracksController* trackContr, PlayerController* playerContr, HitController* hitContr, ThrowController* throwContr, PhysicsController* physContr, FoundScreen* foundScreen, ShootController* shootContr) {
 			this->lifeCore = lifeCore;
@@ -165,8 +166,7 @@ namespace openAITD {
 				return this->world->gobjects[obj].modelId;
 				}, "MODEL");
 			lua->CreateFunction([this](int obj) -> int {
-				//TODO: Camera index?
-				return 0;
+				return this->world->curCameraId;
 				}, "CAMERA");
 			lua->CreateFunction([this](int obj) -> int {
 				return this->world->gobjects[obj].physics.collidedBy;
@@ -570,15 +570,15 @@ namespace openAITD {
 				if (curAnim.keyFrameSoundIdx == animFrame) return;
 				if (curAnim.keyFrameIdx != animFrame) return;
 				curAnim.keyFrameSoundIdx = animFrame;
-				resources->audio.PlaySound(sampleId);
+				resources->audio.PlaySound(sampleId, this->curRndFreq);
 				}, "SET_ANIM_SOUND");
 			lua->CreateFunction([this](int sampleId) {
 				//cout << "SOUND " << sampleId << endl;
-				resources->audio.PlaySound(sampleId);
+				resources->audio.PlaySound(sampleId, this->curRndFreq);
 				}, "SOUND");
 			//Set Random sound frequency
 			lua->CreateFunction([this](int freqDiff) {
-				//TODO: RND_FREQ
+				this->curRndFreq = freqDiff / 200.f;
 				}, "RND_FREQ");
 			lua->CreateFunction([this](int sampleId, int reserve) {
 				//TODO: REP_SOUND

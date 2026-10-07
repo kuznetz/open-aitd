@@ -2,6 +2,7 @@
 #include <map>
 #include <string>
 #include <stdexcept>
+#include <random>
 #include "../../common/raylib_cpp.hpp"
 #include "data_path.h"
 
@@ -23,13 +24,22 @@ namespace openAITD {
       ~Audio() {}
       void Init();
       void LoadSound(const int soundId);
-      void PlaySound(const int soundId);
+      void PlaySound(const int soundId, const float rndFreq = 0);
 
       void LoadMusic(const int musicId);
       void StopMusic();
       void PlayMusic(const int musicId);
       void SetMusicVolume(float volume);
       void Process();
+
+  private:
+      std::mt19937 rng{ std::random_device{}() };
+
+      // Равномерное случайное смещение в диапазоне [-amplitude, +amplitude]
+      float RandomAmplitude(const float amplitude) {
+        std::uniform_real_distribution<float> dist(-amplitude, amplitude);
+        return dist(rng);
+      }
   };
 
   inline void Audio::Init() {
@@ -55,12 +65,27 @@ namespace openAITD {
     sounds[soundId] = raylib::LoadSoundFromWave(wave);
   }
 
-  inline void Audio::PlaySound(const int soundId) {
+  inline void Audio::PlaySound(const int soundId, const float rndFreq) {
     Init();
     if (sounds.find(soundId) == sounds.end()) {
       Audio::LoadSound(soundId);
     }
-    raylib::PlaySound(sounds[soundId]);
+
+    Sound& snd = sounds[soundId];
+
+    // rndFreq задаёт относительный разброс частоты: 0 = без изменений,
+    // 0.5 = +-50% (pitch в диапазоне [0.5, 1.5]).
+    float pitch = 1.0f;
+    if (rndFreq > 0.0f) {
+      pitch = 1.0f + RandomAmplitude(rndFreq);
+      if (pitch < 0.05f) pitch = 0.05f; // защита от нулевого/отрицательного pitch
+    }
+
+    // Sound кэшируется и переиспользуется, поэтому pitch нужно выставлять
+    // всегда (в т.ч. 1.0), иначе предыдущая рандомизация "прилипнет".
+    raylib::SetSoundPitch(snd, pitch);
+
+    raylib::PlaySound(snd);
   }
 
   inline void Audio::StopMusic() {
