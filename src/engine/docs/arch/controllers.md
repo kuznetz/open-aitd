@@ -67,11 +67,11 @@ Processes smooth rotation animations for objects, interpolating Euler angles alo
 ---
 
 ## `src/engine/controllers/particle_controller.h`
-**Role:**  
-Updates all active particle groups each frame, dispatching to type-specific simulators for effects like ricochet sparks, smoke, muzzle flash, cigar smoke, and fountains.
+**Role:**
+Updates all active particle groups each frame using a single, data-driven simulation loop. Effects (ricochet sparks, smoke, muzzle flash, cigar smoke, fountains) differ only by their `EmitterConfig`, not by code paths.
 
 **Components:**
-*   **`ParticleController`**: Iterates `world.partGroups` and routes each active group to one of five inline update methods (`processRicochet`, `processSmoke`, `processMuzzleFlash`, `processCigarSmoke`, `processFountain`). Each method handles spawning, velocity integration, gravity, turbulence, lifetime decay, and group deactivation.
+*   **`ParticleController`**: Iterates `world.partGroups` and, for every active group that references an `EmitterConfig`, runs the universal `step`. The step initializes the group, integrates each live particle (`updateParticle`), performs timed spawning or a one-shot `spawnBurst` (`spawnOne`, `sampleSpawnDirection`), and deactivates the group based on its configured lifetime and remaining particles. Gravity, drag, turbulence, floor collision, size/color-over-life curves and cone emission are all driven by the config.
 
 ---
 

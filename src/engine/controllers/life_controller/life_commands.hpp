@@ -637,7 +637,7 @@ namespace openAITD {
 			lua->CreateFunction([this](int objId) {
 				  auto& obj = this->world->gobjects[objId];
 					auto& partGrp = world->partGroups.add();
-					partGrp.type = 2;
+					partGrp.config = &ParticlePresets::Smoke;
 					partGrp.position = obj.getPosition();
 					partGrp.stageId = obj.getStageId();
 					partGrp.roomId = obj.getRoomId();
@@ -646,7 +646,7 @@ namespace openAITD {
 			lua->CreateFunction([this](int objId) {
 				  auto& obj = this->world->gobjects[objId];
 					auto& partGrp = world->partGroups.add();
-					partGrp.type = 1;
+					partGrp.config = &ParticlePresets::Blood;
 					partGrp.position = obj.damage.point;
 					partGrp.stageId = obj.getStageId();
 					partGrp.roomId = obj.getRoomId();
@@ -655,7 +655,7 @@ namespace openAITD {
 			lua->CreateFunction([this](int objId) {
 				  ParticleGroup* partGrp = nullptr;
 					for (auto& pg : world->partGroups.groups) {
-						if (pg.active && pg.type == 4) {
+						if (pg.active && pg.config == &ParticlePresets::CigarSmoke) {
 							partGrp = &pg;
 							break;
 						}
@@ -663,8 +663,8 @@ namespace openAITD {
 
 					if (!partGrp) {
 			      partGrp = &world->partGroups.add();
-  				  auto& obj = this->world->gobjects[objId];
-						partGrp->type = 4;
+						  auto& obj = this->world->gobjects[objId];
+						partGrp->config = &ParticlePresets::CigarSmoke;
 						partGrp->position = obj.getPosition();
 						partGrp->stageId = obj.getStageId();
 						partGrp->roomId = obj.getRoomId();
@@ -673,7 +673,7 @@ namespace openAITD {
 					partGrp->lifetime = 1.0f;
 				}, "CIGAR_PARTICLES");
 
-			lua->CreateFunction([this](int light) {
+			lua->CreateFunction([this]() {
 				world->gameOver = true;
 				}, "GAME_OVER");
 			lua->CreateFunction([this](int light) {

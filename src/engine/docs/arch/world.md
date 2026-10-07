@@ -24,13 +24,16 @@ Defines the core game object entity and its associated substructures, encapsulat
 ---
 
 ## `src/engine/world/particles.h`
-**Role:**  
-Implements a lightweight, fixed-capacity particle system for visual effects, managing individual particles and groups with automatic recycling and bounds computation for rendering culling.
+**Role:**
+Implements a lightweight, data-driven particle system for visual effects. It defines the declarative effect descriptions (`EmitterConfig` + presets), the runtime particle/group data, and the bounded group pool, plus bounds computation used for render culling.
 
 **Components:**
-*   **`Particle`**: A minimal particle descriptor storing active state, 3D position, velocity, color, size, and remaining lifetime.
-*   **`ParticleGroup`**: Represents a single particle emitter with a fixed pool of 25 particles. It manages spawn timing, emitter position and direction, stage/room placement, and provides methods for particle recycling, active-state checking, and bounds computation for both logical and render-space culling.
+*   **`Particle`**: A particle descriptor storing active state, 3D position, velocity, color, current `size`, `baseSize`, remaining `lifetime` and `maxLifetime` (used to drive the size/color-over-life curves).
+*   **`FloatCurve` / `ColorGradient`**: Small piecewise-linear keyed curves (up to 4 keys) used to vary a particle's size and color over its normalized lifetime. The size curve is expressed in percent of the particle's `baseSize` (100 = baseSize).
+*   **`EmitterConfig`**: Declarative description of an effect — group lifetime, spawn mode (`burst`/timed + interval), emission shape (cone angle, group direction, position jitter), initial value ranges (speed, lifetime, size), size/color curves, and physics flags (gravity, floor stick/bounce, drag, turbulence).
+*   **`ParticleGroup`**: A live emitter instance. It references an `EmitterConfig`, holds a dynamically growing (recycled) particle pool, spawn timing, emitter position and direction, stage/room placement, and provides particle acquisition, active-state checking (`allInactive`), and bounds computation for logical and render-space culling.
 *   **`ParticleGroups`**: A fixed-capacity pool of 10 `ParticleGroup` instances. It provides an `add()` method that reuses inactive groups or recycles the oldest active group by creation order, ensuring bounded memory usage for particle effects.
+*   **`ParticlePresets`**: Built-in `EmitterConfig` presets (`Fountain`, `Ricochet`, `Smoke`, `CigarSmoke`, `MuzzleFlash`) referenced by effect call sites.
 
 ---
 

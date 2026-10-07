@@ -2,7 +2,7 @@
 
 ## src/engine/docs/arch/world.md
 **Description:** Documents the core game state management, entity definitions, and particle systems. It details how game objects, inventory, physics, and animation states are structured and serialized for saving.
-**Components:** `GOFlags`, `InventoryFlags`, `AnimationFlags`, `BoundsType`, `GOAnimation`, `GORotateAnim`, `GOInvItem`, `GOPhysics`, `GOLifeMode`, `GOTrackMode`, `GOTrack`, `GODamage`, `GOHit`, `GOThrowing`, `GameObject`, `Particle`, `ParticleGroup`, `ParticleGroups`, `SaveSlot`, `SaveHelper`, `PlayerAnimations`, `Player`, `Picture`, `BookData`, `Shake`, `World`.
+**Components:** `GOFlags`, `InventoryFlags`, `AnimationFlags`, `BoundsType`, `GOAnimation`, `GORotateAnim`, `GOInvItem`, `GOPhysics`, `GOLifeMode`, `GOTrackMode`, `GOTrack`, `GODamage`, `GOHit`, `GOThrowing`, `GameObject`, `Particle`, `FloatCurve`, `ColorGradient`, `EmitterConfig`, `ParticleGroup`, `ParticleGroups`, `ParticlePresets`, `SaveSlot`, `SaveHelper`, `PlayerAnimations`, `Player`, `Picture`, `BookData`, `Shake`, `World`.
 
 ## src/engine/docs/arch/renderers.md
 **Description:** Outlines the rendering pipeline, including base renderer utilities, camera-driven scene composition, and post-processing effects. It covers the separation of object, mask, and particle rendering, as well as a debug freelook renderer.

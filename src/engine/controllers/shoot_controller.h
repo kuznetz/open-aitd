@@ -113,7 +113,7 @@ namespace openAITD {
 
         void addRicochet(const Vector3& pos, const int& roomId) {
             auto& partGrp = world->partGroups.add();
-            partGrp.type = 1;
+            partGrp.config = &ParticlePresets::Ricochet;
             partGrp.position = pos;
             partGrp.stageId = world->curStageId;
             partGrp.roomId = roomId;
@@ -121,7 +121,7 @@ namespace openAITD {
 
         void muzzleFlash(const Vector3& pos, const Vector3& dir, const int& roomId) {
             auto& partGrp = world->partGroups.add();
-            partGrp.type = 3;
+            partGrp.config = &ParticlePresets::MuzzleFlash;
             partGrp.position = pos;
             partGrp.direction = dir;
             partGrp.stageId = world->curStageId;
