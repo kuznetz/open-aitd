@@ -28,6 +28,8 @@ public:
     VerticalMenuWidget verticalMenu;
 
     int resolutionIdx = -1;
+    vector<string> languages;
+    int languageIdx = -1;
     bool firstFrame = true;
     bool exit = false;
 
@@ -45,6 +47,23 @@ public:
         newConfig = config;
         firstFrame = true;
         resolutionIdx = -1;
+
+        if (newConfig.language.empty()) {
+            newConfig.language = Texts::defaultLanguage;
+        }
+        languages = Texts::getLanguageList();
+        languageIdx = -1;
+        for (int i = 0; i < (int)languages.size(); i++) {
+            if (languages[i] == newConfig.language) {
+                languageIdx = i;
+                break;
+            }
+        }
+        if (languageIdx == -1) {
+            languages.push_back(newConfig.language);
+            languageIdx = (int)languages.size() - 1;
+        }
+
         for (int i = 0; i < resolutions.size(); i++) {
             if (config.screenW == resolutions[i].w && config.screenH == resolutions[i].h) {
                 resolutionIdx = i;
@@ -75,6 +94,9 @@ public:
 
         string showFps = string("Show fps: ") + (newConfig.showFps ? "yes" : "no");
         menuItems.push_back({3, showFps});
+
+        string language = string("Language: ") + newConfig.language;
+        menuItems.push_back({5, language});
 
         this->menuItems = menuItems;
 
@@ -117,6 +139,14 @@ public:
                 if (newConfig.antialiasing > 2.0f) newConfig.antialiasing = 1.0f;
                 changeConfig();
                 break;
+            case 5: // Language
+                if (!languages.empty()) {
+                    languageIdx = (languageIdx + 1) % (int)languages.size();
+                    newConfig.language = languages[languageIdx];
+                    applyLanguage();
+                    changeConfig();
+                }
+                break;
         }
     }
 
@@ -154,6 +184,13 @@ public:
     }
 
 private:
+    // Применяет выбранный язык в рантайме: обновляет config.language и
+    // перезагружает строки/шрифт (Texts::reload()).
+    void applyLanguage() {
+        config.language = newConfig.language;
+        resources.texts.reload();
+    }
+
     vector<pair<int, string>> menuItems;
 };
 

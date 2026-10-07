@@ -7,6 +7,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <algorithm>
 
 #include "config.h"
 #include "data_path.h"
@@ -34,61 +35,93 @@ namespace openAITD {
 			unload();
 		}
 
-		std::vector<int> getCodepoints() {
-				std::vector<int> cp;
-				for (int c = 32; c <= 255; ++c) cp.push_back(c);
-				for (int c = 0x0080; c <= 0x00FF; ++c) cp.push_back(c);				
-				for (int с = 0x0410; с <= 0x042F; ++с) cp.push_back(с);
-				for (int с = 0x0430; с <= 0x044F; ++с) cp.push_back(с);
-				cp.push_back(0x0401);
-				cp.push_back(0x0451);
+		// Parses a codepoints file: hex values and ranges ("0410-042F", "0x0410-0x042F").
+		// Separators are spaces and commas; comments run from '#' to the end of the line.
+		static void parseCodepoints(const std::string& path, std::vector<int>& cp) {
+			std::ifstream in(path);
+			if (!in.is_open()) return;
 
-				static const int aitd1_codes[] = {
-						0x00C7, 0x00FC, 0x00E9, 0x00E2, 0x00E4, 0x00E0, 0x00E5, 0x00E7,
-						0x00EA, 0x00EB, 0x00E8, 0x00EF, 0x00EE, 0x00EC, 0x00C4, 0x00C5,
-						0x00C9, 0x00E6, 0x00C6, 0x00F4, 0x00F6, 0x00F2, 0x00FB, 0x00F9,
-						0x00FF, 0x00D6, 0x00DC, 0x00A2, 0x00A3, 0x00A5, 0x003F, 0x00A7,
-						0x00E1, 0x00ED, 0x00F3, 0x00FA, 0x00F1, 0x00D1, 0x00AA, 0x00BA,
-						0x00BF, 0x00A9, 0x00AA, 0x00BD, 0x00BC, 0x00E4, 0x00AE, 0x0069,
-						0x00B0, 0x00B1, 0x00B2, 0x00B3, 0x00B4, 0x00B5, 0x00B6, 0x00B7,
-						0x00B8, 0x00B9, 0x00BA, 0x00BB, 0x00BC, 0x00BD, 0x00BE, 0x00BF,
-						0x00C0, 0x00C1, 0x00C2, 0x00C3, 0x00C4, 0x00C5, 0x00C6, 0x00C7,
-						0x00C9, 0x00C8, 0x00CA, 0x00CB, 0x00CC, 0x00CD, 0x00CE, 0x00CF,
-						0x00D0, 0x00D1, 0x00D2, 0x00D3, 0x00D4, 0x00D5, 0x00D6, 0x00D7,
-						0x00D8, 0x00D9, 0x00DA, 0x00DB, 0x00DC, 0x00DD, 0x00DE, 0x00DF,
-						0x00DE, 0x00DF, 0x00E2, 0x00E3, 0x00E4, 0x00E5, 0x00E6, 0x00E7,
-						0x00E8, 0x00E9, 0x00EA, 0x00EB, 0x00EC, 0x00ED, 0x00EE, 0x00EF,
-						0x00F0, 0x00F1, 0x00F2, 0x00F3, 0x00F4, 0x00F5, 0x00F6, 0x00F7,
-						0x00F8, 0x00F9, 0x00FA, 0x00FB, 0x00FC, 0x00B2, 0x00FE, 0x00FF
-				};
-				for (int code : aitd1_codes) cp.push_back(code);				
+			auto toInt = [](const std::string& s) {
+				return (int)std::stoul(s, nullptr, 16); // base 16, accepts the 0x prefix
+			};
 
-  		return cp;
+			std::string line;
+			while (std::getline(in, line)) {
+				auto hash = line.find('#');
+				if (hash != std::string::npos) line.erase(hash);
+				for (char& ch : line) if (ch == ',') ch = ' ';
+
+				std::istringstream ss(line);
+				std::string tok;
+				while (ss >> tok) {
+					try {
+						auto dash = tok.find('-');
+						if (dash == std::string::npos) {
+							cp.push_back(toInt(tok));
+						} else {
+							int a = toInt(tok.substr(0, dash));
+							int b = toInt(tok.substr(dash + 1));
+							if (a > b) std::swap(a, b);
+							for (int c = a; c <= b; ++c) cp.push_back(c);
+						}
+					} catch (const std::exception&) {
+						// skip malformed token
+					}
+				}
+			}
+		}
+
+		// Codepoints for a language: the basic ASCII set plus language-specific ones
+		// from texts/<language>/codepoints.txt, falling back to the default language.
+		std::vector<int> getCodepoints(const std::string& language) {
+			std::vector<int> cp;
+
+			// Basic set: printable ASCII only, always present in any font.
+			for (int c = 0x20; c <= 0x7E; ++c) cp.push_back(c);
+
+			// Language-specific additions.
+			std::string path = DataPath::GetFile("texts/" + language + "/codepoints.txt");
+			if (path.empty() && language != defaultLanguage)
+				path = DataPath::GetFile("texts/" + defaultLanguage + "/codepoints.txt");
+			if (!path.empty()) parseCodepoints(path, cp);
+
+			// Deduplicate and sort.
+			std::sort(cp.begin(), cp.end());
+			cp.erase(std::unique(cp.begin(), cp.end()), cp.end());
+			return cp;
 		}
 
     void load() {
-			string s = "data/texts/" + defaultLanguage + "/main.txt";
-			loadTexts(s);
-      s = "data/texts/" + config.language + "/main.txt";
+      texts.clear();
+   string s = DataPath::GetFile("texts/" + defaultLanguage + "/main.txt");
+   loadTexts(s);
+      s = DataPath::GetFile("texts/" + config.language + "/main.txt");
       loadTexts(s);
 
-			auto& codepoints = getCodepoints();
+			auto codepoints = getCodepoints(config.language);
 			s = DataPath::GetFile("texts/" + config.language + "/font.ttf");
 			if (s != "") {
-				mainFont = LoadFontEx(s.c_str(), config.screenH * 16 / 200, codepoints.data(), codepoints.size());
+				mainFont = LoadFontEx(s.c_str(), config.screenH * 16 / 200, codepoints.data(), (int)codepoints.size());
 			} else {
 				s = DataPath::GetFile("texts/" + defaultLanguage + "/font.ttf");
-	  		mainFont = LoadFontEx(s.c_str(), config.screenH * 16 / 200, codepoints.data(), codepoints.size());
+	  		mainFont = LoadFontEx(s.c_str(), config.screenH * 16 / 200, codepoints.data(), (int)codepoints.size());
 			}
 
 			loaded = true;
     }
 
     void unload() {
-			if (!loaded) return;
-			UnloadFont(mainFont);
-			loaded=false;
-		}
+   if (!loaded) return;
+   UnloadFont(mainFont);
+   loaded=false;
+  }
+
+    // Reloads strings and font for the current config.language.
+    void reload() {
+      unload();
+      texts.clear();
+      load();
+    }
 
 		void loadTexts(string textsPath) {
 			int idx;
@@ -120,7 +153,7 @@ namespace openAITD {
     }
 
 		string getBookText(const int textId) {
-			string path = "data/texts/" + config.language + "/" + to_string(textId + 1) + ".txt";
+			string path = DataPath::GetFile("texts/" + config.language + "/" + to_string(textId + 1) + ".txt");
 			std::ifstream file(path);
 			if (file.is_open()) {
 					std::ostringstream buffer;
@@ -128,7 +161,7 @@ namespace openAITD {
 					return buffer.str();
 			}
 
-			string defaultPath = "data/texts/" + defaultLanguage + "/" + to_string(textId + 1) + ".txt";
+			string defaultPath = DataPath::GetFile("texts/" + defaultLanguage + "/" + to_string(textId + 1) + ".txt");
 			std::ifstream defaultFile(defaultPath);
 			if (defaultFile.is_open()) {
 					std::ostringstream buffer;
