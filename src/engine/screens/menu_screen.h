@@ -63,7 +63,8 @@ namespace openAITD {
                 mainItems.push_back(_T("menu.resume"));
             }
             mainItems.push_back(_T("menu.newGame"));
-            if (!world.gameOver) {
+            //Saving is not allowed while the player is dead
+            if (!world.gameOver && !world.player.dead) {
                 mainItems.push_back(_T("menu.saveGame"));
             }
             mainItems.push_back(_T("menu.loadGame"));
@@ -75,7 +76,9 @@ namespace openAITD {
 
         void submitMain() {
             int idx = mainMenu.getSelectedIndex();
-            if (!world.gameOver) {
+            //The "Save" item is hidden while the player is dead, so indices shift.
+            bool canSave = !world.gameOver && !world.player.dead;
+            if (canSave) {
                 switch (idx) {
                     case 0: result = MenuScreenResult::resume; break;
                     case 1: result = MenuScreenResult::newGame; break;
@@ -83,6 +86,14 @@ namespace openAITD {
                     case 3: state = MenuScreenState::load; savesScreen.reload(SavesScreen::Mode::Load); break;
                     case 4: state = MenuScreenState::options; options.reload(); break;
                     case 5: result = MenuScreenResult::exit; break;
+                }
+            } else if (!world.gameOver) {
+                switch (idx) {
+                    case 0: result = MenuScreenResult::resume; break;
+                    case 1: result = MenuScreenResult::newGame; break;
+                    case 2: state = MenuScreenState::load; savesScreen.reload(SavesScreen::Mode::Load); break;
+                    case 3: state = MenuScreenState::options; options.reload(); break;
+                    case 4: result = MenuScreenResult::exit; break;
                 }
             } else {
                 switch (idx) {

@@ -91,6 +91,7 @@ namespace openAITD {
 
     void startGame() {
         world.gameOver = false;
+        world.player.dead = false;
         world.loadVars("data/vars.json");
         world.loadGObjects("data/objects.json");
         world.setCurStage(0, 0);
@@ -386,7 +387,7 @@ namespace openAITD {
                 inventoryScreen.reload();
                 state = AppState::Inventory;
             }
-            else if (world.player.allowInventory && IsKeyPressed(KEY_ESCAPE)) {
+            else if (IsKeyPressed(KEY_ESCAPE)) {
                 startMenu();
             }
             else if (world.picture.id != -1) {

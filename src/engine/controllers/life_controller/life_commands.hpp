@@ -291,7 +291,7 @@ namespace openAITD {
 			}, "SET_ALT_BACKGROUNDS");
 
 			lua->CreateFunction([this](int val) {
-				//TODO: disable save
+				this->world->player.dead = (val != 0);
 			}, "SET_PLAYER_DEAD");
 			
 			lua->CreateFunction([this](int messId) {
@@ -594,7 +594,7 @@ namespace openAITD {
 				resources->audio.PlayMusic(musicId);
 				}, "NEXT_MUSIC");			
 			lua->CreateFunction([this](int musicId) {
-				//TODO: SOUND_THEN
+				//FADE_MUSIC not using in aitd1
 				}, "FADE_MUSIC");
 
 			//SFX
