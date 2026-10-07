@@ -12,6 +12,7 @@ Features:
 + Multilanguage support (lang select and save)
 + Additional multilang text
 + ogv/theora video cutscene support
++ Audio: RndFreq, RepeatSound
 0.3: Additional features
 - Extract resuources screen
 - CDAudio music ripper (.cue)

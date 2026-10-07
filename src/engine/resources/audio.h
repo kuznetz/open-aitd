@@ -20,11 +20,18 @@ namespace openAITD {
 
       raylib::Music musicTrack;
 
+      // Repeating (cyclic) sound. Plays while REP_SOUND is called every frame.
+      // If the command is not issued during a frame, it stops in Process().
+      int repeatSoundId = -1;
+      bool repeatSoundRequested = false;
+
       Audio() {}
       ~Audio() {}
       void Init();
       void LoadSound(const int soundId);
       void PlaySound(const int soundId, const float rndFreq = 0);
+      void PlayRepeatSound(const int soundId, const float rndFreq = 0);
+      void StopRepeatSound();
 
       void LoadMusic(const int musicId);
       void StopMusic();
@@ -35,7 +42,7 @@ namespace openAITD {
   private:
       std::mt19937 rng{ std::random_device{}() };
 
-      // Равномерное случайное смещение в диапазоне [-amplitude, +amplitude]
+      // Uniform random offset in the range [-amplitude, +amplitude]
       float RandomAmplitude(const float amplitude) {
         std::uniform_real_distribution<float> dist(-amplitude, amplitude);
         return dist(rng);
@@ -73,19 +80,60 @@ namespace openAITD {
 
     Sound& snd = sounds[soundId];
 
-    // rndFreq задаёт относительный разброс частоты: 0 = без изменений,
-    // 0.5 = +-50% (pitch в диапазоне [0.5, 1.5]).
+    // rndFreq sets the relative frequency spread: 0 = no change,
+    // 0.5 = +-50% (pitch in the range [0.5, 1.5]).
     float pitch = 1.0f;
     if (rndFreq > 0.0f) {
       pitch = 1.0f + RandomAmplitude(rndFreq);
-      if (pitch < 0.05f) pitch = 0.05f; // защита от нулевого/отрицательного pitch
+      if (pitch < 0.05f) pitch = 0.05f; // guard against zero/negative pitch
     }
 
-    // Sound кэшируется и переиспользуется, поэтому pitch нужно выставлять
-    // всегда (в т.ч. 1.0), иначе предыдущая рандомизация "прилипнет".
+    // Sound is cached and reused, so pitch must always be set
+    // (including 1.0), otherwise the previous randomization would "stick".
     raylib::SetSoundPitch(snd, pitch);
 
     raylib::PlaySound(snd);
+  }
+
+  // Starts a cyclic sound. While the method is called every frame, the sound
+  // continues to play (restarts upon completion). As soon as the calls
+  // stop, the sound stops in Audio::Process().
+  inline void Audio::PlayRepeatSound(const int soundId, const float rndFreq) {
+    Init();
+
+    // The repeating sound changed — stop the previous one.
+    if (repeatSoundId != -1 && repeatSoundId != soundId) {
+      auto it = sounds.find(repeatSoundId);
+      if (it != sounds.end()) {
+        raylib::StopSound(it->second);
+      }
+      repeatSoundId = -1;
+    }
+
+    if (repeatSoundId == -1) {
+      // First frame of playback — start it.
+      repeatSoundId = soundId;
+      PlaySound(soundId, rndFreq);
+    } else {
+      // Sound already selected: restart only once it has finished (loop).
+      auto it = sounds.find(repeatSoundId);
+      if (it != sounds.end() && !raylib::IsSoundPlaying(it->second)) {
+        PlaySound(repeatSoundId, rndFreq);
+      }
+    }
+
+    repeatSoundRequested = true;
+  }
+
+  inline void Audio::StopRepeatSound() {
+    if (repeatSoundId != -1) {
+      auto it = sounds.find(repeatSoundId);
+      if (it != sounds.end()) {
+        raylib::StopSound(it->second);
+      }
+      repeatSoundId = -1;
+    }
+    repeatSoundRequested = false;
   }
 
   inline void Audio::StopMusic() {
@@ -143,6 +191,12 @@ namespace openAITD {
   }  
 
   inline void Audio::Process() {
+      // The cyclic sound plays only while REP_SOUND is called every frame.
+      if (repeatSoundId != -1 && !repeatSoundRequested) {
+          StopRepeatSound();
+      }
+      repeatSoundRequested = false;
+
       if (currentMusicId == -1) return;
       raylib::UpdateMusicStream(musicTrack);
       if (!raylib::IsMusicStreamPlaying(musicTrack)) {

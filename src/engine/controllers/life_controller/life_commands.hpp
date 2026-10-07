@@ -573,7 +573,6 @@ namespace openAITD {
 				resources->audio.PlaySound(sampleId, this->curRndFreq);
 				}, "SET_ANIM_SOUND");
 			lua->CreateFunction([this](int sampleId) {
-				//cout << "SOUND " << sampleId << endl;
 				resources->audio.PlaySound(sampleId, this->curRndFreq);
 				}, "SOUND");
 			//Set Random sound frequency
@@ -581,10 +580,12 @@ namespace openAITD {
 				this->curRndFreq = freqDiff / 200.f;
 				}, "RND_FREQ");
 			lua->CreateFunction([this](int sampleId, int reserve) {
-				//TODO: REP_SOUND
+        // Cyclic sound: plays while REP_SOUND is called every frame.
+				// As soon as the object stops sending the command, the sound is muted.
+				resources->audio.PlayRepeatSound(sampleId, this->curRndFreq);
 				}, "REP_SOUND");
 			lua->CreateFunction([this](int sampleId, int nextSampleId) {
-				//TODO: SOUND_THEN
+				//SOUND_THEN not using in aitd1
 				}, "SOUND_THEN");
 			lua->CreateFunction([this](int musicId) {
 				resources->audio.PlayMusic(musicId);
@@ -604,7 +605,7 @@ namespace openAITD {
 				resources->audio.PlaySound(sampleId);
 			}, "PICTURE");
 
-			//Plays data/cutscenes/{cutsceneId}.ogv as a full-screen video (see ConsoleScreen::PlayCutscene).
+			//Plays data/cutscenes/{cutsceneId}.ogv as a full-screen video
 			lua->CreateFunction([this](int cutsceneId) {
 				this->world->cutscene.path = "cutscenes/" + std::to_string(cutsceneId) + ".ogv";
 				this->world->cutscene.request = true;
