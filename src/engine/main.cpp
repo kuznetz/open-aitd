@@ -44,7 +44,7 @@ namespace openAITD {
         StartIntro,
         Loading,
         CharSelect,
-        Intro,
+        GameIntro,
         InWorld,
         MainMenu,
         Inventory,
@@ -98,14 +98,13 @@ namespace openAITD {
         state = AppState::InWorld;
     }
 
-    void startIntro() {
+    void startGameIntro() {
         startGame();
         world.setCurStage(7, 1);
-        state = AppState::Intro;
+        state = AppState::GameIntro;
     }
 
     void startStartIntro() {
-        world.gameOver = false;
         world.brightnessTrg = 1;
         introScreen.start();
         state = AppState::StartIntro;
@@ -349,7 +348,7 @@ namespace openAITD {
             charSelectScreen.process(timeDelta);
             if (charSelectScreen.exited) {
                 if (charSelectScreen.selected != -1) {
-                    startIntro();                    
+                    startGameIntro();                    
                 } else {
                     state = AppState::MainMenu;
                 }
@@ -357,10 +356,9 @@ namespace openAITD {
         }
         else if (state == AppState::StartIntro) {
             world.brightnessTrg = 1;
+            // ESC is handled inside IntroScreen: it fades the current frame out
+            // first and only then sets finished.
             introScreen.process(timeDelta);
-            if (IsKeyPressed(KEY_ESCAPE)) {
-                introScreen.finished = true;
-            }
             if (introScreen.finished) {
                 introScreen.end();
                 if (resources.config.fastStart) {
@@ -370,7 +368,7 @@ namespace openAITD {
                 }
             }
         }
-        else if (state == AppState::Intro) {
+        else if (state == AppState::GameIntro) {
             processWorld(timeDelta);
             if (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_ESCAPE)) {
                 world.gameOver = true;
@@ -463,7 +461,7 @@ namespace openAITD {
             sceneRend.render();
             resources.screen.end();
         }
-        else if (state == AppState::Intro) {
+        else if (state == AppState::GameIntro) {
             renderWorld();
         }
         else if (state == AppState::InWorld) {

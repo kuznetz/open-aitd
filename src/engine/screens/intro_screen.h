@@ -14,8 +14,9 @@ namespace openAITD {
 	// Intro screen: shows data/intro/[0-9].png in order with fade-in/fade-out.
 	class IntroScreen {
 	public:
-		// Per-frame phases: fade in -> fully visible -> fade out -> next frame
-		enum class Phase { FadeIn, Hold, FadeOut };
+		// Per-frame phases: fade in -> fully visible -> fade out -> next frame.
+		// Exiting is the ESC-triggered fade-out: twice as fast and finishing the intro.
+		enum class Phase { FadeIn, Hold, FadeOut, Exiting };
 
 		World* world;
 		Resources* resources;
@@ -36,6 +37,8 @@ namespace openAITD {
 
 		bool started = false;
 		bool finished = false;
+		// ESC fade-out runs twice as fast as the regular one.
+		static constexpr float exitFadeScale = 0.5f;
 
 		IntroScreen(World* world)
 			: world(world)
@@ -72,7 +75,7 @@ namespace openAITD {
 			curTime = 0;
 			finished = false;
 			started = true;
-			phase = Phase::FadeIn;
+			phase = Phase::FadeIn; // fade in from black on start
 			if (!loadFrame(0)) {
 				finished = true;
 			}
@@ -118,20 +121,38 @@ namespace openAITD {
 					phase = Phase::FadeOut;
 				}
 			}
-			else { // Phase::FadeOut
-				if (curTime >= fadeTime) {
-					curTime -= fadeTime;
+			else { // Phase::FadeOut / Phase::Exiting
+				if (curTime >= fadeOutDuration()) {
+					curTime -= fadeOutDuration();
+					if (phase == Phase::Exiting) {
+						// The ESC fade-out is done: the intro finishes here.
+						finished = true;
+						return;
+					}
 					advance();
 				}
 			}
 		}
 
 		void processKeys() {
+			// ESC: fast fade-out, the intro finishes only after it completes.
+			if (phase != Phase::Exiting && IsKeyPressed(KEY_ESCAPE)) {
+				phase = Phase::Exiting;
+				curTime = 0;
+				return;
+			}
+
 			// SPACE / ENTER / RIGHT: fade out the current frame and go to the next
-			if (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_RIGHT)) {
+			if (phase != Phase::Exiting &&
+				(IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_RIGHT))) {
 				phase = Phase::FadeOut;
 				curTime = 0;
 			}
+		}
+
+		// Duration of the current fade-out (Exiting is twice as fast).
+		float fadeOutDuration() const {
+			return (phase == Phase::Exiting) ? fadeTime * exitFadeScale : fadeTime;
 		}
 
 		// Current frame opacity: 0..1
@@ -142,8 +163,9 @@ namespace openAITD {
 			if (phase == Phase::Hold) {
 				return 1.0f;
 			}
-			// Phase::FadeOut
-			return (fadeTime > 0) ? Clamp(1.0f - curTime / fadeTime, 0.0f, 1.0f) : 0.0f;
+			// Phase::FadeOut / Phase::Exiting
+			float dur = fadeOutDuration();
+			return (dur > 0) ? Clamp(1.0f - curTime / dur, 0.0f, 1.0f) : 0.0f;
 		}
 
 		void render() {
