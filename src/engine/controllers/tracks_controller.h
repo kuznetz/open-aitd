@@ -224,12 +224,49 @@ namespace openAITD {
 			}
 		}
 
+		// Finds the ChangeRoom zone in `room1` that links it to `room2`.
+		// Returns the zone (its bounds are in room1 local coordinates) or nullptr if not linked.
+		const RoomZone* getRoomLink(int room1, int room2) {
+			auto& room = world->curStage->rooms[room1];
+			for (auto& zone : room.zones) {
+				if (zone.type != RoomZoneType::ChangeRoom) continue;
+				if (zone.parameter == room2) {
+					return &zone;
+				}
+			}
+			return nullptr;
+		}
+
+		// (x = min + (max - min) / 2 for each axis). Coordinates are local to `room1`.
+		// Returns false when there is no ChangeRoom zone linking room1 -> room2.
+		bool getRoomLinkMidPoint(int room1, int room2, Vector3& outMidPoint) {
+			const RoomZone* link = getRoomLink(room1, room2);
+			if (!link) return false;
+			const Bounds& b = link->bounds;
+			outMidPoint = {
+				b.min.x + (b.max.x - b.min.x) / 2,
+				b.min.y + (b.max.y - b.min.y) / 2,
+				b.min.z + (b.max.z - b.min.z) / 2
+			};
+			return true;
+		}
+
 		void processObjFollow(GameObject& gobj, const float timeDelta) {
 			if (gobj.track.id == -1) return;
 			auto& gobj2 = world->gobjects[gobj.track.id];
 			if (gobj.getStageId() != gobj2.getStageId()) return;
-			auto pos2 = world->curStage->VectorChangeRoom(gobj2.getPosition(), gobj2.getRoomId(), gobj.getRoomId());
-			
+
+			Vector3 pos2;
+			if (gobj.getRoomId() != gobj2.getRoomId() &&
+				getRoomLinkMidPoint(gobj.getRoomId(), gobj2.getRoomId(), pos2)) {
+				// Target is in an adjacent room and there is a ChangeRoom zone
+				// (door) linking the rooms: head to the middle of that zone.
+			}
+			else {
+				// Same room, or no linking zone found: route directly to the target.
+				pos2 = world->curStage->VectorChangeRoom(gobj2.getPosition(), gobj2.getRoomId(), gobj.getRoomId());
+			}
+
 			Vector3 v2 = Vector3Subtract(pos2, gobj.getPosition());
 			//printf("Rooms %d %d\n", gobj.getRoomId(), gobj2.getRoomId());
 			//printf("VectorChangeRoom %f %f\n", v2.x, v2.z);
