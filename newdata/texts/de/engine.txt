@@ -1,0 +1,35 @@
+; Engine texts, German (de) language.
+; Format:
+;   [section]
+;   key=value
+; Keys are addressed as "section.key".
+; Note: values are trimmed, so trailing spaces are not preserved.
+
+[menu]
+resume=Zurück zum Spiel
+newGame=Neues Spiel
+saveGame=Spiel speichern
+loadGame=Spiel laden
+options=Optionen
+quit=Beenden
+
+[found]
+youFind=Du findest
+leave=Liegen lassen
+take=Nehmen
+
+[saves]
+newSave=<Neuer Spielstand>
+saveTitle=Spiel speichern
+loadTitle=Spiel laden
+
+[options]
+title=Optionen
+fullscreen=Vollbild:
+resolution=Auflösung:
+scale=3D-Skalierung:
+showFps=fps anzeigen:
+language=Sprache:
+yes=Ja
+no=Nein
+restartHint=Auflösung wird nach Neustart übernommen

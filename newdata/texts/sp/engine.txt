@@ -1,0 +1,35 @@
+; Engine texts, Spanish (sp) language.
+; Format:
+;   [section]
+;   key=value
+; Keys are addressed as "section.key".
+; Note: values are trimmed, so trailing spaces are not preserved.
+
+[menu]
+resume=Volver al juego
+newGame=Nueva partida
+saveGame=Guardar partida
+loadGame=Cargar partida
+options=Opciones
+quit=Salir
+
+[found]
+youFind=Encuentras
+leave=Dejar
+take=Coger
+
+[saves]
+newSave=<Nueva partida guardada>
+saveTitle=Guardar partida
+loadTitle=Cargar partida
+
+[options]
+title=Opciones
+fullscreen=Pantalla completa:
+resolution=Resolución:
+scale=Escala 3D:
+showFps=Mostrar fps:
+language=Idioma:
+yes=sí
+no=no
+restartHint=La resolución se aplica tras reiniciar

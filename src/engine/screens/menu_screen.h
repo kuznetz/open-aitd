@@ -96,8 +96,11 @@ namespace openAITD {
 
         void processKeys() {
             if (IsKeyPressed(KEY_ESCAPE)) {
-                if (state == MenuScreenState::save || state == MenuScreenState::load || state == MenuScreenState::options) {
+                if (state == MenuScreenState::save || state == MenuScreenState::load) {
                     state = MenuScreenState::main;
+                } else if (state == MenuScreenState::options) {
+                    state = MenuScreenState::main;
+                    reload();
                 } else if (!world.gameOver) {
                     result = MenuScreenResult::resume;
                 }

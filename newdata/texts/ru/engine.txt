@@ -1,0 +1,35 @@
+; Engine texts, Russian (ru) language.
+; Format:
+;   [section]
+;   key=value
+; Keys are addressed as "section.key".
+; Note: values are trimmed, so trailing spaces are not preserved.
+
+[menu]
+resume=Вернуться в игру
+newGame=Новая игра
+saveGame=Сохранить игру
+loadGame=Загрузить игру
+options=Настройки
+quit=Выход
+
+[found]
+youFind=Вы находите
+leave=Оставить
+take=Взять
+
+[saves]
+newSave=<Новое сохранение>
+saveTitle=Сохранить игру
+loadTitle=Загрузить игру
+
+[options]
+title=Настройки
+fullscreen=Полный экран:
+resolution=Разрешение:
+scale=Масштаб 3D:
+showFps=Показывать fps:
+language=Язык:
+yes=да
+no=нет
+restartHint=Разрешение применится после перезапуска

@@ -1,0 +1,35 @@
+; Engine texts, Chinese (zh) language.
+; Format:
+;   [section]
+;   key=value
+; Keys are addressed as "section.key".
+; Note: values are trimmed, so trailing spaces are not preserved.
+
+[menu]
+resume=返回游戏
+newGame=新游戏
+saveGame=保存游戏
+loadGame=读取游戏
+options=选项
+quit=退出
+
+[found]
+youFind=你发现了
+leave=留下
+take=拿走
+
+[saves]
+newSave=<新存档>
+saveTitle=保存游戏
+loadTitle=读取游戏
+
+[options]
+title=选项
+fullscreen=全屏:
+resolution=分辨率:
+scale=3D 缩放:
+showFps=显示 fps:
+language=语言:
+yes=是
+no=否
+restartHint=分辨率将在重启后生效

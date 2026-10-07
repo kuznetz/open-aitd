@@ -1,0 +1,35 @@
+; Engine texts, French (fr) language.
+; Format:
+;   [section]
+;   key=value
+; Keys are addressed as "section.key".
+; Note: values are trimmed, so trailing spaces are not preserved.
+
+[menu]
+resume=Reprendre la partie
+newGame=Nouvelle partie
+saveGame=Sauvegarder la partie
+loadGame=Charger la partie
+options=Options
+quit=Quitter
+
+[found]
+youFind=Vous trouvez
+leave=Laisser sur place
+take=Prendre
+
+[saves]
+newSave=<Nouvelle sauvegarde>
+saveTitle=Sauvegarder la partie
+loadTitle=Charger la partie
+
+[options]
+title=Options
+fullscreen=Plein écran:
+resolution=Résolution:
+scale=Échelle 3D:
+showFps=Afficher les fps:
+language=Langue:
+yes=oui
+no=non
+restartHint=Résolution appliquée après redémarrage
