@@ -13,6 +13,7 @@
                 "${workspaceFolder}/libs/json/include",
                 "${workspaceFolder}/libs/ogg/include",
                 "${workspaceFolder}/libs/vorbis/include",
+                "${workspaceFolder}/libs/theora/include",
                 "${env:INCLUDE}"  // MSVC system includes
             ],
             "defines": [

@@ -34,3 +34,6 @@
 [submodule "libs/vorbis"]
 	path = libs/vorbis
 	url = https://github.com/xiph/vorbis.git
+[submodule "libs/theora"]
+	path = libs/theora
+	url = https://github.com/xiph/theora.git

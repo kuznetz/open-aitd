@@ -39,6 +39,14 @@ namespace openAITD {
 		float delay;
 	};
 
+	// Full-screen .ogv (Theora) clip, started by file name.
+	struct Video {
+		bool request = false;     // set to true (with `path`) to start playback
+		string path;              // direct path or DataPath-relative name (videos/x.ogv)
+		bool active = false;      // currently playing
+		bool finished = false;    // clip ended or was cancelled
+	};
+
 	struct BookData {
 		int bookType;
 		int readText = -1;
@@ -119,6 +127,9 @@ namespace openAITD {
 
 		//Showed image
 		Picture picture;
+
+		//Full-screen video clip
+		Video video;
 
 		//Shake screen
 		Shake shake;

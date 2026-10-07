@@ -31,6 +31,7 @@
 #include "./screens/book_screen.h"
 #include "./screens/console_screen.h"
 #include "./screens/char_select_screen.h"
+#include "./screens/video_screen.h"
 
 #include "../extractor/include/extractor.h"
 
@@ -48,9 +49,11 @@ namespace openAITD {
         MainMenu,
         Inventory,
         Book,
-        SelectGame
+        SelectGame,
+        Video
     };
     AppState state = AppState::StartIntro;
+    AppState videoReturnState = AppState::InWorld;
     bool gameStarted = false;
     
     Resources resources;
@@ -81,6 +84,7 @@ namespace openAITD {
     ConsoleScreen consoleScreen(&world);
     MenuScreen mainMenu(world, saveHelper);
     CharSelectScreen charSelectScreen(world);
+    VideoScreen videoScreen(&world);
 
     bool freeLook = false;
     bool pause = false;
@@ -106,6 +110,23 @@ namespace openAITD {
         world.brightnessTrg = 1;
         introScreen.start();
         state = AppState::StartIntro;
+    }
+
+    // Starts a full-screen video clip from the given file (see World::Video).
+    void startVideo(const string& path) {
+        if (path.empty()) return;
+        if (!videoScreen.start(path)) {
+            world.video.active = false;
+            world.video.finished = true;
+            return;
+        }
+        if (state != AppState::Video) {
+            videoReturnState = state;
+        }
+        world.video.active = true;
+        world.video.finished = false;
+        world.video.path = path;
+        state = AppState::Video;
     }
 
     void loadGame(int slot) {
@@ -293,7 +314,33 @@ namespace openAITD {
     }
 
     bool process(float timeDelta) {
-        if (state == AppState::MainMenu) {
+        // The video source is a file: an .ogv dropped onto the window starts playback.
+        if (IsFileDropped()) {
+            FilePathList dropped = LoadDroppedFiles();
+            if (dropped.count > 0 && dropped.paths[0] != nullptr) {
+                world.video.path = dropped.paths[0];
+                world.video.request = true;
+            }
+            UnloadDroppedFiles(dropped);
+        }
+
+        // Video can also be requested from anywhere by setting World::Video::request.
+        if (world.video.request && state != AppState::Video) {
+            world.video.request = false;
+            startVideo(world.video.path);
+        }
+
+        if (state == AppState::Video) {
+            world.brightnessTrg = 1;
+            videoScreen.process(timeDelta);
+            if (IsKeyPressed(KEY_ESCAPE) || videoScreen.isFinished()) {
+                videoScreen.stop();
+                world.video.active = false;
+                world.video.finished = true;
+                state = videoReturnState;
+            }
+        }
+        else if (state == AppState::MainMenu) {
             world.brightnessTrg = world.inDark ? inDarkBrightness : 0.1f;
             if (!processMenu(timeDelta)) return false;
         }
@@ -405,6 +452,12 @@ namespace openAITD {
         }
         else if (state == AppState::StartIntro) {
             introScreen.render();
+            resources.screen.begin();
+            sceneRend.render();
+            resources.screen.end();
+        }
+        else if (state == AppState::Video) {
+            videoScreen.render();
             resources.screen.begin();
             sceneRend.render();
             resources.screen.end();

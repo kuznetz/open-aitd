@@ -84,6 +84,8 @@ namespace openAITD {
         ShowObjectInfo(tokens);
       } else if (cmd == 'V') {
         SetValue(tokens);
+      } else if (cmd == 'P') {
+        PlayCutscene(tokens);
       } else if (cmd == 'S') {
         ShakeScreen(tokens);
       } else if (cmd == 'L') {        
@@ -107,6 +109,7 @@ namespace openAITD {
       lines[4] = "O {OBJECT_ID} - Object info";
       lines[5] = "V {VAR_ID} {VALUE} - Set variable / V {VAR_ID} - Get variable";
       lines[6] = "S {1/0} - Shake screen / L {OBJECT_ID} - Set light object";
+      lines[7] = "P {CUTSCENE_ID} - Play cutscene";
     }
 
     template<typename... Args> std::string BuildString(Args&&... args) {
@@ -258,6 +261,20 @@ namespace openAITD {
       } else {
         world->shake.stop();
       }
+    }
+
+    // Plays data/cutscenes/{CUTSCENE_ID}.ogv as a full-screen video.
+    void PlayCutscene(const vector<string>& tokens) {
+      if (tokens.size() != 2) {
+        lines[0] = "Usage: P {CUTSCENE_ID}";
+        ShowHelp();
+        return;
+      }
+      world->video.path = "cutscenes/" + tokens[1] + ".ogv";
+      world->video.request = true;
+      world->video.finished = false;
+      lines[0] = BuildString("Cutscene: ", tokens[1]);
+      exit = true;  // close the console so the video starts right away
     }
 
     void LightObject(const vector<string>& tokens) {

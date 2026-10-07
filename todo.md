@@ -9,14 +9,14 @@ Features:
 + Cut model in water
 + Camera shaking
 + Light in maze
++ Multilanguage support (lang select and save)
+- Additional multilang text
+- Pregzt if fire sequense (ogv/theora video support)
 0.3: Additional features
 - Extract resuources screen
 - CDAudio music ripper (.cue)
 - Extract files from cd (.cue)
 - Book audio ripper from cd
-- Multilanguage support (lang select and save)
-- Additional multilang text
-- Pregzt if fire sequense (ogv/theora video support)
 0.4: Recreate better
 - Light in maze (animate spot)
 - Character Select (better)

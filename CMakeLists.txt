@@ -97,6 +97,30 @@ add_subdirectory( ${CMAKE_SOURCE_DIR}/libs/ogg ${CMAKE_CURRENT_BINARY_DIR}/ogg E
 set(VORBIS_INCLUDE_DIR "libs/vorbis/include")
 add_subdirectory( ${CMAKE_SOURCE_DIR}/libs/vorbis ${CMAKE_CURRENT_BINARY_DIR}/vorbis EXCLUDE_FROM_ALL)
 
+#THEORA (no upstream CMakeLists -> build decoder subset directly, pure C path)
+set(THEORA_INCLUDE_DIR "libs/theora/include")
+set(THEORA_DIR "${CMAKE_SOURCE_DIR}/libs/theora")
+add_library(theora STATIC
+    ${THEORA_DIR}/lib/apiwrapper.c
+    ${THEORA_DIR}/lib/bitpack.c
+    ${THEORA_DIR}/lib/decapiwrapper.c
+    ${THEORA_DIR}/lib/decinfo.c
+    ${THEORA_DIR}/lib/decode.c
+    ${THEORA_DIR}/lib/dequant.c
+    ${THEORA_DIR}/lib/fragment.c
+    ${THEORA_DIR}/lib/huffdec.c
+    ${THEORA_DIR}/lib/idct.c
+    ${THEORA_DIR}/lib/info.c
+    ${THEORA_DIR}/lib/internal.c
+    ${THEORA_DIR}/lib/quant.c
+    ${THEORA_DIR}/lib/state.c
+)
+target_include_directories(theora PUBLIC ${THEORA_DIR}/include PRIVATE ${THEORA_DIR}/lib)
+target_link_libraries(theora PRIVATE Ogg::ogg)
+if(MSVC)
+    target_compile_definitions(theora PRIVATE _CRT_SECURE_NO_WARNINGS)
+endif()
+
 #RAYLIB
 set(RAYLIB_INCLUDE_DIR "libs/raylib/src")
 set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE) # don't build the supplied examples
@@ -104,7 +128,7 @@ set(BUILD_GAMES    OFF CACHE BOOL "" FORCE) # don't build the supplied example g
 add_subdirectory( ${CMAKE_SOURCE_DIR}/libs/raylib ${CMAKE_CURRENT_BINARY_DIR}/raylib EXCLUDE_FROM_ALL)
 #file(GLOB_RECURSE RAYLIB_SOURCES CONFIGURE_DEPENDS "libs/raylib/src/*.c")
 
-set(ALL_INCLUDES 
+set(ALL_INCLUDES
     ${ZLIB_INCLUDE_DIR}
     ${PNG_INCLUDE_DIR}
     ${GLFW_INCLUDE}
@@ -115,6 +139,7 @@ set(ALL_INCLUDES
     ${TINYGLTF_INCLUDE_DIR}
 	${OGG_INCLUDE_DIR}
 	${VORBIS_INCLUDE_DIR}
+	${THEORA_INCLUDE_DIR}
     ${CMAKE_SOURCE_DIR}/src)
 
 add_library(libextractor STATIC)
@@ -145,7 +170,7 @@ file(GLOB_RECURSE AITD_SOURCES CONFIGURE_DEPENDS "src/engine/*.cpp" "src/engine/
 target_include_directories(open-aitd PRIVATE ${ALL_INCLUDES})
 target_sources(open-aitd PRIVATE ${AITD_SOURCES} ${LUACPP_SOURCES} ${RAYLIB_SOURCES} ${PLATFORM_SOURCE})
 #target_include_directories(open-aitd PRIVATE ${CMAKE_SOURCE_DIR}/libs/includes)
-target_link_libraries(open-aitd PRIVATE PNG::PNG ZLIB::ZLIB lua::lua Ogg::ogg Vorbis::vorbis libextractor raylib)
+target_link_libraries(open-aitd PRIVATE PNG::PNG ZLIB::ZLIB lua::lua Ogg::ogg Vorbis::vorbis theora libextractor raylib)
 set_property(TARGET open-aitd PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/data")
 
 #INSTALL
