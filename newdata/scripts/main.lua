@@ -2,6 +2,7 @@
 
 function END_SEQUENCE()
   LOG("END_SEQUENCE");
+  --CUTSCENE(0);
 end
 
 -- L_PLAYER_CLIMBING - climb fix

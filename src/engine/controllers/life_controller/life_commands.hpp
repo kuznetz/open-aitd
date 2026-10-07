@@ -602,7 +602,14 @@ namespace openAITD {
 				this->world->picture.curTime = 0;
 				this->world->picture.delay = delay / 30.;
 				resources->audio.PlaySound(sampleId);
-			}, "PICTURE");			
+			}, "PICTURE");
+
+			//Plays data/cutscenes/{cutsceneId}.ogv as a full-screen video (see ConsoleScreen::PlayCutscene).
+			lua->CreateFunction([this](int cutsceneId) {
+				this->world->video.path = "cutscenes/" + std::to_string(cutsceneId) + ".ogv";
+				this->world->video.request = true;
+				this->world->video.finished = false;
+			}, "CUTSCENE");
 
 			lua->CreateFunction([this](int light) {
 				this->world->inDark = !light;

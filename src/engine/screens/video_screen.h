@@ -199,6 +199,7 @@ namespace openAITD {
 
 			BeginTextureMode(resources->screen.sceneTex);
 			ClearBackground(BLACK);
+			bindPlanes();
 			BeginShaderMode(yuvShader);
 			DrawTexturePro(
 				yTex,
@@ -447,11 +448,28 @@ namespace openAITD {
 			locV = GetShaderLocation(yuvShader, "texture2");
 		}
 
+		// Pins the three samplers to fixed texture units (0/1/2) instead of relying
+		// on SetShaderValueTexture, which raylib does not keep stable across draws.
 		void bindSamplers() {
 			if (yuvShader.id == 0) return;
-			if (locY != -1) SetShaderValueTexture(yuvShader, locY, yTex);
-			if (locU != -1) SetShaderValueTexture(yuvShader, locU, uTex);
-			if (locV != -1) SetShaderValueTexture(yuvShader, locV, vTex);
+			int yUnit = 0, uUnit = 1, vUnit = 2;
+			if (locY != -1) SetShaderValue(yuvShader, locY, &yUnit, SHADER_UNIFORM_INT);
+			if (locU != -1) SetShaderValue(yuvShader, locU, &uUnit, SHADER_UNIFORM_INT);
+			if (locV != -1) SetShaderValue(yuvShader, locV, &vUnit, SHADER_UNIFORM_INT);
+		}
+
+		// Binds U/V to units 1/2 right before drawing; DrawTexturePro puts yTex on
+		// unit 0 itself. Restores unit 0 as the active slot afterwards.
+		void bindPlanes() {
+			if (uTex.id != 0) {
+				rlActiveTextureSlot(1);
+				rlEnableTexture(uTex.id);
+			}
+			if (vTex.id != 0) {
+				rlActiveTextureSlot(2);
+				rlEnableTexture(vTex.id);
+			}
+			rlActiveTextureSlot(0);
 		}
 
 		static void uploadPlane(Texture2D& tex, const th_img_plane& plane,
