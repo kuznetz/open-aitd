@@ -136,7 +136,15 @@ namespace openAITD {
 			Vector3 toPoint = Vector3Subtract(pos, mainCamera.position);
 			bool inFrontCamera = Vector3DotProduct(forward, toPoint) > 0.0f;
 			if (!inFrontCamera) return;
-			auto screenPos = GetWorldToScreen(pos, mainCamera);
+			// GetWorldToScreen() uses the window size (GetScreenWidth/Height), but the
+			// debug text is drawn into sceneTex sized config.screenW x config.screenH.
+			// In fullscreen the window may be wider (e.g. 16:9) than the 4:3 render
+			// texture, which shifts the projection. Project against the render target
+			// size so the labels stay aligned in any window mode/aspect.
+			auto screenPos = GetWorldToScreenEx(
+				pos, mainCamera,
+				resources->config.screenW, resources->config.screenH
+			);
 			renderDebugText({ screenPos.x, screenPos.y }, text, color);
 		}
 
@@ -300,6 +308,11 @@ namespace openAITD {
 			if (freeLook) {
 				UpdateCamera(&mainCamera, CAMERA_FREE);
 			}
+			if (IsKeyPressed(raylib::KEY_U) && curCamera) {
+				mainCamera.position = curCamera->position;
+				mainCamera.target = Vector3Add(curCamera->position, Vector3Negate(Vector3RotateByQuaternion({ 0,0,1 }, curCamera->rotation)));
+				mainCamera.up = Vector3RotateByQuaternion({ 0,1,0 }, curCamera->rotation);				
+			}
 		}
 
 		void render() {
@@ -307,12 +320,15 @@ namespace openAITD {
 			ClearBackground(BLACK);
 
 			if (world->curStageId == -1 || world->curCameraId == -1) return;
-			if (world->curStageId != curStageId || world->curCameraId != curCameraId) {
+			if (world->curStageId != curStageId) {
 				curStageId = world->curStageId;
 				loadCamera(world->curCameraId);
 				mainCamera.position = curCamera->position;
 				mainCamera.target = Vector3Add(curCamera->position, Vector3Negate(Vector3RotateByQuaternion({ 0,0,1 }, curCamera->rotation)));
 				mainCamera.up = Vector3RotateByQuaternion({ 0,1,0 }, curCamera->rotation);				
+			}
+			else if (world->curCameraId != curCameraId) {
+				loadCamera(world->curCameraId);
 			}
 
 			endDebugObjs = debugObjs;
