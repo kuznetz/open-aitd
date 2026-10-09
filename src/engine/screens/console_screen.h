@@ -228,7 +228,7 @@ namespace openAITD {
         
         string animInfo = BuildString(
           "Model: ", gobj.modelId, 
-          " Anim: ", gobj.animation.animIdx);
+          " Anim: ", gobj.animation.id, " [", gobj.animation.animIdx, "]");
         if (gobj.animation.bitField.repeat) animInfo += " Rep";
         if (gobj.animation.bitField.reset) animInfo += " Rst";
         if (gobj.animation.bitField.uninterruptable) animInfo += " UnInt";
