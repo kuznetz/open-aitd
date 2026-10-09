@@ -69,15 +69,18 @@ namespace AITDExtractor {
         cubeVertVw.byteLength = cubeVertSize;
         cubeVertVw.target = TINYGLTF_TARGET_ARRAY_BUFFER;
         m.bufferViews.push_back(cubeVertVw);
+        int cubeVertVwIdx = m.bufferViews.size() - 1;
 
         tinygltf::Accessor cubeVertAcc;
-        cubeVertAcc.bufferView = 0;
+        cubeVertAcc.bufferView = cubeVertVwIdx;
         cubeVertAcc.byteOffset = 0;
         cubeVertAcc.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
         cubeVertAcc.count = 8;
         cubeVertAcc.type = TINYGLTF_TYPE_VEC3;
-        //lineAcc.maxValues = { 1.0, 1.0, 0.0 };
-        //lineAcc.minValues = { 0.0, 0.0, 0.0 };
+        // POSITION accessors must carry min/max: the engine uses them as a fast
+        // path when converting node geometry to bounds.
+        cubeVertAcc.minValues = { 0.0, 0.0, 0.0 };
+        cubeVertAcc.maxValues = { 1.0, 1.0, 1.0 };
         m.accessors.push_back(cubeVertAcc);
 
         tinygltf::BufferView cubeIdxVw;
@@ -86,9 +89,10 @@ namespace AITDExtractor {
         cubeIdxVw.byteLength = 36;
         cubeIdxVw.target = TINYGLTF_TARGET_ELEMENT_ARRAY_BUFFER;
         m.bufferViews.push_back(cubeIdxVw);
+        int cubeIdxVwIdx = m.bufferViews.size() - 1;
 
         tinygltf::Accessor cubeIdxAcc;
-        cubeIdxAcc.bufferView = 1;
+        cubeIdxAcc.bufferView = cubeIdxVwIdx;
         cubeIdxAcc.byteOffset = 0;
         cubeIdxAcc.componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE;
         cubeIdxAcc.count = 36;

@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <algorithm>
+#include <cstring>
 #include <fstream>
 #include <vector>
 
@@ -43,31 +44,195 @@ namespace openAITD {
 		return 0;
 	}
 
-	inline Bounds NodeToBounds(tinygltf::Node& n)
+	inline int findNodeIndex(const tinygltf::Model& m, const string& name)
 	{
-		auto t = n.translation;
-		auto s = n.scale;
-		if (s[0] < 0) {	s[0] = -s[0]; t[0] -= s[0];	}
-		if (s[1] < 0) {	s[1] = -s[1]; t[1] -= s[1]; }
-		if (s[2] < 0) {	s[2] = -s[2]; t[2] -= s[2];	}
-		Bounds b(
-			{ (float)t[0], (float)t[1], (float)t[2] },
-			{ (float)(t[0] + s[0]), (float)(t[1] + s[1]), (float)(t[2] + s[2])}
+		for (int i = 0; i < (int)m.nodes.size(); i++) {
+			if (m.nodes[i].name == name) return i;
+		}
+		return -1;
+	}
+
+	// Builds node local transform as T * R * S, matching the transform order
+	// used by the rest of the engine (e.g. camera modelview).
+	inline Matrix nodeLocalMatrix(const tinygltf::Node& n)
+	{
+		if (n.matrix.size() == 16) {
+			// glTF stores node.matrix in the same column-major layout raylib uses.
+			return Matrix{
+				(float)n.matrix[0],  (float)n.matrix[1],  (float)n.matrix[2],  (float)n.matrix[3],
+				(float)n.matrix[4],  (float)n.matrix[5],  (float)n.matrix[6],  (float)n.matrix[7],
+				(float)n.matrix[8],  (float)n.matrix[9],  (float)n.matrix[10], (float)n.matrix[11],
+				(float)n.matrix[12], (float)n.matrix[13], (float)n.matrix[14], (float)n.matrix[15]
+			};
+		}
+		// tinygltf only fills TRS vectors that are present in the file, so an
+		// absent component stays empty: fall back to identity values instead of
+		// indexing out of range.
+		Vector3 t = { 0, 0, 0 };
+		Vector3 s = { 1, 1, 1 };
+		Quaternion q = { 0, 0, 0, 1 };
+		if (n.translation.size() >= 3) {
+			t = { (float)n.translation[0], (float)n.translation[1], (float)n.translation[2] };
+		}
+		if (n.scale.size() >= 3) {
+			s = { (float)n.scale[0], (float)n.scale[1], (float)n.scale[2] };
+		}
+		if (n.rotation.size() >= 4) {
+			q = { (float)n.rotation[0], (float)n.rotation[1], (float)n.rotation[2], (float)n.rotation[3] };
+		}
+		// raylib composes with MatrixMultiply(A, B) == B * A, exactly like
+		// DrawModelEx does: MatrixMultiply(MatrixMultiply(S, R), T) yields the
+		// classic T * R * S transform (scale first, then rotate, then translate).
+		return MatrixMultiply(
+			MatrixMultiply(MatrixScale(s.x, s.y, s.z), QuaternionToMatrix(q)),
+			MatrixTranslate(t.x, t.y, t.z)
 		);
-		b.correctBounds();
+	}
+
+	// Local AABB of a VEC3 accessor: min/max when present, otherwise raw buffer
+	// read respecting byteOffset/byteStride.
+	inline bool accessorVec3Bounds(const tinygltf::Model& m, const tinygltf::Accessor& acc, Bounds& out)
+	{
+		if (acc.type != TINYGLTF_TYPE_VEC3) return false;
+
+		if (acc.minValues.size() >= 3 && acc.maxValues.size() >= 3) {
+			out.min = { (float)acc.minValues[0], (float)acc.minValues[1], (float)acc.minValues[2] };
+			out.max = { (float)acc.maxValues[0], (float)acc.maxValues[1], (float)acc.maxValues[2] };
+			return true;
+		}
+
+		if (acc.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT) return false;
+		if (acc.sparse.isSparse) return false;
+		if (acc.bufferView < 0 || acc.bufferView >= (int)m.bufferViews.size()) return false;
+
+		const auto& vw = m.bufferViews[acc.bufferView];
+		if (vw.buffer < 0 || vw.buffer >= (int)m.buffers.size()) return false;
+
+		const auto& data = m.buffers[vw.buffer].data;
+		const size_t elementSize = 3 * sizeof(float);
+		const size_t stride = vw.byteStride ? (size_t)vw.byteStride : elementSize;
+		const size_t base = (size_t)vw.byteOffset + (size_t)acc.byteOffset;
+		if (acc.count <= 0) return false;
+		if (base + (size_t)(acc.count - 1) * stride + elementSize > data.size()) return false;
+
+		const uint8_t* ptr = data.data() + base;
+		for (int i = 0; i < acc.count; i++) {
+			float f[3];
+			memcpy(f, ptr + (size_t)i * stride, sizeof(f));
+			Vector3 p = { f[0], f[1], f[2] };
+			if (i == 0) { out.min = out.max = p; }
+			else { out.min = Vector3Min(out.min, p); out.max = Vector3Max(out.max, p); }
+		}
+		return true;
+	}
+
+	inline bool meshLocalBounds(const tinygltf::Model& m, int meshIdx, Bounds& out)
+	{
+		if (meshIdx < 0 || meshIdx >= (int)m.meshes.size()) return false;
+		const auto& mesh = m.meshes[meshIdx];
+		bool any = false;
+		for (size_t p = 0; p < mesh.primitives.size(); p++) {
+			const auto& prim = mesh.primitives[p];
+			auto posIt = prim.attributes.find("POSITION");
+			if (posIt == prim.attributes.end()) continue;
+			const int accIdx = posIt->second;
+			if (accIdx < 0 || accIdx >= (int)m.accessors.size()) continue;
+			Bounds pb;
+			if (!accessorVec3Bounds(m, m.accessors[accIdx], pb)) continue;
+			if (!any) { out = pb; any = true; }
+			else { out.min = Vector3Min(out.min, pb.min); out.max = Vector3Max(out.max, pb.max); }
+		}
+		return any;
+	}
+
+	inline Bounds transformBounds(const Bounds& b, const Matrix& transform)
+	{
+		auto corners = b.getCorners();
+		Vector3 p = Vector3Transform(corners[0], transform);
+		Bounds r(p, p);
+		for (int i = 1; i < 8; i++) {
+			p = Vector3Transform(corners[i], transform);
+			r.min = Vector3Min(r.min, p);
+			r.max = Vector3Max(r.max, p);
+		}
+		return r;
+	}
+
+	// Collects geometry bounds of a node subtree: every mesh of the subtree is
+	// measured and transformed by its accumulated transform. Returns false when
+	// the subtree contains no readable geometry at all.
+	inline bool nodeGeometryBounds(const tinygltf::Model& m, int nodeIdx, const Matrix& parent, Bounds& out, int depth)
+	{
+		if (nodeIdx < 0 || nodeIdx >= (int)m.nodes.size()) return false;
+		if (depth > 32) return false;
+
+		const auto& n = m.nodes[nodeIdx];
+		// Accumulate as MatrixMultiply(local, parent) == parent * local, so the
+		// child transform is applied first and the parent transform after it.
+		const Matrix local = MatrixMultiply(nodeLocalMatrix(n), parent);
+
+		bool any = false;
+		if (n.mesh >= 0) {
+			Bounds mb;
+			if (meshLocalBounds(m, n.mesh, mb)) {
+				out = transformBounds(mb, local);
+				any = true;
+			}
+		}
+
+		for (size_t c = 0; c < n.children.size(); c++) {
+			Bounds cb;
+			if (!nodeGeometryBounds(m, n.children[c], local, cb, depth + 1)) continue;
+			if (!any) { out = cb; any = true; }
+			else { out.min = Vector3Min(out.min, cb.min); out.max = Vector3Max(out.max, cb.max); }
+		}
+		return any;
+	}
+
+	// Geometry based bounds: AABB of the node subtree mesh geometry. A unit cube
+	// scaled/translated (legacy stages produced by floor_extractor_2) yields
+	// exactly the same box as the old translation/scale math, including negative
+	// scale, so no format versioning or markers are needed.
+	inline Bounds NodeToBounds(const tinygltf::Model& m, int nodeIdx, const Matrix& parent = MatrixIdentity())
+	{
+		Bounds b;
+		if (!nodeGeometryBounds(m, nodeIdx, parent, b, 0)) {
+			const char* name = (nodeIdx >= 0 && nodeIdx < (int)m.nodes.size()) ? m.nodes[nodeIdx].name.c_str() : "?";
+			TraceLog(LOG_WARNING, "NodeToBounds: no readable geometry for node %d '%s'", nodeIdx, name);
+			return Bounds({ 0, 0, 0 }, { 0, 0, 0 });
+		}
 		return b;
 	}
 
-	inline vector<Vector2> loadLineAcc2d(tinygltf::Model& m, int accIdx)
+	// Reads {type, parameter} extras of collider/zone nodes; keeps defaults when
+	// the node carries no extras object at all.
+	inline void readPairExtras(const tinygltf::Value& extras, int& type, int& parameter)
 	{
-		vector<Vector2> res;		
+		if (!extras.IsObject()) return;
+		if (extras.Has("type")) type = extras.Get("type").GetNumberAsInt();
+		if (extras.Has("parameter")) parameter = extras.Get("parameter").GetNumberAsInt();
+	}
+
+	inline vector<Vector2> loadLineAcc2d(const tinygltf::Model& m, int accIdx)
+	{
+		vector<Vector2> res;
+		if (accIdx < 0 || accIdx >= (int)m.accessors.size()) return res;
 		auto& acc = m.accessors[accIdx];
+		if (acc.type != TINYGLTF_TYPE_VEC3) return res;
+		if (acc.bufferView < 0 || acc.bufferView >= (int)m.bufferViews.size()) return res;
 		auto& bufVW = m.bufferViews[acc.bufferView];
-		char* data = (char*)m.buffers[bufVW.buffer].data.data() + bufVW.byteOffset;
-		float* dataf = (float*)data;
+		if (bufVW.buffer < 0 || bufVW.buffer >= (int)m.buffers.size()) return res;
+		const auto& data = m.buffers[bufVW.buffer].data;
+		const size_t elementSize = 3 * sizeof(float);
+		const size_t stride = bufVW.byteStride ? (size_t)bufVW.byteStride : elementSize;
+		const size_t base = (size_t)bufVW.byteOffset + (size_t)acc.byteOffset;
+		if (acc.count <= 0) return res;
+		if (base + (size_t)(acc.count - 1) * stride + elementSize > data.size()) return res;
+		const uint8_t* ptr = data.data() + base;
 		for (int i = 0; i < acc.count; i++) {
-			res.push_back({ dataf[0], dataf[2] });
-			dataf += 3;
+			float f[3];
+			memcpy(f, ptr + (size_t)i * stride, sizeof(f));
+			res.push_back({ f[0], f[2] });
 		}
 		return res;
 	}
@@ -182,23 +347,29 @@ namespace openAITD {
 
 			int collId = 0;
 			while (true) {
-				tinygltf::Node* collN = findNode(model, string("coll_") + to_string(roomId) + "_" + to_string(collId));
-				if (!collN) break;
+				int collIdx = findNodeIndex(model, string("coll_") + to_string(roomId) + "_" + to_string(collId));
+				if (collIdx < 0) break;
 				auto& coll = room.colliders.emplace_back();
-				coll.bounds = NodeToBounds(*collN);
-				coll.parameter = collN->extras.Get("parameter").GetNumberAsInt();
-				coll.type = collN->extras.Get("type").GetNumberAsInt();
+				coll.bounds = NodeToBounds(model, collIdx);
+				int type = 0;
+				int parameter = 0;
+				readPairExtras(model.nodes[collIdx].extras, type, parameter);
+				coll.type = type;
+				coll.parameter = parameter;
 				collId++;
 			}
 
 			collId = 0;
 			while (true) {
-				tinygltf::Node* collN = findNode(model, string("zone_") + to_string(roomId) + "_" + to_string(collId));
-				if (!collN) break;
+				int zoneIdx = findNodeIndex(model, string("zone_") + to_string(roomId) + "_" + to_string(collId));
+				if (zoneIdx < 0) break;
 				auto& zone = room.zones.emplace_back();
-				zone.bounds = NodeToBounds(*collN);
-				zone.parameter = collN->extras.Get("parameter").GetNumberAsInt();
-				zone.type = (RoomZoneType)collN->extras.Get("type").GetNumberAsInt();
+				zone.bounds = NodeToBounds(model, zoneIdx);
+				int type = 0;
+				int parameter = 0;
+				readPairExtras(model.nodes[zoneIdx].extras, type, parameter);
+				zone.type = (RoomZoneType)type;
+				zone.parameter = parameter;
 				collId++;
 			}
 
@@ -249,12 +420,12 @@ namespace openAITD {
 					int overlayZoneId = 0;
 					GCameraOverlay overlay;
 					while (true) {
-						tinygltf::Node* ovlZN = findNode(model, 
+						int ovlZIdx = findNodeIndex(model,
 							string("overlay_zone_") + to_string(cameraId) + "_" + to_string(camRoom.roomId) + "_" +
 							to_string(overlayId) + "_" + to_string(overlayZoneId)
 						);
-						if (!ovlZN) break;
-						auto b = NodeToBounds(*ovlZN);
+						if (ovlZIdx < 0) break;
+						auto b = NodeToBounds(model, ovlZIdx);
 						b.max.y = b.min.y + 1;
 						overlay.bounds.push_back(b);
 						overlayZoneId++;

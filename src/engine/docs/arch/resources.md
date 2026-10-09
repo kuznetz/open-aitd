@@ -114,9 +114,12 @@ Loads and represents stage geometry, including rooms, colliders, zones, and came
 *   **`WCamera`**: Represents a world camera with position, rotation, perspective parameters, and coverage polygons. It provides point-in-camera testing and world-to-screen projection utilities.
 *   **`Stage`**: The main stage container holding rooms and cameras. It loads stage data from `stage.gltf` and `stage.json`, providing methods for camera proximity queries, room-to-room coordinate transformation, and point-in-camera tests.
 *   **`isPointInPoly()`**: A free function implementing a ray-casting algorithm to test whether a 2D point lies within a polygon.
-*   **`findNode()`**: A free function that searches a glTF model's nodes by name.
-*   **`NodeToBounds()`**: A free function converting a glTF node's translation and scale into a `Bounds` AABB.
-*   **`loadLineAcc2d()`**: A free function extracting 2D line vertex data from a glTF accessor for camera coverage zone polygons.
+*   **`findNode()` / `findNodeIndex()`**: free functions that search a glTF model's nodes by name, returning a pointer or an index respectively.
+*   **`nodeLocalMatrix()`**: builds a node local transform as `T * R * S` (or uses the explicit glTF `node.matrix` when present).
+*   **`accessorVec3Bounds()` / `meshLocalBounds()`**: compute a local AABB of a VEC3 accessor (using accessor `min/max` when available, otherwise a raw buffer read honoring `byteOffset`/`byteStride`) and of all `POSITION` primitives of a mesh.
+*   **`nodeGeometryBounds()` / `NodeToBounds()`**: free functions computing a `Bounds` AABB from the mesh geometry of a node subtree, transforming every mesh by its accumulated transform. A scaled/translated unit cube (legacy stages produced by `floor_extractor_2`) yields exactly the same box as the old `translation`/`scale` math, including negative scale, so no stage format versioning is required. Nodes whose subtree carries no readable geometry produce a degenerate box plus a `LOG_WARNING`, so the invariant is: every node that needs bounds must own geometry in its subtree.
+*   **`readPairExtras()`**: reads the `{type, parameter}` extras of collider/zone nodes, keeping defaults when the node carries no extras object.
+*   **`loadLineAcc2d()`**: A free function extracting 2D line vertex data from a glTF VEC3 accessor (honoring `byteOffset`/`byteStride`) for camera coverage zone polygons.
 
 ---
 
