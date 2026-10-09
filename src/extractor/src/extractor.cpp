@@ -13,6 +13,7 @@
 #include "./extractors/mask_extractor.h"
 #include "./extractors/sound_extractor.h"
 #include "./extractors/model_extractor.h"
+#include "./extractors/characters_extractor.hpp"
 //#include "extractors/skeleton_extractor.h"
 #include "./extractors/track_extractor.h"
 #include "./extractors/vars_extractor.hpp"
@@ -54,6 +55,7 @@ namespace AITDExtractor {
         AITDExtractor();
         void processStages();
         void processModels();
+        void processCharacters(bool exportAlt);
         void processScripts(bool floppy);
         void processTracks();
         void processSounds();
@@ -209,6 +211,11 @@ namespace AITDExtractor {
                 }
             }
         }
+    }
+
+    void AITDExtractor::processCharacters(bool exportAlt) {
+        CharactersExtractor charExtractor(resLoader, pallete, nameDecoders, exportAlt);
+        charExtractor.extractAll("newdata/characters.json", "data/char_models");
     }
 
     void AITDExtractor::processScripts(bool floppy) {
@@ -407,6 +414,7 @@ namespace AITDExtractor {
 
         this->processStages();
         this->processModels();
+        this->processCharacters(true);
         //processTestScript();
         this->processTracks();
         this->processSounds();
