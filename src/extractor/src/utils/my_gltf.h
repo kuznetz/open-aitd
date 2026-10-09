@@ -14,6 +14,24 @@ namespace AITDExtractor {
 	using namespace std;
 	using namespace raylib;
 
+	inline tinygltf::Value makePairExtras(int type, int parameter) {
+		tinygltf::Value::Object obj;
+		obj["type"] = tinygltf::Value(type);
+		obj["parameter"] = tinygltf::Value(parameter);
+		return tinygltf::Value(obj);
+	}
+
+	inline tinygltf::Value makeRoomsExtras(const vector<int>& rooms) {
+		tinygltf::Value::Array arr;
+		arr.reserve(rooms.size());
+		for (size_t i = 0; i < rooms.size(); i++) {
+			arr.push_back(tinygltf::Value(rooms[i]));
+		}
+		tinygltf::Value::Object obj;
+		obj["rooms"] = tinygltf::Value(arr);
+		return tinygltf::Value(obj);
+	}
+
 	extern const uint8_t cubeIndices[];
 	extern const float cubeVertices[];
 	extern const int cubeVertSize;

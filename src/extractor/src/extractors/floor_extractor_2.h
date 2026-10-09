@@ -1,16 +1,12 @@
 ﻿#pragma once
 
-//#include <json_fwd.hpp>
-#include <fstream>
 #include <vector>
-#include <iomanip>
 
 #include "../utils/my_gltf.h"
 #include "../structs/floor.h"
 
 namespace AITDExtractor {
 
-    using json = nlohmann::json;
     using namespace std;
 
 
@@ -42,6 +38,11 @@ namespace AITDExtractor {
         m.cameras.push_back(camera);
         int cam2Idx = m.cameras.size() - 1;
 
+        vector<int> roomIds;
+        for (int viewIdx = 0; viewIdx < cam.viewedRoomTable.size(); viewIdx++) {
+            roomIds.push_back(cam.viewedRoomTable[viewIdx].viewedRoomIdx);
+        }
+
         tinygltf::Node camN;
         camN.name = string("camera_") + to_string(camIdx);
         camN.camera = cam2Idx;
@@ -51,13 +52,15 @@ namespace AITDExtractor {
             camPosition.z
         };
         camN.rotation = { q.x, q.y, q.z, q.w };
+        camN.extras = makeRoomsExtras(roomIds);
         m.nodes.push_back(camN);
     }
 
-    int createBoxNode(tinygltf::Model& m, string name, hardColStruct& coll) {
+    int createBoxNode(tinygltf::Model& m, string name, hardColStruct& coll, const tinygltf::Value& extras) {
         tinygltf::Node collN;
         collN.name = name;
         collN.mesh = 0;
+        collN.extras = extras;
 
         Vector3 v1 = Vector3Transform({ 
             coll.zv.ZVX1 / 1000.f ,
@@ -89,22 +92,19 @@ namespace AITDExtractor {
     void saveFloorGLTF(int stageId, floorStruct& floor2, const vector<gameObjectStruct>& gameObjs, const string& stageDir)
     {
         floorStruct* floor = &floor2;
-        nlohmann::json floorJson;
         tinygltf::Model m;
         m.asset.version = "2.0";
         m.asset.generator = "open-AITD";
-        
+        m.extras = tinygltf::Value(tinygltf::Value::Object{
+            { "version", tinygltf::Value(1) }
+        });
+
         createCubeMesh(m);
 
         vector<tinygltf::Node> roomNodes(floor->rooms.size());
 
-        floorJson["rooms"] = nlohmann::json::array();
         for (int roomId = 0; roomId < floor->rooms.size(); roomId++) {
             auto& room = floor->rooms[roomId];
-
-            nlohmann::json roomJson;
-            roomJson["colliders"] = nlohmann::json::array();
-            roomJson["zones"] = nlohmann::json::array();
 
             auto& roomN = roomNodes[roomId];
             roomN.name = string("room_") + to_string(roomId);
@@ -120,36 +120,8 @@ namespace AITDExtractor {
             for (int collIdx = 0; collIdx < room.hardColTable.size(); collIdx++) {
                 auto& coll = room.hardColTable[collIdx];
 
-                json collJson;
-                collJson["parameter"] = coll.parameter;
-                collJson["type"] = coll.type;
-
-                /*
-                if (coll.type == 9) {
-                    //Link collider with object
-                    bool linked = false;
-                    for (int objI = 0; objI < gameObjs.size(); objI++) {
-                        auto& gobj = gameObjs[objI];
-                        if (gobj.stageId != stageId || gobj.roomId != roomId) continue;
-                        if (gobj.boundsType == 4 && gobj.inventoryName == coll.parameter) {
-                            if (!linked) {
-                                collJson["linkedObject"] = objI;
-                                linked = true;
-                            }
-                            else {
-                                throw new exception("Collider with object - two links");
-                            }
-                        }
-                    }
-                    if (!linked) {
-                        throw new exception("Collider with object - link not found");
-                    }
-                }
-                */
-
-                roomJson["colliders"].push_back(collJson);
-
-                createBoxNode(m, string("coll_") + to_string(roomId) + "_" + to_string(collIdx), coll);
+                createBoxNode(m, string("coll_") + to_string(roomId) + "_" + to_string(collIdx), coll,
+                    makePairExtras(coll.type, coll.parameter));
                 int collNIdx = m.nodes.size() - 1;
                 rootColl.children.push_back(collNIdx);
             }
@@ -163,49 +135,31 @@ namespace AITDExtractor {
             for (int zoneIdx = 0; zoneIdx < room.sceZoneTable.size(); zoneIdx++) {
                 auto& zone = room.sceZoneTable[zoneIdx];
 
-                json collJson;
-                collJson["parameter"] = zone.parameter;
-                collJson["type"] = zone.type;
-                roomJson["zones"].push_back(collJson);
-
-                createBoxNode(m, string("zone_") + to_string(roomId) + "_" + to_string(zoneIdx), zone);
+                createBoxNode(m, string("zone_") + to_string(roomId) + "_" + to_string(zoneIdx), zone,
+                    makePairExtras(zone.type, zone.parameter));
                 int zoneNIdx = m.nodes.size() - 1;
                 rootZone.children.push_back(zoneNIdx);
             }
             m.nodes.push_back(rootZone);
             int rootZoneIdx = m.nodes.size() - 1;
             roomN.children.push_back(rootZoneIdx);
-
-            //int roomNIdx = m.nodes.size() - 1;
-            floorJson["rooms"].push_back(roomJson);
         }
 
-        floorJson["cameras"] = nlohmann::json::array();
         for (int camIdx = 0; camIdx < floor->cameras.size(); camIdx++) {
             auto& cam = floor->cameras[camIdx];
-
-            json cameraJson;
-            //cameraJson["roomViews"] = nlohmann::json::array();
 
             addCamera(m, camIdx, cam);
 
             for (int viewIdx = 0; viewIdx < cam.viewedRoomTable.size(); viewIdx++) {
                 auto& vw = cam.viewedRoomTable[viewIdx];
                 auto roomId = vw.viewedRoomIdx;
-                cameraJson["rooms"].push_back(roomId);
-
-                //json roomViewsJson;
-                //roomViewsJson["roomId"] = roomId;
 
                 auto& roomN = roomNodes[vw.viewedRoomIdx];
                 tinygltf::Node camRoomN;
                 camRoomN.name = string("camera_room_") + to_string(camIdx) + "_" + to_string(roomId);
 
-                //roomViewsJson["overlays"] = json::array();
                 for (int ovlIdx = 0; ovlIdx < vw.overlays_V1.size(); ovlIdx++) {
                     auto& ovl = vw.overlays_V1[ovlIdx];
-                    //json overlay = json::object();
-                    //overlay["zoneCount"] = ovl.zones.size();
                     for (int ovlZIdx = 0; ovlZIdx < ovl.zones.size(); ovlZIdx++) {
                         auto& ovlZ = ovl.zones[ovlZIdx];
                         tinygltf::Node ovlZN;
@@ -230,10 +184,8 @@ namespace AITDExtractor {
                         int ovlZNIdx = m.nodes.size() - 1;
                         camRoomN.children.push_back(ovlZNIdx);
                     }
-                    //roomViewsJson["overlays"].push_back(overlay);
                 }
 
-                //roomViewsJson["coverZones"] = vw.coverZones.size();
                 for (int zoneIdx = 0; zoneIdx < vw.coverZones.size(); zoneIdx++) {
                     auto& camZone = vw.coverZones[zoneIdx];
                     vector<float> flzone(camZone.pointTable.size() * 3);
@@ -258,20 +210,12 @@ namespace AITDExtractor {
                 m.nodes.push_back(camRoomN);
                 int idx = m.nodes.size() - 1;
                 roomN.children.push_back(idx);
-
-                //cameraJson["roomViews"].push_back(roomViewsJson);
             }
-
-            floorJson["cameras"].push_back(cameraJson);
         }
 
         for (int roomId = 0; roomId < floor->rooms.size(); roomId++) {
             m.nodes.push_back(roomNodes[roomId]);
         }
-
-        // Save it to a file
-        std::ofstream o( stageDir + "/stage.json" );
-        o << std::setw(2) << floorJson;
 
         tinygltf::TinyGLTF gltf;
         gltf.WriteGltfSceneToFile(&m, stageDir + "/stage.gltf",

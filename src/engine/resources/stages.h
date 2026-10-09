@@ -3,8 +3,6 @@
 #include <fstream>
 #include <vector>
 
-#define NLOHMANN_JSON_NAMESPACE_NO_VERSION 1
-#include <nlohmann/json.hpp>
 #define TINYGLTF_NO_INCLUDE_JSON
 #define TINYGLTF_NO_STB_IMAGE
 #define TINYGLTF_NO_STB_IMAGE_WRITE
@@ -14,7 +12,6 @@
 #include "../../common/metrics.hpp"
 #include "bounds.h"
 
-using nlohmann::json;
 using namespace raylib;
 using namespace std;
 namespace openAITD {
@@ -144,8 +141,8 @@ namespace openAITD {
 	//Store static data in game
 	class Stage {
 	private:
-		void loadRooms(tinygltf::Model& model, json& stageJson);
-		void loadCameras(tinygltf::Model& model, json& stageJson);
+		void loadRooms(tinygltf::Model& model);
+		void loadCameras(tinygltf::Model& model);
 
 	public:
 		string stageDir;
@@ -163,8 +160,6 @@ namespace openAITD {
 
 	void Stage::load(string stageDir) {
 		this->stageDir = stageDir;
-		ifstream ifs(stageDir + "/stage.json");
-		json stageJson = json::parse(ifs);
 
 		tinygltf::Model model;
 		tinygltf::TinyGLTF loader;
@@ -173,11 +168,11 @@ namespace openAITD {
 		bool ret = loader.LoadASCIIFromFile(&model, &err, &warn, stageDir + "/stage.gltf");
 
 
-		loadRooms(model, stageJson);
-		loadCameras(model, stageJson);
+		loadRooms(model);
+		loadCameras(model);
 	}
 
-	void Stage::loadRooms(tinygltf::Model& model, json& stageJson) {
+	void Stage::loadRooms(tinygltf::Model& model) {
 		int roomId = 0;
 		while (true) {
 			tinygltf::Node* roomN = findNode(model, string("room_") + to_string(roomId));
@@ -190,10 +185,9 @@ namespace openAITD {
 				tinygltf::Node* collN = findNode(model, string("coll_") + to_string(roomId) + "_" + to_string(collId));
 				if (!collN) break;
 				auto& coll = room.colliders.emplace_back();
-				auto& collJson = stageJson["rooms"][roomId]["colliders"][collId];
 				coll.bounds = NodeToBounds(*collN);
-				coll.parameter = collJson["parameter"];
-				coll.type = collJson["type"];
+				coll.parameter = collN->extras.Get("parameter").GetNumberAsInt();
+				coll.type = collN->extras.Get("type").GetNumberAsInt();
 				collId++;
 			}
 
@@ -202,10 +196,9 @@ namespace openAITD {
 				tinygltf::Node* collN = findNode(model, string("zone_") + to_string(roomId) + "_" + to_string(collId));
 				if (!collN) break;
 				auto& zone = room.zones.emplace_back();
-				auto& zoneJson = stageJson["rooms"][roomId]["zones"][collId];
 				zone.bounds = NodeToBounds(*collN);
-				zone.parameter = zoneJson["parameter"];
-				zone.type = zoneJson["type"];
+				zone.parameter = collN->extras.Get("parameter").GetNumberAsInt();
+				zone.type = (RoomZoneType)collN->extras.Get("type").GetNumberAsInt();
 				collId++;
 			}
 
@@ -215,13 +208,19 @@ namespace openAITD {
 		}
 	}
 
-	void Stage::loadCameras(tinygltf::Model& model, json& stageJson) {
+	void Stage::loadCameras(tinygltf::Model& model) {
 		int cameraId = 0;
 		while (true) {
 			tinygltf::Node* cameraN = findNode(model, string("camera_") + to_string(cameraId));
 			if (!cameraN) break;
 			auto& cam = cameras.emplace_back();
-			auto roomIds = stageJson["cameras"][cameraId]["rooms"].get<vector<int>>();
+			vector<int> roomIds;
+			{
+				const tinygltf::Value& roomsArr = cameraN->extras.Get("rooms");
+				for (size_t i = 0; i < roomsArr.ArrayLen(); i++) {
+					roomIds.push_back(roomsArr.Get(i).GetNumberAsInt());
+				}
+			}
 			auto& camPers = model.cameras[cameraN->camera].perspective;
 
 			cam.pers = camPers;
