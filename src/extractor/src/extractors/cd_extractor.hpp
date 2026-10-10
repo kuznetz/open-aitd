@@ -14,162 +14,20 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <exception>
 #include <filesystem>
+#include <map>
+#include <regex>
 #include <string>
 #include <vector>
 
 #include "tiny-cdio/disc_iso.hpp"
-#include <vorbis/vorbisenc.h>
+
+// loadVoc()/writeWav()/writeOgg() and the shared Ogg/Vorbis writer live in
+// sound_extractor.h (the writer is used for the music tracks below as well).
+#include "sound_extractor.h"
 
 namespace AITDExtractor {
-
-    // -----------------------------------------------------------------------
-    // Streaming Ogg/Vorbis encoder (mirrors music/music_extractor.cpp).
-    //
-    // Interleaved little-endian 16-bit PCM is fed in arbitrary-sized chunks;
-    // compressed pages are flushed as the stream is produced.
-    // -----------------------------------------------------------------------
-    class OggVorbisWriter {
-    public:
-        OggVorbisWriter() = default;
-        ~OggVorbisWriter() { close(); }
-
-        OggVorbisWriter(const OggVorbisWriter&) = delete;
-        OggVorbisWriter& operator=(const OggVorbisWriter&) = delete;
-
-        /**
-         * Create the output file and write the Vorbis headers.
-         * @param quality 0.0 (low) .. 1.0 (high).
-         * @return false if the file could not be created / the encoder failed.
-         */
-        bool open(const std::string& path, int channels = 2,
-                  int sampleRate = 44100, float quality = 0.8f) {
-            close();
-
-            file_ = std::fopen(path.c_str(), "wb");
-            if (!file_) return false;
-
-            channels_   = channels;
-            sampleRate_ = sampleRate;
-
-            vorbis_info_init(&vi_);
-            if (vorbis_encode_init_vbr(&vi_, channels, sampleRate, quality) != 0) {
-                vorbis_info_clear(&vi_);
-                std::fclose(file_);
-                file_ = nullptr;
-                return false;
-            }
-
-            vorbis_comment_init(&vc_);
-            vorbis_comment_add_tag(&vc_, "ENCODER", "open-AITD");
-
-            vorbis_analysis_init(&vd_, &vi_);
-            vorbis_block_init(&vd_, &vb_);
-            ogg_stream_init(&os_, std::rand());
-
-            ogg_packet header{}, headerComm{}, headerCode{};
-            vorbis_analysis_headerout(&vd_, &vc_, &header, &headerComm, &headerCode);
-            ogg_stream_packetin(&os_, &header);
-            ogg_stream_packetin(&os_, &headerComm);
-            ogg_stream_packetin(&os_, &headerCode);
-            while (ogg_stream_flush(&os_, &og_) != 0) {
-                writePage();
-            }
-
-            open_ = true;
-            return true;
-        }
-
-        /**
-         * Feed a chunk of interleaved 16-bit PCM. `bytes` must be a multiple of
-         * (channels * 2). Returns false on a non-open/failed stream.
-         */
-        bool write(const uint8_t* data, size_t bytes) {
-            if (!open_ || !data) return false;
-
-            const size_t frameBytes = static_cast<size_t>(channels_) * sizeof(int16_t);
-            const size_t frames     = bytes / frameBytes;
-            if (frames == 0) return true;
-
-            const int16_t* samples = reinterpret_cast<const int16_t*>(data);
-
-            size_t done = 0;
-            while (done < frames) {
-                int n = static_cast<int>(std::min<size_t>(kBlockFrames, frames - done));
-
-                float** buffer = vorbis_analysis_buffer(&vd_, n);
-                for (int ch = 0; ch < channels_; ++ch) {
-                    for (int i = 0; i < n; ++i) {
-                        buffer[ch][i] = samples[(done + i) * channels_ + ch] / 32768.0f;
-                    }
-                }
-                vorbis_analysis_wrote(&vd_, n);
-                done += n;
-
-                drain();
-            }
-            return true;
-        }
-
-        /** Flush the encoder and close the file. Safe to call more than once. */
-        void close() {
-            if (open_) {
-                vorbis_analysis_wrote(&vd_, 0); // end of stream
-                drain();
-                while (ogg_stream_flush(&os_, &og_) != 0) {
-                    writePage();
-                }
-
-                ogg_stream_clear(&os_);
-                vorbis_block_clear(&vb_);
-                vorbis_dsp_clear(&vd_);
-                vorbis_comment_clear(&vc_);
-                vorbis_info_clear(&vi_);
-                open_ = false;
-            }
-            if (file_) {
-                std::fclose(file_);
-                file_ = nullptr;
-            }
-        }
-
-    private:
-        void writePage() {
-            if (og_.header_len > 0 && og_.header)
-                std::fwrite(og_.header, 1, og_.header_len, file_);
-            if (og_.body_len > 0 && og_.body)
-                std::fwrite(og_.body, 1, og_.body_len, file_);
-        }
-
-        void drain() {
-            while (vorbis_analysis_blockout(&vd_, &vb_) == 1) {
-                vorbis_analysis(&vb_, nullptr);
-                vorbis_bitrate_addblock(&vb_);
-
-                while (vorbis_bitrate_flushpacket(&vd_, &op_)) {
-                    ogg_stream_packetin(&os_, &op_);
-                    while (ogg_stream_pageout(&os_, &og_) != 0) {
-                        writePage();
-                    }
-                }
-            }
-        }
-
-        static const int kBlockFrames = 1024; // frames per vorbis_analysis_buffer() call
-
-        std::FILE*    file_       = nullptr;
-        bool          open_       = false;
-        int           channels_   = 2;
-        int           sampleRate_ = 44100;
-
-        ogg_stream_state os_{};
-        ogg_page         og_{};
-        ogg_packet       op_{};
-        vorbis_info      vi_{};
-        vorbis_comment   vc_{};
-        vorbis_dsp_state vd_{};
-        vorbis_block     vb_{};
-    };
 
     // -----------------------------------------------------------------------
     // Extraction
@@ -218,6 +76,106 @@ namespace AITDExtractor {
                 std::filesystem::remove(outPath); // do not keep a truncated file
                 continue;
             }
+            ++written;
+        }
+        return written;
+    }
+
+    /**
+     * Extract the "book" audio from the data track of the CUE image.
+     *
+     * The files live in the INDARK directory of the ISO9660 file system and are
+     * named XXYYZZ.VOC, where XX is the book number, YY the page number and ZZ
+     * the chunk number (each two decimal digits). All chunks of a single page
+     * are decoded with the helper from sound_extractor.h, concatenated in chunk
+     * order into one continuous stream and written as a single 8-bit mono WAV
+     * to data/audiobooks/XX.YY.wav — the numbers without leading zeros.
+     *
+     * @param cuePath   path to the .cue (original/GAME.INST).
+     * @param outDir    output directory (data/audiobooks); created if missing.
+     * @param overwrite re-convert pages whose .wav already exists.
+     * @return number of pages successfully written.
+     */
+    inline int extractCdBookAudio(const std::string& cuePath = "original/GAME.INST",
+                                  const std::string& outDir  = "data/audiobooks",
+                                  bool overwrite = false) {
+        tinycdio::DiscIso disc;
+        disc.open(cuePath);
+
+        if (!disc.hasFilesystem()) return 0;
+
+        std::filesystem::create_directories(outDir);
+
+        // Match \INDARK\XXYYZZ.VOC on any separator ('/' is used by ISO9660
+        // paths). The digits are split from the right: ZZ = chunk, YY = page,
+        // the remaining leading digits = book.
+        static const std::regex bookVocRe(
+            R"((?:^|[\\/])INDARK[\\/]([0-9]+)\.VOC$)", std::regex::icase);
+
+        // Key: (book, page). Value: chunk number (ZZ) -> full path on the disc.
+        std::map<std::pair<int, int>, std::map<int, std::string>> pages;
+
+        for (const tinycdio::Entry& e : disc.walk()) {
+            if (e.isDirectory) continue;
+
+            std::smatch m;
+            if (!std::regex_search(e.fullPath, m, bookVocRe)) continue;
+
+            const std::string digits = m[1].str();
+            if (digits.size() < 5) continue; // need at least page + chunk digits
+
+            const int chunk = std::stoi(digits.substr(digits.size() - 2));
+            const int page  = std::stoi(digits.substr(digits.size() - 4, 2));
+            const int book  = std::stoi(digits.substr(0, digits.size() - 4));
+
+            pages[{book, page}][chunk] = e.fullPath;
+        }
+
+        int written = 0;
+        for (const auto& [key, chunks] : pages) {
+            const std::string outPath = outDir + "/" + std::to_string(key.first) +
+                                        "." + std::to_string(key.second) + ".wav";
+            if (!overwrite && std::filesystem::exists(outPath)) continue;
+
+            // Concatenate the decoded PCM of every chunk of this page in order.
+            std::vector<uint8_t> pcm;
+            int rate = 22050;
+            bool haveRate = false;
+
+            for (const auto& [chunkNo, path] : chunks) {
+                std::vector<uint8_t> bytes;
+                try {
+                    bytes = disc.readFile(path);
+                } catch (const std::exception&) {
+                    continue; // unreadable entry: skip it
+                }
+                if (bytes.size() <= 32) continue;
+
+                VOCSample voc = loadVoc(reinterpret_cast<char*>(bytes.data()),
+                                        static_cast<int>(bytes.size()));
+
+                // Never read past the buffer that was actually loaded.
+                const int available = static_cast<int>(bytes.size()) - 32;
+                if (voc.size > available) voc.size = available;
+                if (voc.size <= 0) continue;
+
+                if (!haveRate) {
+                    rate = voc.rate;
+                    haveRate = true;
+                }
+
+                const uint8_t* begin = reinterpret_cast<const uint8_t*>(voc.data);
+                pcm.insert(pcm.end(), begin, begin + voc.size);
+            }
+
+            if (pcm.empty()) continue;
+
+            VOCSample combined;
+            combined.data = reinterpret_cast<char*>(pcm.data());
+            combined.size = static_cast<int>(pcm.size());
+            combined.rate = rate;
+
+            writeWav(&combined, outPath);
             ++written;
         }
         return written;

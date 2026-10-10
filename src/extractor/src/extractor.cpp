@@ -62,6 +62,7 @@ namespace AITDExtractor {
         void processSounds();
         void processAdlibMusic();
         void processCdAudio();
+        void processCdBookAudio();
         void processTexts(const string filelang, const string lang);
         void processPictures();
         void extractAllData(bool floppy);
@@ -328,6 +329,13 @@ namespace AITDExtractor {
                              ExtractorPath::data + "/music");
     }
 
+    void AITDExtractor::processCdBookAudio() {
+        // Extract the book audio (\\INDARK\\<n>.VOC) from the data track of
+        // the original/GAME.INST cue to data/audiobooks/{n}.wav.
+        extractCdBookAudio(ExtractorPath::original + "/GAME.INST",
+                           ExtractorPath::data + "/audiobooks");
+    }
+
     void AITDExtractor::processTexts(const string filelang, const string lang) {
         string dirname = "data/texts/"+lang;
         if (!std::filesystem::exists(dirname)) {
@@ -433,6 +441,7 @@ namespace AITDExtractor {
             this->processAdlibMusic();
         } else {
             this->processCdAudio();
+            this->processCdBookAudio();
         }
 
         this->processScripts(floppy);
