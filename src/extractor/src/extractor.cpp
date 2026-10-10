@@ -18,6 +18,7 @@
 #include "./extractors/track_extractor.h"
 #include "./extractors/vars_extractor.hpp"
 #include "./extractors/font_extractor.hpp"
+#include "./extractors/cd_extractor.hpp"
 
 #include "./life/life_writer.hpp"
 #include "./life/life_optimizer.h"
@@ -60,6 +61,7 @@ namespace AITDExtractor {
         void processTracks();
         void processSounds();
         void processAdlibMusic();
+        void processCdAudio();
         void processTexts(const string filelang, const string lang);
         void processPictures();
         void extractAllData(bool floppy);
@@ -319,6 +321,13 @@ namespace AITDExtractor {
         }
     }
 
+    void AITDExtractor::processCdAudio() {
+        // Stream every audio track of the original/GAME.INST cue to
+        // data/music/{n}.ogg (n = track number from the cue).
+        extractCdAudioTracks(ExtractorPath::original + "/GAME.INST",
+                             ExtractorPath::data + "/music");
+    }
+
     void AITDExtractor::processTexts(const string filelang, const string lang) {
         string dirname = "data/texts/"+lang;
         if (!std::filesystem::exists(dirname)) {
@@ -423,7 +432,7 @@ namespace AITDExtractor {
         if (floppy) {
             this->processAdlibMusic();
         } else {
-            //TODO: CD Audio Ripper
+            this->processCdAudio();
         }
 
         this->processScripts(floppy);
