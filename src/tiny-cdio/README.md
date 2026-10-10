@@ -16,11 +16,20 @@
 
 ## Файлы
 
+Библиотека разбита на слои (заголовки включаются в порядке
+`types.hpp → cue.hpp → iso9660.hpp → tiny_cdio.hpp`):
+
 | Файл | Назначение |
 |------|------------|
-| `tiny_cdio.hpp` | Вся библиотека (класс `tinycdio::Disc` и типы). |
-| `example.cpp`  | Пример использования всех четырёх возможностей. |
-| `README.md`    | Эта документация. |
+| `tiny_cdio.hpp` | Umbrella-заголовок: документация и публичный фасад `tinycdio::Disc`. |
+| `types.hpp`     | Константы секторов, публичные типы (`TrackMode`, `TrackInfo`, `Entry`), WAV-хелпер. |
+| `cue.hpp`       | Разбор `.cue`, дорожки, чтение сырых секторов и аудио, WAV (`DiscBase`). |
+| `iso9660.hpp`   | Файловая система ISO9660 (+ Joliet): `listDir`/`readFile`/`walk` (`DiscIso`). |
+| `example.cpp`   | Пример использования всех четырёх возможностей. |
+| `README.md`     | Эта документация. |
+
+Иерархия классов: `DiscBase` (cue/аудио) → `DiscIso` (ISO9660) → `Disc`
+(публичный фасад). Подключать в коде нужно только `tiny_cdio.hpp`.
 
 ## Быстрый старт
 
@@ -72,6 +81,8 @@ std::vector<uint8_t> data = disc.readFile("AITD.EXE");
 | `std::vector<uint8_t> readAudioTrack(size_t idx)` | Вся аудио-дорожка как PCM. |
 | `std::vector<uint8_t> readAudioSectors(size_t idx, uint64_t first, uint64_t count)` | Диапазон аудио-секторов. |
 | `bool saveAudioTrackWav(size_t idx, const std::string& path)` | Записать PCM в WAV (44-байтный заголовок, 16-bit stereo 44100 Hz). |
+| `TrackReader openTrack(size_t idx, uint64_t first = 0, uint64_t count = 0)` | Поток чтения дорожки (см. «Потоковое чтение»). |
+| `TrackReader openAudioTrack(size_t idx)` | Поток чтения аудио-дорожки. |
 
 ### Файловая система ISO9660
 
@@ -83,9 +94,42 @@ std::vector<uint8_t> data = disc.readFile("AITD.EXE");
 | `bool exists(const std::string& path)` | Проверить наличие пути. |
 | `std::vector<uint8_t> readFile(const std::string& path)` | Прочитать файл целиком. |
 | `std::string readFileText(const std::string& path)` | То же, в `std::string`. |
+| `FileReader openFile(const std::string& path)` | Поток чтения файла (см. «Потоковое чтение»). |
 | `std::vector<Entry> walk()` | Рекурсивно все записи дерева. |
 | `std::vector<uint8_t> readIsoBlock(uint32_t lba)` | Один логический блок (2048 байт). |
 | `bool readIsoBlocks(uint32_t lba, uint32_t count, uint8_t* out)` | Несколько логических блоков. |
+
+### Потоковое чтение (без загрузки целиком)
+
+Вместо чтения всей дорожки/файла в `std::vector` можно получить поток и
+обрабатывать данные блоками.
+
+`DiscBase::TrackReader` (сырые сектора/аудио):
+
+| Метод | Описание |
+|-------|----------|
+| `size_t read(uint8_t* dst, size_t maxBytes)` | Прочитать не более `maxBytes`; вернуть число байт (0 — конец). |
+| `std::vector<uint8_t> readChunk(size_t maxBytes)` | Очередной блок (пустой — конец). |
+| `bool seek(uint64_t byteOffset)` | Перейти к байтовому смещению от начала диапазона. |
+| `uint64_t remaining()` / `uint64_t tell()` | Осталось / уже отдано байт. |
+| `bool eof()` / `bool bad()` | Конец потока / ошибка чтения. |
+
+`DiscIso::FileReader` (файл ISO9660): те же `read`/`readChunk`/`seek`/`tell`/
+`remaining`/`eof`/`bad`, плюс `uint64_t size()`.
+
+```cpp
+// Поток файла блоками по 4 КиБ.
+auto fr = disc.openFile("AITD.EXE");
+std::vector<uint8_t> chunk;
+while (!(chunk = fr.readChunk(4096)).empty()) { /* ... */ }
+
+// Поток аудио, посекторно.
+auto ar = disc.openAudioTrack(2);
+while (ar.remaining()) { auto pcm = ar.readChunk(2352); /* ... */ }
+```
+
+`readFile()`, `readAudioTrack()` и `readTrackRaw()` реализованы поверх этих
+потоков, поэтому код не дублируется.
 
 ### Типы
 

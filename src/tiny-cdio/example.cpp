@@ -87,6 +87,32 @@ int main(int argc, char** argv) {
             std::printf("\n");
         }
 
+        // 5. Потоковое чтение файла (без загрузки целиком в память).
+        if (disc.exists(target)) {
+            auto fr = disc.openFile(target);
+            uint64_t total = 0;
+            std::vector<uint8_t> chunk;
+            while (!(chunk = fr.readChunk(4096)).empty())
+                total += chunk.size();
+            std::printf("Поток файла %s: %llu из %llu байт, ошибок: %s\n",
+                        target.c_str(),
+                        static_cast<unsigned long long>(total),
+                        static_cast<unsigned long long>(fr.size()),
+                        fr.bad() ? "да" : "нет");
+        }
+
+        // 6. Потоковое чтение аудио по секторам.
+        for (size_t i : disc.audioTrackIndices()) {
+            auto ar = disc.openAudioTrack(i);
+            uint64_t total = 0;
+            std::vector<uint8_t> chunk;
+            while (!(chunk = ar.readChunk(2352 * 16)).empty())
+                total += chunk.size();
+            std::printf("Поток аудио idx=%zu: %llu байт, ошибок: %s\n", i,
+                        static_cast<unsigned long long>(total),
+                        ar.bad() ? "да" : "нет");
+        }
+
         // Рекурсивный обход всего дерева.
         std::printf("Всего записей в дереве: %zu\n", disc.walk().size());
     } catch (const std::exception& ex) {
