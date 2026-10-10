@@ -1,12 +1,12 @@
 #pragma once
 /*
- * tiny-cdio — типы и константы.
+ * tiny-cdio — types and constants.
  *
- * Часть header-only библиотеки tiny-cdio (C++17); подключается через
- * "tiny_cdio.hpp". Здесь собраны:
- *   - константы секторов (по мотивам libcdio: cdio/sector.h, cdio/iso9660.h);
- *   - публичные типы TrackMode, TrackInfo, Entry;
- *   - мелкие независимые хелперы (little-endian запись, WAV-заголовок).
+ * Part of the header-only tiny-cdio library (C++17); included through
+ * This file holds:
+ *   - sector constants (modelled after libcdio: cdio/sector.h, cdio/iso9660.h);
+ *   - public types TrackMode, TrackInfo, Entry;
+ *   - small standalone helpers (little-endian writing, WAV header).
  */
 
 #include <cstddef>
@@ -17,7 +17,7 @@
 namespace tinycdio {
 
 // ---------------------------------------------------------------------------
-// Константы (совпадают по смыслу с libcdio: cdio/sector.h, cdio/iso9660.h)
+// Constants (semantically identical to libcdio: cdio/sector.h, cdio/iso9660.h)
 // ---------------------------------------------------------------------------
 constexpr uint32_t kRawSectorSize   = 2352;   // CDIO_CD_FRAMESIZE_RAW
 constexpr uint32_t kIsoBlockSize    = 2048;   // ISO_BLOCKSIZE / CDIO_CD_FRAMESIZE
@@ -28,48 +28,48 @@ constexpr int      kPregapSectors   = 150;    // CDIO_PREGAP_SECTORS
 constexpr uint64_t kUndefinedSector = ~static_cast<uint64_t>(0);
 
 // ---------------------------------------------------------------------------
-// Публичные типы
+// Public types
 // ---------------------------------------------------------------------------
 
-/** Тип сектора дорожки (соответствует записям TRACK ... MODE в .cue). */
+/** Track sector type (corresponds to TRACK ... MODE records in .cue). */
 enum class TrackMode {
-    Audio,        ///< AUDIO (Red Book, 2352 байт на сектор)
+    Audio,        ///< AUDIO (Red Book, 2352 bytes per sector)
     Mode1_2048,   ///< MODE1/2048 (cooked)
-    Mode1_2352,   ///< MODE1/2352 (raw, данные с offset 16)
+    Mode1_2352,   ///< MODE1/2352 (raw, data at offset 16)
     Mode2_2048,   ///< MODE2/2048 (cooked)
-    Mode2_2336,   ///< MODE2/2336 (данные с offset 8)
-    Mode2_2352,   ///< MODE2/2352 (XA, данные с offset 24)
-    Unknown       ///< не распознан
+    Mode2_2336,   ///< MODE2/2336 (data at offset 8)
+    Mode2_2352,   ///< MODE2/2352 (XA, data at offset 24)
+    Unknown       ///< unrecognized
 };
 
-/** Описание дорожки образа. */
+/** Image track description. */
 struct TrackInfo {
-    int        number        = 0;                ///< номер дорожки из .cue (с 1)
+    int        number        = 0;                ///< track number from .cue (1-based)
     TrackMode  mode          = TrackMode::Unknown;
-    bool       isAudio       = false;            ///< true для AUDIO-дорожек
-    uint32_t   sectorStride  = kRawSectorSize;   ///< размер сектора в файле, байт
-    uint32_t   dataOffset    = 0;                ///< смещение полезных данных в секторе
-    uint32_t   dataSize      = kRawSectorSize;   ///< сколько полезных байт в секторе
-    uint64_t   startSector   = 0;                ///< INDEX 01 (0-based, внутри файла)
-    uint64_t   endSector     = 0;                ///< эксклюзивный конец дорожки
-    uint64_t   sectorCount   = 0;                ///< число секторов в дорожке
-    bool       hasPregapIndex= false;            ///< задан ли INDEX 00
-    uint64_t   index00Sector = 0;                ///< INDEX 00 (если есть)
-    size_t     fileIndex     = 0;                ///< индекс файла-источника (files_)
-    std::string file;                            ///< имя файла, как указано в .cue
+    bool       isAudio       = false;            ///< true for AUDIO tracks
+    uint32_t   sectorStride  = kRawSectorSize;   ///< sector size in the file, bytes
+    uint32_t   dataOffset    = 0;                ///< offset of payload data within the sector
+    uint32_t   dataSize      = kRawSectorSize;   ///< payload bytes per sector
+    uint64_t   startSector   = 0;                ///< INDEX 01 (0-based, within the file)
+    uint64_t   endSector     = 0;                ///< exclusive end of the track
+    uint64_t   sectorCount   = 0;                ///< number of sectors in the track
+    bool       hasPregapIndex= false;            ///< whether INDEX 00 is present
+    uint64_t   index00Sector = 0;                ///< INDEX 00 (if present)
+    size_t     fileIndex     = 0;                ///< index of the source file (files_)
+    std::string file;                            ///< file name as given in .cue
 };
 
-/** Запись каталога ISO9660. */
+/** ISO9660 directory entry. */
 struct Entry {
-    std::string name;        ///< имя (без версии ";1")
-    std::string fullPath;    ///< полный путь от корня, с '/'
+    std::string name;        ///< name (without the ";1" version suffix)
+    std::string fullPath;    ///< full path from the root, using '/'
     bool        isDirectory  = false;
-    uint32_t    extentLba    = 0;   ///< ISO LBA начала данных
-    uint64_t    size         = 0;   ///< размер данных, байт
+    uint32_t    extentLba    = 0;   ///< ISO LBA of the data start
+    uint64_t    size         = 0;   ///< data size, bytes
 };
 
 // ---------------------------------------------------------------------------
-// Мелкие независимые хелперы
+// Small standalone helpers
 // ---------------------------------------------------------------------------
 namespace detail {
 
@@ -85,7 +85,7 @@ inline void putLe32(std::vector<uint8_t>& v, uint32_t x) {
     v.push_back(static_cast<uint8_t>((x >> 24) & 0xFF));
 }
 
-/** Собрать 44-байтный WAV-заголовок (PCM) под указанный объём данных. */
+/** Build a 44-byte WAV header (PCM) for the given data size. */
 inline std::vector<uint8_t> makeWavHeader(uint64_t dataBytes,
                                           uint32_t sampleRate = 44100,
                                           uint16_t channels = 2,

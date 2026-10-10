@@ -1,15 +1,16 @@
 #pragma once
 /*
- * tiny-cdio — разбор CUE и низкоуровневое чтение образа CUE/BIN.
+ * tiny-cdio — CUE parsing and low-level reading of a CUE/BIN image.
  *
- * Базовый слой библиотеки: DiscBase.
- *   - парсинг .cue (FILE/TRACK/INDEX/PREGAP/FLAGS/CD-TEXT-метаданные);
- *   - дорожки (TrackInfo) и открытые файлы образа;
- *   - чтение сырых секторов и аудио-дорожек;
- *   - сохранение аудио-дорожки в WAV.
+ * The base layer of the library: DiscBase.
+ *   - .cue parsing (FILE/TRACK/INDEX/PREGAP/FLAGS/CD-TEXT metadata);
+ *   - tracks (TrackInfo) and open image files;
+ *   - reading raw sectors and audio tracks;
+ *   - saving an audio track to WAV.
  *
- * ISO9660 строится поверх этого слоя (см. iso9660.hpp), публичный фасад —
- * Disc (см. tiny_cdio.hpp). Подключается через "tiny_cdio.hpp".
+ * ISO9660 is built on top of this layer (see disc_iso.hpp).
+ * Include "disc_base.hpp" for CUE/BIN access alone, or "disc_iso.hpp" for
+ * ISO9660 support (it pulls this header in).
  */
 
 #include "types.hpp"
@@ -29,7 +30,7 @@
 namespace tinycdio {
 
 // ---------------------------------------------------------------------------
-// Внутренние хелперы разбора CUE
+// Internal CUE parsing helpers
 // ---------------------------------------------------------------------------
 namespace detail {
 
@@ -150,15 +151,15 @@ inline std::string joinOsPath(const std::string& dir, const std::string& name) {
 } // namespace detail
 
 // ---------------------------------------------------------------------------
-// DiscBase — образ CUE/BIN: дорожки, сырые сектора, аудио
+// DiscBase — CUE/BIN image: tracks, raw sectors, audio
 // ---------------------------------------------------------------------------
 class DiscBase {
 protected:
-    // FileHandle объявлен до TrackReader: последний хранит указатель на него.
+    // FileHandle is declared before TrackReader: the latter holds a pointer to it.
     struct FileHandle {
         std::string   path;
-        mutable std::fstream stream;    ///< mutable: чтение идёт из const-методов
-        uint32_t      stride      = 0;  ///< байт на сектор в этом файле
+        mutable std::fstream stream;    ///< mutable: reads happen in const methods
+        uint32_t      stride      = 0;  ///< bytes per sector in this file
         uint64_t      byteSize    = 0;
         uint64_t      sectorCount = 0;
     };
@@ -171,11 +172,11 @@ public:
     DiscBase& operator=(DiscBase&&) = default;
 
     // -----------------------------------------------------------------------
-    // Потоковое чтение дорожки (без загрузки всей дорожки в память)
+    // Streaming track reading (without loading the whole track into memory)
     // -----------------------------------------------------------------------
     /**
-     * Последовательный/произвольный доступ к дорожке как к потоку байт.
-     * Данные подчитываются посекторно по мере вызовов read()/readChunk().
+     * Sequential/random access to a track as a byte stream.
+     * Data is read sector by sector as read()/readChunk() are called.
      */
     class TrackReader {
     public:
@@ -196,26 +197,26 @@ public:
             buf_.resize(stride_);
         }
 
-        /** Была ли ошибка чтения. */
+        /** Whether a read error occurred. */
         bool bad() const { return bad_; }
 
         bool eof() const { return !bad_ && cur_ >= end_ && bufPos_ >= bufLen_; }
 
-        /** Сколько байт ещё не отдано. */
+        /** How many bytes have not been delivered yet. */
         uint64_t remaining() const {
             uint64_t rest = (cur_ < end_) ? (end_ - cur_) : 0;
             return rest * stride_ + (bufLen_ - bufPos_);
         }
 
-        /** Сколько байт уже отдано от начала диапазона. */
+        /** How many bytes have already been delivered from the start of the range. */
         uint64_t tell() const {
             uint64_t done = (cur_ > start_) ? (cur_ - start_) : 0;
             return done * stride_ - (bufLen_ - bufPos_);
         }
 
         /**
-         * Прочитать не более maxBytes байт в dst. Возвращает число реально
-         * прочитанных байт; 0 означает конец потока (или ошибку — см. bad()).
+         * Read at most maxBytes bytes into dst. Returns the number of bytes
+         * actually read; 0 means end of stream (or an error — see bad()).
          */
         size_t read(uint8_t* dst, size_t maxBytes) {
             size_t n = 0;
@@ -232,7 +233,7 @@ public:
             return n;
         }
 
-        /** Прочитать очередной блок размером не более maxBytes (0 = конец). */
+        /** Read the next chunk of at most maxBytes bytes (0 = end). */
         std::vector<uint8_t> readChunk(size_t maxBytes) {
             size_t want = static_cast<size_t>(std::min<uint64_t>(maxBytes, remaining()));
             std::vector<uint8_t> v(want);
@@ -241,7 +242,7 @@ public:
             return v;
         }
 
-        /** Перейти к смещению byteOffset (в байтах) от начала диапазона. */
+        /** Seek to byteOffset (in bytes) from the start of the range. */
         bool seek(uint64_t byteOffset) {
             if (stride_ == 0) return false;
             uint64_t half   = byteOffset / stride_;
@@ -279,13 +280,13 @@ public:
         std::vector<uint8_t> buf_;
     };
 
-    /** Открыть поток чтения дорожки (параметры как у readTrackRaw). */
+    /** Open a track read stream (same parameters as readTrackRaw). */
     TrackReader openTrack(size_t trackIndex, uint64_t firstSector = 0,
                           uint64_t count = 0) const {
         return TrackReader(this, trackIndex, firstSector, count);
     }
 
-    /** Открыть поток чтения аудио-дорожки (бросает, если дорожка не аудио). */
+    /** Open an audio track read stream (throws if the track is not audio). */
     TrackReader openAudioTrack(size_t trackIndex) const {
         const TrackInfo& t = tracks_.at(trackIndex);
         if (!t.isAudio)
@@ -293,7 +294,7 @@ public:
         return TrackReader(this, trackIndex, 0, 0);
     }
 
-    // --- общая информация ---------------------------------------------------
+    // --- general information ------------------------------------------------
 
     const std::string& cuePath() const { return cuePath_; }
 
@@ -301,40 +302,40 @@ public:
     const std::vector<TrackInfo>& tracks() const { return tracks_; }
     const TrackInfo& track(size_t index) const { return tracks_.at(index); }
 
-    /** Индекс дорожки по её номеру из .cue (с 1); -1 если нет. */
+    /** Track index by its number from the .cue (1-based); -1 if absent. */
     int trackIndexByNumber(int number) const {
         for (size_t i = 0; i < tracks_.size(); ++i)
             if (tracks_[i].number == number) return static_cast<int>(i);
         return -1;
     }
 
-    /** true, если образ содержит и данные, и аудио (mixed-mode). */
+    /** true if the image contains both data and audio (mixed-mode). */
     bool isMixedMode() const {
         bool data = false, audio = false;
         for (auto& t : tracks_) { if (t.isAudio) audio = true; else data = true; }
         return data && audio;
     }
 
-    /** Индекс первой дорожки с данными или -1. */
+    /** Index of the first data track, or -1. */
     int dataTrackIndex() const { return dataTrackIndex_; }
 
-    /** Индексы всех аудио-дорожек. */
+    /** Indices of all audio tracks. */
     std::vector<size_t> audioTrackIndices() const {
         std::vector<size_t> v;
         for (size_t i = 0; i < tracks_.size(); ++i) if (tracks_[i].isAudio) v.push_back(i);
         return v;
     }
 
-    /** Суммарное число секторов (сырых) по всем файлам образа. */
+    /** Total number of (raw) sectors across all image files. */
     uint64_t totalSectors() const {
         uint64_t n = 0;
         for (auto& f : files_) n += f->sectorCount;
         return n;
     }
 
-    // --- чтение дорожек -----------------------------------------------------
+    // --- track reading ------------------------------------------------------
 
-    /** Прочитать сырые сектора дорожки (sectorStride байт на сектор). */
+    /** Read raw track sectors (sectorStride bytes per sector). */
     std::vector<uint8_t> readTrackRaw(size_t trackIndex, uint64_t firstSector = 0,
                                       uint64_t count = 0) const {
         TrackReader r(this, trackIndex, firstSector, count);
@@ -347,9 +348,9 @@ public:
     }
 
     /**
-     * Прочитать аудио-дорожку целиком как сырой PCM (2352 байта на сектор,
+     * Read a whole audio track as raw PCM (2352 bytes per sector,
      * 16-bit stereo 44100 Hz).
-     * @throws std::runtime_error если дорожка не аудио.
+     * @throws std::runtime_error if the track is not audio.
      */
     std::vector<uint8_t> readAudioTrack(size_t trackIndex) const {
         const TrackInfo& t = tracks_.at(trackIndex);
@@ -358,7 +359,7 @@ public:
         return readTrackRaw(trackIndex);
     }
 
-    /** Прочитать count аудио-секторов начиная с firstSector дорожки. */
+    /** Read count audio sectors starting from firstSector of the track. */
     std::vector<uint8_t> readAudioSectors(size_t trackIndex, uint64_t firstSector,
                                           uint64_t count) const {
         const TrackInfo& t = tracks_.at(trackIndex);
@@ -367,7 +368,7 @@ public:
         return readTrackRaw(trackIndex, firstSector, count);
     }
 
-    /** Сохранить аудио-дорожку в WAV (44-байтный заголовок + PCM). */
+    /** Save an audio track to WAV (44-byte header + PCM). */
     bool saveAudioTrackWav(size_t trackIndex, const std::string& outPath) const {
         auto pcm = readAudioTrack(trackIndex);
         std::vector<uint8_t> header = detail::makeWavHeader(pcm.size());
@@ -380,9 +381,9 @@ public:
         return out.good();
     }
 
-    // --- чтение данных (ISO-секторов) --------------------------------------
+    // --- data reading (ISO sectors) -----------------------------------------
 
-    /** Прочитать один логический блок ISO9660 (2048 байт полезных данных). */
+    /** Read a single ISO9660 logical block (2048 bytes of payload). */
     std::vector<uint8_t> readIsoBlock(uint32_t lba) const {
         std::vector<uint8_t> out(kIsoBlockSize);
         if (!readIsoBlocks(lba, 1, out.data()))
@@ -390,7 +391,7 @@ public:
         return out;
     }
 
-    /** Прочитать count логических блоков ISO9660 (2048 байт каждый) в out. */
+    /** Read count ISO9660 logical blocks (2048 bytes each) into out. */
     bool readIsoBlocks(uint32_t lba, uint32_t count, uint8_t* out) const {
         if (dataTrackIndex_ < 0) return false;
         const TrackInfo& t = tracks_[dataTrackIndex_];
@@ -407,7 +408,7 @@ public:
 
 protected:
     // -----------------------------------------------------------------------
-    // Внутренние данные
+    // Internal data
     // -----------------------------------------------------------------------
     std::string                              cuePath_;
     std::vector<TrackInfo>                   tracks_;
@@ -415,10 +416,16 @@ protected:
     std::vector<std::unique_ptr<FileHandle>> files_;
     int                                      dataTrackIndex_ = -1;
 
+public:
     // -----------------------------------------------------------------------
-    // Разбор CUE и открытие образа
+    // Opening the image
     // -----------------------------------------------------------------------
-    void init(const std::string& cuePath) {
+    /**
+     * Parse the .cue file and open the image files.
+     * The .bin files are taken from the cue, relative to the cue directory.
+     * @throws std::runtime_error on parse/open errors.
+     */
+    void open(const std::string& cuePath) {
         cuePath_ = cuePath;
         std::string src = detail::readTextFile(cuePath);
         if (src.empty())
@@ -451,7 +458,7 @@ protected:
                 TrackInfo t;
                 t.number = std::atoi(tok[i + 1].text.c_str());
                 t.fileIndex = curFile;
-                t.startSector = kUndefinedSector;   // пока не найден INDEX 01
+                t.startSector = kUndefinedSector;   // until INDEX 01 is found
                 if (!detail::applyTrackMode(detail::toUpper(tok[i + 2].text), t))
                     throw std::runtime_error("tiny-cdio: unknown track mode: " + tok[i + 2].text);
                 tracks_.push_back(t);
@@ -476,15 +483,15 @@ protected:
             }
             if (kw == "PREGAP" || kw == "POSTGAP") { i += 2; continue; }
 
-            // REM — комментарий: пропускаем всю строку целиком.
+            // REM — a comment: skip the whole line.
             if (kw == "REM") {
                 int ln = tok[i].line;
                 while (i < tok.size() && tok[i].line == ln) ++i;
                 continue;
             }
 
-            // FLAGS <PRE|DCP|4CH|SCMS>... — пропускаем только сами флаги,
-            // чтобы поддержать строки вида "FLAGS DCP INDEX 01 00:00:00".
+            // FLAGS <PRE|DCP|4CH|SCMS>... — skip only the flags themselves,
+            // to support lines like "FLAGS DCP INDEX 01 00:00:00".
             if (kw == "FLAGS") {
                 ++i;
                 while (i < tok.size()) {
@@ -495,7 +502,7 @@ protected:
                 continue;
             }
 
-            // CD-TEXT/прочие метаданные: ключевое слово + один аргумент.
+            // CD-TEXT/other metadata: keyword + a single argument.
             if (kw == "CATALOG" || kw == "CDTEXTFILE" || kw == "ISRC" ||
                 kw == "TITLE" || kw == "PERFORMER" || kw == "SONGWRITER" ||
                 kw == "MESSAGE" || kw == "ARRANGER" || kw == "COMPOSER") {
@@ -503,14 +510,14 @@ protected:
                 continue;
             }
 
-            // Неизвестное слово — пропускаем один токен.
+            // Unknown word — skip a single token.
             ++i;
         }
 
         if (!haveFile) throw std::runtime_error("tiny-cdio: no FILE statement in cue");
         if (tracks_.empty()) throw std::runtime_error("tiny-cdio: no TRACK statement in cue");
 
-        // Имя файла дорожки + проверка индексов.
+        // Track file name + index validation.
         for (auto& t : tracks_) {
             if (t.fileIndex >= cueFiles_.size())
                 throw std::runtime_error("tiny-cdio: TRACK before FILE in cue");
@@ -519,7 +526,7 @@ protected:
                 throw std::runtime_error("tiny-cdio: track without INDEX 01");
         }
 
-        // Открываем файлы образа.
+        // Open the image files.
         std::string base = detail::dirName(cuePath);
         files_.clear();
         for (auto& cf : cueFiles_) {
@@ -535,7 +542,8 @@ protected:
             files_.push_back(std::move(h));
         }
 
-        // Stride файла берём из первой ссылающейся дорожки; проверяем единство.
+        // The file stride is taken from the first referencing track; consistency
+        // is validated.
         for (auto& t : tracks_) {
             FileHandle& f = *files_[t.fileIndex];
             if (f.stride == 0) f.stride = t.sectorStride;
@@ -547,7 +555,7 @@ protected:
             f->sectorCount = f->byteSize / f->stride;
         }
 
-        // Границы/длины дорожек.
+        // Track boundaries/lengths.
         for (size_t i = 0; i < tracks_.size(); ++i) {
             TrackInfo& t = tracks_[i];
             uint64_t end;
@@ -563,15 +571,16 @@ protected:
             t.sectorCount = end - t.startSector;
         }
 
-        // Первая дорожка с данными.
+        // The first data track.
         dataTrackIndex_ = -1;
         for (size_t i = 0; i < tracks_.size(); ++i) {
             if (!tracks_[i].isAudio) { dataTrackIndex_ = static_cast<int>(i); break; }
         }
     }
 
+protected:
     // -----------------------------------------------------------------------
-    // Чтение секторов
+    // Sector reading
     // -----------------------------------------------------------------------
     static bool readRawSectors(FileHandle& f, uint64_t sector, uint64_t count,
                                uint8_t* out) {

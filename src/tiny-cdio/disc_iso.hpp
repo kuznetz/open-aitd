@@ -1,18 +1,15 @@
 #pragma once
 /*
- * tiny-cdio — файловая система ISO9660 (+ Joliet).
+ * tiny-cdio — ISO9660 (+ Joliet) file system.
  *
- * Наслаивается на DiscBase (см. cue.hpp): читает логические блоки через
- * readIsoBlocks() и разбирает:
- *   - primary volume descriptor (LBA 16, "CD001");
- *   - опциональный Joliet SVD (type 2, escape "%/@", "%/C", "%/E");
- *   - каталоги, extents, чтение файлов.
- *
- * Публичный фасад — Disc (см. tiny_cdio.hpp). Подключается через
- * "tiny_cdio.hpp".
+ * Layered on top of DiscBase (see disc_base.hpp): reads logical blocks via
+ * readIsoBlocks() and parses:
+ *   - the primary volume descriptor (LBA 16, "CD001");
+ *   - the optional Joliet SVD (type 2, escape "%/@", "%/C", "%/E");
+ *   - directories, extents, file reads.
  */
 
-#include "cue.hpp"
+#include "disc_base.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -26,7 +23,7 @@
 namespace tinycdio {
 
 // ---------------------------------------------------------------------------
-// DiscIso — доступ к файловой системе ISO9660 в data-дорожке
+// DiscIso — access to the ISO9660 file system on the data track
 // ---------------------------------------------------------------------------
 class DiscIso : public DiscBase {
 public:
@@ -37,11 +34,11 @@ public:
     DiscIso& operator=(DiscIso&&) = default;
 
     // -----------------------------------------------------------------------
-    // Потоковое чтение файла (без загрузки файла целиком в память)
+    // Streaming file reading (without loading the whole file into memory)
     // -----------------------------------------------------------------------
     /**
-     * Последовательный/произвольный доступ к файлу ISO9660 как к потоку байт.
-     * Блоки по 2048 байт подчитываются по мере вызовов read()/readChunk().
+     * Sequential/random access to an ISO9660 file as a byte stream.
+     * 2048-byte blocks are read on demand as read()/readChunk() are called.
      */
     class FileReader {
     public:
@@ -50,7 +47,7 @@ public:
         FileReader(const DiscIso* disc, uint32_t lba, uint64_t size)
             : disc_(disc), lba_(lba), size_(size) {}
 
-        /** Была ли ошибка чтения. */
+        /** Whether a read error occurred. */
         bool bad() const { return bad_; }
 
         bool eof() const { return pos_ >= size_; }
@@ -60,8 +57,8 @@ public:
         uint64_t remaining() const { return (pos_ < size_) ? (size_ - pos_) : 0; }
 
         /**
-         * Прочитать не более maxBytes байт в dst. Возвращает число реально
-         * прочитанных байт; 0 означает конец файла (или ошибку — см. bad()).
+         * Read at most maxBytes bytes into dst. Returns the number of bytes
+         * actually read; 0 means end of file (or an error — see bad()).
          */
         size_t read(uint8_t* dst, size_t maxBytes) {
             size_t n = 0;
@@ -81,7 +78,7 @@ public:
             return n;
         }
 
-        /** Прочитать очередной блок размером не более maxBytes (0 = конец). */
+        /** Read the next chunk of at most maxBytes bytes (0 = end). */
         std::vector<uint8_t> readChunk(size_t maxBytes) {
             size_t want = static_cast<size_t>(std::min<uint64_t>(maxBytes, remaining()));
             std::vector<uint8_t> v(want);
@@ -90,7 +87,7 @@ public:
             return v;
         }
 
-        /** Перейти к смещению byteOffset (в байтах) от начала файла. */
+        /** Seek to byteOffset (in bytes) from the start of the file. */
         bool seek(uint64_t byteOffset) {
             if (byteOffset > size_) return false;
             pos_ = byteOffset;
@@ -107,9 +104,9 @@ public:
         std::vector<uint8_t> blk_    = std::vector<uint8_t>(kIsoBlockSize);
     };
 
-    // --- файловая система ISO9660 ------------------------------------------
+    // --- ISO9660 file system -----------------------------------------------
 
-    /** Открыть поток чтения файла по пути (бросает, если нет/каталог). */
+    /** Open a file read stream by path (throws if missing or a directory). */
     FileReader openFile(const std::string& path) const {
         auto e = find(path);
         if (!e) throw std::runtime_error("tiny-cdio: file not found: " + path);
@@ -117,10 +114,10 @@ public:
         return FileReader(this, e->extentLba, e->size);
     }
 
-    /** Есть ли доступная файловая система ISO9660 в data-дорожке. */
+    /** Whether an accessible ISO9660 file system is present on the data track. */
     bool hasFilesystem() const { return ensureIso(); }
 
-    /** Вывести содержимое каталога (path: "" или "/" — корень). */
+    /** List the contents of a directory (path: "" or "/" means the root). */
     std::vector<Entry> listDir(const std::string& path = std::string()) const {
         if (!ensureIso()) return {};
         auto dir = resolve(path);
@@ -128,7 +125,7 @@ public:
         return listDirOf(*dir);
     }
 
-    /** Найти запись по пути. */
+    /** Find an entry by path. */
     std::optional<Entry> find(const std::string& path) const {
         if (!ensureIso()) return std::nullopt;
         return resolve(path);
@@ -139,7 +136,7 @@ public:
         return e.has_value();
     }
 
-    /** Прочитать содержимое файла по пути целиком (обёртка над openFile). */
+    /** Read the whole contents of a file by path (a wrapper over openFile). */
     std::vector<uint8_t> readFile(const std::string& path) const {
         FileReader r = openFile(path);
         std::vector<uint8_t> out(static_cast<size_t>(r.size()));
@@ -150,13 +147,13 @@ public:
         return out;
     }
 
-    /** Прочитать содержимое файла в строку. */
+    /** Read the contents of a file into a string. */
     std::string readFileText(const std::string& path) const {
         auto bytes = readFile(path);
         return std::string(bytes.begin(), bytes.end());
     }
 
-    /** Рекурсивно обойти всё дерево; возвращает записи файлов и каталогов. */
+    /** Recursively traverse the whole tree; returns file and directory entries. */
     std::vector<Entry> walk() const {
         std::vector<Entry> out;
         if (!ensureIso()) return out;
@@ -172,7 +169,7 @@ public:
     }
 
 private:
-    // --- кэш ISO9660 --------------------------------------------------------
+    // --- ISO9660 cache ------------------------------------------------------
     mutable bool     isoTried_    = false;
     mutable bool     isoOk_       = false;
     mutable bool     joliet_      = false;
@@ -214,7 +211,7 @@ private:
         rootSize_   = le32(&pvd[156 + 10]);
         joliet_     = false;
 
-        // Ищем Joliet SVD (type 2, escape "%/@"|"%/C"|"%/E").
+        // Look for a Joliet SVD (type 2, escape "%/@"|"%/C"|"%/E").
         for (uint32_t l = 17; l < 17 + 32; ++l) {
             auto d = readIsoBlockSafe(l);
             if (d.size() < 2048) break;
@@ -239,7 +236,7 @@ private:
         return out;
     }
 
-    // --- имена/пути ---------------------------------------------------------
+    // --- names/paths --------------------------------------------------------
     static std::string toLowerStr(std::string s) {
         for (char& c : s) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
         return s;
@@ -306,7 +303,7 @@ private:
         return parts;
     }
 
-    // --- обход/чтение -------------------------------------------------------
+    // --- traversal/reading --------------------------------------------------
     std::optional<Entry> resolve(const std::string& path) const {
         if (!ensureIso()) return std::nullopt;
         Entry cur = makeRootEntry();
@@ -333,8 +330,8 @@ private:
             uint32_t off = 0;
             while (off + 33 <= kIsoBlockSize) {
                 uint8_t rlen = blk[off];
-                if (rlen == 0) break;                       // padding до конца сектора
-                if (off + rlen > kIsoBlockSize) break;      // повреждённая запись
+                if (rlen == 0) break;                       // padding to the end of the sector
+                if (off + rlen > kIsoBlockSize) break;      // corrupted record
                 uint8_t flags   = blk[off + 25];
                 uint8_t nameLen = blk[off + 32];
                 if (nameLen == 0 || off + 33 + nameLen > kIsoBlockSize) { off += rlen; continue; }

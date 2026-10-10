@@ -1,148 +1,148 @@
 # tiny-cdio
 
-Минималистичная **header-only** библиотека (C++17) для чтения образов **CUE/BIN**.
+A minimalist **header-only** library (C++17) for reading **CUE/BIN** images.
 
-Логика разбора `cue`-файла и чтения секторов повторяет подход libcdio
-(`lib/driver/image/bincue.c`, `lib/iso9660/*`), но библиотека полностью
-самодостаточна: нужны только заголовки стандартной библиотеки C++, никакой сборки
-сторонних зависимостей.
+The logic for parsing the `cue` file and reading sectors follows the libcdio
+approach (`lib/driver/image/bincue.c`, `lib/iso9660/*`), but the library is fully
+self-contained: it only needs the standard C++ library headers, with no
+third-party dependencies to build.
 
-Реализованный функционал:
+Implemented functionality:
 
-1. **Чтение только cue/bin** — открытие образа и количество дорожек.
-2. **Чтение аудио-дорожек** из mixed-mode CD (сырой PCM 2352 байта/сектор).
-3. **Чтение файловой системы** ISO9660 (+ Joliet, если есть) из data-дорожки.
-4. **Чтение содержимого файла** из этой файловой системы.
+1. **Cue/bin reading only** — opening an image and counting tracks.
+2. **Reading audio tracks** from a mixed-mode CD (raw PCM, 2352 bytes/sector).
+3. **Reading the file system** ISO9660 (+ Joliet, if present) from the data track.
+4. **Reading file contents** from that file system.
 
-## Файлы
+## Files
 
-Библиотека разбита на слои (заголовки включаются в порядке
-`types.hpp → cue.hpp → iso9660.hpp → tiny_cdio.hpp`):
+The library is split into layers (headers are included in the order
+`types.hpp → disc_base.hpp → disc_iso.hpp`):
 
-| Файл | Назначение |
-|------|------------|
-| `tiny_cdio.hpp` | Umbrella-заголовок: документация и публичный фасад `tinycdio::Disc`. |
-| `types.hpp`     | Константы секторов, публичные типы (`TrackMode`, `TrackInfo`, `Entry`), WAV-хелпер. |
-| `cue.hpp`       | Разбор `.cue`, дорожки, чтение сырых секторов и аудио, WAV (`DiscBase`). |
-| `iso9660.hpp`   | Файловая система ISO9660 (+ Joliet): `listDir`/`readFile`/`walk` (`DiscIso`). |
-| `example.cpp`   | Пример использования всех четырёх возможностей. |
-| `README.md`     | Эта документация. |
+| File | Purpose |
+|------|---------|
+| `types.hpp`     | Sector constants, public types (`TrackMode`, `TrackInfo`, `Entry`), the WAV helper. |
+| `disc_base.hpp` | `.cue` parsing, tracks, raw sector and audio reading, WAV (`DiscBase`). |
+| `disc_iso.hpp`  | ISO9660 (+ Joliet) file system: `listDir`/`readFile`/`walk` (`DiscIso`). Holds the public class and includes `disc_base.hpp`. |
+| `example.cpp`   | An example using all four capabilities. |
+| `README.md`     | This documentation. |
 
-Иерархия классов: `DiscBase` (cue/аудио) → `DiscIso` (ISO9660) → `Disc`
-(публичный фасад). Подключать в коде нужно только `tiny_cdio.hpp`.
+Class hierarchy: `DiscBase` (cue/audio) → `DiscIso` (ISO9660). Include
+`disc_iso.hpp` in code — it pulls in `disc_base.hpp` and `types.hpp`.
 
-## Быстрый старт
+## Quick start
 
 ```cpp
-#include "tiny-cdio/tiny_cdio.hpp"
+#include "tiny-cdio/disc_iso.hpp"
 
-auto disc = tinycdio::Disc::open("game.cue");
+tinycdio::DiscIso disc;
+disc.open("game.cue");
 
-// 1. Дорожки
-size_t n = disc.trackCount();                 // сколько дорожек
+// 1. Tracks
+size_t n = disc.trackCount();                 // number of tracks
 for (const auto& t : disc.tracks()) { /* ... */ }
 
-// 2. Аудио
+// 2. Audio
 for (size_t i : disc.audioTrackIndices()) {
-    std::vector<uint8_t> pcm = disc.readAudioTrack(i);   // 2352 байта/сектор
-    disc.saveAudioTrackWav(i, "track.wav");              // сразу в WAV
+    std::vector<uint8_t> pcm = disc.readAudioTrack(i);   // 2352 bytes/sector
+    disc.saveAudioTrackWav(i, "track.wav");              // straight to WAV
 }
 
-// 3. Файловая система
+// 3. File system
 if (disc.hasFilesystem()) {
     for (const auto& e : disc.listDir("/")) { /* ... */ }
 }
 
-// 4. Файл
+// 4. File
 std::vector<uint8_t> data = disc.readFile("AITD.EXE");
 ```
 
-## API (`tinycdio::Disc`)
+## API (`tinycdio::DiscIso`)
 
-### Открытие и общая информация
+### Opening and general information
 
-| Метод | Описание |
-|-------|----------|
-| `static Disc open(const std::string& cuePath)` | Открыть `.cue`; `.bin` берётся из cue (относительно каталога cue). Бросает `std::runtime_error`. |
-| `size_t trackCount()` | Количество дорожек. |
-| `const std::vector<TrackInfo>& tracks()` | Список дорожек. |
-| `const TrackInfo& track(size_t index)` | Дорожка по 0-based индексу. |
-| `int trackIndexByNumber(int number)` | Индекс по номеру из cue (с 1), `-1` если нет. |
-| `bool isMixedMode()` | Есть и data-, и audio-дорожки. |
-| `int dataTrackIndex()` | Индекс data-дорожки, `-1` если нет. |
-| `std::vector<size_t> audioTrackIndices()` | Индексы всех аудио-дорожек. |
-| `uint64_t totalSectors()` | Суммарно секторов по файлам образа. |
+| Method | Description |
+|--------|-------------|
+| `void open(const std::string& cuePath)` | Open a `.cue`; the `.bin` is taken from the cue (relative to the cue directory). Throws `std::runtime_error`. |
+| `size_t trackCount()` | Number of tracks. |
+| `const std::vector<TrackInfo>& tracks()` | Track list. |
+| `const TrackInfo& track(size_t index)` | Track by 0-based index. |
+| `int trackIndexByNumber(int number)` | Index by the number from the cue (1-based), `-1` if absent. |
+| `bool isMixedMode()` | Has both data and audio tracks. |
+| `int dataTrackIndex()` | Index of the data track, `-1` if absent. |
+| `std::vector<size_t> audioTrackIndices()` | Indices of all audio tracks. |
+| `uint64_t totalSectors()` | Total sectors across the image files. |
 
-### Аудио и сырые сектора
+### Audio and raw sectors
 
-| Метод | Описание |
-|-------|----------|
-| `std::vector<uint8_t> readTrackRaw(size_t idx, uint64_t first = 0, uint64_t count = 0)` | Сырые сектора дорожки (`sectorStride` байт на сектор). |
-| `std::vector<uint8_t> readAudioTrack(size_t idx)` | Вся аудио-дорожка как PCM. |
-| `std::vector<uint8_t> readAudioSectors(size_t idx, uint64_t first, uint64_t count)` | Диапазон аудио-секторов. |
-| `bool saveAudioTrackWav(size_t idx, const std::string& path)` | Записать PCM в WAV (44-байтный заголовок, 16-bit stereo 44100 Hz). |
-| `TrackReader openTrack(size_t idx, uint64_t first = 0, uint64_t count = 0)` | Поток чтения дорожки (см. «Потоковое чтение»). |
-| `TrackReader openAudioTrack(size_t idx)` | Поток чтения аудио-дорожки. |
+| Method | Description |
+|--------|-------------|
+| `std::vector<uint8_t> readTrackRaw(size_t idx, uint64_t first = 0, uint64_t count = 0)` | Raw track sectors (`sectorStride` bytes per sector). |
+| `std::vector<uint8_t> readAudioTrack(size_t idx)` | The whole audio track as PCM. |
+| `std::vector<uint8_t> readAudioSectors(size_t idx, uint64_t first, uint64_t count)` | A range of audio sectors. |
+| `bool saveAudioTrackWav(size_t idx, const std::string& path)` | Write the PCM to WAV (44-byte header, 16-bit stereo 44100 Hz). |
+| `TrackReader openTrack(size_t idx, uint64_t first = 0, uint64_t count = 0)` | Track read stream (see "Streaming reads"). |
+| `TrackReader openAudioTrack(size_t idx)` | Audio track read stream. |
 
-### Файловая система ISO9660
+### ISO9660 file system
 
-| Метод | Описание |
-|-------|----------|
-| `bool hasFilesystem()` | Есть ли ISO9660 в data-дорожке. |
-| `std::vector<Entry> listDir(const std::string& path = "")` | Содержимое каталога (`""` или `"/"` — корень). |
-| `std::optional<Entry> find(const std::string& path)` | Найти запись по пути. |
-| `bool exists(const std::string& path)` | Проверить наличие пути. |
-| `std::vector<uint8_t> readFile(const std::string& path)` | Прочитать файл целиком. |
-| `std::string readFileText(const std::string& path)` | То же, в `std::string`. |
-| `FileReader openFile(const std::string& path)` | Поток чтения файла (см. «Потоковое чтение»). |
-| `std::vector<Entry> walk()` | Рекурсивно все записи дерева. |
-| `std::vector<uint8_t> readIsoBlock(uint32_t lba)` | Один логический блок (2048 байт). |
-| `bool readIsoBlocks(uint32_t lba, uint32_t count, uint8_t* out)` | Несколько логических блоков. |
+| Method | Description |
+|--------|-------------|
+| `bool hasFilesystem()` | Whether ISO9660 is present on the data track. |
+| `std::vector<Entry> listDir(const std::string& path = "")` | Directory contents (`""` or `"/"` means the root). |
+| `std::optional<Entry> find(const std::string& path)` | Find an entry by path. |
+| `bool exists(const std::string& path)` | Check whether a path exists. |
+| `std::vector<uint8_t> readFile(const std::string& path)` | Read a whole file. |
+| `std::string readFileText(const std::string& path)` | The same, as `std::string`. |
+| `FileReader openFile(const std::string& path)` | File read stream (see "Streaming reads"). |
+| `std::vector<Entry> walk()` | Recursively all entries of the tree. |
+| `std::vector<uint8_t> readIsoBlock(uint32_t lba)` | A single logical block (2048 bytes). |
+| `bool readIsoBlocks(uint32_t lba, uint32_t count, uint8_t* out)` | Several logical blocks. |
 
-### Потоковое чтение (без загрузки целиком)
+### Streaming reads (without loading everything)
 
-Вместо чтения всей дорожки/файла в `std::vector` можно получить поток и
-обрабатывать данные блоками.
+Instead of reading a whole track/file into a `std::vector`, you can obtain a
+stream and process the data in chunks.
 
-`DiscBase::TrackReader` (сырые сектора/аудио):
+`DiscBase::TrackReader` (raw sectors/audio):
 
-| Метод | Описание |
-|-------|----------|
-| `size_t read(uint8_t* dst, size_t maxBytes)` | Прочитать не более `maxBytes`; вернуть число байт (0 — конец). |
-| `std::vector<uint8_t> readChunk(size_t maxBytes)` | Очередной блок (пустой — конец). |
-| `bool seek(uint64_t byteOffset)` | Перейти к байтовому смещению от начала диапазона. |
-| `uint64_t remaining()` / `uint64_t tell()` | Осталось / уже отдано байт. |
-| `bool eof()` / `bool bad()` | Конец потока / ошибка чтения. |
+| Method | Description |
+|--------|-------------|
+| `size_t read(uint8_t* dst, size_t maxBytes)` | Read at most `maxBytes`; return the number of bytes (0 = end). |
+| `std::vector<uint8_t> readChunk(size_t maxBytes)` | The next chunk (empty = end). |
+| `bool seek(uint64_t byteOffset)` | Seek to a byte offset from the start of the range. |
+| `uint64_t remaining()` / `uint64_t tell()` | Bytes remaining / already delivered. |
+| `bool eof()` / `bool bad()` | End of stream / read error. |
 
-`DiscIso::FileReader` (файл ISO9660): те же `read`/`readChunk`/`seek`/`tell`/
-`remaining`/`eof`/`bad`, плюс `uint64_t size()`.
+`DiscIso::FileReader` (an ISO9660 file): the same `read`/`readChunk`/`seek`/`tell`/
+`remaining`/`eof`/`bad`, plus `uint64_t size()`.
 
 ```cpp
-// Поток файла блоками по 4 КиБ.
+// File stream in 4 KiB chunks.
 auto fr = disc.openFile("AITD.EXE");
 std::vector<uint8_t> chunk;
 while (!(chunk = fr.readChunk(4096)).empty()) { /* ... */ }
 
-// Поток аудио, посекторно.
+// Audio stream, sector by sector.
 auto ar = disc.openAudioTrack(2);
 while (ar.remaining()) { auto pcm = ar.readChunk(2352); /* ... */ }
 ```
 
-`readFile()`, `readAudioTrack()` и `readTrackRaw()` реализованы поверх этих
-потоков, поэтому код не дублируется.
+`readFile()`, `readAudioTrack()` and `readTrackRaw()` are implemented on top of
+these streams, so the code is not duplicated.
 
-### Типы
+### Types
 
 ```cpp
 struct TrackInfo {
-    int         number;        // номер дорожки из cue (с 1)
+    int         number;        // track number from the cue (1-based)
     TrackMode   mode;          // Audio / Mode1_2352 / Mode2_2352 / ...
     bool        isAudio;
-    uint32_t    sectorStride;  // размер сектора в файле, байт
-    uint32_t    dataOffset;    // смещение полезных данных в секторе
-    uint32_t    dataSize;      // полезных байт в секторе (2048 для data)
-    uint64_t    startSector;   // INDEX 01 (0-based, внутри файла)
-    uint64_t    endSector;     // эксклюзивный конец
+    uint32_t    sectorStride;  // sector size in the file, bytes
+    uint32_t    dataOffset;    // offset of the payload within the sector
+    uint32_t    dataSize;      // payload bytes per sector (2048 for data)
+    uint64_t    startSector;   // INDEX 01 (0-based, within the file)
+    uint64_t    endSector;     // exclusive end
     uint64_t    sectorCount;
     bool        hasPregapIndex;
     uint64_t    index00Sector;
@@ -151,49 +151,50 @@ struct TrackInfo {
 };
 
 struct Entry {
-    std::string name;       // без версии ";1"
-    std::string fullPath;   // полный путь, разделитель '/'
+    std::string name;       // without the ";1" version suffix
+    std::string fullPath;   // full path, '/' separator
     bool        isDirectory;
     uint32_t    extentLba;
-    uint64_t    size;       // байт
+    uint64_t    size;       // bytes
 };
 ```
 
-## Как это работает
+## How it works
 
-- **CUE** токенизируется с учётом кавычек и отдельных строк; поддержаны
-  `FILE`, `TRACK <n> <MODE>`, `INDEX 00/01 mm:ss:ff`, а метаданные
-  (`REM`, `TITLE`, `CATALOG`, `ISRC`, `FLAGS`, `PREGAP`, ...) пропускаются.
-  Корректно разбираются строки вида `FLAGS DCP INDEX 01 00:00:00`.
-- **Границы дорожек**: начало — `INDEX 01`, конец — `INDEX 00` следующей
-  дорожки (или её `INDEX 01`), либо конец файла. Учитывается pregap
-  (как в `bincue.c`).
-- **Чтение data-секторов**: из сырого сектора (2352/2336 байт) вырезаются
-  полезные 2048 байт по `dataOffset`, зависящему от режима
+- **CUE** is tokenized with awareness of quotes and individual lines; `FILE`,
+  `TRACK <n> <MODE>`, `INDEX 00/01 mm:ss:ff` are supported, while metadata
+  (`REM`, `TITLE`, `CATALOG`, `ISRC`, `FLAGS`, `PREGAP`, ...) is skipped.
+  Lines like `FLAGS DCP INDEX 01 00:00:00` are parsed correctly.
+- **Track boundaries**: the start is `INDEX 01`, the end is the next track's
+  `INDEX 00` (or its `INDEX 01`), otherwise the end of the file. The pregap is
+  taken into account (as in `bincue.c`).
+- **Reading data sectors**: the useful 2048 bytes are carved out of the raw
+  sector (2352/2336 bytes) using `dataOffset`, which depends on the mode
   (MODE1/2352 → 16, MODE2/2352 → 24, MODE2/2336 → 8).
-- **ISO9660**: primary volume descriptor в LBA 16 (`CD001`), от него — корневой
-  directory record; при наличии Joliet SVD (type 2, escape `%/@`|`%/C`|`%/E`)
-  используются Joliet-имена (UCS-2BE → UTF-8). Обход каталогов и extents
-  реализован вручную, без Rock Ridge.
+- **ISO9660**: the primary volume descriptor at LBA 16 (`CD001`) gives the root
+  directory record; if a Joliet SVD is present (type 2, escape
+  `%/@`|`%/C`|`%/E`), Joliet names are used (UCS-2BE → UTF-8). Directory and
+  extent traversal is implemented manually, without Rock Ridge.
 
-## Ограничения
+## Limitations
 
-- Только образы **BIN/CUE** (не NRG/TOC/ISO).
-- Основной сценарий — «сырые» сектора 2352 байта; MODE1/2048, MODE2/2048,
-  MODE2/2336 поддержаны, но смешивать разные размеры секторов в одном файле
-  нельзя (бросается исключение).
-- Rock Ridge / длинные POSIX-имена не разбираются.
-- Файлы с несколькими extents (flag `0x80`) не поддерживаются.
+- Only **BIN/CUE** images (not NRG/TOC/ISO).
+- The main scenario is "raw" 2352-byte sectors; MODE1/2048, MODE2/2048 and
+  MODE2/2336 are supported, but different sector sizes cannot be mixed within a
+  single file (an exception is thrown).
+- Rock Ridge / long POSIX names are not parsed.
+- Files with multiple extents (flag `0x80`) are not supported.
 
-## Интеграция
+## Integration
 
-Библиотека header-only: достаточно добавить каталог `src/` в include-пути и
-подключить `tiny-cdio/tiny_cdio.hpp`. В этом проекте каталог `src/` уже входит
-в `ALL_INCLUDES` (см. `CMakeLists.txt`), поэтому дополнительная настройка сборки
-не требуется — заголовок можно включать как `#include "tiny-cdio/tiny_cdio.hpp"`.
+The library is header-only: just add the `src/` directory to the include paths
+and include `tiny-cdio/disc_iso.hpp`. In this project the `src/` directory is
+already part of `ALL_INCLUDES` (see `CMakeLists.txt`), so no extra build
+configuration is required — the header can be included as
+`#include "tiny-cdio/disc_iso.hpp"`.
 
-Пример (`example.cpp`) намеренно не добавлен в `CMakeLists.txt`; скомпилировать
-его можно вручную:
+The example (`example.cpp`) is intentionally not added to `CMakeLists.txt`; it
+can be compiled manually:
 
 ```bat
 cl /std:c++17 /EHsc /I.. example.cpp
