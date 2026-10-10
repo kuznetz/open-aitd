@@ -4,6 +4,8 @@
 
 #include "../utils/my_gltf.h"
 #include "../structs/floor.h"
+#include "../structs/game_objects.h"
+#include "../../../common/metrics.hpp"
 
 namespace AITDExtractor {
 
@@ -54,6 +56,24 @@ namespace AITDExtractor {
         camN.rotation = { q.x, q.y, q.z, q.w };
         camN.extras = makeRoomsExtras(roomIds);
         m.nodes.push_back(camN);
+    }
+
+    int createObjectNode(tinygltf::Model& m, int objectId, const gameObjectStruct& obj) {
+        tinygltf::Node objN;
+        objN.name = string("O_") + to_string(objectId);
+        // узел без геометрии: mesh не задаём (остаётся -1)
+
+        // координаты по образцу object_extractor.h
+        Vector3 v = { obj.x / 1000.f, obj.y / 1000.f, obj.z / 1000.f };
+        v = Vector3Transform(v, openAITD::Metrics::roomMatrix);
+        objN.translation = { v.x, v.y, v.z };
+
+        auto rot = openAITD::Metrics::fromRotate(obj.alpha, obj.beta, obj.gamma);
+        auto q = QuaternionFromEuler(rot.x, rot.y, rot.z);
+        objN.rotation = { q.x, q.y, q.z, q.w };
+
+        m.nodes.push_back(objN);
+        return (int)m.nodes.size() - 1;
     }
 
     int createBoxNode(tinygltf::Model& m, string name, hardColStruct& coll, const tinygltf::Value& extras) {
@@ -143,6 +163,25 @@ namespace AITDExtractor {
             m.nodes.push_back(rootZone);
             int rootZoneIdx = m.nodes.size() - 1;
             roomN.children.push_back(rootZoneIdx);
+
+
+            // объекты комнаты в группе objects_{roomId} (создаётся лениво, пустые комнаты её не получают)
+            tinygltf::Node rootObjects;
+            int rootObjectsIdx = -1;
+            for (int objIdx = 0; objIdx < (int)gameObjs.size(); objIdx++) {
+                auto& obj = gameObjs[objIdx];
+                if (obj.stageId != stageId || obj.roomId != roomId) continue;
+
+                if (rootObjectsIdx < 0) {
+                    rootObjects.name = string("objects_") + to_string(roomId);
+                    m.nodes.push_back(rootObjects);
+                    rootObjectsIdx = (int)m.nodes.size() - 1;
+                    roomN.children.push_back(rootObjectsIdx);
+                }
+
+                int objNIdx = createObjectNode(m, objIdx, obj);
+                m.nodes[rootObjectsIdx].children.push_back(objNIdx);
+            }
         }
 
         for (int camIdx = 0; camIdx < floor->cameras.size(); camIdx++) {
