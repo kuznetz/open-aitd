@@ -78,7 +78,7 @@ namespace openAITD {
     BookScreen bookScreen(world);
     PictureScreen pictureScr(&world);
     IntroScreen introScreen(&world);
-    LifeController lifeContr(&world, &tracksContr, &playerContr, &hitContr, &throwContr, &physContr, &foundScreen, &shootContr);
+    LifeController lifeContr(&world, &tracksContr, &hitContr, &throwContr, &physContr, &foundScreen, &shootContr);
     SaveHelper saveHelper(world);
     ConsoleScreen consoleScreen(&world);
     MenuScreen mainMenu(world, saveHelper);
