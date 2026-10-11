@@ -113,10 +113,10 @@ namespace openAITD {
 			auto codepoints = getCodepoints(config.language);
 			s = DataPath::GetFile("texts/" + config.language + "/font.ttf");
 			if (s != "") {
-				mainFont = LoadFontEx(s.c_str(), config.screenH * 16 / 200, codepoints.data(), (int)codepoints.size());
+				mainFont = LoadFontEx(s.c_str(), config.screenH * 15 / 200, codepoints.data(), (int)codepoints.size());
 			} else {
 				s = DataPath::GetFile("texts/" + defaultLanguage + "/font.ttf");
-	  		mainFont = LoadFontEx(s.c_str(), config.screenH * 16 / 200, codepoints.data(), (int)codepoints.size());
+	  		mainFont = LoadFontEx(s.c_str(), config.screenH * 15 / 200, codepoints.data(), (int)codepoints.size());
 			}
 
 			loaded = true;
