@@ -13,12 +13,25 @@ namespace openAITD {
 	struct BookType {
 		int pictureId;
 		raylib::Rectangle bounds;
+		raylib::Rectangle pages;
 	};
 
 	inline const std::array<BookType, 3> bookTypes = {{
-			{6, {60/320.f, 10/200.f, (245-60)/320.f, (190-10)/200.f} }, // READ_MESSAGE
-			{7, {48/320.f, 2/200.f, (260-48)/320.f, (197-2)/200.f} }, // READ_BOOK
-			{8, {50/320.f, 20/200.f, (250-50)/320.f, (199-20)/200.f} }  // READ_CARNET
+			{
+				6,
+				{60/320.f, 10/200.f, (245-60)/320.f, (190-10)/200.f},
+				{60/320.f, 185/200.f, (245-60)/320.f, 1.0f} 
+			}, // READ_MESSAGE
+			{
+				7, 
+				{48/320.f, 2/200.f, (260-48)/320.f, (197-2)/200.f},
+				{60/320.f, 185/200.f, (245-60)/320.f, 1.0f}
+			}, // READ_BOOK
+			{
+				8, 
+				{50/320.f, 20/200.f, (250-50)/320.f, (199-20)/200.f},
+				{60/320.f, 185/200.f, (245-60)/320.f, 1.0f}
+			}  // READ_CARNET
 	}};
 
 	class BookScreen {
@@ -88,6 +101,24 @@ namespace openAITD {
 				{ 0, 0 }, 0, WHITE
 			);
 			text.draw();
+			drawPageNumber();
+		}
+
+		// Draws the page indicator "{n}/{total}" centered in the BookType.pages area.
+		// Nothing is drawn when the text fits on a single page.
+		void drawPageNumber() {
+			int total = text.getPageCount();
+			if (total <= 1) return;
+			auto& c = resources.config;
+			auto& p = bookTypes[bookData.bookType].pages;
+			raylib::Rectangle area = {
+				p.x * c.screenW,
+				p.y * c.screenH,
+				p.width * c.screenW,
+				p.height * c.screenH
+			};
+			string label = to_string(text.getCurrentPage() + 1) + "/" + to_string(total);
+			resources.texts.drawCentered(label.c_str(), area, BLACK);
 		}
 
 	};
