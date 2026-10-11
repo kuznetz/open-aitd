@@ -13,8 +13,6 @@ namespace openAITD {
 
 	class CharSelectScreen {
 	public:
-		const raylib::Rectangle textRect = {60/320.f, 10/200.f, (245-60)/320.f, (190-10)/200.f};
-
 		World& world;
 		Resources& resources;
 		Texture2D pictureTex = { 0 };
@@ -53,9 +51,7 @@ namespace openAITD {
 
 		void start() {
 			loadPicture();
-			auto& b = textRect;
 			auto& c = resources.config;
-			textWid.setBounds({ b.x * c.screenW, b.y * c.screenH, b.width * c.screenW, b.height * c.screenH });
 			exited = false;
 			exiting = false;
 			selected = false;
@@ -94,7 +90,11 @@ namespace openAITD {
 			if (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_ENTER)) {
 				if (selectedChar != -1) {
 					world.altModels = (selectedChar != 1);
-					world.bookData = { 0, (world.altModels)?20:19, (world.altModels)?19:18};
+					world.bookData = { 
+						0,
+						(world.altModels)?20:19, 
+						(world.altModels)?1:0
+				  };
 					GameObject::altModels = world.altModels;
 					selected = true;
 				}

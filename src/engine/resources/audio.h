@@ -20,6 +20,13 @@ namespace openAITD {
 
       raylib::Music musicTrack;
 
+      // Audio book (voice-over) currently playing: audiobooks/{num}.{page}.ogg
+      int currentAudioBookNum = -1;
+      int currentAudioBookPage = -1;
+      raylib::Music audioBookTrack;
+      // Music that was playing before an audio book started, to resume it on close.
+      int musicBeforeAudioBook = -1;
+
       // Repeating (cyclic) sound. Plays while REP_SOUND is called every frame.
       // If the command is not issued during a frame, it stops in Process().
       int repeatSoundId = -1;
@@ -37,6 +44,14 @@ namespace openAITD {
       void StopMusic();
       void PlayMusic(const int musicId);
       void SetMusicVolume(float volume);
+
+      // Plays the audio book page: audiobooks/{audioBookNum}.{pageNum}.ogg.
+      // While an audio book is playing the background music is paused; it is
+      // resumed by StopAudioBook(). A missing audio book file is not an error.
+      void PlayAudioBook(const int audioBookNum, const int pageNum);
+      // Stops the audio book and resumes the music that was playing before it.
+      void StopAudioBook();
+
       void Process();
 
   private:
@@ -47,7 +62,17 @@ namespace openAITD {
         std::uniform_real_distribution<float> dist(-amplitude, amplitude);
         return dist(rng);
       }
-  };
+
+      // Stops and unloads the current audio book without resuming the music.
+      void UnloadAudioBook() {
+        if (currentAudioBookNum != -1) {
+          raylib::StopMusicStream(audioBookTrack);
+          raylib::UnloadMusicStream(audioBookTrack);
+          currentAudioBookNum = -1;
+          currentAudioBookPage = -1;
+        }
+      }
+    };
 
   inline void Audio::Init() {
     if (!initialized) {
@@ -188,7 +213,69 @@ namespace openAITD {
       if (currentMusicId != -1) {
           raylib::SetMusicVolume(musicTrack, volume);
       }
-  }  
+      if (currentAudioBookNum != -1) {
+          raylib::SetMusicVolume(audioBookTrack, volume);
+      }
+  }
+
+  inline void Audio::PlayAudioBook(const int audioBookNum, const int pageNum) {
+      if (audioBookNum < 0 || pageNum < 0) return;
+
+      // The same page of the same book is already playing – nothing to do.
+      if (currentAudioBookNum == audioBookNum && currentAudioBookPage == pageNum) return;
+
+      // File name: audiobooks/{audioBookNum}.{pageNum}.{ext}.
+      // .ogg is the canonical extension, the others are accepted as a fallback.
+      vector<string> extensions = { ".ogg", ".wav", ".mp3", ".flac" };
+      string filename;
+      for (const auto& ext : extensions) {
+          filename = DataPath::GetFile(string("audiobooks/") + to_string(audioBookNum)
+                                       + "." + to_string(pageNum) + ext);
+          if (!filename.empty()) break;
+      }
+
+      Init();
+
+      // A missing audio book file is normal: just drop the previous audio book.
+      if (filename.empty()) {
+          UnloadAudioBook();
+          return;
+      }
+
+      raylib::Music track = raylib::LoadMusicStream(filename.c_str());
+      if (!raylib::IsMusicValid(track)) {
+          UnloadAudioBook();
+          return;
+      }
+
+      // An audio book must play through once: raylib enables music looping by
+      // default (LoadMusicStream sets `looping = true`), so turn it off here.
+      track.looping = false;
+
+      // A valid audio book takes over: pause the background music and remember it.
+      if (currentMusicId != -1) {
+          musicBeforeAudioBook = currentMusicId;
+          StopMusic();
+      }
+
+      UnloadAudioBook();
+      audioBookTrack = track;
+      raylib::SetMusicVolume(audioBookTrack, musicVolume);
+      raylib::PlayMusicStream(audioBookTrack);
+      currentAudioBookNum = audioBookNum;
+      currentAudioBookPage = pageNum;
+  }
+
+  inline void Audio::StopAudioBook() {
+      UnloadAudioBook();
+
+      // Resume the music that was playing before the audio book started.
+      if (musicBeforeAudioBook != -1) {
+          int musicId = musicBeforeAudioBook;
+          musicBeforeAudioBook = -1;
+          PlayMusic(musicId);
+      }
+  }
 
   inline void Audio::Process() {
       // The cyclic sound plays only while REP_SOUND is called every frame.
@@ -196,6 +283,11 @@ namespace openAITD {
           StopRepeatSound();
       }
       repeatSoundRequested = false;
+
+      // The audio book must be advanced every frame to keep playing.
+      if (currentAudioBookNum != -1) {
+          raylib::UpdateMusicStream(audioBookTrack);
+      }
 
       if (currentMusicId == -1) return;
       raylib::UpdateMusicStream(musicTrack);

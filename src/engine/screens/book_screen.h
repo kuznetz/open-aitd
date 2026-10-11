@@ -69,6 +69,9 @@ namespace openAITD {
 			{}
 
 		~BookScreen() {
+			// If the screen goes away while the book is still open, make sure the
+			// voice-over stops and the background music resumes.
+			resources.audio.StopAudioBook();
 		}
 
 		void reload() {
@@ -89,10 +92,19 @@ namespace openAITD {
 				animTime = 0.0f;
 				if (opening) {
 					resources.audio.PlaySound(pageSoundId);
+					// Start the audio book voice-over for the first page (if any).
+					startAudioBook();
 				}
 			}
 			processKeys();
 			updateAnim(timeDelta);
+		}
+
+		// Plays the audio book voice-over for the currently shown page.
+		// bookData.readAudio < 0 means the book has no narration.
+		void startAudioBook() {
+			if (bookData.readAudio < 0) return;
+			resources.audio.PlayAudioBook(bookData.readAudio, text.getCurrentPage());
 		}
 
 		// Advances the current animation and finishes it once the duration is over.
@@ -103,6 +115,8 @@ namespace openAITD {
 
 			if (anim == Anim::Closing) {
 				// The slide-out is done: release the book so the world resumes.
+				// Stop the narration and resume the music that was playing before it.
+				resources.audio.StopAudioBook();
 				bookData.readText = -1;
 				lastBookText = -1;
 			}
@@ -162,6 +176,8 @@ namespace openAITD {
 			anim = (dir > 0) ? Anim::FlipNext : Anim::FlipPrev;
 			animTime = 0.0f;
 			resources.audio.PlaySound(pageSoundId, 0.1);
+			// Voice-over for the page we flipped to.
+			startAudioBook();
 		}
 
 		// Starts the slide-out animation. The book is actually released
