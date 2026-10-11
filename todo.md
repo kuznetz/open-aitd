@@ -13,21 +13,32 @@ Features:
 + Additional multilang text
 + ogv/theora video cutscene support
 + Audio: RndFreq, RepeatSound
-0.3: Additional features
-- Extract resuources screen
-- CDAudio music ripper (.cue)
-- Extract files from cd (.cue)
-- Book audio ripper from cd
-0.4: Recreate better
-- Light in maze (animate spot)
+0.3: Additional CD features
++ Text in character select
++ CDAudio music ripper (.cue)
++ Extract files from cd (.cue)
++ Book audio ripper from cd
++ Book - spaces / animation / page number
 - Character Select (better)
+- Extended music support
+- Textured spheres
+- Light in maze (animate spot)
+- Fix falling boulder and spiders
+- Fix arrow shooting
+- Fix toad and car
 - More fancy save/load
-- Book - spaces / animation / page number
-- Take script hack / upgrade take screen
+- Disablable weight limit
+- Extract resuources screen
+0.4: Recreate better
+- Multiple mods - move newdata override fixres as mod
+- Input bind and basic gamepad
+- Fast open/serach key
 - Parallel camera load, camera cache without preload
-- Input bind and gamepad
+- Take script hack / upgrade take screen
+- Full test
 - Project documentation
 1.0: Full original support
+- Interactive map
 - Shoot Autoaim
 - Extend modding support
 - Eight turn movement
