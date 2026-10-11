@@ -32,17 +32,28 @@ namespace openAITD {
 
 		void processObj(GameObject& gobj, float timeDelta) {
 			bool isAction = false;
+			auto& playerAnims = world->player.animations;
 			int nextAnimation = gobj.animation.id;
 
-			//if (gobj.track.mode == GOTrackMode::manual) {
 			if (gobj.animation.bitField.uninterruptable) {
 				isAction = true;
 			}
 
-			// A scripted one-shot animation must play to its end and must not be
-			// overwritten by idle/input (old-engine animActionType behaviour).
-			if (!gobj.animation.bitField.repeat && gobj.bitField.animated) {
+			// A scripted one-shot animation must play to its end
+			//  and must not be overwritten by idle/input
+			if (
+				!gobj.animation.bitField.repeat &&
+				gobj.bitField.animated
+			) {
 				isAction = true;
+			}
+
+			//Fix for some scripts
+			if (
+				playerAnims.walkForw == nextAnimation ||
+				playerAnims.idle == nextAnimation
+			) {
+				isAction = false;
 			}
 
 			//Rotate Player
@@ -50,11 +61,11 @@ namespace openAITD {
 				float rotate = 0;
 				if (IsKeyDown(KEY_LEFT)) {
 					rotate = 1;					
-					nextAnimation = world->player.animations.turnCCW;
+					nextAnimation = playerAnims.turnCCW;
 				}
 				if (IsKeyDown(KEY_RIGHT)) {
 					rotate = -1;
-					nextAnimation = world->player.animations.turnCW;
+					nextAnimation = playerAnims.turnCW;
 				}
 				if (rotate != 0) {
 					auto newRot = gobj.getOrigRotation();
@@ -68,16 +79,16 @@ namespace openAITD {
 				float move = 0;
 				if (IsKeyDown(KEY_DOWN)) {
 					move = -0.75;
-					nextAnimation = world->player.animations.walkBackw;
+					nextAnimation = playerAnims.walkBackw;
 				}
 				else if (IsKeyDown(KEY_UP)) {
 					if (IsKeyDown(KEY_LEFT_SHIFT)) {
 						move = 3;
-						nextAnimation = world->player.animations.runForw;
+						nextAnimation = playerAnims.runForw;
 					}
 					else {
 						move = 0.75;
-						nextAnimation = world->player.animations.walkForw;
+						nextAnimation = playerAnims.walkForw;
 					}
 				}
 				if (move != 0) {
@@ -86,7 +97,7 @@ namespace openAITD {
 			}
 
 			if (!isAction) {
-				nextAnimation = world->player.animations.idle;
+				nextAnimation = playerAnims.idle;
 			}
 			if (nextAnimation != gobj.animation.id) {
 				gobj.setRepeatAnimation(nextAnimation);
