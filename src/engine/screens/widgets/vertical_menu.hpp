@@ -91,6 +91,8 @@ public:
             float xPos = bounds.x + (bounds.width - textWidth) * 0.5f;
             DrawTextEx(font, text.c_str(), { xPos, yPos }, font.baseSize, 1.0f, color);
         }
+
+        drawScrollbar(startY, totalHeight);
     }
 
     void process(float timeDelta) {
@@ -105,6 +107,10 @@ private:
     const raylib::Color normalColor = raylib::WHITE;
     const raylib::Color selectedColor = raylib::GOLD;
     const raylib::Color selectedColor2 = raylib::YELLOW;
+    const raylib::Color scrollbarColor = raylib::WHITE;
+    const raylib::Color scrollbarTrackColor = raylib::Color { 0, 0, 0, 80 };
+    static constexpr float scrollbarWidth = 6.0f;
+    static constexpr float scrollbarMargin = 4.0f;
     std::vector<std::string> items;
     int selectedIndex;
     int scrollOffset;
@@ -113,6 +119,32 @@ private:
     // Blink state for smooth transition
     float blinkTimer = 0.0f;
     static constexpr float blinkPeriod = 1.0f;
+
+    // Draw a white scrollbar thumb on the right edge when items don't fit on screen.
+    void drawScrollbar(float startY, float totalHeight) const {
+        const int itemCount = static_cast<int>(items.size());
+        if (itemCount <= maxVisibleItems) return;
+        if (totalHeight <= 0.0f) return;
+
+        const float x = bounds.x + bounds.width - scrollbarWidth - scrollbarMargin;
+
+        // Track
+        DrawRectangle(static_cast<int>(x), static_cast<int>(startY),
+                      static_cast<int>(scrollbarWidth), static_cast<int>(totalHeight),
+                      scrollbarTrackColor);
+
+        // Thumb size proportional to the visible fraction of the list
+        float thumbHeight = totalHeight * static_cast<float>(maxVisibleItems) / static_cast<float>(itemCount);
+        if (thumbHeight < scrollbarWidth) thumbHeight = scrollbarWidth;
+
+        const int maxOffset = itemCount - maxVisibleItems;
+        const float scrollT = (maxOffset > 0) ? static_cast<float>(scrollOffset) / static_cast<float>(maxOffset) : 0.0f;
+        const float thumbY = startY + (totalHeight - thumbHeight) * scrollT;
+
+        DrawRectangle(static_cast<int>(x), static_cast<int>(thumbY),
+                      static_cast<int>(scrollbarWidth), static_cast<int>(thumbHeight),
+                      scrollbarColor);
+    }
 
     void clampSelection() {
         if (selectedIndex >= static_cast<int>(items.size()))
