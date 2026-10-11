@@ -55,6 +55,9 @@ namespace openAITD {
 		static constexpr float closeTime = 0.30f;
 		static constexpr float flipTime = 0.30f;
 
+		// Sound played when the book opens and on every page flip.
+		static constexpr int pageSoundId = 49;
+
 		// Color of the flip line separating the old and the new page.
 		raylib::Color flipLineColor = { 0, 0, 0, 150 };
 
@@ -84,6 +87,9 @@ namespace openAITD {
 				reload();
 				anim = opening ? Anim::Opening : Anim::None;
 				animTime = 0.0f;
+				if (opening) {
+					resources.audio.PlaySound(pageSoundId);
+				}
 			}
 			processKeys();
 			updateAnim(timeDelta);
@@ -155,6 +161,7 @@ namespace openAITD {
 			flipToPage = to;
 			anim = (dir > 0) ? Anim::FlipNext : Anim::FlipPrev;
 			animTime = 0.0f;
+			resources.audio.PlaySound(pageSoundId, 0.1);
 		}
 
 		// Starts the slide-out animation. The book is actually released
