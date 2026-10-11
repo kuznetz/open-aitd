@@ -73,7 +73,7 @@ inline const vector<parseLifeInstruction> LifeParams_V1 =
 	{ LifeEnum::SET_OBJ_WEIGHT, "SET_OBJ_WEIGHT", { { lifeConst } }, true},
 	{ LifeEnum::UP_COOR_Y, "UP_COOR_Y", { }},
 	{ LifeEnum::SPEED, "SPEED", { }},
-	{ LifeEnum::PUT_AT, "PUT_AT", { { lifeConst }, { lifeConst } }},
+	{ LifeEnum::PUT_AT, "PUT_AT", { { lifeConst, varObject }, { lifeConst, varObject } }},
 	{ LifeEnum::DEF_ZV, "DEF_ZV", { { lifeConst }, { lifeConst }, { lifeConst }, { lifeConst }, { lifeConst }, { lifeConst } }, true},
 	{ LifeEnum::HIT_OBJECT, "HIT_OBJECT", { { lifeConst }, { lifeConst } }, true},
 	{ LifeEnum::GET_HARD_CLIP, "GET_HARD_CLIP", { }},

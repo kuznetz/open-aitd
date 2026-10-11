@@ -441,7 +441,9 @@ namespace AITDExtractor {
                 auto matIdx = getMaterialIdx(m, prim.colorIndex, pallete, prim.subType, noiseTexIdx);
                 auto& pos = modelVerts[prim.vertexIdxs[0] / 6];
                 float size = prim.size / 1000.0f;
-                auto prim2 = createSpherePrim(m, size, vertCount, pos, matIdx);
+                //Noise spheres need UVs; reference loader: uvScale = noisesize * size / 200.
+                float uvScale = (prim.subType == 1) ? noisesize * prim.size / 200.0f : 0.0f;
+                auto prim2 = createSpherePrim(m, size, vertCount, pos, matIdx, uvScale);
 
                 if (hasBones) {
                     int VertCountFull = vertCount * vertCount * 6;
@@ -610,7 +612,7 @@ namespace AITDExtractor {
             bool anyNoise = false;
             for (auto* pm : models) {
                 for (auto& prim : pm->primitives) {
-                    if (prim.type == 1 && prim.subType == 1) { anyNoise = true; break; }
+                    if ((prim.type == 1 || prim.type == 3) && prim.subType == 1) { anyNoise = true; break; }
                 }
                 if (anyNoise) break;
             }
@@ -659,7 +661,7 @@ namespace AITDExtractor {
 
                 bool hasNoise = false;
                 for (auto& prim : meshModel->primitives) {
-                    if (prim.type == 1 && prim.subType == 1) { hasNoise = true; break; }
+                    if ((prim.type == 1 || prim.type == 3) && prim.subType == 1) { hasNoise = true; break; }
                 }
 
                 addModelMesh(m, *meshModel, meshNames[k], boneMap, sharedBoneWorldPos,

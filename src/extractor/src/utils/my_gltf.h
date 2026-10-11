@@ -47,10 +47,11 @@ namespace AITDExtractor {
 	int createLineMesh(tinygltf::Model& m, const vector<float>& line);
 	int createPolyMesh(tinygltf::Model& m, const vector<Vector3>& vertexes, const vector<unsigned int>& indices);
 	int createVertexes(tinygltf::Model& m, const vector<Vector3>& vertexes);
+	int createVec2Accessor(tinygltf::Model& m, const vector<Vector2>& vecs);
 	const VertexSkin addVertexSkin(tinygltf::Model& m, vector<unsigned char> vecBoneAffect);
 	
 	tinygltf::Primitive createPolyPrimitive(tinygltf::Model& m, const vector<unsigned int>& indices, int vertAccIdx, int material);
-	tinygltf::Primitive createSpherePrim(tinygltf::Model& m, float radius, int vertCount, Vector3 pos, int material);
+	tinygltf::Primitive createSpherePrim(tinygltf::Model& m, float radius, int vertCount, Vector3 pos, int material, float uvScale = 0.0f);
 	tinygltf::Primitive createPipePrim(tinygltf::Model& m, Vector3 points[], float radius, int sides, int material);
 	tinygltf::Primitive createCubePrim(tinygltf::Model& m, Vector3 center, Vector3 size, int material);
 

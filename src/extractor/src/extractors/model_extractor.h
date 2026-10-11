@@ -134,19 +134,6 @@ namespace AITDExtractor {
         return m.textures.size() - 1;
     }
 
-    int createVec2Accessor(tinygltf::Model& m, const vector<Vector2>& vecs)
-    {
-        int vwIdx = createBufferAndView(m, (void*)vecs.data(), (int)(vecs.size() * sizeof(Vector2)), TINYGLTF_TARGET_ARRAY_BUFFER);
-        tinygltf::Accessor acc;
-        acc.bufferView = vwIdx;
-        acc.byteOffset = 0;
-        acc.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
-        acc.count = vecs.size();
-        acc.type = TINYGLTF_TYPE_VEC2;
-        m.accessors.push_back(acc);
-        return m.accessors.size() - 1;
-    }
-
     // Magnitude of the model bounding box diagonal.
     float computeBoundsMagnitude(const vector<Vector3>& verts)
     {
@@ -610,9 +597,10 @@ namespace AITDExtractor {
         int vertAccIdx = createVertexes(m, modelVerts);
 
         //--- noise / transparent materials setup ---
+        //Noise material is used by both polygons (type 1) and spheres (type 3).
         bool hasNoise = false;
         for (auto& p : model.primitives) {
-            if (p.type == 1 && p.subType == 1) { hasNoise = true; break; }
+            if ((p.type == 1 || p.type == 3) && p.subType == 1) { hasNoise = true; break; }
         }
 
         int noiseTexIdx = -1;
@@ -674,7 +662,9 @@ namespace AITDExtractor {
                 auto matIdx = getMaterialIdx(m, prim.colorIndex, pallete, prim.subType, noiseTexIdx);
                 auto& pos = modelVerts[prim.vertexIdxs[0] / 6];
                 float size = prim.size / 1000.0f;
-                auto& prim2 = createSpherePrim(m, size, vertCount, pos, matIdx);
+                //Noise spheres need UVs; reference loader: uvScale = noisesize * size / 200.
+                float uvScale = (prim.subType == 1) ? noisesize * prim.size / 200.0f : 0.0f;
+                auto& prim2 = createSpherePrim(m, size, vertCount, pos, matIdx, uvScale);
                 if (model.bones.size()) {
                     int VertCountFull = vertCount * vertCount * 6;
                     vector<u8> vecBoneAffect2(VertCountFull, vecBoneAffect[prim.vertexIdxs[0] / 6]);

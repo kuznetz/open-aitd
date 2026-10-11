@@ -165,6 +165,18 @@ namespace AITDExtractor {
         return vertAccIdx;
     }
 
+    int createVec2Accessor(tinygltf::Model& m, const vector<Vector2>& vecs) {
+        int vwIdx = createBufferAndView(m, (void*)vecs.data(), (int)(vecs.size() * sizeof(Vector2)), TINYGLTF_TARGET_ARRAY_BUFFER);
+        tinygltf::Accessor acc;
+        acc.bufferView = vwIdx;
+        acc.byteOffset = 0;
+        acc.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
+        acc.count = vecs.size();
+        acc.type = TINYGLTF_TYPE_VEC2;
+        m.accessors.push_back(acc);
+        return m.accessors.size() - 1;
+    }
+
     tinygltf::Primitive createPolyPrimitive(tinygltf::Model& m, const vector<unsigned int>& indices, int vertAccIdx, int material) {
         int indxBytes = indices.size() * sizeof(unsigned int);
         int indxOffs = addDataToBuffer(m, (uint8_t*)indices.data(), indxBytes);

@@ -53,7 +53,7 @@ namespace AITDExtractor {
 		}
 	}
 
-	tinygltf::Primitive createSpherePrim(tinygltf::Model& m, float radius, int vertCount, Vector3 pos, int material) {
+	tinygltf::Primitive createSpherePrim(tinygltf::Model& m, float radius, int vertCount, Vector3 pos, int material, float uvScale) {
 		int sideVCount = vertCount * vertCount;
 		int sideFaceICount = (vertCount-1) * (vertCount-1) * 2 * 3;
 		vector<Vector3> vertexes(sideVCount * 6);
@@ -67,7 +67,28 @@ namespace AITDExtractor {
 		}
 		
 		int vertAccIdx = createVertexes(m, vertexes);
-		return createPolyPrimitive(m, faces, vertAccIdx, material);
+		auto prim = createPolyPrimitive(m, faces, vertAccIdx, material);
+
+		// Noise spheres (polyType 1) carry a noise texture. The reference loader
+		// maps SphereMesh.uv scaled by uvScale = noisesize * size / 200. This
+		// quad-sphere is built from 6 cube sides, so each side gets its own 0..1
+		// UV grid (the equivalent of the sphere mesh unwrap).
+		if (uvScale != 0.0f) {
+			vector<Vector2> uvs(vertexes.size());
+			for (int i = 0; i < 6; i++) {
+				for (int y = 0; y < vertCount; y++) {
+					for (int x = 0; x < vertCount; x++) {
+						int idx = sideVCount * i + y * vertCount + x;
+						uvs[idx] = {
+							(float)x / (vertCount - 1) * uvScale,
+							(float)y / (vertCount - 1) * uvScale
+						};
+					}
+				}
+			}
+			prim.attributes["TEXCOORD_0"] = createVec2Accessor(m, uvs);
+		}
+		return prim;
 	}
 
 }
