@@ -5,6 +5,7 @@
 #include "../resources/resources.h"
 #include "../../common/raylib_cpp.hpp"
 #include "./widgets/text.hpp"
+#include "./book_screen.h"
 
 using namespace std;
 using namespace raylib;
@@ -19,7 +20,9 @@ namespace openAITD {
 		Texture2D pictureTex = { 0 };
 		Texture2D bookTex = { 0 };
 		TextWidget textWid;
-		int selected = 0;
+		BookScreen book;
+		bool selected = false;
+		int selectedChar = -1;
 
 		bool exiting = false;
 		bool exited = false;
@@ -27,7 +30,8 @@ namespace openAITD {
 		CharSelectScreen(World& world) :
 		  world(world),
 			resources(*world.resources),
-			textWid(resources.texts.mainFont,{0})
+			textWid(resources.texts.mainFont,{0}),
+			book(world)
 			{}
 
 		~CharSelectScreen() {
@@ -53,55 +57,70 @@ namespace openAITD {
 			auto& c = resources.config;
 			textWid.setBounds({ b.x * c.screenW, b.y * c.screenH, b.width * c.screenW, b.height * c.screenH });
 			exited = false;
-			selected = -1;
+			exiting = false;
+			selected = false;
+			selectedChar = -1;
+			book.lastBookText = -1;
 		}
 
 		void process(float timeDelta) {
 			if (exiting) {
 				UnloadTexture(pictureTex);
 				exited = true;
+			} else if (selected) {
+				// While a character is selected the nested BookScreen owns input/render.
+				book.process(timeDelta);
+				// The book has been read through (readText reset by BookScreen::exit) – leave.
+				if (world.bookData.readText == -1) {
+					exiting = true;
+				}
 			} else {
 				processKeys();
 			}
 		}
 
     void processKeys() {
-        // ESC: close the screen
-        if (IsKeyPressed(KEY_ESCAPE)) {
-					selected = -1;
-					exiting = true;
-        }
-        if (IsKeyPressed(KEY_LEFT)) {
-					selected = 0;
-        }				
-        if (IsKeyPressed(KEY_RIGHT)) {
-					selected = 1;
-        }
-        if (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_ENTER)) {
-					if (selected != -1) {
-						world.altModels = (selected != 1);
-						GameObject::altModels = world.altModels;
-						exiting = true;
-					}
-        }
-    }
+			// ESC: close the screen
+			if (IsKeyPressed(KEY_ESCAPE)) {
+				selectedChar = -1;
+				exiting = true;
+			}
+			if (IsKeyPressed(KEY_LEFT)) {
+				selectedChar = 0;
+			}				
+			if (IsKeyPressed(KEY_RIGHT)) {
+				selectedChar = 1;
+			}
+			if (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_ENTER)) {
+				if (selectedChar != -1) {
+					world.altModels = (selectedChar != 1);
+					world.bookData = { 0, (world.altModels)?20:19, (world.altModels)?19:18};
+					GameObject::altModels = world.altModels;
+					selected = true;
+				}
+			}
+		}
 
 		void render() {
-			float screenW = resources.config.screenW;
-			float screenW2 = screenW / 2;
-			float screenH = resources.config.screenH;
-			DrawTexturePro(
-				pictureTex,
-				{ 0, 0, screenW2, screenH },
-				{ 0, 0, screenW2, screenH },
-				{ 0, 0 }, 0, selected == 0? WHITE: GRAY
-			);
-			DrawTexturePro(
-				pictureTex,
-				{ screenW2, 0, screenW, screenH },
-				{ screenW2, 0, screenW, screenH },
-				{ 0, 0 }, 0, selected == 1? WHITE: GRAY
-			);
+			if (selected) {
+				book.render();
+			} else {
+				float screenW = resources.config.screenW;
+				float screenW2 = screenW / 2;
+				float screenH = resources.config.screenH;
+				DrawTexturePro(
+					pictureTex,
+					{ 0, 0, screenW2, screenH },
+					{ 0, 0, screenW2, screenH },
+					{ 0, 0 }, 0, selectedChar == 0? WHITE: GRAY
+				);
+				DrawTexturePro(
+					pictureTex,
+					{ screenW2, 0, screenW, screenH },
+					{ screenW2, 0, screenW, screenH },
+					{ 0, 0 }, 0, selectedChar == 1? WHITE: GRAY
+				);				
+			}
 		}
 
 	};

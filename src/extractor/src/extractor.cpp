@@ -345,7 +345,7 @@ namespace AITDExtractor {
             
             auto& data = textsPak.readBlock(0);
             extractText(data, dirname+"/main.txt");
-            for (int i=1; i<textsPak.headers.size()-1; i++) {
+            for (int i=1; i<textsPak.headers.size(); i++) {
                 auto& data = textsPak.readBlock(i);
                 extractText(data, dirname+"/"+to_string(i)+".txt");
             }

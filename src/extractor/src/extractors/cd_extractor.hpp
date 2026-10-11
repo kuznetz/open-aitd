@@ -134,7 +134,7 @@ namespace AITDExtractor {
         int written = 0;
         for (const auto& [key, chunks] : pages) {
             const std::string outPath = outDir + "/" + std::to_string(key.first) +
-                                        "." + std::to_string(key.second) + ".wav";
+                                        "." + std::to_string(key.second) + ".ogg";
             if (!overwrite && std::filesystem::exists(outPath)) continue;
 
             // Concatenate the decoded PCM of every chunk of this page in order.
@@ -175,7 +175,7 @@ namespace AITDExtractor {
             combined.size = static_cast<int>(pcm.size());
             combined.rate = rate;
 
-            writeWav(&combined, outPath);
+            writeOgg(&combined, outPath);
             ++written;
         }
         return written;

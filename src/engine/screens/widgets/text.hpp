@@ -40,7 +40,8 @@ public:
     void draw() const {
         if (pages.empty() || currentPage >= pages.size()) return;
         const Page& page = pages[currentPage];
-        float lineHeight = font.baseSize + spacing;
+        // Line spacing is computed per page so the lines fill bounds.height evenly.
+        float lineHeight = page.lineHeight > 0.0f ? page.lineHeight : (font.baseSize + spacing);
         float y = bounds.y;
         for (const Line& line : page.lines) {
             drawLine(line, y);
@@ -67,11 +68,11 @@ private:
     struct Line {
         std::vector<Word> words;
         bool centered = false;
-        bool lastLine = false;
     };
 
     struct Page {
         std::vector<Line> lines;
+        float lineHeight = 0.0f; // computed after the page is built: bounds.height / lines.size()
     };
 
     const raylib::Font& font;
@@ -81,6 +82,11 @@ private:
     std::vector<Token> tokens;
     std::vector<Page> pages;
     int currentPage;
+
+    // Inter-word gap limits, expressed as coefficients of the natural space
+    // width (the width of the ' ' glyph in the current font).
+    static constexpr float MIN_SPACE = 0.5f;
+    static constexpr float MAX_SPACE = 8.0f;
 
     void tokenize() {
         tokens.clear();
@@ -120,8 +126,9 @@ private:
             }
             if (p > start) {
                 std::string word(start, p - start);
+                // Store the raw glyph width; inter-word gaps are applied separately.
                 float w = MeasureTextEx(font, word.c_str(), font.baseSize, 1.0f).x;
-                tokens.push_back({ Token::WORD, word, w + 3.0f, 0 });
+                tokens.push_back({ Token::WORD, word, w, 0 });
             }
         }
     }
@@ -135,25 +142,52 @@ private:
         while (!lastPage && idx < tokens.size()) {
             Page page;
             lastPage = buildPage(idx, page);
+            // A trailing '#P' leaves the last page empty – do not add it.
+            if (page.lines.empty() && lastPage) break;
+            // Interline spacing depends on how many lines the page actually has.
+            // It may shrink to fit the lines, but must never exceed the reference
+            // spacing (font.baseSize + spacing).
+            float reference = font.baseSize + spacing;
+            size_t lineCount = page.lines.size();
+            float computed = lineCount > 0 ? bounds.height / (float)lineCount : reference;
+            page.lineHeight = std::min(computed, reference);
             pages.push_back(std::move(page));
         }
     }
 
+    // Width of the natural space glyph (' ') in the current font.
+    float naturalSpace() const {
+        float w = MeasureTextEx(font, " ", font.baseSize, 1.0f).x;
+        return w > 0.0f ? w : 1.0f;
+    }
+
     // Builds one page, starting from token idx.
+    // A page is terminated strictly by the '#P' tag (or by the end of text) –
+    // vertical overflow is no longer used to split pages.
     // Returns true if this is the last page (end of text reached).
     bool buildPage(size_t& idx, Page& page) {
         float maxWidth = bounds.width;
-        float lineHeight = font.baseSize + spacing;
-        float currentY = 0.0f;
+        float baseSpace = naturalSpace();
+        float minSpace = MIN_SPACE * baseSpace;
         bool endOfText = false;
+        bool pageBreak = false;
 
-        while (currentY + lineHeight <= bounds.height && !endOfText) {
+        // A word fits while the resulting inter-word gap stays >= MIN_SPACE;
+        // otherwise the word is wrapped to the next line.
+        auto fitsOnLine = [&](float sum, size_t count, float w) -> bool {
+            size_t newCount = count + 1;
+            float newSum = sum + w;
+            if (newCount <= 1) return newSum <= maxWidth;
+            return (maxWidth - newSum) / (float)(newCount - 1) >= minSpace;
+        };
+
+        while (!endOfText && !pageBreak) {
             Line line;
             bool lineFinished = false;
-            bool pageBreak = false;
             bool forceNewline = false; // true if the line is terminated due to NEWLINE
             float totalWidth = 0.0f;
             bool centered = false;
+            size_t lineStartIdx = idx;
 
             // Collect line
             while (!lineFinished && !pageBreak && !endOfText && idx < tokens.size()) {
@@ -162,7 +196,7 @@ private:
                 if (tok.type == Token::COMMAND) {
                     switch (tok.command) {
                         case 'P': { // Page break
-                            if (currentY > 0) { // not the first line on page
+                            if (!page.lines.empty()) { // not the first line on page
                                 pageBreak = true;
                                 lineFinished = true;
                             } else {
@@ -178,8 +212,8 @@ private:
                         }
                         case 'T': { // Tab – insert two spaces
                             std::string tabStr = "  ";
-                            float w = MeasureTextEx(font, tabStr.c_str(), font.baseSize, 1.0f).x + 3.0f;
-                            if (totalWidth + w <= maxWidth) {
+                            float w = MeasureTextEx(font, tabStr.c_str(), font.baseSize, 1.0f).x;
+                            if (fitsOnLine(totalWidth, line.words.size(), w)) {
                                 line.words.push_back({ tabStr, w });
                                 totalWidth += w;
                             } else {
@@ -209,7 +243,7 @@ private:
                 }
 
                 // Normal word
-                if (totalWidth + tok.width <= maxWidth) {
+                if (fitsOnLine(totalWidth, line.words.size(), tok.width)) {
                     line.words.push_back({ tok.text, tok.width });
                     totalWidth += tok.width;
                     ++idx;
@@ -219,22 +253,23 @@ private:
                 }
             }
 
-            // End of tokens reached – last page
-            if (idx >= tokens.size()) {
-                endOfText = true;
-                lineFinished = true;
+            // Guarantee progress: a single word wider than the page never advances
+            // idx on its own, which would otherwise cause an infinite loop.
+            if (!pageBreak && !endOfText && idx == lineStartIdx
+                && idx < tokens.size() && tokens[idx].type == Token::WORD) {
+                line.words.push_back({ tokens[idx].text, tokens[idx].width });
+                ++idx;
             }
 
             // Add the line if it has words or a forced newline
             if (!line.words.empty() || forceNewline) {
                 line.centered = centered;
-                line.lastLine = endOfText; // last line on page (or entire text) – do not justify
                 page.lines.push_back(line);
-                currentY += lineHeight;
             }
 
-            // If page break occurred – finish page
+            // Only a page break ends the page; otherwise continue until tokens run out.
             if (pageBreak) break;
+            if (idx >= tokens.size()) endOfText = true;
         }
 
         // If end of text reached and page is empty – skip it
@@ -248,32 +283,45 @@ private:
     void drawLine(const Line& line, float y) const {
         if (line.words.empty()) return; // empty line – draw nothing
 
+        float baseSpace = naturalSpace();
+        float minSpace = MIN_SPACE * baseSpace;
+        float maxSpace = MAX_SPACE * baseSpace;
+
+        size_t count = line.words.size();
         float totalWidth = 0.0f;
         for (const auto& w : line.words) totalWidth += w.width;
 
-        float startX;
+        // Centered lines ignore the gap rule and use the natural spacing.
         if (line.centered) {
-            startX = bounds.x + (bounds.width - totalWidth) / 2.0f;
-        } else if (!line.lastLine && line.words.size() > 1) {
-            // Justify (full width alignment)
-            float extraSpace = (bounds.width - totalWidth) / (line.words.size() - 1);
-            float x = bounds.x;
-            for (size_t i = 0; i < line.words.size(); ++i) {
-                const auto& w = line.words[i];
+            float full = totalWidth + (count > 1 ? (count - 1) * baseSpace : 0.0f);
+            float x = bounds.x + (bounds.width - full) / 2.0f;
+            for (const auto& w : line.words) {
                 DrawTextEx(font, w.text.c_str(), {x, y}, font.baseSize, 1.0f, color);
-                x += w.width + extraSpace;
+                x += w.width + baseSpace;
             }
             return;
-        } else {
-            // Left alignment
-            startX = bounds.x;
         }
 
-        // Regular drawing (centered or last line)
-        float x = startX;
+        // Gap between words:
+        //   space < MIN_SPACE -> cramped, clamp up (wrapping is done while building);
+        //   space > MAX_SPACE -> too stretched, fall back to the natural space;
+        //   otherwise         -> use the computed gap (justify).
+        float gap = baseSpace;
+        if (count > 1) {
+            float space = (bounds.width - totalWidth) / (float)(count - 1);
+            if (space > maxSpace) {
+                gap = baseSpace;
+            } else if (space < minSpace) {
+                gap = minSpace;
+            } else {
+                gap = space;
+            }
+        }
+
+        float x = bounds.x;
         for (const auto& w : line.words) {
             DrawTextEx(font, w.text.c_str(), {x, y}, font.baseSize, 1.0f, color);
-            x += w.width;
+            x += w.width + gap;
         }
     }
 };

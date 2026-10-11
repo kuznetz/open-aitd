@@ -348,7 +348,7 @@ namespace openAITD {
         else if (state == AppState::CharSelect) {
             charSelectScreen.process(timeDelta);
             if (charSelectScreen.exited) {
-                if (charSelectScreen.selected != -1) {
+                if (charSelectScreen.selectedChar != -1) {
                     startGameIntro();                    
                 } else {
                     state = AppState::MainMenu;
@@ -440,7 +440,7 @@ namespace openAITD {
             mainMenu.render();
             resources.screen.end();
         }
-        else if (world.bookData.readText != -1) {
+        else if (state != AppState::CharSelect && world.bookData.readText != -1) {
             resources.screen.begin();
             bookScreen.render();
             resources.screen.end();
