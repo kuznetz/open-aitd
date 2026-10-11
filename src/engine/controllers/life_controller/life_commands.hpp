@@ -1,7 +1,6 @@
 #pragma once
 #include "./life_core.hpp"
 #include "../tracks_controller.h"
-#include "../player_controller.h"
 #include "../hit_controller.h"
 #include "../shoot_controller.h"
 #include "../throw_controller.h"
@@ -23,7 +22,6 @@ namespace openAITD {
 		World* world;
 		Resources* resources;
 		TracksController* trackContr;
-		PlayerController* playerContr;
 		HitController* hitContr;
 		ShootController* shootContr;
 		ThrowController* throwContr;
@@ -33,12 +31,11 @@ namespace openAITD {
 		LuaState* lua = 0;
 		float curRndFreq = 0;
 
-		LifeCommands(LifeCore* lifeCore, TracksController* trackContr, PlayerController* playerContr, HitController* hitContr, ThrowController* throwContr, PhysicsController* physContr, FoundScreen* foundScreen, ShootController* shootContr) {
+		LifeCommands(LifeCore* lifeCore, TracksController* trackContr, HitController* hitContr, ThrowController* throwContr, PhysicsController* physContr, FoundScreen* foundScreen, ShootController* shootContr) {
 			this->lifeCore = lifeCore;
 			this->world = lifeCore->world;
 			this->resources = lifeCore->resources;
 			this->trackContr = trackContr;
-			this->playerContr = playerContr;
 			this->hitContr = hitContr;
 			this->shootContr = shootContr;
 			this->physContr = physContr;
@@ -511,7 +508,8 @@ namespace openAITD {
 					trackContr->processObjTrack(obj, this->getTimeDelta());
 					break;
 				case GOTrackMode::manual:
-					playerContr->processObj(obj, this->getTimeDelta());
+					world->player.objectId = objId;
+					world->player.movable = true;
 					break;
 				case GOTrackMode::follow:
 					trackContr->processObjFollow(obj, this->getTimeDelta());
@@ -519,8 +517,8 @@ namespace openAITD {
 				};
 				}, "DO_MOVE");
 			lua->CreateFunction([this](int objId) {
-				auto& obj = this->world->gobjects[objId];
-				playerContr->processRotate(obj, this->getTimeDelta());
+				world->player.objectId = objId;
+				world->player.aiming = true;
 				}, "MANUAL_ROT");			
 			lua->CreateFunction([this](int obj) {
 				//Not needed

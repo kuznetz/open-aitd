@@ -26,13 +26,12 @@ namespace openAITD {
 
 	struct Player {
 		int objectId;
-		bool hasControl;
+		bool movable;
+		bool aiming;
 		PlayerAnimations animations;
 		bool allowInventory;
 		bool space;
 		int keyboard;
-		//True while the player's death / post-death scenario is playing.
-		//Set by SET_PLAYER_DEAD(1) in the scripts; blocks saving the game.
 		bool dead = false;
 	};
 

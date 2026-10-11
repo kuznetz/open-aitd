@@ -15,7 +15,7 @@ namespace openAITD {
 			this->resources = world->resources;
 		}
 
-		void processRotate(GameObject& gobj, float timeDelta) {
+		void processAim(GameObject& gobj, const float timeDelta) {
 			float rotate = 0;
 			if (IsKeyDown(KEY_LEFT)) {
 				rotate = 1;
@@ -30,7 +30,7 @@ namespace openAITD {
 			}
 		}
 
-		void processObj(GameObject& gobj, float timeDelta) {
+		void processMove(GameObject& gobj, const float timeDelta) {
 			bool isAction = false;
 			auto& playerAnims = world->player.animations;
 			int nextAnimation = gobj.animation.id;
@@ -103,6 +103,19 @@ namespace openAITD {
 				gobj.setRepeatAnimation(nextAnimation);
 			}
 		}
+
+		void process(const float timeDelta) {
+			if (world->player.objectId == -1) return;
+			auto& gobj = world->gobjects[world->player.objectId];
+			if (world->player.aiming) {
+				processAim(gobj, timeDelta);
+				world->player.aiming = false;
+			} else if (world->player.movable) {
+				processMove(gobj, timeDelta);
+				world->player.movable = false;
+			}
+		}
+
 	};
 
 }

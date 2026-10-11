@@ -19,9 +19,9 @@ namespace openAITD {
 
 	  LifeCommands commands;
 
-		LifeController(World* world, TracksController* trackContr, PlayerController* playerContr, HitController* hitContr, ThrowController* throwContr, PhysicsController* physContr, FoundScreen* foundScreen, ShootController* shootContr):
+		LifeController(World* world, TracksController* trackContr, HitController* hitContr, ThrowController* throwContr, PhysicsController* physContr, FoundScreen* foundScreen, ShootController* shootContr):
 			LifeCore(world),
-			commands(this, trackContr, playerContr, hitContr, throwContr, physContr, foundScreen, shootContr)
+			commands(this, trackContr, hitContr, throwContr, physContr, foundScreen, shootContr)
 		{
 		}
 

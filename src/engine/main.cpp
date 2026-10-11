@@ -240,6 +240,7 @@ namespace openAITD {
 
                 float partDelta = min(timeDelta, maxDelta);
                 world.chrono += partDelta;
+                playerContr.process(partDelta);
                 lifeContr.process(partDelta);
                 animContr.process(partDelta);
                 hitContr.process(partDelta);
