@@ -425,6 +425,7 @@ namespace openAITD {
                 state = AppState::MainMenu;
             }
             else {
+                world.player.quickSearch = IsKeyDown(KEY_LEFT_CONTROL);
                 world.player.space = IsKeyDown(KEY_SPACE);
                 if (IsKeyDown(KEY_UP)) {
                     world.player.keyboard = 1;
@@ -441,7 +442,6 @@ namespace openAITD {
                 else {
                     world.player.keyboard = 0;
                 }
-                world.player.space = IsKeyDown(KEY_SPACE);
                 processWorld(timeDelta);
             }
         }

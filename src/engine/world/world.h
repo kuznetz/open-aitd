@@ -30,6 +30,7 @@ namespace openAITD {
 		bool aiming;
 		PlayerAnimations animations;
 		bool allowInventory;
+		bool quickSearch;
 		bool space;
 		int keyboard;
 		bool dead = false;

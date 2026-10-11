@@ -9,6 +9,7 @@ namespace openAITD {
 	public:
 		World* world;
 		Resources* resources;
+		const int quickSearchAnimId = 2;
 		
 		PlayerController(World* world) {
 			this->world = world;
@@ -54,6 +55,12 @@ namespace openAITD {
 				playerAnims.idle == nextAnimation
 			) {
 				isAction = false;
+			}
+
+			// quickSearch
+			if (world->player.quickSearch) {
+				gobj.setOnceAnimation(quickSearchAnimId, playerAnims.idle);
+				return;
 			}
 
 			//Rotate Player
