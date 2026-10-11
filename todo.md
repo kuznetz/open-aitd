@@ -19,16 +19,16 @@ Features:
 + Extract files from cd (.cue)
 + Book audio ripper from cd
 + Book - spaces / animation / page number
-- Character Select (better)
-- Extended music support
-- Textured spheres
++ Character Select (better)
++ Textured spheres
 - Light in maze (animate spot)
-- Fix falling boulder and spiders
-- Fix arrow shooting
-- Fix toad and car
+- Extended music support
 - More fancy save/load
 - Disablable weight limit
 - Extract resuources screen
+- Fix falling boulder and spiders
+- Fix arrow shooting
+- Fix toad and car
 0.4: Recreate better
 - Multiple mods - move newdata override fixres as mod
 - Input bind and basic gamepad

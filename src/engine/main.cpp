@@ -202,6 +202,17 @@ namespace openAITD {
     }
 
     void processWorld(float timeDelta) {
+        // Character select runs as a world scene before the game starts. The
+        // state transition itself is handled in process().
+        if (state == AppState::CharSelect) {
+            // The previews must stay fully visible, so keep the scene bright.
+            world.brightnessTrg = 1;
+            if (world.messageTime > 0) {
+                world.messageTime -= timeDelta;
+            }
+            charSelectScreen.process(timeDelta);
+            return;
+        }
         if (world.picture.id != -1) {
             world.brightnessTrg = 1;
             pictureScr.process(timeDelta);
@@ -269,7 +280,12 @@ namespace openAITD {
     }
 
     void renderWorld() {
-        if (freeLook) {
+        // Character select is technically a scene before the game starts: its
+        // previews go through sceneTex -> brightness, the book is an overlay.
+        bool charSelect = (state == AppState::CharSelect);
+        if (charSelect) {
+            charSelectScreen.renderScene();
+        } else if (freeLook) {
             flRenderer.render();
         } else if (world.picture.id != -1) {
             pictureScr.render();
@@ -278,6 +294,11 @@ namespace openAITD {
         }
         resources.screen.begin();
         sceneRend.render();
+        // The book is a UI layer drawn on top of the blitted scene, so the
+        // previews stay visible during its slide animations.
+        if (charSelect && charSelectScreen.selected) {
+            charSelectScreen.book.render();
+        }
         renderMessage();
         resources.screen.end();
     }
@@ -297,6 +318,8 @@ namespace openAITD {
         case MenuScreenResult::newGame:
             charSelectScreen.start();
             state = AppState::CharSelect;
+            world.messageText = "Select character";
+            world.messageTime = 2;
             break;
         case MenuScreenResult::resume:
             state = AppState::InWorld;
@@ -347,12 +370,12 @@ namespace openAITD {
             if (!processMenu(timeDelta)) return false;
         }
         else if (state == AppState::CharSelect) {
-            charSelectScreen.process(timeDelta);
+            processWorld(timeDelta);
             if (charSelectScreen.exited) {
                 if (charSelectScreen.selectedChar != -1) {
-                    startGameIntro();                    
+                    startGameIntro();
                 } else {
-                    state = AppState::MainMenu;
+                    startMenu();
                 }
             }
         }
@@ -459,9 +482,7 @@ namespace openAITD {
             resources.screen.end();
         }
         else if (state == AppState::CharSelect) {
-            resources.screen.begin();
-            charSelectScreen.render();
-            resources.screen.end();
+            renderWorld();
         }
         else if (state == AppState::ReadBook) {
             resources.screen.begin();

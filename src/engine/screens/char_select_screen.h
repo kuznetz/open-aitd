@@ -1,6 +1,8 @@
 ﻿#pragma once
 #include <vector>
 #include <string>
+#include <algorithm>
+#include <cmath>
 #include "../world/world.h"
 #include "../resources/resources.h"
 #include "../../common/raylib_cpp.hpp"
@@ -21,6 +23,22 @@ namespace openAITD {
 		BookScreen book;
 		bool selected = false;
 		int selectedChar = -1;
+
+		// Start animation: the screen fades in from black (same idea as IntroScreen).
+		static constexpr float fadeInTime = 0.5f;
+		float fadeTimer = 0.0f;
+
+		// Smooth brightness change of each pictureTex half when selectedChar flips.
+		// dimBrightness matches the old GRAY tint, activeBrightness the old WHITE one.
+		static constexpr float dimBrightness = 0.4f;
+		static constexpr float activeBrightness = 1.0f;
+		static constexpr float brightnessSpeed = 2.0f; // brightness units per second
+		float brightness[2] = { dimBrightness, dimBrightness };
+
+		// Blinking of the active pictureTex (selectedChar), like ButtonWidget.
+		static constexpr float blinkPeriod = 2.0f;
+		static constexpr float blinkMin = 0.6f;
+		float blinkTimer = 0.0f;
 
 		bool exiting = false;
 		bool exited = false;
@@ -57,9 +75,48 @@ namespace openAITD {
 			selected = false;
 			selectedChar = -1;
 			book.lastBookText = -1;
+			// Fade in from black and show both previews dimmed until one is chosen.
+			fadeTimer = 0.0f;
+			blinkTimer = 0.0f;
+			brightness[0] = dimBrightness;
+			brightness[1] = dimBrightness;
+		}
+
+		// Advances the start fade-in, the smooth brightness and the blink timer.
+		void updateAnim(float timeDelta) {
+			if (fadeTimer < fadeInTime) {
+				fadeTimer = std::min(fadeTimer + timeDelta, fadeInTime);
+			}
+			blinkTimer += timeDelta;
+			if (blinkTimer > blinkPeriod) blinkTimer -= blinkPeriod;
+			for (int i = 0; i < 2; i++) {
+				float target = (selectedChar == i) ? activeBrightness : dimBrightness;
+				brightness[i] = moveTowards(brightness[i], target, brightnessSpeed * timeDelta);
+			}
+		}
+
+		static float moveTowards(float cur, float target, float maxDelta) {
+			if (cur < target) return std::min(cur + maxDelta, target);
+			return std::max(cur - maxDelta, target);
+		}
+
+		// Overall opacity of the start fade-in (0..1).
+		float fadeAlpha() const {
+			return (fadeInTime > 0.0f) ? Clamp(fadeTimer / fadeInTime, 0.0f, 1.0f) : 1.0f;
+		}
+
+		// Final tint of one pictureTex half, combining brightness, blink and fade-in.
+		raylib::Color pictureTint(int i) const {
+			float b = brightness[i];
+			if (selectedChar == i) {
+				float t = (1.0f - cosf(2.0f * PI * blinkTimer / blinkPeriod)) * 0.5f;
+				b *= (blinkMin + (1.0f - blinkMin) * t);
+			}
+			return Fade(WHITE, Clamp(b * fadeAlpha(), 0.0f, 1.0f));
 		}
 
 		void process(float timeDelta) {
+			updateAnim(timeDelta);
 			if (exiting) {
 				UnloadTexture(pictureTex);
 				exited = true;
@@ -101,15 +158,18 @@ namespace openAITD {
 			}
 		}
 
-		void render() {
-			// The book covers the whole screen on top of a black background, so while
-			// it is shown there is no need to draw the character select underneath.
-			// Skipping it also guarantees the background never shows a stale copy of
-			// the book during the opening/closing slide animations.
-			if (selected) {
-				book.render();
-				return;
-			}
+		// The character previews are treated as a scene: they are drawn into
+		// sceneTex and then blitted through the brightness shader from main
+		// (AppState::CharSelect), exactly like the in-world renderers.
+		void renderScene() {
+			BeginTextureMode(resources.screen.sceneTex);
+			ClearBackground(BLACK);
+			drawBackground();
+			EndTextureMode();
+		}
+
+		// Draws both pictureTex halves with the current brightness/blink tint.
+		void drawBackground() {
 			float screenW = resources.config.screenW;
 			float screenW2 = screenW / 2;
 			float screenH = resources.config.screenH;
@@ -117,13 +177,13 @@ namespace openAITD {
 				pictureTex,
 				{ 0, 0, screenW2, screenH },
 				{ 0, 0, screenW2, screenH },
-				{ 0, 0 }, 0, selectedChar == 0? WHITE: GRAY
+				{ 0, 0 }, 0, pictureTint(0)
 			);
 			DrawTexturePro(
 				pictureTex,
 				{ screenW2, 0, screenW, screenH },
 				{ screenW2, 0, screenW, screenH },
-				{ 0, 0 }, 0, selectedChar == 1? WHITE: GRAY
+				{ 0, 0 }, 0, pictureTint(1)
 			);
 		}
 
