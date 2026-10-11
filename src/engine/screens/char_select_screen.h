@@ -102,25 +102,29 @@ namespace openAITD {
 		}
 
 		void render() {
+			// The book covers the whole screen on top of a black background, so while
+			// it is shown there is no need to draw the character select underneath.
+			// Skipping it also guarantees the background never shows a stale copy of
+			// the book during the opening/closing slide animations.
 			if (selected) {
 				book.render();
-			} else {
-				float screenW = resources.config.screenW;
-				float screenW2 = screenW / 2;
-				float screenH = resources.config.screenH;
-				DrawTexturePro(
-					pictureTex,
-					{ 0, 0, screenW2, screenH },
-					{ 0, 0, screenW2, screenH },
-					{ 0, 0 }, 0, selectedChar == 0? WHITE: GRAY
-				);
-				DrawTexturePro(
-					pictureTex,
-					{ screenW2, 0, screenW, screenH },
-					{ screenW2, 0, screenW, screenH },
-					{ 0, 0 }, 0, selectedChar == 1? WHITE: GRAY
-				);				
+				return;
 			}
+			float screenW = resources.config.screenW;
+			float screenW2 = screenW / 2;
+			float screenH = resources.config.screenH;
+			DrawTexturePro(
+				pictureTex,
+				{ 0, 0, screenW2, screenH },
+				{ 0, 0, screenW2, screenH },
+				{ 0, 0 }, 0, selectedChar == 0? WHITE: GRAY
+			);
+			DrawTexturePro(
+				pictureTex,
+				{ screenW2, 0, screenW, screenH },
+				{ screenW2, 0, screenW, screenH },
+				{ 0, 0 }, 0, selectedChar == 1? WHITE: GRAY
+			);
 		}
 
 	};

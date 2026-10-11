@@ -38,13 +38,24 @@ public:
     bool hasPrev() const { return currentPage > 0; }
 
     void draw() const {
-        if (pages.empty() || currentPage >= pages.size()) return;
-        const Page& page = pages[currentPage];
+        drawPage(currentPage, 0.0f, 0.0f);
+    }
+
+    // Draws the current page shifted by (dx, dy) – used for the book slide-in/out.
+    void draw(float dx, float dy) const {
+        drawPage(currentPage, dx, dy);
+    }
+
+    // Draws an arbitrary page index shifted by (dx, dy).
+    // Used by the page-flip animation to render both the old and the new page.
+    void drawPage(int index, float dx = 0.0f, float dy = 0.0f) const {
+        if (index < 0 || index >= (int)pages.size()) return;
+        const Page& page = pages[index];
         // Line spacing is computed per page so the lines fill bounds.height evenly.
         float lineHeight = page.lineHeight > 0.0f ? page.lineHeight : (font.baseSize + spacing);
-        float y = bounds.y;
+        float y = bounds.y + dy;
         for (const Line& line : page.lines) {
-            drawLine(line, y);
+            drawLine(line, y, dx);
             y += lineHeight;
         }
     }
@@ -210,8 +221,8 @@ private:
                             ++idx;
                             break;
                         }
-                        case 'T': { // Tab – insert two spaces
-                            std::string tabStr = "  ";
+                        case 'T': { // Tab – insert spaces
+                            std::string tabStr = " ";
                             float w = MeasureTextEx(font, tabStr.c_str(), font.baseSize, 1.0f).x;
                             if (fitsOnLine(totalWidth, line.words.size(), w)) {
                                 line.words.push_back({ tabStr, w });
@@ -280,7 +291,7 @@ private:
         return endOfText;
     }
 
-    void drawLine(const Line& line, float y) const {
+    void drawLine(const Line& line, float y, float dx = 0.0f) const {
         if (line.words.empty()) return; // empty line – draw nothing
 
         float baseSpace = naturalSpace();
@@ -294,7 +305,7 @@ private:
         // Centered lines ignore the gap rule and use the natural spacing.
         if (line.centered) {
             float full = totalWidth + (count > 1 ? (count - 1) * baseSpace : 0.0f);
-            float x = bounds.x + (bounds.width - full) / 2.0f;
+            float x = bounds.x + dx + (bounds.width - full) / 2.0f;
             for (const auto& w : line.words) {
                 DrawTextEx(font, w.text.c_str(), {x, y}, font.baseSize, 1.0f, color);
                 x += w.width + baseSpace;
@@ -318,7 +329,7 @@ private:
             }
         }
 
-        float x = bounds.x;
+        float x = bounds.x + dx;
         for (const auto& w : line.words) {
             DrawTextEx(font, w.text.c_str(), {x, y}, font.baseSize, 1.0f, color);
             x += w.width + gap;

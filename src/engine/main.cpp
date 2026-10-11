@@ -48,7 +48,7 @@ namespace openAITD {
         InWorld,
         MainMenu,
         Inventory,
-        Book,
+        ReadBook,
         SelectGame,
         Cutscene
     };
@@ -381,9 +381,12 @@ namespace openAITD {
         }
         else if (state == AppState::InWorld) {
             if (world.bookData.readText != -1) {
-                world.brightnessTrg = 1;
+                // A book was opened from a life script: switch to the dedicated
+                // state so the scene behind it can be darkened like the inventory.
+                state = AppState::ReadBook;
+                world.brightnessTrg = world.inDark ? inDarkBrightness : 0.2f;
                 bookScreen.process(timeDelta);
-            }            
+            }
             else if (world.player.allowInventory && IsKeyPressed(KEY_ENTER)) {
                 inventoryScreen.reload();
                 state = AppState::Inventory;
@@ -430,7 +433,21 @@ namespace openAITD {
                 state = AppState::InWorld;
             }
         }
-        processBrightness(timeDelta);        
+        else if (state == AppState::ReadBook) {
+            // Darken the scene behind the book (like the inventory), but brighten
+            // it back while the book slides out on close.
+            bool closing = (bookScreen.anim == BookScreen::Anim::Closing);
+            if (!closing) {
+                world.brightnessTrg = world.inDark ? inDarkBrightness : 0.2f;
+            } else {
+                world.brightnessTrg = world.inDark ? inDarkBrightness : 1.0f;
+            }
+            bookScreen.process(timeDelta);
+            if (world.bookData.readText == -1) {
+                state = AppState::InWorld;
+            }
+        }
+        processBrightness(timeDelta);
         return true;
     }
 
@@ -441,14 +458,15 @@ namespace openAITD {
             mainMenu.render();
             resources.screen.end();
         }
-        else if (state != AppState::CharSelect && world.bookData.readText != -1) {
-            resources.screen.begin();
-            bookScreen.render();
-            resources.screen.end();
-        } 
         else if (state == AppState::CharSelect) {
             resources.screen.begin();
             charSelectScreen.render();
+            resources.screen.end();
+        }
+        else if (state == AppState::ReadBook) {
+            resources.screen.begin();
+            sceneRend.render();
+            bookScreen.render();
             resources.screen.end();
         }
         else if (state == AppState::StartIntro) {

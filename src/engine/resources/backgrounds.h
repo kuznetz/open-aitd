@@ -83,12 +83,16 @@ namespace openAITD {
 			return picture;
 		}
 
+		// Loads and resizes an image into a brand new texture. It intentionally does
+		// NOT touch the shared `picture` slot: callers (e.g. the character select
+		// screen) own the returned texture. Previously this overwrote `picture`,
+		// which let a later loadPicture() unload the caller's texture and reuse its
+		// GPU id for a different image (the book appearing as the background).
 		Texture2D loadImageResized(const string path) {
 			auto bgImg = raylib::LoadImage(path.c_str());
 			auto& fullBgImg = resizeImg(bgImg, config->screenW, config->screenH);
 			UnloadImage(bgImg);
-			picture = raylib::LoadTextureFromImage(fullBgImg);
-			return picture;
+			return raylib::LoadTextureFromImage(fullBgImg);
 		}
 
 		string getImgStagePath(string tail) {
