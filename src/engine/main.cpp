@@ -521,6 +521,12 @@ namespace openAITD {
 
         float timeDelta = 0;        
         while (!WindowShouldClose()) {
+
+            //Fullscreen fix
+            if (!IsWindowFocused()) {
+                MinimizeWindow(); 
+            }
+
             timeDelta = GetFrameTime();
             if (!process(timeDelta)) break;
             render();
