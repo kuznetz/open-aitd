@@ -128,6 +128,12 @@ namespace openAITD {
 		//Current reading book
 		BookData bookData;
 
+		//Music playlist state (managed by MusicController):
+		//targetMusicId - the track that should play; nextMusicId - the track
+		//queued after the current one. -1 means "no music".
+		int targetMusicId = -1;
+		int nextMusicId = -1;
+
 		//Showed image
 		Picture picture;
 

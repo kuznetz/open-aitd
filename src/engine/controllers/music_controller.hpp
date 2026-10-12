@@ -8,9 +8,9 @@ namespace openAITD {
   //
   // The Audio resource only knows how to load/play/stop a single stream and to
   // set its volume, so all playlist logic lives here:
-  //   targetMusicId  - the track that should be playing  (PlayMusic)
-  //   nextMusicId    - the track queued after the current (PlayNextMusic)
-  //   currentMusicId - what actually plays right now (Audio::currentMusicId)
+  //   world.targetMusicId - the track that should be playing  (PlayMusic)
+  //   world.nextMusicId   - the track queued after the current (PlayNextMusic)
+  //   currentMusicId      - what actually plays right now (Audio::currentMusicId)
   //
   // When the current track ends and nextMusicId is set, playback jumps to it
   // without any fade; otherwise the target track is repeated seamlessly.
@@ -25,11 +25,6 @@ namespace openAITD {
     World& world;
     Resources& resources;
 
-    // The track that should be playing; -1 means "no music".
-    int targetMusicId = -1;
-    // The track scheduled to start right after the current one; -1 = none.
-    int nextMusicId = -1;
-
     // Fade durations in seconds (0 disables the corresponding fade).
     float fadeOutTime = 1.0f;
     float fadeInTime = 0.5f;
@@ -40,25 +35,27 @@ namespace openAITD {
     // Sets the track that should be playing. The actual change happens in
     // process(): the current track is faded out first unless nothing plays.
     void PlayMusic(const int musicId) {
-      if (musicId == targetMusicId) return;
-      targetMusicId = musicId;
+      if (musicId == world.targetMusicId) return;
+      world.targetMusicId = musicId;
       failedMusicId = -1;
     }
 
     // Sets the track to start once the current one ends (no fade).
     void PlayNextMusic(const int musicId) {
-      nextMusicId = musicId;
+      world.nextMusicId = musicId;
     }
 
     // Stops the music immediately and drops the whole playlist state.
     void StopMusic() {
       resources.audio.StopMusic();
-      targetMusicId = -1;
-      nextMusicId = -1;
+      world.targetMusicId = -1;
+      world.nextMusicId = -1;
       failedMusicId = -1;
       fadeFactor = 1.0f;
       trackStarted = false;
       appliedVolume = -1.0f;
+      pausedMusicId = -1;
+      pausedMusicTime = 0.0f;
       phase = Phase::Idle;
     }
 
@@ -78,9 +75,16 @@ namespace openAITD {
     bool pausedForBook = false;
     // Track that failed to load: prevents retrying it on every frame.
     int failedMusicId = -1;
+    // Track and playback position (seconds) captured when the music was paused
+    // for a book, so it resumes from exactly that place (see process()).
+    int pausedMusicId = -1;
+    float pausedMusicTime = 0.0f;
+    // True once the music has been fully faded out for an open book.
+    bool bookFadeDone = false;
 
     // Starts the given track right away; false if it could not be loaded.
-    bool startTrack(const int musicId);
+    // startTime > 0 starts playback at that offset in seconds.
+    bool startTrack(const int musicId, const float startTime = 0.0f);
     // Restarts the current track from the beginning (manual looping).
     void repeatTrack();
     // True when the current stream has reached its end.
@@ -89,8 +93,8 @@ namespace openAITD {
     void applyVolume();
   };
 
-  inline bool MusicController::startTrack(const int musicId) {
-    resources.audio.PlayMusic(musicId);
+  inline bool MusicController::startTrack(const int musicId, const float startTime) {
+    resources.audio.PlayMusic(musicId, startTime);
     if (resources.audio.currentMusicId != musicId) {
       // Audio::PlayMusic swallows load errors: remember the id and give up.
       failedMusicId = musicId;
@@ -142,36 +146,72 @@ namespace openAITD {
   inline void MusicController::process(const float timeDelta) {
     Audio& audio = resources.audio;
 
-    // ---- A book being read silences the music (the target is kept) ----
+    // Guard against huge frame times (window drag, breakpoint, ...).
+    const float dt = (timeDelta > 0.25f) ? 0.25f : (timeDelta > 0.0f ? timeDelta : 0.0f);
+
+    // ---- A book being read fades the music out (the target is kept) ----
     if (world.bookData.readText != -1) {
       if (!pausedForBook) {
         pausedForBook = true;
-        audio.StopMusic();
-        phase = Phase::Idle;
-        fadeFactor = 1.0f;
-        trackStarted = false;
+        // Nothing is playing: there is nothing to fade out.
+        bookFadeDone = (audio.currentMusicId == -1);
+        if (bookFadeDone) {
+          pausedMusicId = -1;
+          pausedMusicTime = 0.0f;
+        }
+      }
+      if (!bookFadeDone) {
+        // Fade the volume down, then stop the track and remember the position:
+        // when the book is closed the music resumes from exactly there.
+        if (fadeOutTime > 0.0f) {
+          fadeFactor -= dt / fadeOutTime;
+        } else {
+          fadeFactor = 0.0f;
+        }
+        if (fadeFactor <= 0.0f) {
+          fadeFactor = 0.0f;
+          pausedMusicId = audio.currentMusicId;
+          pausedMusicTime = audio.GetMusicTime();
+          audio.StopMusic();
+          trackStarted = false;
+          appliedVolume = -1.0f;
+          phase = Phase::Idle;
+          bookFadeDone = true;
+        } else {
+          applyVolume();
+        }
       }
       return;
     }
     if (pausedForBook) {
-      // Reading is over: the state machine below restarts the pending target.
+      // Reading is over: the state machine below restarts the pending target,
+      // resuming it from the saved position.
       pausedForBook = false;
       trackStarted = false;
     }
 
-    // Guard against huge frame times (window drag, breakpoint, ...).
-    const float dt = (timeDelta > 0.25f) ? 0.25f : (timeDelta > 0.0f ? timeDelta : 0.0f);
-
     switch (phase) {
     case Phase::Idle: {
-      if (targetMusicId == -1 || targetMusicId == failedMusicId) break;
-      if (audio.currentMusicId == targetMusicId) {
-        // Something else (e.g. the audio book) already resumed this track.
+      if (world.targetMusicId == -1 || world.targetMusicId == failedMusicId) break;
+      if (audio.currentMusicId == world.targetMusicId) {
+        // The track is already playing (e.g. it was started elsewhere).
         trackStarted = true;
         audio.musicTrack.looping = false;
         appliedVolume = -1.0f; // its volume may not be the expected one yet
-      } else if (!startTrack(targetMusicId)) {
-        break; // failed to load, the target stays but is not retried
+        // The track already plays, so the saved pause position is obsolete.
+        pausedMusicId = -1;
+        pausedMusicTime = 0.0f;
+      } else {
+        // Resume the same track from where it was paused for a book (if any).
+        float startTime = 0.0f;
+        if (world.targetMusicId == pausedMusicId) {
+          startTime = pausedMusicTime;
+        }
+        pausedMusicId = -1;
+        pausedMusicTime = 0.0f;
+        if (!startTrack(world.targetMusicId, startTime)) {
+          break; // failed to load, the target stays but is not retried
+        }
       }
       if (fadeInTime > 0.0f) {
         fadeFactor = 0.0f;
@@ -184,17 +224,17 @@ namespace openAITD {
     }
     case Phase::Playing: {
       // The requested target changed: the playing track has to go.
-      if (targetMusicId != audio.currentMusicId) {
+      if (world.targetMusicId != audio.currentMusicId) {
         phase = Phase::FadeOut;
         break;
       }
       if (!isTrackFinished()) break;
 
-      const int next = nextMusicId;
-      nextMusicId = -1;
+      const int next = world.nextMusicId;
+      world.nextMusicId = -1;
       if (next != -1) {
         // Jump to the scheduled track without any fade.
-        targetMusicId = next;
+        world.targetMusicId = next;
         if (!startTrack(next)) break;
         fadeFactor = 1.0f;
         phase = Phase::Playing;
@@ -206,7 +246,7 @@ namespace openAITD {
     }
     case Phase::FadeOut: {
       // The target went back to what is already playing: fade in again.
-      if (targetMusicId != -1 && targetMusicId == audio.currentMusicId) {
+      if (world.targetMusicId != -1 && world.targetMusicId == audio.currentMusicId) {
         phase = Phase::FadeIn;
         break;
       }
@@ -221,11 +261,11 @@ namespace openAITD {
       fadeFactor = 0.0f;
       audio.StopMusic();
       trackStarted = false;
-      if (targetMusicId == -1 || targetMusicId == failedMusicId) {
+      if (world.targetMusicId == -1 || world.targetMusicId == failedMusicId) {
         phase = Phase::Idle;
         break;
       }
-      if (!startTrack(targetMusicId)) break;
+      if (!startTrack(world.targetMusicId)) break;
       if (fadeInTime > 0.0f) {
         phase = Phase::FadeIn;
       } else {
@@ -235,7 +275,7 @@ namespace openAITD {
       break;
     }
     case Phase::FadeIn: {
-      if (targetMusicId != audio.currentMusicId) {
+      if (world.targetMusicId != audio.currentMusicId) {
         phase = Phase::FadeOut;
         break;
       }

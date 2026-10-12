@@ -21,33 +21,35 @@ Features:
 + Book - spaces / animation / page number
 + Character Select (better)
 + Textured spheres
-- Light in maze (animate spot)
++ Fast open/serach key
++ Light in maze (animate spot)
 - Extended music support
-- More fancy save/load
 - Disablable weight limit
-- Extract resuources screen
+- More fancy save/load
+- Separate mark take object from script
+- Save current object anim frame
+- Fix start ghost pose
 - Fix falling boulder and spiders
 - Fix arrow shooting
 - Fix toad and car
 0.4: Recreate better
 - Multiple mods - move newdata override fixres as mod
-- Input bind and basic gamepad
-- Fast open/serach key
+- Character model separate in-hand item from main body
 - Parallel camera load, camera cache without preload
+- Bone id from name
 - Take script hack / upgrade take screen
+- Extract resuources screen
 - Full test
 - Project documentation
 1.0: Full original support
+- Input bind and basic gamepad
 - Interactive map
 - Shoot Autoaim
-- Extend modding support
 - Eight turn movement
 - Codirection camera on aim
 - Gamepad support
 - Hi poly models support
-- Character model separate in-hand item from main body
 - Top-down shadows
-- Thread loading backgrounds
 - Thread loading models
 - Map bone script index to bone name
 1.1:  Extra Featurtes 

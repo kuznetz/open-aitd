@@ -153,7 +153,7 @@ namespace openAITD {
 				return (int)this->world->gobjects[obj].physics.falling;
 				}, "FALLING");
 			lua->CreateFunction([this](int obj) -> int {
-				return this->musicContr->targetMusicId;
+				return this->world->targetMusicId;
 				}, "MUSIC");
 
 			lua->CreateFunction([this](int obj) -> int {

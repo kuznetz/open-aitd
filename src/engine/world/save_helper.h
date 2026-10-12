@@ -63,6 +63,8 @@ namespace openAITD {
             outJson["lightSpotObjId"] = world.lightSpotObjId;
             outJson["waterLevel"] = world.waterLevel;
             outJson["shaking"] = world.shake.active;
+            outJson["targetMusicId"] = world.targetMusicId;
+            outJson["nextMusicId"] = world.nextMusicId;
 
             outJson["vars"] = json::array();
             for (int i = 0; i < world.vars.size(); i++) {
@@ -209,6 +211,8 @@ namespace openAITD {
                 world.lightSpotObjId = inJson.value("lightSpotObjId", -1);
                 world.waterLevel = inJson.value("waterLevel", -1000.0f);
                 world.shake.active = inJson.value("shaking", false);
+                world.targetMusicId = inJson.value("targetMusicId", -1);
+                world.nextMusicId = inJson.value("nextMusicId", -1);
 
                 auto foll = world.followTarget;
                 world.setCurStage(foll->getStageId(), foll->getRoomId());

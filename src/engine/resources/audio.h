@@ -28,8 +28,6 @@ namespace openAITD {
       int currentAudioBookNum = -1;
       int currentAudioBookPage = -1;
       raylib::Music audioBookTrack;
-      // Music that was playing before an audio book started, to resume it on close.
-      int musicBeforeAudioBook = -1;
 
       // Repeating (cyclic) sound. Plays while REP_SOUND is called every frame.
       // If the command is not issued during a frame, it stops in Process().
@@ -46,16 +44,20 @@ namespace openAITD {
 
       void LoadMusic(const int musicId);
       void StopMusic();
-      void PlayMusic(const int musicId);
+      // Current playback position of the music stream, in seconds (0 if none).
+      float GetMusicTime() const;
+      // Plays the track. startTime > 0 starts playback at that offset (seconds),
+      // e.g. to resume a track from the position where it was paused.
+      void PlayMusic(const int musicId, const float startTime = 0.0f);
       void SetMusicVolume(float volume);
       void SetSoundVolume(float volume);
       void SetVoiceVolume(float volume);
 
       // Plays the audio book page: audiobooks/{audioBookNum}.{pageNum}.ogg.
-      // While an audio book is playing the background music is paused; it is
-      // resumed by StopAudioBook(). A missing audio book file is not an error.
+      // The background music is left to MusicController, which fades it out
+      // while a book is open. A missing audio book file is not an error.
       void PlayAudioBook(const int audioBookNum, const int pageNum);
-      // Stops the audio book and resumes the music that was playing before it.
+      // Stops the audio book voice-over (the music is handled by MusicController).
       void StopAudioBook();
 
       void Process();
@@ -203,7 +205,12 @@ namespace openAITD {
       SetMusicVolume(musicVolume);
   }
 
-  inline void Audio::PlayMusic(const int musicId) {      
+  inline float Audio::GetMusicTime() const {
+      if (currentMusicId == -1) return 0.0f;
+      return raylib::GetMusicTimePlayed(musicTrack);
+  }
+
+  inline void Audio::PlayMusic(const int musicId, const float startTime) {
       if (currentMusicId != -1 && currentMusicId != musicId) {
           StopMusic();
       }
@@ -212,6 +219,10 @@ namespace openAITD {
       try {
         LoadMusic(musicId);
         raylib::PlayMusicStream(musicTrack);
+        // Optional start offset: resume from the position where it was paused.
+        if (startTime > 0.0f) {
+          raylib::SeekMusicStream(musicTrack, startTime);
+        }
         currentMusicId = musicId;
       } catch (exception e) {
         //Failed to load music
@@ -274,12 +285,8 @@ namespace openAITD {
       // default (LoadMusicStream sets `looping = true`), so turn it off here.
       track.looping = false;
 
-      // A valid audio book takes over: pause the background music and remember it.
-      if (currentMusicId != -1) {
-          musicBeforeAudioBook = currentMusicId;
-          StopMusic();
-      }
-
+      // The background music is not touched here: while a book is open,
+      // MusicController fades it out and resumes it once the book is closed.
       UnloadAudioBook();
       audioBookTrack = track;
       raylib::SetMusicVolume(audioBookTrack, voiceVolume);
@@ -289,14 +296,9 @@ namespace openAITD {
   }
 
   inline void Audio::StopAudioBook() {
+      // Just drop the voice-over; the background music is resumed (from the
+      // position where it was interrupted) by MusicController on book close.
       UnloadAudioBook();
-
-      // Resume the music that was playing before the audio book started.
-      if (musicBeforeAudioBook != -1) {
-          int musicId = musicBeforeAudioBook;
-          musicBeforeAudioBook = -1;
-          PlayMusic(musicId);
-      }
   }
 
   inline void Audio::Process() {
