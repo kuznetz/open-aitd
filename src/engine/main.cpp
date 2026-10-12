@@ -177,7 +177,25 @@ namespace openAITD {
             } else {
                 world.brightnessCur += (diff > 0.0f ? step : -step);
             }
-        }        
+        }
+
+        if (world.lightSpotBrightTrg > 0.0f) {
+            float t = (float)GetTime();
+            float flicker = 1.0f
+                + 0.10f * sinf(t * 5.0f)
+                + 0.05f * sinf(t * 11.3f); // диапазон примерно 0.85 .. 1.15
+            float target = world.lightSpotBrightTrg * flicker;
+
+            float diff = target - world.lightSpotBrightCur;
+            float step = timeDelta * 8;
+            if (fabs(diff) <= step) {
+                world.lightSpotBrightCur = target;
+            } else {
+                world.lightSpotBrightCur += (diff > 0.0f ? step : -step);
+            }
+        } else {
+            world.lightSpotBrightCur = 0.0f;
+        }
     }
 
     void renderMessage() {

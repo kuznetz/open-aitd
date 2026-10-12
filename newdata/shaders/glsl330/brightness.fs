@@ -2,8 +2,10 @@
 
 uniform sampler2D sceneTexture;
 uniform sampler2D maskTexture;
-uniform vec3 brightness;
-uniform int mode; // brightness: 0 = from vec3, 1 = from texture
+uniform vec3  brightness;      // Global brightness (mode 0)
+uniform float bgBrightness;    // Mask background brightness (mode 1) = world.brightnessCur
+uniform float spotBrightness;  // Spot brightness (mode 1)      = world.lightSpotBrightCur
+uniform int   mode;            // brightness: 0 = from vec3, 1 = from texture
 
 in vec2 fragTexCoord;
 out vec4 finalColor;
@@ -14,8 +16,9 @@ void main()
     if (mode == 0) {
         finalColor = vec4(texColor.rgb * brightness, 1.0); //texColor.a
     } else {
-        vec4 maskValue = texture(maskTexture, fragTexCoord);
-        //finalColor = maskValue;
-        finalColor = vec4(texColor.rgb * maskValue.r, 1.0); //texColor.a
+        // The mask stores only the spot geometry: 0.0 outside the spot, 1.0 at the center
+        float g = texture(maskTexture, fragTexCoord).r;
+        float b = mix(bgBrightness, spotBrightness, g);
+        finalColor = vec4(texColor.rgb * b, 1.0); //texColor.a
     }
 }

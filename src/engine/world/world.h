@@ -143,6 +143,9 @@ namespace openAITD {
 		float waterLevel = -1000;
     
 		int lightSpotObjId = -1;
+		float lightSpotBrightCur = 1;
+    float lightSpotBrightTrg = 1;
+
 		float brightnessCur = 1;
     float brightnessTrg = 1;
 

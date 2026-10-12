@@ -22,6 +22,8 @@ public:
     int modeUniformLoc = 0;
     int sceneTextureLoc = 0;
     int maskTextureLoc = 0;
+    int bgBrightnessLoc = 0;
+    int spotBrightnessLoc = 0;
     
     Vector3 brightnessFactor = { 1.0f, 1.0f, 1.0f };
     bool useMask = false; //External controlled
@@ -37,6 +39,8 @@ public:
         modeUniformLoc = GetShaderLocation(brightnessShader, "mode");
         sceneTextureLoc = GetShaderLocation(brightnessShader, "sceneTexture");
         maskTextureLoc = GetShaderLocation(brightnessShader, "maskTexture");
+        bgBrightnessLoc = GetShaderLocation(brightnessShader, "bgBrightness");
+        spotBrightnessLoc = GetShaderLocation(brightnessShader, "spotBrightness");
         
         int mode = 0;
         SetShaderValue(brightnessShader, modeUniformLoc, &mode, SHADER_UNIFORM_INT);
@@ -82,21 +86,14 @@ public:
 
     void renderMask() {
         if (!softCircleTex.id) {
-            softCircleTex = GenerateSoftCircleTexture(128, 2.0f);            
+            softCircleTex = GenerateSoftCircleTexture(128, 0.8f);            
         }
 
         auto& c = resources.config;
-        float bright = world.brightnessCur;
-        
-        Color bgColor = {
-            (unsigned char)(bright * 255.0f),
-            (unsigned char)(bright * 255.0f),
-            (unsigned char)(bright * 255.0f),
-            255
-        };
 
+        // Маска хранит только геометрию пятна (яркости передаются во фрагментный шейдер)
         BeginTextureMode(resources.screen.maskTex);
-        ClearBackground(bgColor);
+        ClearBackground(BLACK);
 
         auto& obj = world.gobjects[world.lightSpotObjId];
         if (obj.getStageId() == world.curStageId) {
@@ -145,7 +142,11 @@ public:
 
         if (useMask) {
             int mode = 1;
+            float bgBrightness = world.brightnessCur;
+            float spotBrightness = world.lightSpotBrightCur;
             SetShaderValue(brightnessShader, modeUniformLoc, &mode, SHADER_UNIFORM_INT);
+            SetShaderValue(brightnessShader, bgBrightnessLoc, &bgBrightness, SHADER_UNIFORM_FLOAT);
+            SetShaderValue(brightnessShader, spotBrightnessLoc, &spotBrightness, SHADER_UNIFORM_FLOAT);
             SetShaderValueTexture(brightnessShader, maskTextureLoc, resources.screen.maskTex.texture);
             SetShaderValueTexture(brightnessShader, sceneTextureLoc, resources.screen.sceneTex.texture);
         } else {
