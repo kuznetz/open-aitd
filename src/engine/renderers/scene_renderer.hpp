@@ -16,17 +16,23 @@ private:
     Texture2D softCircleTex = { 0 };
     Shader brightnessShader = { 0 };
 
+    // Spot parameters (filled in render(), used as uniforms)
+    Vector2 spotCenter = { 0.0f, 0.0f }; // spot center in UV space [0..1]
+    Vector2 spotSizeUV = { 1.0f, 1.0f }; // spot quad size / screen size (per-axis, accounts for aspect ratio)
+
 public:
-    // Локации uniform
+    // Uniform locations
     int shUniformLoc = 0;
     int modeUniformLoc = 0;
     int sceneTextureLoc = 0;
     int maskTextureLoc = 0;
     int bgBrightnessLoc = 0;
     int spotBrightnessLoc = 0;
+    int spotCenterLoc = 0;
+    int spotSizeUVLoc = 0;
     
     Vector3 brightnessFactor = { 1.0f, 1.0f, 1.0f };
-    bool useMask = false; //External controlled
+    bool useMask = false; //Externally controlled
 
     SceneRenderer(World& world) : world(world), resources(*world.resources) {}
 
@@ -41,6 +47,8 @@ public:
         maskTextureLoc = GetShaderLocation(brightnessShader, "maskTexture");
         bgBrightnessLoc = GetShaderLocation(brightnessShader, "bgBrightness");
         spotBrightnessLoc = GetShaderLocation(brightnessShader, "spotBrightness");
+        spotCenterLoc = GetShaderLocation(brightnessShader, "spotCenter");
+        spotSizeUVLoc = GetShaderLocation(brightnessShader, "spotSizeUV");
         
         int mode = 0;
         SetShaderValue(brightnessShader, modeUniformLoc, &mode, SHADER_UNIFORM_INT);
@@ -81,62 +89,62 @@ public:
         // Load texture from image and unload the image
         Texture2D tex = LoadTextureFromImage(img);
         UnloadImage(img);
+        // Border texels are 0, so clamping gives a black mask outside the spot
+        // (default REPEAT would wrap out-of-range UVs back into the circle)
+        SetTextureWrap(tex, TEXTURE_WRAP_CLAMP);
         return tex;
     }
 
-    void renderMask() {
-        if (!softCircleTex.id) {
-            softCircleTex = GenerateSoftCircleTexture(128, 0.8f);            
-        }
+    // Computes the spot center and size in UV space. Returns true if the spot is active.
+    bool computeSpotParams() {
+        useMask = false;
+        spotCenter = { 0.0f, 0.0f };
+        spotSizeUV = { 1.0f, 1.0f };
 
-        auto& c = resources.config;
-
-        // Маска хранит только геометрию пятна (яркости передаются во фрагментный шейдер)
-        BeginTextureMode(resources.screen.maskTex);
-        ClearBackground(BLACK);
+        if (world.lightSpotObjId == -1) return false;
 
         auto& obj = world.gobjects[world.lightSpotObjId];
-        if (obj.getStageId() == world.curStageId) {
-            auto& b = obj.getBounds();
-            Vector3 pos = obj.getAbsPosition();
-            pos.y += (b.max.y - b.min.y) / 2.f;
-            
-            // Screen coordinates for the center of the circle
-            Vector3 screenPos = world.WorldToScreenZ(pos);
-            
-            // Distance from the camera to the light source (Euclidean)
-            Vector3 camPos = world.curCamera->position; // or from the matrix
-            float dist = Vector3Distance(camPos, pos);
-            if (dist < 0.001f) dist = 0.001f; // protection against division by zero
-            
-            // Radius parameters (adjustable)
-            const float baseRadius = 150.0f;
-            const float referenceDist = 10.0f;
-            float radius = baseRadius * (referenceDist / dist);
-            radius = Clamp(radius, 10.0f, 800.0f);
-            
-            float size = radius * 3.0f;
-            raylib::Rectangle srcRect = { 0, 0, (float)softCircleTex.width, (float)softCircleTex.height };
-            raylib::Rectangle dstRect = { screenPos.x - size/2, screenPos.y - size/2, size, size };
-            Vector2 origin = { 0, 0 };
-            DrawTexturePro(softCircleTex, srcRect, dstRect, origin, 0.0f, WHITE);
-        }
+        if (obj.getStageId() != world.curStageId) return false;
 
-        EndTextureMode(); 
+        auto& c = resources.config;
+        auto& b = obj.getBounds();
+        Vector3 pos = obj.getAbsPosition();
+        pos.y += (b.max.y - b.min.y) / 2.f;
+
+        // Screen coordinates for the center of the circle
+        Vector3 screenPos = world.WorldToScreenZ(pos);
+
+        // Distance from the camera to the light source (Euclidean)
+        Vector3 camPos = world.curCamera->position; // or from the matrix
+        float dist = Vector3Distance(camPos, pos);
+        if (dist < 0.001f) dist = 0.001f; // protection against division by zero
+
+        // Radius parameters (adjustable)
+        const float baseRadius = 150.0f;
+        const float referenceDist = 10.0f;
+        float radius = baseRadius * (referenceDist / dist);
+        radius = Clamp(radius, 10.0f, 800.0f);
+
+        // The spot texture quad has size radius * 3.0 (as in the previous DrawTexturePro)
+        float size = radius * 3.0f;
+
+        spotCenter = { screenPos.x / (float)c.screenW, screenPos.y / (float)c.screenH };
+        spotSizeUV = { size / (float)c.screenW, size / (float)c.screenH };
+        useMask = true;
+        return true;
     }
-    
 
     void render() {
         auto& c = resources.config;
         float offX = world.shake.offsetX;
         float offY = world.shake.offsetY;
 
-        if (world.lightSpotObjId != -1) {
-            useMask = true;
-            renderMask();
-        } else {
-            useMask = false;
+        // The soft circle texture is created once and sampled directly from the shader
+        if (!softCircleTex.id) {
+            softCircleTex = GenerateSoftCircleTexture(128, 0.8f);
         }
+
+        computeSpotParams();
 
         BeginShaderMode(brightnessShader);
 
@@ -147,7 +155,9 @@ public:
             SetShaderValue(brightnessShader, modeUniformLoc, &mode, SHADER_UNIFORM_INT);
             SetShaderValue(brightnessShader, bgBrightnessLoc, &bgBrightness, SHADER_UNIFORM_FLOAT);
             SetShaderValue(brightnessShader, spotBrightnessLoc, &spotBrightness, SHADER_UNIFORM_FLOAT);
-            SetShaderValueTexture(brightnessShader, maskTextureLoc, resources.screen.maskTex.texture);
+            SetShaderValue(brightnessShader, spotCenterLoc, &spotCenter, SHADER_UNIFORM_VEC2);
+            SetShaderValue(brightnessShader, spotSizeUVLoc, &spotSizeUV, SHADER_UNIFORM_VEC2);
+            SetShaderValueTexture(brightnessShader, maskTextureLoc, softCircleTex);
             SetShaderValueTexture(brightnessShader, sceneTextureLoc, resources.screen.sceneTex.texture);
         } else {
             int mode = 0;
