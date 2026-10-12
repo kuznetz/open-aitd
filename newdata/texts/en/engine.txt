@@ -30,9 +30,16 @@ resolution=Resolution:
 scale=3D Scale:
 showFps=Show fps:
 language=Language:
+soundVolume=Sound volume:
+musicVolume=Music volume:
+voiceVolume=Voice volume:
 yes=yes
 no=no
 restartHint=Resolution applied after restart
+volumeOff=off
+volumeQuiet=quiet
+volumeNormal=normal
+volumeLoud=loud
 
 [main]
 loading=Loading...

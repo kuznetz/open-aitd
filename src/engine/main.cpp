@@ -539,6 +539,11 @@ namespace openAITD {
     {
         resources.config = loadConfig();
 
+        // Apply the persisted volume settings to the audio subsystem.
+        resources.audio.SetSoundVolume(resources.config.soundVolume);
+        resources.audio.SetMusicVolume(resources.config.musicVolume);
+        resources.audio.SetVoiceVolume(resources.config.voiceVolume);
+
         resources.screen.init();
         sceneRend.init();
         SetExitKey(KEY_F10);

@@ -4,6 +4,7 @@
 #include <sstream>
 #include <iomanip>
 #include <cstdio>
+#include <cmath>
 #include "../../common/raylib_cpp.hpp"
 #include "../world/world.h"
 #include "../resources/resources.h"
@@ -29,6 +30,10 @@ public:
     VerticalMenuWidget verticalMenu;
 
     int resolutionIdx = -1;
+    // Indexes of the selected volume level (see volumeOptions()).
+    int soundVolumeIdx = 2; // normal
+    int musicVolumeIdx = 2;
+    int voiceVolumeIdx = 2;
     vector<string> languages;
     int languageIdx = -1;
     bool firstFrame = true;
@@ -72,13 +77,18 @@ public:
             }
         }
 
+        soundVolumeIdx = volumeIndexFromValue(newConfig.soundVolume);
+        musicVolumeIdx = volumeIndexFromValue(newConfig.musicVolume);
+        voiceVolumeIdx = volumeIndexFromValue(newConfig.voiceVolume);
+
         verticalMenu.bounds = { 0, 0, (float)config.screenW, (float)config.screenH };
+        applyVolumes();
         reloadMenu();
     }
 
-    // Пересобирает список пунктов меню. Порядок добавления задаёт порядок
-    // отображения; id пункта хранит сам виджет, поэтому submit не зависит
-    // от позиции элемента.
+    // Rebuilds the menu item list. The order of insertion determines the display
+    // order; the item id is stored by the widget itself, so submit does not depend
+    // on the item's position.
     void reloadMenu() {
         vector<VerticalMenuWidget::Item> items;
         items.push_back({ OptLanguage,   _T("options.language") + " " + newConfig.language });
@@ -91,12 +101,18 @@ public:
 
         items.push_back({ OptScale,   _T("options.scale") + " " + scaleLabel() });
         items.push_back({ OptShowFps, _T("options.showFps") + " " + yesNo(newConfig.showFps) });
+        items.push_back({ OptSoundVolume, _T("options.soundVolume") + " " + volumeLabel(soundVolumeIdx) });
+        items.push_back({ OptMusicVolume, _T("options.musicVolume") + " " + volumeLabel(musicVolumeIdx) });
+        items.push_back({ OptVoiceVolume, _T("options.voiceVolume") + " " + volumeLabel(voiceVolumeIdx) });
 
         verticalMenu.setItemsExt(items);
         verticalMenu.active = true;
     }
 
     void changeConfig() {
+        config.soundVolume = newConfig.soundVolume;
+        config.musicVolume = newConfig.musicVolume;
+        config.voiceVolume = newConfig.voiceVolume;
         saveConfig(newConfig);
         reloadMenu();
     }
@@ -129,6 +145,24 @@ public:
                     applyLanguage();
                     changeConfig();
                 }
+                break;
+            case OptSoundVolume:
+                soundVolumeIdx = nextVolumeIndex(soundVolumeIdx);
+                newConfig.soundVolume = volumeOptions()[soundVolumeIdx].value;
+                applyVolumes();
+                changeConfig();
+                break;
+            case OptMusicVolume:
+                musicVolumeIdx = nextVolumeIndex(musicVolumeIdx);
+                newConfig.musicVolume = volumeOptions()[musicVolumeIdx].value;
+                applyVolumes();
+                changeConfig();
+                break;
+            case OptVoiceVolume:
+                voiceVolumeIdx = nextVolumeIndex(voiceVolumeIdx);
+                newConfig.voiceVolume = volumeOptions()[voiceVolumeIdx].value;
+                applyVolumes();
+                changeConfig();
                 break;
             default:
                 break;
@@ -169,14 +203,17 @@ public:
     }
 
 private:
-    // Идентификаторы пунктов меню. Значения не обязаны совпадать с порядком
-    // вывода: порядок задаётся в reloadMenu.
+    // Menu item identifiers. Values do not have to match display order:
+    // the order is set in reloadMenu.
     enum OptionId {
         OptFullscreen = 1,
         OptResolution,
         OptShowFps,
         OptScale,
         OptLanguage,
+        OptSoundVolume,
+        OptMusicVolume,
+        OptVoiceVolume,
     };
 
     string _T(const string& key) {
@@ -187,15 +224,69 @@ private:
         return value ? _T("options.yes") : _T("options.no");
     }
 
-    // Значение масштаба с двумя знаками после точки без ostringstream.
+    // Scale value with two decimal places, without ostringstream.
     string scaleLabel() const {
         char buffer[16];
         snprintf(buffer, sizeof(buffer), "%.2f", newConfig.antialiasing);
         return buffer;
     }
 
-    // Применяет выбранный язык в рантайме: обновляет config.language и
-    // перезагружает строки/шрифт (Texts::reload()).
+    // Volume level available in settings: label + value.
+    struct VolumeLevel {
+        float value;
+        const char* textKey;
+    };
+
+    // Discrete volume levels: off(0.0), quiet(0.3), normal(0.6), loud(1.0).
+    // This is an entity of the options screen only; the config stores only the float value.
+    static const vector<VolumeLevel>& volumeOptions() {
+        static const vector<VolumeLevel> options = {
+            { 0.0f, "options.volumeOff" },
+            { 0.3f, "options.volumeQuiet" },
+            { 0.6f, "options.volumeNormal" },
+            { 1.0f, "options.volumeLoud" },
+        };
+        return options;
+    }
+
+    // Volume level label (off/quiet/normal/loud).
+    string volumeLabel(int idx) {
+        const auto& options = volumeOptions();
+        if (idx < 0 || idx >= (int)options.size()) idx = 0;
+        return _T(options[idx].textKey);
+    }
+
+    // Index of the closest level for a saved volume value.
+    static int volumeIndexFromValue(float value) {
+        const auto& options = volumeOptions();
+        int best = 0;
+        float bestDiff = fabsf(options[0].value - value);
+        for (int i = 1; i < (int)options.size(); i++) {
+            float diff = fabsf(options[i].value - value);
+            if (diff < bestDiff) {
+                bestDiff = diff;
+                best = i;
+            }
+        }
+        return best;
+    }
+
+    // Next volume level, wrapping around.
+    static int nextVolumeIndex(int idx) {
+        const int count = (int)volumeOptions().size();
+        if (idx < 0 || idx >= count) idx = 0;
+        return (idx + 1) % count;
+    }
+
+    // Applies volume settings from config to the audio subsystem.
+    void applyVolumes() {
+        resources.audio.SetSoundVolume(newConfig.soundVolume);
+        resources.audio.SetMusicVolume(newConfig.musicVolume);
+        resources.audio.SetVoiceVolume(newConfig.voiceVolume);
+    }
+
+    // Applies the selected language at runtime: updates config.language and
+    // reloads strings/font (Texts::reload()).
     void applyLanguage() {
         config.language = newConfig.language;
         resources.texts.load();

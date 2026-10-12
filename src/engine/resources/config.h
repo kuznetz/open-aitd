@@ -16,6 +16,13 @@ namespace openAITD {
 
 	std::string configPath("saves/config.json");
 
+	// Gain value in [0.0, 1.0] for the Sound/Music/Voice settings.
+	inline float clampVolume(float value) {
+		if (value < 0.0f) return 0.0f;
+		if (value > 1.0f) return 1.0f;
+		return value;
+	}
+
 	struct Config
 	{
 		std::string language;
@@ -28,6 +35,10 @@ namespace openAITD {
 		int screenH = 480;
 		int targetFps = 60;
 		float antialiasing = 2.0f;
+		// Volume gain values in [0.0, 1.0] for sound effects/music/voice.
+		float soundVolume = 0.6f;
+		float musicVolume = 0.6f;
+		float voiceVolume = 0.6f;
 	};
 
 	Config loadConfig() {
@@ -57,6 +68,19 @@ namespace openAITD {
 			}
 		}
 
+		if (confJson.contains("soundVolume")) {
+			cfg.soundVolume = confJson["soundVolume"];
+		}
+		if (confJson.contains("musicVolume")) {
+			cfg.musicVolume = confJson["musicVolume"];
+		}
+		if (confJson.contains("voiceVolume")) {
+			cfg.voiceVolume = confJson["voiceVolume"];
+		}
+		cfg.soundVolume = clampVolume(cfg.soundVolume);
+		cfg.musicVolume = clampVolume(cfg.musicVolume);
+		cfg.voiceVolume = clampVolume(cfg.voiceVolume);
+
 		cfg.showFps = confJson["showFps"] || false;
 		cfg.targetFps = 144;
 		return cfg;
@@ -72,6 +96,9 @@ namespace openAITD {
 		outJson["screenW"] = cfg.screenW;
 		outJson["screenH"] = cfg.screenH;
 		outJson["showFps"] = cfg.showFps;
+		outJson["soundVolume"] = cfg.soundVolume;
+		outJson["musicVolume"] = cfg.musicVolume;
+		outJson["voiceVolume"] = cfg.voiceVolume;
 
 		std::ofstream o(configPath);
 		o << std::setw(2) << outJson << std::endl;

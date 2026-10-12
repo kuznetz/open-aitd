@@ -17,6 +17,10 @@ namespace openAITD {
 
       int currentMusicId = -1;
       float musicVolume = 1.0f;
+      // Gain applied to one-shot/cyclic sound effects (Sound volume option).
+      float soundVolume = 1.0f;
+      // Gain applied to audio book voice-over (Voice volume option).
+      float voiceVolume = 1.0f;
 
       raylib::Music musicTrack;
 
@@ -44,6 +48,8 @@ namespace openAITD {
       void StopMusic();
       void PlayMusic(const int musicId);
       void SetMusicVolume(float volume);
+      void SetSoundVolume(float volume);
+      void SetVoiceVolume(float volume);
 
       // Plays the audio book page: audiobooks/{audioBookNum}.{pageNum}.ogg.
       // While an audio book is playing the background music is paused; it is
@@ -116,6 +122,10 @@ namespace openAITD {
     // Sound is cached and reused, so pitch must always be set
     // (including 1.0), otherwise the previous randomization would "stick".
     raylib::SetSoundPitch(snd, pitch);
+
+    // The Sound volume option also applies to cached sounds, so set it
+    // on every play (the cached Sound keeps the last volume otherwise).
+    raylib::SetSoundVolume(snd, soundVolume);
 
     raylib::PlaySound(snd);
   }
@@ -213,6 +223,18 @@ namespace openAITD {
       if (currentMusicId != -1) {
           raylib::SetMusicVolume(musicTrack, volume);
       }
+  }
+
+  inline void Audio::SetSoundVolume(float volume) {
+      soundVolume = volume;
+      // Update sounds already loaded into the cache.
+      for (auto& entry : sounds) {
+          raylib::SetSoundVolume(entry.second, volume);
+      }
+  }
+
+  inline void Audio::SetVoiceVolume(float volume) {
+      voiceVolume = volume;
       if (currentAudioBookNum != -1) {
           raylib::SetMusicVolume(audioBookTrack, volume);
       }
@@ -260,7 +282,7 @@ namespace openAITD {
 
       UnloadAudioBook();
       audioBookTrack = track;
-      raylib::SetMusicVolume(audioBookTrack, musicVolume);
+      raylib::SetMusicVolume(audioBookTrack, voiceVolume);
       raylib::PlayMusicStream(audioBookTrack);
       currentAudioBookNum = audioBookNum;
       currentAudioBookPage = pageNum;

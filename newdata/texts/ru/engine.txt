@@ -30,9 +30,16 @@ resolution=Разрешение:
 scale=Масштаб 3D:
 showFps=Показывать fps:
 language=Язык:
+soundVolume=Громкость звуков:
+musicVolume=Громкость музыки:
+voiceVolume=Громкость озвучки:
 yes=да
 no=нет
 restartHint=Разрешение применится после перезапуска
+volumeOff=выкл
+volumeQuiet=тихо
+volumeNormal=нормально
+volumeLoud=громко
 
 [main]
 loading=Загрузка...

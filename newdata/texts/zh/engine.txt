@@ -30,9 +30,16 @@ resolution=分辨率:
 scale=3D 缩放:
 showFps=显示 fps:
 language=语言:
+soundVolume=音效音量:
+musicVolume=音乐音量:
+voiceVolume=语音音量:
 yes=是
 no=否
 restartHint=分辨率将在重启后生效
+volumeOff=关
+volumeQuiet=低
+volumeNormal=正常
+volumeLoud=高
 
 [main]
 loading=载入中...
