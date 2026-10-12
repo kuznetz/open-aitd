@@ -58,50 +58,31 @@ namespace openAITD {
 
             mainMenu.bounds = { 0, 0, (float)resources.config.screenW, (float)resources.config.screenH };
 
-            vector<string> mainItems;
+            vector<VerticalMenuWidget::Item> mainItems;
             if (!world.gameOver) {
-                mainItems.push_back(_T("menu.resume"));
+                mainItems.push_back({ MenuResume, _T("menu.resume") });
             }
-            mainItems.push_back(_T("menu.newGame"));
+            mainItems.push_back({ MenuNewGame, _T("menu.newGame") });
             //Saving is not allowed while the player is dead
             if (!world.gameOver && !world.player.dead) {
-                mainItems.push_back(_T("menu.saveGame"));
+                mainItems.push_back({ MenuSaveGame, _T("menu.saveGame") });
             }
-            mainItems.push_back(_T("menu.loadGame"));
-            mainItems.push_back(_T("menu.options"));
-            mainItems.push_back(_T("menu.quit"));
-            mainMenu.setItems(mainItems);
+            mainItems.push_back({ MenuLoadGame, _T("menu.loadGame") });
+            mainItems.push_back({ MenuOptions, _T("menu.options") });
+            mainItems.push_back({ MenuQuit, _T("menu.quit") });
+            mainMenu.setItemsExt(mainItems);
             mainMenu.setSelectedIndex(0);
         }
 
         void submitMain() {
-            int idx = mainMenu.getSelectedIndex();
-            //The "Save" item is hidden while the player is dead, so indices shift.
-            bool canSave = !world.gameOver && !world.player.dead;
-            if (canSave) {
-                switch (idx) {
-                    case 0: result = MenuScreenResult::resume; break;
-                    case 1: result = MenuScreenResult::newGame; break;
-                    case 2: state = MenuScreenState::save; savesScreen.reload(SavesScreen::Mode::Save); break;
-                    case 3: state = MenuScreenState::load; savesScreen.reload(SavesScreen::Mode::Load); break;
-                    case 4: state = MenuScreenState::options; options.reload(); break;
-                    case 5: result = MenuScreenResult::exit; break;
-                }
-            } else if (!world.gameOver) {
-                switch (idx) {
-                    case 0: result = MenuScreenResult::resume; break;
-                    case 1: result = MenuScreenResult::newGame; break;
-                    case 2: state = MenuScreenState::load; savesScreen.reload(SavesScreen::Mode::Load); break;
-                    case 3: state = MenuScreenState::options; options.reload(); break;
-                    case 4: result = MenuScreenResult::exit; break;
-                }
-            } else {
-                switch (idx) {
-                    case 0: result = MenuScreenResult::newGame; break;
-                    case 1: state = MenuScreenState::load; savesScreen.reload(SavesScreen::Mode::Load); break;
-                    case 2: state = MenuScreenState::options; options.reload(); break;
-                    case 3: result = MenuScreenResult::exit; break;
-                }
+            switch (static_cast<MainItemId>(mainMenu.getSelectedId())) {
+                case MenuResume:   result = MenuScreenResult::resume; break;
+                case MenuNewGame:  result = MenuScreenResult::newGame; break;
+                case MenuSaveGame: state = MenuScreenState::save; savesScreen.reload(SavesScreen::Mode::Save); break;
+                case MenuLoadGame: state = MenuScreenState::load; savesScreen.reload(SavesScreen::Mode::Load); break;
+                case MenuOptions:  state = MenuScreenState::options; options.reload(); break;
+                case MenuQuit:     result = MenuScreenResult::exit; break;
+                default: break;
             }
         }
 
@@ -177,6 +158,16 @@ namespace openAITD {
         int saveSlot = -1;
 
     private:
+
+        enum MainItemId {
+            MenuResume = 1,
+            MenuNewGame,
+            MenuSaveGame,
+            MenuLoadGame,
+            MenuOptions,
+            MenuQuit,
+        };
+
         string _T(const string& key) {
             return this->resources.texts.getEngineText(key);
         }

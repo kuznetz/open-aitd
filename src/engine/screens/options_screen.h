@@ -3,6 +3,7 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
+#include <cstdio>
 #include "../../common/raylib_cpp.hpp"
 #include "../world/world.h"
 #include "../resources/resources.h"
@@ -75,36 +76,23 @@ public:
         reloadMenu();
     }
 
+    // Пересобирает список пунктов меню. Порядок добавления задаёт порядок
+    // отображения; id пункта хранит сам виджет, поэтому submit не зависит
+    // от позиции элемента.
     void reloadMenu() {
-        vector<pair<int, string>> menuItems;
-        std::ostringstream sstream;
-
-        string fullscreen = _T("options.fullscreen") + " " + (newConfig.fulllscreen ? _T("options.yes") : _T("options.no"));
-        menuItems.push_back({1, fullscreen});
+        vector<VerticalMenuWidget::Item> items;
+        items.push_back({ OptLanguage,   _T("options.language") + " " + newConfig.language });
+        items.push_back({ OptFullscreen, _T("options.fullscreen") + " " + yesNo(newConfig.fulllscreen) });
 
         if (!newConfig.fulllscreen) {
-            string resol = _T("options.resolution") + " " + to_string(newConfig.screenW) + "x" + to_string(newConfig.screenH);
-            menuItems.push_back({2, resol});
+            items.push_back({ OptResolution,
+                _T("options.resolution") + " " + to_string(newConfig.screenW) + "x" + to_string(newConfig.screenH) });
         }
 
-        sstream.str("");
-        sstream << std::fixed << std::setprecision(2) << newConfig.antialiasing;
-        string antialiasing = _T("options.scale") + " " + sstream.str();
-        menuItems.push_back({4, antialiasing});
+        items.push_back({ OptScale,   _T("options.scale") + " " + scaleLabel() });
+        items.push_back({ OptShowFps, _T("options.showFps") + " " + yesNo(newConfig.showFps) });
 
-        string showFps = _T("options.showFps") + " " + (newConfig.showFps ? _T("options.yes") : _T("options.no"));
-        menuItems.push_back({3, showFps});
-
-        string language = _T("options.language") + " " + newConfig.language;
-        menuItems.push_back({5, language});
-
-        this->menuItems = menuItems;
-
-        vector<string> labels;
-        for (const auto& p : menuItems) {
-            labels.push_back(p.second);
-        }
-        verticalMenu.setItems(labels);
+        verticalMenu.setItemsExt(items);
         verticalMenu.active = true;
     }
 
@@ -114,38 +102,35 @@ public:
     }
 
     void submit() {
-        if (menuItems.empty()) return;
-        int idx = verticalMenu.getSelectedIndex();
-        if (idx < 0 || idx >= (int)menuItems.size()) return;
-
-        int id = menuItems[idx].first;
-        switch (id) {
-            case 1: // Fullscreen
+        switch (static_cast<OptionId>(verticalMenu.getSelectedId())) {
+            case OptFullscreen:
                 newConfig.fulllscreen = !newConfig.fulllscreen;
                 changeConfig();
                 break;
-            case 2: // Resolution
+            case OptResolution:
                 resolutionIdx = (resolutionIdx + 1) % resolutions.size();
                 newConfig.screenW = resolutions[resolutionIdx].w;
                 newConfig.screenH = resolutions[resolutionIdx].h;
                 changeConfig();
                 break;
-            case 3: // Show FPS
+            case OptShowFps:
                 newConfig.showFps = !newConfig.showFps;
                 changeConfig();
                 break;
-            case 4: // Antialiasing
+            case OptScale:
                 newConfig.antialiasing += 0.25f;
                 if (newConfig.antialiasing > 2.0f) newConfig.antialiasing = 1.0f;
                 changeConfig();
                 break;
-            case 5: // Language
+            case OptLanguage:
                 if (!languages.empty()) {
                     languageIdx = (languageIdx + 1) % (int)languages.size();
                     newConfig.language = languages[languageIdx];
                     applyLanguage();
                     changeConfig();
                 }
+                break;
+            default:
                 break;
         }
     }
@@ -184,8 +169,29 @@ public:
     }
 
 private:
+    // Идентификаторы пунктов меню. Значения не обязаны совпадать с порядком
+    // вывода: порядок задаётся в reloadMenu.
+    enum OptionId {
+        OptFullscreen = 1,
+        OptResolution,
+        OptShowFps,
+        OptScale,
+        OptLanguage,
+    };
+
     string _T(const string& key) {
         return resources.texts.getEngineText(key);
+    }
+
+    string yesNo(bool value) {
+        return value ? _T("options.yes") : _T("options.no");
+    }
+
+    // Значение масштаба с двумя знаками после точки без ostringstream.
+    string scaleLabel() const {
+        char buffer[16];
+        snprintf(buffer, sizeof(buffer), "%.2f", newConfig.antialiasing);
+        return buffer;
     }
 
     // Применяет выбранный язык в рантайме: обновляет config.language и
@@ -194,8 +200,6 @@ private:
         config.language = newConfig.language;
         resources.texts.load();
     }
-
-    vector<pair<int, string>> menuItems;
 };
 
 } // namespace openAITD

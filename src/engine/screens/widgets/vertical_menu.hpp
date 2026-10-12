@@ -9,6 +9,13 @@ namespace openAITD {
 
 class VerticalMenuWidget {
 public:
+    // Элемент меню: текст для отображения и произвольный id,
+    // по которому вызывающий код определяет действие.
+    struct Item {
+        int id = 0;
+        std::string text;
+    };
+
     bool active = true;
     raylib::Rectangle bounds;
 
@@ -20,7 +27,18 @@ public:
       scrollOffset(0),
       blinkTimer(0.0f) {}
 
+    // Совместимость: элементы без явных id (id = порядковый номер).
     void setItems(const std::vector<std::string>& newItems) {
+        std::vector<Item> newMenuItems;
+        newMenuItems.reserve(newItems.size());
+        for (size_t i = 0; i < newItems.size(); ++i) {
+            newMenuItems.push_back({ static_cast<int>(i), newItems[i] });
+        }
+        setItemsExt(newMenuItems);
+    }
+
+    // Устанавливает элементы с явными идентификаторами.
+    void setItemsExt(const std::vector<Item>& newItems) {
         items = newItems;
         if (items.size() < selectedIndex) {
             selectedIndex = 0;
@@ -40,6 +58,12 @@ public:
     }
 
     int getSelectedIndex() const { return selectedIndex; }
+
+    // id выбранного элемента или -1, если список пуст.
+    int getSelectedId() const {
+        if (selectedIndex < 0 || selectedIndex >= static_cast<int>(items.size())) return -1;
+        return items[selectedIndex].id;
+    }
 
     void moveUp() {
         if (selectedIndex > 0) {
@@ -86,7 +110,7 @@ public:
             }
 
             float yPos = startY + i * lineHeight;
-            const std::string& text = items[idx];
+            const std::string& text = items[idx].text;
             float textWidth = MeasureTextEx(font, text.c_str(), font.baseSize, 1.0f).x;
             float xPos = bounds.x + (bounds.width - textWidth) * 0.5f;
             DrawTextEx(font, text.c_str(), { xPos, yPos }, font.baseSize, 1.0f, color);
@@ -111,7 +135,7 @@ private:
     const raylib::Color scrollbarTrackColor = raylib::Color { 0, 0, 0, 80 };
     static constexpr float scrollbarWidth = 6.0f;
     static constexpr float scrollbarMargin = 4.0f;
-    std::vector<std::string> items;
+    std::vector<Item> items;
     int selectedIndex;
     int scrollOffset;
     int maxVisibleItems;
