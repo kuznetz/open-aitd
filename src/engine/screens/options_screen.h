@@ -279,9 +279,10 @@ private:
     }
 
     // Applies volume settings from config to the audio subsystem.
+    // The music volume is applied by MusicController, which reads
+    // config.musicVolume every frame (and multiplies it by its fade factor).
     void applyVolumes() {
         resources.audio.SetSoundVolume(newConfig.soundVolume);
-        resources.audio.SetMusicVolume(newConfig.musicVolume);
         resources.audio.SetVoiceVolume(newConfig.voiceVolume);
     }
 

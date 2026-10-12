@@ -56,6 +56,15 @@ Registers the full catalog of Lua-exposed functions that scripts use to query st
 
 ---
 
+## `src/engine/controllers/music_controller.hpp`
+**Role:**
+Owns the music state machine that the low-level `Audio` resource intentionally does not implement: which track should play, which one is queued, looping, and the fade transitions between tracks.
+
+**Components:**
+*   **`MusicController`**: Holds `targetMusicId` (set by `PlayMusic`/`SET_MUSIC`) and `nextMusicId` (set by `PlayNextMusic`/`NEXT_MUSIC`) and compares them against `Audio::currentMusicId`. In `process()` it detects the end of the current stream (`looping` is turned off so raylib does not loop on its own): a queued `nextMusicId` is started without a fade, otherwise the target track is repeated seamlessly. A target that differs from what is playing triggers a fade-out, a track swap and a fade-in, all implemented through `Audio::SetMusicVolume`. It is also the only place that applies `config.musicVolume` (scaled by the current fade factor), and it silences the music while a book is open (`World::bookData.readText != -1`), restoring the pending target once the book is closed.
+
+---
+
 ## `src/engine/controllers/objrotate_controller.h`
 **Role:**  
 Processes smooth rotation animations for objects, interpolating Euler angles along the shortest arc and performing collision checks on rotated bounding boxes.

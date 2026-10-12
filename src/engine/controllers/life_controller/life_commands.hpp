@@ -1,5 +1,6 @@
 #pragma once
 #include "./life_core.hpp"
+#include "../music_controller.hpp"
 #include "../tracks_controller.h"
 #include "../hit_controller.h"
 #include "../shoot_controller.h"
@@ -22,6 +23,7 @@ namespace openAITD {
 		World* world;
 		Resources* resources;
 		TracksController* trackContr;
+		MusicController* musicContr;
 		HitController* hitContr;
 		ShootController* shootContr;
 		ThrowController* throwContr;
@@ -31,11 +33,12 @@ namespace openAITD {
 		LuaState* lua = 0;
 		float curRndFreq = 0;
 
-		LifeCommands(LifeCore* lifeCore, TracksController* trackContr, HitController* hitContr, ThrowController* throwContr, PhysicsController* physContr, FoundScreen* foundScreen, ShootController* shootContr) {
+		LifeCommands(LifeCore* lifeCore, TracksController* trackContr, HitController* hitContr, ThrowController* throwContr, PhysicsController* physContr, FoundScreen* foundScreen, ShootController* shootContr, MusicController* musicContr) {
 			this->lifeCore = lifeCore;
 			this->world = lifeCore->world;
 			this->resources = lifeCore->resources;
 			this->trackContr = trackContr;
+			this->musicContr = musicContr;
 			this->hitContr = hitContr;
 			this->shootContr = shootContr;
 			this->physContr = physContr;
@@ -150,7 +153,7 @@ namespace openAITD {
 				return (int)this->world->gobjects[obj].physics.falling;
 				}, "FALLING");
 			lua->CreateFunction([this](int obj) -> int {
-				return 1; //TODO: MUSIC
+				return this->musicContr->targetMusicId;
 				}, "MUSIC");
 
 			lua->CreateFunction([this](int obj) -> int {
@@ -586,11 +589,11 @@ namespace openAITD {
 				//SOUND_THEN not using in aitd1
 				}, "SOUND_THEN");
 			lua->CreateFunction([this](int musicId) {
-				resources->audio.PlayMusic(musicId);
+				musicContr->PlayMusic(musicId);
 				}, "SET_MUSIC");
 			lua->CreateFunction([this](int musicId) {
-				resources->audio.PlayMusic(musicId);
-				}, "NEXT_MUSIC");			
+				musicContr->PlayNextMusic(musicId);
+				}, "NEXT_MUSIC");
 			lua->CreateFunction([this](int musicId) {
 				//FADE_MUSIC not using in aitd1
 				}, "FADE_MUSIC");

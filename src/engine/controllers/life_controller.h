@@ -2,6 +2,7 @@
 #include "../resources/resources.h"
 #include "../world/world.h"
 
+#include "./music_controller.hpp"
 #include "./life_controller/life_core.hpp"
 #include "./life_controller/life_commands.hpp"
 
@@ -19,9 +20,9 @@ namespace openAITD {
 
 	  LifeCommands commands;
 
-		LifeController(World* world, TracksController* trackContr, HitController* hitContr, ThrowController* throwContr, PhysicsController* physContr, FoundScreen* foundScreen, ShootController* shootContr):
+		LifeController(World* world, TracksController* trackContr, HitController* hitContr, ThrowController* throwContr, PhysicsController* physContr, FoundScreen* foundScreen, ShootController* shootContr, MusicController* musicContr):
 			LifeCore(world),
-			commands(this, trackContr, hitContr, throwContr, physContr, foundScreen, shootContr)
+			commands(this, trackContr, hitContr, throwContr, physContr, foundScreen, shootContr, musicContr)
 		{
 		}
 

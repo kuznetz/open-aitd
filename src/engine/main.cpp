@@ -22,6 +22,7 @@
 #include "./controllers/tracks_controller.h"
 #include "./controllers/particle_controller.h"
 #include "./controllers/shake_controller.hpp"
+#include "./controllers/music_controller.hpp"
 
 #include "./screens/found_screen.h"
 #include "./screens/inventory_screen.h"
@@ -73,12 +74,13 @@ namespace openAITD {
     TracksController tracksContr(&world);
     ParticleController particleContr(world);
     ShakeController shakeContr(world);
+    MusicController musicContr(world);
 
     InventoryScreen inventoryScreen(&world);
     BookScreen bookScreen(world);
     PictureScreen pictureScr(&world);
     IntroScreen introScreen(&world);
-    LifeController lifeContr(&world, &tracksContr, &hitContr, &throwContr, &physContr, &foundScreen, &shootContr);
+    LifeController lifeContr(&world, &tracksContr, &hitContr, &throwContr, &physContr, &foundScreen, &shootContr, &musicContr);
     SaveHelper saveHelper(world);
     ConsoleScreen consoleScreen(&world);
     MenuScreen mainMenu(world, saveHelper);
@@ -488,6 +490,8 @@ namespace openAITD {
                 state = AppState::InWorld;
             }
         }
+        // Music state machine: targets, looping, fades and the volume option.
+        musicContr.process(timeDelta);
         processBrightness(timeDelta);
         return true;
     }
@@ -540,8 +544,8 @@ namespace openAITD {
         resources.config = loadConfig();
 
         // Apply the persisted volume settings to the audio subsystem.
+        // The music volume is owned by MusicController (config.musicVolume).
         resources.audio.SetSoundVolume(resources.config.soundVolume);
-        resources.audio.SetMusicVolume(resources.config.musicVolume);
         resources.audio.SetVoiceVolume(resources.config.voiceVolume);
 
         resources.screen.init();
